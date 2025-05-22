@@ -1,0 +1,14 @@
+{
+    "adresse": "Solbakken 12, 0257 Oslo",
+    "byggår": 1965,
+    "bra_m2": 150,
+    "forbruk_kwh": 25000,
+    "oppvarming": "el",
+    "tiltak": [
+      {
+        "navn": "Loftisolering",
+        "kwh_sparing": 1000,
+        "kost_kr": 50000
+      }
+    ]
+  }

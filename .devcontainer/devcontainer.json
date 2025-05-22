@@ -1,0 +1,9 @@
+{
+  "name": "Node + Python",
+  "image": "mcr.microsoft.com/vscode/devcontainers/python:3.11", 
+  "postCreateCommand": "apt-get update && apt-get install -y python3-venv",
+  "features": {
+    "node": "latest"
+  },
+  "workspaceFolder": "/project/workspace"
+}

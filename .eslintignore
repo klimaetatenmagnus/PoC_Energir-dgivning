@@ -1,0 +1,3 @@
+# .eslintignore
+# Ignorer alle filer i scripts-mappen
+scripts/
