@@ -1,2 +1,31 @@
-# Miljøvariabler
-.env
+# --- 1  Node & front-end standard ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+package-lock.json
+.pnpm-store/
+.cache/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# --- 2  Codesandbox / VS Code / macOS ---
+.vscode/
+*.code-workspace
+.DS_Store
+
+# --- 3  Environment & secrets ---
+.env*
+!.env.example        # behold eksempel-fila i repoet
+
+# --- 4  Test & tooling artefakter ---
+jest-html-reporters/
+*.log
+*.sqlite
+*.tgz
+
+# --- 5  Optional: generated output you DON'T commit ---
+# Hvis dere *committer* SOAP-stubbene i /generated, IKKE ignorer den mappen.
+# /generated/
