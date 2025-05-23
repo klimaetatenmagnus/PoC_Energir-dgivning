@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    env:
+      MATRIKKEL_WSDL: ./scripts/wsdls/AdresseServiceWS.wsdl
+      MATRIKKEL_SNAPSHOT_VERSION: "9999-01-01T00:00:00"
+      MATRIKKEL_API_BASE_URL_TEST: ${{ secrets.MATRIKKEL_API_BASE_URL_TEST }}
+      MATRIKKEL_USERNAME: ${{ secrets.MATRIKKEL_USERNAME_TEST }}
+      MATRIKKEL_PASSWORD: ${{ secrets.MATRIKKEL_PASSWORD }}   # felles passord
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test --if-present
+
+  build-prod:
+    # kjør bare ved tag-release eller tilsvarende
+    if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'release:')
+    runs-on: ubuntu-latest
+    env:
+      MATRIKKEL_API_BASE_URL: https://matrikkel.no/matrikkelapi/wsapi/v1
+      MATRIKKEL_USERNAME: ${{ secrets.MATRIKKEL_USERNAME_PROD }}
+      MATRIKKEL_PASSWORD: ${{ secrets.MATRIKKEL_PASSWORD }}   # samme passord
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test --if-present
+      # evt. deploy-steg her
