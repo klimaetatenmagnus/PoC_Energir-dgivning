@@ -1,0 +1,8 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:kod="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/kodeliste"
+                  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <kod:getKodelister/>
+  </soapenv:Body>
+</soapenv:Envelope>

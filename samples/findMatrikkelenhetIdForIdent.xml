@@ -1,0 +1,33 @@
+<soapenv:Envelope 
+    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
+    xmlns:mid="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet"
+    xmlns:kom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kommune"
+    xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <mat:findMatrikkelenhetIdForIdent>
+      <mat:matrikkelenhetIdent>
+        <mid:kommuneIdent>
+          <kom:kommunenummer>301</kom:kommunenummer>
+        </mid:kommuneIdent>
+        <mid:gardsnummer>72</mid:gardsnummer>
+        <mid:bruksnummer>94</mid:bruksnummer>
+        <mid:festenummer>0</mid:festenummer>
+        <mid:seksjonsnummer>0</mid:seksjonsnummer>
+      </mat:matrikkelenhetIdent>
+      <mat:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>false</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId>
+          <dom:value>25833</dom:value>
+        </dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>proxy</dom:klientIdentifikasjon>
+        <dom:snapshotVersion>
+          <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
+        </dom:snapshotVersion>
+      </mat:matrikkelContext>
+    </mat:findMatrikkelenhetIdForIdent>
+  </soapenv:Body>
+</soapenv:Envelope>

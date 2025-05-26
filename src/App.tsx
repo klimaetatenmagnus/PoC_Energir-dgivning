@@ -1,5 +1,6 @@
 // src/App.tsx
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { MatrikkelClient } from "./clients/MatrikkelClient";
 
 interface Tiltak {
   navn: string;
@@ -10,6 +11,8 @@ interface Tiltak {
 
 interface House {
   adresse: string;
+  gardsnummer: number;
+  bruksnummer: number;
   byggår: number;
   bra_m2: number;
   forbruk_kwh: number;
@@ -17,106 +20,119 @@ interface House {
   tiltak: Tiltak[];
 }
 
+// Hent proxy-URL fra Vite-env (må ligge i .env som VITE_API_PROXY_URL)
+const PROXY_BASE = import.meta.env.VITE_API_PROXY_URL ?? "/api/matrikkel";
+
 function App() {
   const [house, setHouse] = useState<House | null>(null);
-  const [step, setStep] = useState<number>(1);
+  const [step, setStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
-  const [loadingSubsidy, setLoadingSubsidy] = useState<boolean>(false);
-  const [subsidyFetched, setSubsidyFetched] = useState<boolean>(false);
 
-  // 1) Initial load: house.json + lookup via proxy
+  const [matrikkelIds, setMatrikkelIds] = useState<number[] | null>(null);
+  const [loadingIds, setLoadingIds] = useState(false);
+
+  const [loadingSubsidy, setLoadingSubsidy] = useState(false);
+  const [subsidyFetched, setSubsidyFetched] = useState(false);
+
+  // 1) Hent house.json + bygg-info
   useEffect(() => {
-    console.log("🟢 Starter initial load av house.json");
     fetch("/house.json")
       .then((res) => {
-        console.log("📥 house.json status:", res.status);
-        if (!res.ok)
-          throw new Error(`Kunne ikke laste husdata (status ${res.status})`);
+        if (!res.ok) throw new Error(`Kunne ikke laste husdata (${res.status})`);
         return res.json() as Promise<House>;
       })
       .then((data) => {
-        console.log("📦 Mottatt house.json:", data);
         setHouse(data);
-        console.log("🔍 Starter lookup på bygg-info");
         return fetch(`/lookup?adresse=${encodeURIComponent(data.adresse)}`);
       })
       .then((res) => {
-        console.log("⮕ lookup-status:", res.status, res.statusText);
-        if (!res.ok)
-          throw new Error(`Kunne ikke hente bygg-info (status ${res.status})`);
+        if (!res.ok) throw new Error(`Kunne ikke hente bygg-info (${res.status})`);
         return res.json() as Promise<{ byggår: number; bra_m2: number }>;
       })
       .then((info) => {
-        console.log("✔️ Mottatt bygg-info:", info);
-        setHouse(
-          (prev) =>
-            prev && {
-              ...prev,
-              byggår: info.byggår,
-              bra_m2: info.bra_m2,
-            }
+        setHouse((prev) =>
+          prev
+            ? { ...prev, byggår: info.byggår, bra_m2: info.bra_m2 }
+            : prev
         );
       })
-      .catch((err) => {
-        console.error("🚨 Initial load feilet:", err);
-        setError(err.message);
-      });
+      .catch((err) => setError(err.message));
   }, []);
 
-  // 2) Subsidy-fetch kun én gang når vi går til steg 3
+  // 1b) Når vi vet gardsnr/bruksnr, kall MatrikkelClient
   useEffect(() => {
-    if (step === 3 && house?.tiltak && !subsidyFetched) {
-      setLoadingSubsidy(true);
-      setSubsidyFetched(true);
-      console.log(
-        "🔍 Starter subsidy-fetch for tiltak:",
-        house.tiltak.map((t) => t.navn)
-      );
+    if (!house || matrikkelIds !== null) return;
 
-      Promise.all(
-        house.tiltak.map((t) =>
-          fetch(`/subsidy?tiltak=${encodeURIComponent(t.navn)}`)
-            .then((res) => {
-              console.log(
-                `⮕ Subsidy-status for ${t.navn}:`,
-                res.status,
-                res.statusText
-              );
-              if (!res.ok)
-                throw new Error(
-                  `Kunne ikke hente støtte (status ${res.status})`
-                );
-              return res.json() as Promise<{ enova_støtte_kr: number }>;
-            })
-            .then((s) => {
-              console.log(`✔️ Respons-data for ${t.navn}:`, s);
-              return s.enova_støtte_kr;
-            })
-        )
+    setLoadingIds(true);
+
+    const client = new MatrikkelClient(PROXY_BASE, "", "");
+    const søk = {
+      kommunenummer: 301,
+      status: "BESTAENDE",
+      gardsnummer: house.gardsnummer,
+      bruksnummer: house.bruksnummer,
+    };
+    const ctx = {
+      locale: "no_NO_B",
+      brukOriginaleKoordinater: false,
+      koordinatsystemKodeId: 25833,
+      systemVersion: "trunk",
+      klientIdentifikasjon: "frontend",
+      snapshotVersion: "9999-01-01T00:00:00+01:00",
+    };
+
+    client
+      .findMatrikkelenheter(søk, ctx)
+      .then((ids) => setMatrikkelIds(ids))
+      .catch((err) => setError(`Feil ved matrikkelenhet-søk: ${err.message}`))
+      .finally(() => setLoadingIds(false));
+  }, [house, matrikkelIds]);
+
+  // 2) Subsidy-fetch ved steg 3
+  useEffect(() => {
+    if (step !== 3 || !house?.tiltak || subsidyFetched) return;
+
+    setLoadingSubsidy(true);
+    setSubsidyFetched(true);
+
+    Promise.all(
+      house.tiltak.map((t) =>
+        fetch(`/subsidy?tiltak=${encodeURIComponent(t.navn)}`)
+          .then((res) => {
+            if (!res.ok) throw new Error(`Kunne ikke hente støtte (${res.status})`);
+            return res.json() as Promise<{ enova_støtte_kr: number }>;
+          })
+          .then((s) => s.enova_støtte_kr)
       )
-        .then((støtteTall) => {
-          setHouse((prev) => {
-            if (!prev) return prev;
-            const nyeTiltak = prev.tiltak.map((t, i) => ({
-              ...t,
-              enova_støtte_kr: støtteTall[i],
-            }));
-            return { ...prev, tiltak: nyeTiltak };
-          });
-        })
-        .catch((err) => {
-          console.error("❌ Fetch subsidy feilet:", err);
-          setError("Feil ved lasting av Enova-støtte: " + err.message);
-        })
-        .finally(() => setLoadingSubsidy(false));
-    }
+    )
+      .then((støtteTall) => {
+        setHouse((prev) => {
+          if (!prev) return prev;
+          const nyeTiltak = prev.tiltak.map((t, i) => ({
+            ...t,
+            enova_støtte_kr: støtteTall[i],
+          }));
+          return { ...prev, tiltak: nyeTiltak };
+        });
+      })
+      .catch((err) => setError("Feil ved lasting av støtte: " + err.message))
+      .finally(() => setLoadingSubsidy(false));
   }, [step, house, subsidyFetched]);
 
+  // --- Render ---
   if (error) return <p className="text-red-600">Error: {error}</p>;
   if (!house) return <p>Laster data…</p>;
 
   return (
     <div className="max-w-xl mx-auto p-4">
+      {/* Debug: matrikkel-IDs */}
+      {loadingIds && <p>Henter matrikkelenhets-ID…</p>}
+      {matrikkelIds && (
+        <p className="mb-4">
+          <strong>Matrikkelenhets-IDer:</strong> {matrikkelIds.join(", ")}
+        </p>
+      )}
+
       {step === 1 && (
         <div>
           <h1 className="text-2xl font-bold mb-4">Grønn hus-sjekk</h1>
@@ -138,8 +154,7 @@ function App() {
       {step === 2 && (
         <div>
           <p>
-            <strong>Årlig forbruk:</strong> {house.forbruk_kwh.toLocaleString()}{" "}
-            kWh
+            <strong>Årlig forbruk:</strong> {house.forbruk_kwh.toLocaleString()} kWh
           </p>
           <p>
             <strong>Estimert CO₂:</strong>{" "}
@@ -194,6 +209,7 @@ function App() {
             onClick={() => {
               setStep(1);
               setSubsidyFetched(false);
+              setMatrikkelIds(null);
             }}
           >
             Start på nytt
