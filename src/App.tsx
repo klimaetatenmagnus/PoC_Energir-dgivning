@@ -1,24 +1,7 @@
 // src/App.tsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import type { House, Tiltak } from "./types/House";
 import { MatrikkelClient } from "./clients/MatrikkelClient";
-
-interface Tiltak {
-  navn: string;
-  kwh_sparing: number;
-  kost_kr: number;
-  enova_støtte_kr?: number;
-}
-
-interface House {
-  adresse: string;
-  gardsnummer: number;
-  bruksnummer: number;
-  byggår: number;
-  bra_m2: number;
-  forbruk_kwh: number;
-  oppvarming: string;
-  tiltak: Tiltak[];
-}
 
 // Hent proxy-URL fra Vite-env (må ligge i .env som VITE_API_PROXY_URL)
 const PROXY_BASE = import.meta.env.VITE_API_PROXY_URL ?? "/api/matrikkel";
@@ -38,7 +21,8 @@ function App() {
   useEffect(() => {
     fetch("/house.json")
       .then((res) => {
-        if (!res.ok) throw new Error(`Kunne ikke laste husdata (${res.status})`);
+        if (!res.ok)
+          throw new Error(`Kunne ikke laste husdata (${res.status})`);
         return res.json() as Promise<House>;
       })
       .then((data) => {
@@ -46,13 +30,21 @@ function App() {
         return fetch(`/lookup?adresse=${encodeURIComponent(data.adresse)}`);
       })
       .then((res) => {
-        if (!res.ok) throw new Error(`Kunne ikke hente bygg-info (${res.status})`);
-        return res.json() as Promise<{ byggår: number; bra_m2: number }>;
+        if (!res.ok)
+          throw new Error(`Kunne ikke hente bygg-info (${res.status})`);
+        return res.json() as Promise<Record<string, any>>;
       })
       .then((info) => {
         setHouse((prev) =>
           prev
-            ? { ...prev, byggår: info.byggår, bra_m2: info.bra_m2 }
+            ? {
+                ...prev,
+                byggår: info.byggår ?? prev.byggår,
+                bra_m2: info.bra_m2 ?? prev.bra_m2,
+                energikarakter: info.energikarakter ?? null,
+                oppvarmingskarakter: info.oppvarmingskarakter ?? null,
+                energiattest_kwh: info.energiattest_kwh ?? null,
+              }
             : prev
         );
       })
@@ -61,13 +53,19 @@ function App() {
 
   // 1b) Når vi vet gardsnr/bruksnr, kall MatrikkelClient
   useEffect(() => {
-    if (!house || matrikkelIds !== null) return;
+    if (
+      !house ||
+      matrikkelIds !== null ||
+      !house.gardsnummer ||
+      !house.bruksnummer
+    )
+      return;
 
     setLoadingIds(true);
 
     const client = new MatrikkelClient(PROXY_BASE, "", "");
     const søk = {
-      kommunenummer: 301,
+      kommunenummer: house.kommunenummer ?? 301,
       status: "BESTAENDE",
       gardsnummer: house.gardsnummer,
       bruksnummer: house.bruksnummer,
@@ -99,7 +97,8 @@ function App() {
       house.tiltak.map((t) =>
         fetch(`/subsidy?tiltak=${encodeURIComponent(t.navn)}`)
           .then((res) => {
-            if (!res.ok) throw new Error(`Kunne ikke hente støtte (${res.status})`);
+            if (!res.ok)
+              throw new Error(`Kunne ikke hente støtte (${res.status})`);
             return res.json() as Promise<{ enova_støtte_kr: number }>;
           })
           .then((s) => s.enova_støtte_kr)
@@ -127,7 +126,7 @@ function App() {
     <div className="max-w-xl mx-auto p-4">
       {/* Debug: matrikkel-IDs */}
       {loadingIds && <p>Henter matrikkelenhets-ID…</p>}
-      {matrikkelIds && (
+      {matrikkelIds && matrikkelIds.length > 0 && (
         <p className="mb-4">
           <strong>Matrikkelenhets-IDer:</strong> {matrikkelIds.join(", ")}
         </p>
@@ -139,9 +138,20 @@ function App() {
           <p>
             <strong>Adresse:</strong> {house.adresse}
           </p>
-          <p>
-            <strong>Byggeår:</strong> {house.byggår}
-          </p>
+          {house.byggår != null && (
+            <p>
+              <strong>Byggeår:</strong> {house.byggår}
+            </p>
+          )}
+          {house.energikarakter && (
+            <p>
+              <strong>Energimerke:</strong>{" "}
+              <span className="font-semibold">{house.energikarakter}</span>
+              {house.oppvarmingskarakter && (
+                <> ({house.oppvarmingskarakter.toLowerCase()})</>
+              )}
+            </p>
+          )}
           <button
             className="mt-6 px-4 py-2 bg-green-600 text-white rounded"
             onClick={() => setStep(2)}
@@ -154,8 +164,15 @@ function App() {
       {step === 2 && (
         <div>
           <p>
-            <strong>Årlig forbruk:</strong> {house.forbruk_kwh.toLocaleString()} kWh
+            <strong>Årlig forbruk:</strong> {house.forbruk_kwh.toLocaleString()}{" "}
+            kWh
           </p>
+          {house.energiattest_kwh != null && (
+            <p>
+              <strong>Beregnet levert energi:</strong>{" "}
+              {house.energiattest_kwh.toLocaleString()} kWh
+            </p>
+          )}
           <p>
             <strong>Estimert CO₂:</strong>{" "}
             {(house.forbruk_kwh * 0.2).toLocaleString()} kg

@@ -1,212 +1,208 @@
 // services/building-info-service/index.js
+// ---------------------------------------------------------------------------
+// Henter bygningsdata for én adresse:
+//   • Kartverket → kommune/gnr/bnr/lat/lon
+//   • Matrikkel → matrikkelenhetsID, byggID, Bygg-boble
+//   • Enova → energimerke (fallback BRA/byggår)
+//   • Kulturminne-WFS
+// ---------------------------------------------------------------------------
 
+import "dotenv/config"; // ← laster .env automatisk
 import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 import NodeCache from "node-cache";
 import proj4 from "proj4";
 
-const app = express();
-app.use(cors());
+import { MatrikkelClient } from "../../src/clients/MatrikkelClient.ts";
+import { BygningClient } from "../../src/clients/BygningClient.ts";
+import { StoreClient } from "../../src/clients/StoreClient.ts";
 
-// Cache (TTL: 1 time)
-const cache = new NodeCache({ stdTTL: 3600, checkperiod: 120 });
+// ──────────────── instanser & konstanter ──────────────────────
+const {
+  MATRIKKEL_API_BASE_URL_TEST: BASE,
+  MATRIKKEL_USERNAME_TEST: USER,
+  MATRIKKEL_PASSWORD: PASS,
+  ENOVA_API_KEY,
+} = process.env;
 
-// Projeksjoner for koordinatkonvertering
+const matrikkelClient = new MatrikkelClient(BASE, USER, PASS);
+const bygningClient = new BygningClient(BASE, USER, PASS);
+const storeClient = new StoreClient(BASE, USER, PASS);
+
+const cache = new NodeCache({ stdTTL: 86_400, checkperiod: 600 });
+
 proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
 
-// WFS-endepunkt og kartfil for BBR-bygg (MapServer-fil)
-const WFS_BASE_URL = "https://od2.pbe.oslo.kommune.no/cgi-bin/wms";
-const MAP_FILE = "d:/data_mapserver/kartfiler/BBR_BYGG.map";
-const TYPENAME = "BBR_BYGG";
-
-// WFS-endepunkt for Byantikvaren/Askeladden kulturminner
 const PROT_WFS_URL =
   "https://ws.geonorge.no/kulturminne/fkb_historiske_bygninger";
 const PROT_TYPENAME = "hbf_histbygning";
+const ENOVA_API_URL =
+  "https://api.data.enova.no/ems/offentlige-data/v1/Energiattest";
 
-// Enova energimerkeregister (fallback)
-const ENOVA_API_URL = "https://api.enova.no/energi/certificate/v1/addresses";
-const ENOVA_API_KEY =
-  process.env.ENOVA_API_KEY || "0c5e4a53ce3d4262b3371de8a499c9ca";
+// ──────────────── helper: MatrikkelContext ────────────────────
+const ctx = () => ({
+  locale: "no_NO_B",
+  brukOriginaleKoordinater: false,
+  koordinatsystemKodeId: 25833,
+  systemVersion: "trunk",
+  klientIdentifikasjon: "proxy",
+  snapshotVersion: "9999-01-01T00:00:00+01:00",
+});
 
-// Geokoding via OSM Nominatim
-async function geocode(adresse) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-    adresse
-  )}&limit=1`;
-  const res = await fetch(url, {
-    headers: { "User-Agent": "GrønnHusSjekk/1.0" },
+// ──────────────── helper: Kartverket, Enova, Geocode ───────────
+async function lookupKartverket(adresse) {
+  const r = await fetch(
+    "https://ws.geonorge.no/adresser/v1/sok?sok=" +
+      encodeURIComponent(adresse) +
+      "&treffPerSide=1&fuzzy=true",
+    { headers: { "User-Agent": "Energiverktøy/1.0" } }
+  );
+  const j = await r.json();
+  if (!j.adresser?.length) throw new Error("Kartverket fant ikke adresse");
+  const a = j.adresser[0];
+  return {
+    kommunenummer: a.kommunenummer ?? a.kommunekode ?? null,
+    gnr: a.matrikkelnummer?.gaardsnummer ?? a.gardsnummer ?? null,
+    bnr: a.matrikkelnummer?.bruksnummer ?? a.bruksnummer ?? null,
+  };
+}
+
+async function fetchEnergiattest({ kommunenummer, gnr, bnr }) {
+  if (!kommunenummer || !gnr || !bnr) return null;
+  const payload = {
+    kommunenummer,
+    gardsnummer: String(gnr),
+    bruksnummer: String(bnr),
+    bruksenhetnummer: "",
+    seksjonsnummer: "",
+  };
+  const r = await fetch(ENOVA_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "User-Agent": "Energiverktøy/1.0",
+      "x-api-key": ENOVA_API_KEY,
+    },
+    body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error(`Geokode-feil: ${res.status}`);
-  const data = await res.json();
-  if (!Array.isArray(data) || !data[0])
-    throw new Error("Ingen adresse funnet via geokoding");
-  const lat = parseFloat(data[0].lat);
-  const lon = parseFloat(data[0].lon);
-  if (isNaN(lat) || isNaN(lon))
-    throw new Error("Ugyldig koordinatdata fra geokoding");
-  return { lat, lon };
+  if (!r.ok) throw new Error("Enova " + r.status);
+  const list = await r.json();
+  return Array.isArray(list) && list[0] ? list[0] : null;
 }
 
-// Beregn område for polygon i UTM (meter)
-function calculateArea(coords) {
-  let area = 0;
-  for (let i = 0; i < coords.length; i++) {
-    const [x1, y1] = coords[i];
-    const [x2, y2] = coords[(i + 1) % coords.length];
-    area += x1 * y2 - x2 * y1;
-  }
-  return Math.abs(area) / 2;
+async function geocode(adresse) {
+  const r = await fetch(
+    "https://nominatim.openstreetmap.org/search?format=json&q=" +
+      encodeURIComponent(adresse) +
+      "&limit=1",
+    { headers: { "User-Agent": "Energiverktøy/1.0" } }
+  );
+  const j = await r.json();
+  if (!j[0]) throw new Error("Adresse ikke funnet i Nominatim");
+  return { lat: +j[0].lat, lon: +j[0].lon };
 }
+
+// ──────────────── route ────────────────────────────────────────
+const app = express();
+app.use(cors());
 
 app.get("/lookup", async (req, res) => {
-  console.log("🔔 /lookup kalt med query:", req.query);
+  const adresse = req.query.adresse;
+  if (typeof adresse !== "string")
+    return res.status(400).json({ error: "Mangler adresse" });
+
+  const cacheKey = `build:${adresse}`;
+  if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
+
   try {
-    const adresse = req.query.adresse;
-    if (typeof adresse !== "string") {
-      return res.status(400).json({ error: "Mangler adresse" });
+    // 1) Kartverket
+    const { kommunenummer, gnr, bnr } = await lookupKartverket(adresse);
+    if (!gnr || !bnr)
+      return res
+        .status(404)
+        .json({ error: "Adressen mangler entydig gnr/bnr i Kartverket." });
+
+    // 2) matrikkelenhets-ID
+    const [matrikkelenhetsId] =
+      (await matrikkelClient.findMatrikkelenheter(
+        {
+          kommunenummer,
+          status: "BESTAENDE",
+          gardsnummer: gnr,
+          bruksnummer: bnr,
+        },
+        ctx()
+      )) ?? [];
+
+    // 3) Bygg-ID → Bygg-boble
+    let byggår = null,
+      bra_m2 = null,
+      bruksenheter = null;
+    if (matrikkelenhetsId) {
+      const byggIds = await bygningClient.findByggIds(matrikkelenhetsId, ctx());
+      if (byggIds.length) {
+        const info = await storeClient.getBygg(byggIds[0], ctx());
+        byggår = info.byggeår;
+        bra_m2 = info.bruksareal;
+        bruksenheter = info.antBruksenheter;
+      }
     }
 
-    const cacheKey = `build:${adresse}`;
-    // const cached = cache.get(cacheKey)
-    // if (cached) return res.json(cached)
+    // 4) Enova energimerke (+ fallback)
+    let energi = null;
+    try {
+      energi = await fetchEnergiattest({ kommunenummer, gnr, bnr });
+      if (!byggår && energi?.enhet?.bygg?.byggeår)
+        byggår = energi.enhet.bygg.byggeår;
+      if (!bra_m2 && energi?.enhet?.bruksareal)
+        bra_m2 = energi.enhet.bruksareal;
+    } catch (e) {
+      console.warn("Enova:", e.message);
+    }
 
-    // 1) Geokode adresse
+    // 5) geokoding
     const { lat, lon } = await geocode(adresse);
 
-    // 2) Konverter til UTM32N
-    const [easting, northing] = proj4("EPSG:4326", "EPSG:32632", [lon, lat]);
-    const deltaM = 50;
-    const minX = easting - deltaM,
-      minY = northing - deltaM;
-    const maxX = easting + deltaM,
-      maxY = northing + deltaM;
-
-    // 3) Prøv WFS-kall for BBR-data
-    let byggår = null;
-    let bra_m2 = null;
-    let bruksenheter = 1;
-    let footprint_m2 = null;
-
-    const params = new URLSearchParams({
-      map: MAP_FILE,
-      SERVICE: "WFS",
-      VERSION: "1.1.0",
-      REQUEST: "GetFeature",
-      TYPENAME,
-      SRSNAME: "EPSG:32632",
-      BBOX: `${minX},${minY},${maxX},${maxY}`,
-      OUTPUTFORMAT: "text/xml; subtype=gml/3.1.1",
-    });
-    const wfsUrl = `${WFS_BASE_URL}?${params.toString()}`;
-    console.log("BBR WFS-URL:", wfsUrl);
-
-    try {
-      const wfsRes = await fetch(wfsUrl);
-      const xml = await wfsRes.text();
-      console.log("RAW BBR WFS XML:", xml);
-      if (
-        !xml ||
-        xml.includes("Unable to access file") ||
-        xml.includes("<gml:Null>")
-      ) {
-        throw new Error("WFS-data utilgjengelig");
-      }
-
-      const byggårMatch =
-        xml.match(/<ms:BYGGEÅR>(\d+)<\/ms:BYGGEÅR>/i) ||
-        xml.match(/<ms:BYGGEAAR>(\d+)<\/ms:BYGGEAAR>/i);
-      if (byggårMatch) byggår = parseInt(byggårMatch[1], 10);
-
-      const braMatch =
-        xml.match(/<ms:BRA_M2>([0-9.,]+)<\/ms:BRA_M2>/i) ||
-        xml.match(/<ms:AREAL_BRA>([0-9.,]+)<\/ms:AREAL_BRA>/i);
-      if (braMatch) bra_m2 = parseFloat(braMatch[1].replace(",", "."));
-
-      const brukMatch = xml.match(
-        /<ms:ANT_BRUKSENHETER>(\d+)<\/ms:ANT_BRUKSENHETER>/i
-      );
-      if (brukMatch) bruksenheter = parseInt(brukMatch[1], 10);
-
-      const posMatch = xml.match(
-        /<gml:posList[^>]*>([\s0-9.]+)<\/gml:posList>/i
-      );
-      if (posMatch) {
-        const nums = posMatch[1].trim().split(/\s+/).map(Number);
-        const coords = [];
-        for (let i = 0; i < nums.length; i += 2)
-          coords.push([nums[i], nums[i + 1]]);
-        footprint_m2 = calculateArea(coords);
-      }
-    } catch (wfsErr) {
-      console.warn("WFS-feil:", wfsErr.message);
-      console.log("Fallback til Enova energimerke");
-      const certUrl = `${ENOVA_API_URL}?address=${encodeURIComponent(adresse)}`;
-      console.log("Enova URL:", certUrl);
-      try {
-        const certRes = await fetch(certUrl, {
-          headers: { "x-api-key": ENOVA_API_KEY },
-        });
-        console.log("Enova status:", certRes.status, certRes.statusText);
-        if (certRes.ok) {
-          const certText = await certRes.text();
-          console.log("Enova respons (tekst):", certText);
-          const certData = JSON.parse(certText);
-          const entry = Array.isArray(certData.addresses)
-            ? certData.addresses[0]
-            : certData;
-          byggår = entry.builderYear ?? byggår;
-          bra_m2 = entry.grossFloorArea ?? bra_m2;
-          bruksenheter = entry.numberOfUnits ?? bruksenheter;
-        } else {
-          console.warn("Enova API feilet med status", certRes.status);
-        }
-      } catch (e) {
-        console.error("Enova fallback-feil:", e);
-      }
-    }
-
-    // 4) Kulturminne-sjekk (Byantikvaren)
+    // 6) kulturminne
     let isProtected = false;
     try {
-      const protParams = new URLSearchParams({
-        service: "WFS",
-        version: "1.1.0",
-        request: "GetFeature",
-        typeName: PROT_TYPENAME,
-        SRSNAME: "EPSG:4326",
-        BBOX: `${lon - deltaM / 1000},${lat - deltaM / 1000},${
-          lon + deltaM / 1000
-        },${lat + deltaM / 1000}`,
-      });
-      const protUrl = `${PROT_WFS_URL}?${protParams.toString()}`;
-      console.log("Protected WFS-URL:", protUrl);
-      const protRes = await fetch(protUrl);
-      const protXml = await protRes.text();
-      isProtected = /<gml:featureMember>/i.test(protXml);
+      const bbox = `${lon - 0.001},${lat - 0.001},${lon + 0.001},${
+        lat + 0.001
+      }`;
+      const xml = await (
+        await fetch(
+          `${PROT_WFS_URL}?service=WFS&version=1.1.0&request=GetFeature&typeName=${PROT_TYPENAME}&SRSNAME=EPSG:4326&BBOX=${bbox}`
+        )
+      ).text();
+      isProtected = /<gml:featureMember>/i.test(xml);
     } catch (e) {
-      console.warn("Kulturminne-sjekk feilet:", e.message);
+      console.warn("Kulturminne:", e.message);
     }
 
     const result = {
+      kommunenummer,
+      gardsnummer: gnr,
+      bruksnummer: bnr,
+      matrikkelenhetsId,
       byggår,
       bra_m2,
       bruksenheter,
-      footprint_m2,
       lat,
       lon,
       isProtected,
+      energikarakter: energi?.energiytelse?.energikarakter ?? null,
+      oppvarmingskarakter: energi?.energiytelse?.oppvarmingskarakter ?? null,
     };
+
     cache.set(cacheKey, result);
     res.json(result);
-  } catch (err) {
-    console.error("Feil i building-info-service:", err);
-    res.status(500).json({ error: err.message });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
   }
 });
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, "0.0.0.0", () =>
-  console.log(`building-info-service kjører på port ${PORT}`)
+app.listen(process.env.PORT || 4002, "0.0.0.0", () =>
+  console.log("building-info-service ▶ 4002")
 );

@@ -1,35 +1,36 @@
 {
-  // These tasks will run in order when initializing your CodeSandbox project.
+  "version": "1.0.0",
   "setupTasks": [
     {
       "name": "Install Dependencies",
       "command": "pnpm install"
     }
   ],
-
-  // These tasks can be run from CodeSandbox. Running one will open a log in the app.
-  "tasks": {
-    "dev": {
-      "name": "dev",
-      "command": "pnpm dev",
-      "runAtStart": true,
-      "preview": {
-        "port": 5173
-      }
+  "tasks": [
+    {
+      "name": "client",
+      "command": "pnpm dev:client",
+      "isBackground": true,
+      "isPreview": true,
+      "previewUrl": "5173"
     },
-    "build": {
-      "name": "build",
-      "command": "pnpm build",
-      "runAtStart": false
+    {
+      "name": "proxy",
+      "command": "pnpm dev:server",
+      "isBackground": true,
+      "previewUrl": "3000"
     },
-    "preview": {
-      "name": "preview",
-      "command": "pnpm preview",
-      "runAtStart": false
+    {
+      "name": "building-info",
+      "command": "pnpm dev:buildings",
+      "isBackground": true,
+      "previewUrl": "4002"
     },
-    "install": {
-      "name": "install dependencies",
-      "command": "pnpm install"
+    {
+      "name": "subsidy",
+      "command": "pnpm dev:subsidy",
+      "isBackground": true,
+      "previewUrl": "4001"
     }
-  }
+  ]
 }

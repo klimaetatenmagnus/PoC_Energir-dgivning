@@ -3,18 +3,25 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+
   "scripts": {
-    "dev:client": "vite",
-    "dev:server": "nodemon --exec ts-node server/index.ts",
-    "dev": "concurrently -k -n client,server -c blue,green \"npm:dev:client\" \"npm:dev:server\"",
+    "dev:client":   "vite",
+    "dev:server":   "nodemon --exec ts-node server/index.ts",
+    "dev:buildings": "node --loader ts-node/esm services/building-info-service/index.js",
+    "dev:subsidy":  "node services/subsidy-service/index.js",
+    "dev": "concurrently -k -n client,server,buildings,subsidy -c blue,green,yellow,magenta \"pnpm run dev:client\" \"pnpm run dev:server\" \"pnpm run dev:buildings\" \"pnpm run dev:subsidy\"",
+
+    "dev:local": "cross-env API_ENV=test concurrently -k -n client,server,buildings,subsidy -c blue,green,yellow,magenta \"pnpm run dev:client\" \"pnpm run dev:server\" \"pnpm run dev:buildings\" \"pnpm run dev:subsidy\"",
     "start:prod": "cross-env API_ENV=prod ts-node server/index.ts",
-    "dev:local": "cross-env API_ENV=test concurrently -k -n client,server -c blue,green \"npm:dev:client\" \"npm:dev:server\"",
-    "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview",
+
+    "build":  "tsc && vite build",
+    "preview":"vite preview",
+    "lint":   "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+
     "start:solar-service": "node services/solar-service/index.js",
-    "test:matrikkel": "node scripts/testMatrikkel.cjs"
+    "test:matrikkel":      "node scripts/testMatrikkel.cjs"
   },
+
   "dependencies": {
     "@turf/turf": "7.2.0",
     "@types/cors": "2.8.17",
@@ -30,6 +37,7 @@
     "react-dom": "^19.0.0",
     "soap": "^1.1.11"
   },
+
   "devDependencies": {
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
