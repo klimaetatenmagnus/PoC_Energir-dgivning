@@ -1,0 +1,960 @@
+
+> react-vite-ts@0.0.0 dev /home/vscode/PoC_Energir-dgivning
+> concurrently -k -n client,server,buildings,subsidy -c blue,green,yellow,magenta "pnpm run dev:client" "pnpm run dev:server" "pnpm run dev:buildings" "pnpm run dev:subsidy"
+
+[server] 
+[server] > react-vite-ts@0.0.0 dev:server /home/vscode/PoC_Energir-dgivning
+[server] > nodemon --exec ts-node server/index.ts
+[server] 
+[buildings] 
+[buildings] > react-vite-ts@0.0.0 dev:buildings /home/vscode/PoC_Energir-dgivning
+[buildings] > node --loader ts-node/esm services/building-info-service/index.js
+[buildings] 
+[subsidy] 
+[subsidy] > react-vite-ts@0.0.0 dev:subsidy /home/vscode/PoC_Energir-dgivning
+[subsidy] > node services/subsidy-service/index.js
+[subsidy] 
+[client] 
+[client] > react-vite-ts@0.0.0 dev:client /home/vscode/PoC_Energir-dgivning
+[client] > vite
+[client] 
+[server] [33m[nodemon] 3.1.10[39m
+[server] [33m[nodemon] to restart at any time, enter `rs`[39m
+[server] [33m[nodemon] watching path(s): *.*[39m
+[server] [33m[nodemon] watching extensions: ts,json[39m
+[server] [32m[nodemon] starting `ts-node server/index.ts`[39m
+[subsidy] subsidy-service kjører på http://localhost:4001
+[buildings] (node:13593) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+[buildings] --import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("ts-node/esm", pathToFileURL("./"));'
+[buildings] (Use `node --trace-warnings ...` to show where the warning was created)
+[buildings] (node:13593) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+[buildings] (Use `node --trace-deprecation ...` to show where the warning was created)
+[client] 
+[client]   VITE v6.3.5  ready in 411 ms
+[client] 
+[client]   ➜  Local:   http://localhost:5173/
+[client]   ➜  Network: use --host to expose
+[server] (node:13646) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+[server] (Use `node --trace-warnings ...` to show where the warning was created)
+[server] env=test 
+[server] BASE_URL = https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1 
+[server] USERNAME  = (undefined)
+[server] Proxy listening on http://localhost:3000  (env=test)
+[buildings] building-info-service ▶ 4002
+
+> react-vite-ts@0.0.0 dev /home/vscode/PoC_Energir-dgivning
+> concurrently -k -n client,server,buildings,subsidy -c blue,green,yellow,magenta "pnpm run dev:client" "pnpm run dev:server" "pnpm run dev:buildings" "pnpm run dev:subsidy"
+
+[client] 
+[client] > react-vite-ts@0.0.0 dev:client /home/vscode/PoC_Energir-dgivning
+[client] > vite
+[client] 
+[server] 
+[server] > react-vite-ts@0.0.0 dev:server /home/vscode/PoC_Energir-dgivning
+[server] > nodemon --exec ts-node server/index.ts
+[server] 
+[buildings] 
+[buildings] > react-vite-ts@0.0.0 dev:buildings /home/vscode/PoC_Energir-dgivning
+[buildings] > node --loader ts-node/esm services/building-info-service/index.js
+[buildings] 
+[subsidy] 
+[subsidy] > react-vite-ts@0.0.0 dev:subsidy /home/vscode/PoC_Energir-dgivning
+[subsidy] > node services/subsidy-service/index.js
+[subsidy] 
+[server] [33m[nodemon] 3.1.10[39m
+[server] [33m[nodemon] to restart at any time, enter `rs`[39m
+[server] [33m[nodemon] watching path(s): *.*[39m
+[server] [33m[nodemon] watching extensions: ts,json[39m
+[server] [32m[nodemon] starting `ts-node server/index.ts`[39m
+[client] 
+[client]   VITE v6.3.5  ready in 386 ms
+[client] 
+[client]   ➜  Local:   http://localhost:5173/
+[client]   ➜  Network: use --host to expose
+[subsidy] subsidy-service kjører på http://localhost:4001
+[buildings] (node:15077) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+[buildings] --import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("ts-node/esm", pathToFileURL("./"));'
+[buildings] (Use `node --trace-warnings ...` to show where the warning was created)
+[buildings] (node:15077) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+[buildings] (Use `node --trace-deprecation ...` to show where the warning was created)
+[server] (node:15109) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+[server] (Use `node --trace-warnings ...` to show where the warning was created)
+[server] env=test 
+[server] BASE_URL = https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1 
+[server] USERNAME  = (undefined)
+[server] Proxy listening on http://localhost:3000  (env=test)
+[buildings] building-info-service ▶ 4002
+[buildings] AxiosError: Request failed with status code 401
+[buildings]     at settle (file:///home/vscode/PoC_Energir-dgivning/node_modules/axios/lib/core/settle.js:19:12)
+[buildings]     at IncomingMessage.handleStreamEnd (file:///home/vscode/PoC_Energir-dgivning/node_modules/axios/lib/adapters/http.js:599:11)
+[buildings]     at IncomingMessage.emit (node:events:519:35)
+[buildings]     at endReadableNT (node:internal/streams/readable:1701:12)
+[buildings]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[buildings]     at Axios.request (file:///home/vscode/PoC_Energir-dgivning/node_modules/axios/lib/core/Axios.js:45:41)
+[buildings]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[buildings]     at async MatrikkelClient.findMatrikkelenheter (file:///home/vscode/PoC_Energir-dgivning/src/clients/MatrikkelClient.ts:33:21)
+[buildings]     at async file:///home/vscode/PoC_Energir-dgivning/services/building-info-service/index.js:128:8 {
+[buildings]   code: 'ERR_BAD_REQUEST',
+[buildings]   config: {
+[buildings]     transitional: {
+[buildings]       silentJSONParsing: true,
+[buildings]       forcedJSONParsing: true,
+[buildings]       clarifyTimeoutError: false
+[buildings]     },
+[buildings]     adapter: [ 'xhr', 'http', 'fetch' ],
+[buildings]     transformRequest: [ [Function: transformRequest] ],
+[buildings]     transformResponse: [ [Function: transformResponse] ],
+[buildings]     timeout: 0,
+[buildings]     xsrfCookieName: 'XSRF-TOKEN',
+[buildings]     xsrfHeaderName: 'X-XSRF-TOKEN',
+[buildings]     maxContentLength: -1,
+[buildings]     maxBodyLength: -1,
+[buildings]     env: { FormData: [Function [FormData]], Blob: [class Blob] },
+[buildings]     validateStatus: [Function: validateStatus],
+[buildings]     headers: Object [AxiosHeaders] {
+[buildings]       Accept: 'application/json, text/plain, */*',
+[buildings]       'Content-Type': 'text/xml;charset=UTF-8',
+[buildings]       SOAPAction: 'findMatrikkelenheter',
+[buildings]       'User-Agent': 'axios/1.9.0',
+[buildings]       'Content-Length': '1296',
+[buildings]       'Accept-Encoding': 'gzip, compress, deflate, br'
+[buildings]     },
+[buildings]     auth: {
+[buildings]       username: undefined,
+[buildings]       password: '1234Klimaetatenioslokommunetilgangmatrikkel'
+[buildings]     },
+[buildings]     method: 'post',
+[buildings]     url: 'https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS',
+[buildings]     data: '<?xml version="1.0" encoding="UTF-8"?>\n' +
+[buildings]       '<soapenv:Envelope\n' +
+[buildings]       '  xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"\n' +
+[buildings]       '  xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"\n' +
+[buildings]       '  xmlns:mid="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet"\n' +
+[buildings]       '  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">\n' +
+[buildings]       '  <soapenv:Header/>\n' +
+[buildings]       '  <soapenv:Body>\n' +
+[buildings]       '    <mat:findMatrikkelenheter>\n' +
+[buildings]       '      <mat:matrikkelenhetsokModel>\n' +
+[buildings]       '        <mid:kommunenummer>0301</mid:kommunenummer>\n' +
+[buildings]       '        <mid:status>BESTAENDE</mid:status>\n' +
+[buildings]       '        <mid:gardsnummer>72</mid:gardsnummer>\n' +
+[buildings]       '        <mid:bruksnummer>110</mid:bruksnummer>\n' +
+[buildings]       '      </mat:matrikkelenhetsokModel>\n' +
+[buildings]       '      <mat:matrikkelContext>\n' +
+[buildings]       '        <dom:locale>no_NO_B</dom:locale>\n' +
+[buildings]       '        <dom:brukOriginaleKoordinater>false</dom:brukOriginaleKoordinater>\n' +
+[buildings]       '        <dom:koordinatsystemKodeId>\n' +
+[buildings]       '          <dom:value>25833</dom:value>\n' +
+[buildings]       '        </dom:koordinatsystemKodeId>\n' +
+[buildings]       '        <dom:systemVersion>trunk</dom:systemVersion>\n' +
+[buildings]       '        <dom:klientIdentifikasjon>proxy</dom:klientIdentifikasjon>\n' +
+[buildings]       '        <dom:snapshotVersion>\n' +
+[buildings]       '          <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>\n' +
+[buildings]       '        </dom:snapshotVersion>\n' +
+[buildings]       '      </mat:matrikkelContext>\n' +
+[buildings]       '    </mat:findMatrikkelenheter>\n' +
+[buildings]       '  </soapenv:Body>\n' +
+[buildings]       '</soapenv:Envelope>',
+[buildings]     allowAbsoluteUrls: true
+[buildings]   },
+[buildings]   request: <ref *1> ClientRequest {
+[buildings]     _events: [Object: null prototype] {
+[buildings]       abort: [Function (anonymous)],
+[buildings]       aborted: [Function (anonymous)],
+[buildings]       connect: [Function (anonymous)],
+[buildings]       error: [Function (anonymous)],
+[buildings]       socket: [Function (anonymous)],
+[buildings]       timeout: [Function (anonymous)],
+[buildings]       finish: [Function: requestOnFinish]
+[buildings]     },
+[buildings]     _eventsCount: 7,
+[buildings]     _maxListeners: undefined,
+[buildings]     outputData: [],
+[buildings]     outputSize: 0,
+[buildings]     writable: true,
+[buildings]     destroyed: true,
+[buildings]     _last: false,
+[buildings]     chunkedEncoding: false,
+[buildings]     shouldKeepAlive: true,
+[buildings]     maxRequestsOnConnectionReached: false,
+[buildings]     _defaultKeepAlive: true,
+[buildings]     useChunkedEncodingByDefault: true,
+[buildings]     sendDate: false,
+[buildings]     _removedConnection: false,
+[buildings]     _removedContLen: false,
+[buildings]     _removedTE: false,
+[buildings]     strictContentLength: false,
+[buildings]     _contentLength: 1296,
+[buildings]     _hasBody: true,
+[buildings]     _trailer: '',
+[buildings]     finished: true,
+[buildings]     _headerSent: true,
+[buildings]     _closed: true,
+[buildings]     _header: 'POST /matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS HTTP/1.1\r\n' +
+[buildings]       'Accept: application/json, text/plain, */*\r\n' +
+[buildings]       'Content-Type: text/xml;charset=UTF-8\r\n' +
+[buildings]       'SOAPAction: findMatrikkelenheter\r\n' +
+[buildings]       'User-Agent: axios/1.9.0\r\n' +
+[buildings]       'Content-Length: 1296\r\n' +
+[buildings]       'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+[buildings]       'Host: prodtest.matrikkel.no\r\n' +
+[buildings]       'Authorization: Basic OjEyMzRLbGltYWV0YXRlbmlvc2xva29tbXVuZXRpbGdhbmdtYXRyaWtrZWw=\r\n' +
+[buildings]       'Connection: keep-alive\r\n' +
+[buildings]       '\r\n',
+[buildings]     _keepAliveTimeout: 0,
+[buildings]     _onPendingData: [Function: nop],
+[buildings]     agent: Agent {
+[buildings]       _events: [Object: null prototype],
+[buildings]       _eventsCount: 2,
+[buildings]       _maxListeners: undefined,
+[buildings]       defaultPort: 443,
+[buildings]       protocol: 'https:',
+[buildings]       options: [Object: null prototype],
+[buildings]       requests: [Object: null prototype] {},
+[buildings]       sockets: [Object: null prototype] {},
+[buildings]       freeSockets: [Object: null prototype],
+[buildings]       keepAliveMsecs: 1000,
+[buildings]       keepAlive: true,
+[buildings]       maxSockets: Infinity,
+[buildings]       maxFreeSockets: 256,
+[buildings]       scheduling: 'lifo',
+[buildings]       maxTotalSockets: Infinity,
+[buildings]       totalSocketCount: 2,
+[buildings]       maxCachedSessions: 100,
+[buildings]       _sessionCache: [Object],
+[buildings]       Symbol(shapeMode): false,
+[buildings]       Symbol(kCapture): false
+[buildings]     },
+[buildings]     socketPath: undefined,
+[buildings]     method: 'POST',
+[buildings]     maxHeaderSize: undefined,
+[buildings]     insecureHTTPParser: undefined,
+[buildings]     joinDuplicateHeaders: undefined,
+[buildings]     path: '/matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS',
+[buildings]     _ended: true,
+[buildings]     res: IncomingMessage {
+[buildings]       _events: [Object],
+[buildings]       _readableState: [ReadableState],
+[buildings]       _maxListeners: undefined,
+[buildings]       socket: null,
+[buildings]       httpVersionMajor: 1,
+[buildings]       httpVersionMinor: 1,
+[buildings]       httpVersion: '1.1',
+[buildings]       complete: true,
+[buildings]       rawHeaders: [Array],
+[buildings]       rawTrailers: [],
+[buildings]       joinDuplicateHeaders: undefined,
+[buildings]       aborted: false,
+[buildings]       upgrade: false,
+[buildings]       url: '',
+[buildings]       method: null,
+[buildings]       statusCode: 401,
+[buildings]       statusMessage: 'Unauthorized',
+[buildings]       client: [TLSSocket],
+[buildings]       _consuming: false,
+[buildings]       _dumped: false,
+[buildings]       req: [Circular *1],
+[buildings]       _eventsCount: 4,
+[buildings]       responseUrl: 'https://:1234Klimaetatenioslokommunetilgangmatrikkel@prodtest.matrikkel.no/matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS',
+[buildings]       redirects: [],
+[buildings]       Symbol(shapeMode): true,
+[buildings]       Symbol(kCapture): false,
+[buildings]       Symbol(kHeaders): [Object],
+[buildings]       Symbol(kHeadersCount): 26,
+[buildings]       Symbol(kTrailers): null,
+[buildings]       Symbol(kTrailersCount): 0
+[buildings]     },
+[buildings]     aborted: false,
+[buildings]     timeoutCb: null,
+[buildings]     upgradeOrConnect: false,
+[buildings]     parser: null,
+[buildings]     maxHeadersCount: null,
+[buildings]     reusedSocket: false,
+[buildings]     host: 'prodtest.matrikkel.no',
+[buildings]     protocol: 'https:',
+[buildings]     _redirectable: Writable {
+[buildings]       _events: [Object],
+[buildings]       _writableState: [WritableState],
+[buildings]       _maxListeners: undefined,
+[buildings]       _options: [Object],
+[buildings]       _ended: true,
+[buildings]       _ending: true,
+[buildings]       _redirectCount: 0,
+[buildings]       _redirects: [],
+[buildings]       _requestBodyLength: 1296,
+[buildings]       _requestBodyBuffers: [],
+[buildings]       _eventsCount: 3,
+[buildings]       _onNativeResponse: [Function (anonymous)],
+[buildings]       _currentRequest: [Circular *1],
+[buildings]       _currentUrl: 'https://:1234Klimaetatenioslokommunetilgangmatrikkel@prodtest.matrikkel.no/matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS',
+[buildings]       Symbol(shapeMode): true,
+[buildings]       Symbol(kCapture): false
+[buildings]     },
+[buildings]     Symbol(shapeMode): false,
+[buildings]     Symbol(kCapture): false,
+[buildings]     Symbol(kBytesWritten): 0,
+[buildings]     Symbol(kNeedDrain): false,
+[buildings]     Symbol(corked): 0,
+[buildings]     Symbol(kChunkedBuffer): [],
+[buildings]     Symbol(kChunkedLength): 0,
+[buildings]     Symbol(kSocket): TLSSocket {
+[buildings]       _tlsOptions: [Object],
+[buildings]       _secureEstablished: true,
+[buildings]       _securePending: false,
+[buildings]       _newSessionPending: false,
+[buildings]       _controlReleased: true,
+[buildings]       secureConnecting: false,
+[buildings]       _SNICallback: null,
+[buildings]       servername: 'prodtest.matrikkel.no',
+[buildings]       alpnProtocol: false,
+[buildings]       authorized: true,
+[buildings]       authorizationError: null,
+[buildings]       encrypted: true,
+[buildings]       _events: [Object: null prototype],
+[buildings]       _eventsCount: 9,
+[buildings]       connecting: false,
+[buildings]       _hadError: false,
+[buildings]       _parent: null,
+[buildings]       _host: 'prodtest.matrikkel.no',
+[buildings]       _closeAfterHandlingError: false,
+[buildings]       _readableState: [ReadableState],
+[buildings]       _writableState: [WritableState],
+[buildings]       allowHalfOpen: false,
+[buildings]       _maxListeners: undefined,
+[buildings]       _sockname: null,
+[buildings]       _pendingData: null,
+[buildings]       _pendingEncoding: '',
+[buildings]       server: undefined,
+[buildings]       _server: null,
+[buildings]       ssl: [TLSWrap],
+[buildings]       _requestCert: true,
+[buildings]       _rejectUnauthorized: true,
+[buildings]       timeout: 5000,
+[buildings]       parser: null,
+[buildings]       _httpMessage: null,
+[buildings]       Symbol(alpncallback): null,
+[buildings]       Symbol(res): [TLSWrap],
+[buildings]       Symbol(verified): true,
+[buildings]       Symbol(pendingSession): null,
+[buildings]       Symbol(async_id_symbol): -1,
+[buildings]       Symbol(kHandle): [TLSWrap],
+[buildings]       Symbol(lastWriteQueueSize): 0,
+[buildings]       Symbol(timeout): Timeout {
+[buildings]         _idleTimeout: 5000,
+[buildings]         _idlePrev: [TimersList],
+[buildings]         _idleNext: [Timeout],
+[buildings]         _idleStart: 14597,
+[buildings]         _onTimeout: [Function: bound ],
+[buildings]         _timerArgs: undefined,
+[buildings]         _repeat: null,
+[buildings]         _destroyed: false,
+[buildings]         Symbol(refed): false,
+[buildings]         Symbol(kHasPrimitive): false,
+[buildings]         Symbol(asyncId): 775,
+[buildings]         Symbol(triggerId): 773,
+[buildings]         Symbol(kAsyncContextFrame): undefined
+[buildings]       },
+[buildings]       Symbol(kBuffer): null,
+[buildings]       Symbol(kBufferCb): null,
+[buildings]       Symbol(kBufferGen): null,
+[buildings]       Symbol(shapeMode): true,
+[buildings]       Symbol(kCapture): false,
+[buildings]       Symbol(kSetNoDelay): false,
+[buildings]       Symbol(kSetKeepAlive): true,
+[buildings]       Symbol(kSetKeepAliveInitialDelay): 1,
+[buildings]       Symbol(kBytesRead): 0,
+[buildings]       Symbol(kBytesWritten): 0,
+[buildings]       Symbol(connect-options): [Object]
+[buildings]     },
+[buildings]     Symbol(kOutHeaders): [Object: null prototype] {
+[buildings]       accept: [Array],
+[buildings]       'content-type': [Array],
+[buildings]       soapaction: [Array],
+[buildings]       'user-agent': [Array],
+[buildings]       'content-length': [Array],
+[buildings]       'accept-encoding': [Array],
+[buildings]       host: [Array],
+[buildings]       authorization: [Array]
+[buildings]     },
+[buildings]     Symbol(errored): null,
+[buildings]     Symbol(kHighWaterMark): 65536,
+[buildings]     Symbol(kRejectNonStandardBodyWrites): false,
+[buildings]     Symbol(kUniqueHeaders): null
+[buildings]   },
+[buildings]   response: {
+[buildings]     status: 401,
+[buildings]     statusText: 'Unauthorized',
+[buildings]     headers: Object [AxiosHeaders] {
+[buildings]       date: 'Fri, 30 May 2025 09:04:46 GMT',
+[buildings]       server: 'istio-envoy',
+[buildings]       'x-frame-options': 'SAMEORIGIN',
+[buildings]       'content-security-policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-ancestors 'self'",
+[buildings]       'x-content-type-options': 'nosniff',
+[buildings]       'referrer-policy': 'strict-origin-when-cross-origin',
+[buildings]       'permissions-policy': 'geolocation=(),midi=(),microphone=(),camera=()',
+[buildings]       'strict-transport-security': 'max-age=31536000; includeSubdomains',
+[buildings]       'www-authenticate': 'Basic realm="matrikkel-test-server", charset="UTF-8"',
+[buildings]       'content-type': 'text/html;charset=utf-8',
+[buildings]       'content-language': 'en',
+[buildings]       'content-length': '437',
+[buildings]       'x-envoy-upstream-service-time': '13'
+[buildings]     },
+[buildings]     config: {
+[buildings]       transitional: [Object],
+[buildings]       adapter: [Array],
+[buildings]       transformRequest: [Array],
+[buildings]       transformResponse: [Array],
+[buildings]       timeout: 0,
+[buildings]       xsrfCookieName: 'XSRF-TOKEN',
+[buildings]       xsrfHeaderName: 'X-XSRF-TOKEN',
+[buildings]       maxContentLength: -1,
+[buildings]       maxBodyLength: -1,
+[buildings]       env: [Object],
+[buildings]       validateStatus: [Function: validateStatus],
+[buildings]       headers: [Object [AxiosHeaders]],
+[buildings]       auth: [Object],
+[buildings]       method: 'post',
+[buildings]       url: 'https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS',
+[buildings]       data: '<?xml version="1.0" encoding="UTF-8"?>\n' +
+[buildings]         '<soapenv:Envelope\n' +
+[buildings]         '  xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"\n' +
+[buildings]         '  xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"\n' +
+[buildings]         '  xmlns:mid="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet"\n' +
+[buildings]         '  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">\n' +
+[buildings]         '  <soapenv:Header/>\n' +
+[buildings]         '  <soapenv:Body>\n' +
+[buildings]         '    <mat:findMatrikkelenheter>\n' +
+[buildings]         '      <mat:matrikkelenhetsokModel>\n' +
+[buildings]         '        <mid:kommunenummer>0301</mid:kommunenummer>\n' +
+[buildings]         '        <mid:status>BESTAENDE</mid:status>\n' +
+[buildings]         '        <mid:gardsnummer>72</mid:gardsnummer>\n' +
+[buildings]         '        <mid:bruksnummer>110</mid:bruksnummer>\n' +
+[buildings]         '      </mat:matrikkelenhetsokModel>\n' +
+[buildings]         '      <mat:matrikkelContext>\n' +
+[buildings]         '        <dom:locale>no_NO_B</dom:locale>\n' +
+[buildings]         '        <dom:brukOriginaleKoordinater>false</dom:brukOriginaleKoordinater>\n' +
+[buildings]         '        <dom:koordinatsystemKodeId>\n' +
+[buildings]         '          <dom:value>25833</dom:value>\n' +
+[buildings]         '        </dom:koordinatsystemKodeId>\n' +
+[buildings]         '        <dom:systemVersion>trunk</dom:systemVersion>\n' +
+[buildings]         '        <dom:klientIdentifikasjon>proxy</dom:klientIdentifikasjon>\n' +
+[buildings]         '        <dom:snapshotVersion>\n' +
+[buildings]         '          <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>\n' +
+[buildings]         '        </dom:snapshotVersion>\n' +
+[buildings]         '      </mat:matrikkelContext>\n' +
+[buildings]         '    </mat:findMatrikkelenheter>\n' +
+[buildings]         '  </soapenv:Body>\n' +
+[buildings]         '</soapenv:Envelope>',
+[buildings]       allowAbsoluteUrls: true
+[buildings]     },
+[buildings]     request: <ref *1> ClientRequest {
+[buildings]       _events: [Object: null prototype],
+[buildings]       _eventsCount: 7,
+[buildings]       _maxListeners: undefined,
+[buildings]       outputData: [],
+[buildings]       outputSize: 0,
+[buildings]       writable: true,
+[buildings]       destroyed: true,
+[buildings]       _last: false,
+[buildings]       chunkedEncoding: false,
+[buildings]       shouldKeepAlive: true,
+[buildings]       maxRequestsOnConnectionReached: false,
+[buildings]       _defaultKeepAlive: true,
+[buildings]       useChunkedEncodingByDefault: true,
+[buildings]       sendDate: false,
+[buildings]       _removedConnection: false,
+[buildings]       _removedContLen: false,
+[buildings]       _removedTE: false,
+[buildings]       strictContentLength: false,
+[buildings]       _contentLength: 1296,
+[buildings]       _hasBody: true,
+[buildings]       _trailer: '',
+[buildings]       finished: true,
+[buildings]       _headerSent: true,
+[buildings]       _closed: true,
+[buildings]       _header: 'POST /matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS HTTP/1.1\r\n' +
+[buildings]         'Accept: application/json, text/plain, */*\r\n' +
+[buildings]         'Content-Type: text/xml;charset=UTF-8\r\n' +
+[buildings]         'SOAPAction: findMatrikkelenheter\r\n' +
+[buildings]         'User-Agent: axios/1.9.0\r\n' +
+[buildings]         'Content-Length: 1296\r\n' +
+[buildings]         'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+[buildings]         'Host: prodtest.matrikkel.no\r\n' +
+[buildings]         'Authorization: Basic OjEyMzRLbGltYWV0YXRlbmlvc2xva29tbXVuZXRpbGdhbmdtYXRyaWtrZWw=\r\n' +
+[buildings]         'Connection: keep-alive\r\n' +
+[buildings]         '\r\n',
+[buildings]       _keepAliveTimeout: 0,
+[buildings]       _onPendingData: [Function: nop],
+[buildings]       agent: [Agent],
+[buildings]       socketPath: undefined,
+[buildings]       method: 'POST',
+[buildings]       maxHeaderSize: undefined,
+[buildings]       insecureHTTPParser: undefined,
+[buildings]       joinDuplicateHeaders: undefined,
+[buildings]       path: '/matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS',
+[buildings]       _ended: true,
+[buildings]       res: [IncomingMessage],
+[buildings]       aborted: false,
+[buildings]       timeoutCb: null,
+[buildings]       upgradeOrConnect: false,
+[buildings]       parser: null,
+[buildings]       maxHeadersCount: null,
+[buildings]       reusedSocket: false,
+[buildings]       host: 'prodtest.matrikkel.no',
+[buildings]       protocol: 'https:',
+[buildings]       _redirectable: [Writable],
+[buildings]       Symbol(shapeMode): false,
+[buildings]       Symbol(kCapture): false,
+[buildings]       Symbol(kBytesWritten): 0,
+[buildings]       Symbol(kNeedDrain): false,
+[buildings]       Symbol(corked): 0,
+[buildings]       Symbol(kChunkedBuffer): [],
+[buildings]       Symbol(kChunkedLength): 0,
+[buildings]       Symbol(kSocket): [TLSSocket],
+[buildings]       Symbol(kOutHeaders): [Object: null prototype],
+[buildings]       Symbol(errored): null,
+[buildings]       Symbol(kHighWaterMark): 65536,
+[buildings]       Symbol(kRejectNonStandardBodyWrites): false,
+[buildings]       Symbol(kUniqueHeaders): null
+[buildings]     },
+[buildings]     data: '<!doctype html><html lang="en"><head><title>HTTP Status 401 – Unauthorized</title><style type="text/css">body {font-family:Tahoma,Arial,sans-serif;} h1, h2, h3, b {color:white;background-color:#525D76;} h1 {font-size:22px;} h2 {font-size:16px;} h3 {font-size:14px;} p {font-size:12px;} a {color:black;} .line {height:1px;background-color:#525D76;border:none;}</style></head><body><h1>HTTP Status 401 – Unauthorized</h1></body></html>'
+[buildings]   },
+[buildings]   status: 401
+[buildings] }
+[buildings] AxiosError: Request failed with status code 401
+[buildings]     at settle (file:///home/vscode/PoC_Energir-dgivning/node_modules/axios/lib/core/settle.js:19:12)
+[buildings]     at IncomingMessage.handleStreamEnd (file:///home/vscode/PoC_Energir-dgivning/node_modules/axios/lib/adapters/http.js:599:11)
+[buildings]     at IncomingMessage.emit (node:events:519:35)
+[buildings]     at endReadableNT (node:internal/streams/readable:1701:12)
+[buildings]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[buildings]     at Axios.request (file:///home/vscode/PoC_Energir-dgivning/node_modules/axios/lib/core/Axios.js:45:41)
+[buildings]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[buildings]     at async MatrikkelClient.findMatrikkelenheter (file:///home/vscode/PoC_Energir-dgivning/src/clients/MatrikkelClient.ts:33:21)
+[buildings]     at async file:///home/vscode/PoC_Energir-dgivning/services/building-info-service/index.js:128:8 {
+[buildings]   code: 'ERR_BAD_REQUEST',
+[buildings]   config: {
+[buildings]     transitional: {
+[buildings]       silentJSONParsing: true,
+[buildings]       forcedJSONParsing: true,
+[buildings]       clarifyTimeoutError: false
+[buildings]     },
+[buildings]     adapter: [ 'xhr', 'http', 'fetch' ],
+[buildings]     transformRequest: [ [Function: transformRequest] ],
+[buildings]     transformResponse: [ [Function: transformResponse] ],
+[buildings]     timeout: 0,
+[buildings]     xsrfCookieName: 'XSRF-TOKEN',
+[buildings]     xsrfHeaderName: 'X-XSRF-TOKEN',
+[buildings]     maxContentLength: -1,
+[buildings]     maxBodyLength: -1,
+[buildings]     env: { FormData: [Function [FormData]], Blob: [class Blob] },
+[buildings]     validateStatus: [Function: validateStatus],
+[buildings]     headers: Object [AxiosHeaders] {
+[buildings]       Accept: 'application/json, text/plain, */*',
+[buildings]       'Content-Type': 'text/xml;charset=UTF-8',
+[buildings]       SOAPAction: 'findMatrikkelenheter',
+[buildings]       'User-Agent': 'axios/1.9.0',
+[buildings]       'Content-Length': '1296',
+[buildings]       'Accept-Encoding': 'gzip, compress, deflate, br'
+[buildings]     },
+[buildings]     auth: {
+[buildings]       username: undefined,
+[buildings]       password: '1234Klimaetatenioslokommunetilgangmatrikkel'
+[buildings]     },
+[buildings]     method: 'post',
+[buildings]     url: 'https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS',
+[buildings]     data: '<?xml version="1.0" encoding="UTF-8"?>\n' +
+[buildings]       '<soapenv:Envelope\n' +
+[buildings]       '  xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"\n' +
+[buildings]       '  xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"\n' +
+[buildings]       '  xmlns:mid="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet"\n' +
+[buildings]       '  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">\n' +
+[buildings]       '  <soapenv:Header/>\n' +
+[buildings]       '  <soapenv:Body>\n' +
+[buildings]       '    <mat:findMatrikkelenheter>\n' +
+[buildings]       '      <mat:matrikkelenhetsokModel>\n' +
+[buildings]       '        <mid:kommunenummer>0301</mid:kommunenummer>\n' +
+[buildings]       '        <mid:status>BESTAENDE</mid:status>\n' +
+[buildings]       '        <mid:gardsnummer>72</mid:gardsnummer>\n' +
+[buildings]       '        <mid:bruksnummer>110</mid:bruksnummer>\n' +
+[buildings]       '      </mat:matrikkelenhetsokModel>\n' +
+[buildings]       '      <mat:matrikkelContext>\n' +
+[buildings]       '        <dom:locale>no_NO_B</dom:locale>\n' +
+[buildings]       '        <dom:brukOriginaleKoordinater>false</dom:brukOriginaleKoordinater>\n' +
+[buildings]       '        <dom:koordinatsystemKodeId>\n' +
+[buildings]       '          <dom:value>25833</dom:value>\n' +
+[buildings]       '        </dom:koordinatsystemKodeId>\n' +
+[buildings]       '        <dom:systemVersion>trunk</dom:systemVersion>\n' +
+[buildings]       '        <dom:klientIdentifikasjon>proxy</dom:klientIdentifikasjon>\n' +
+[buildings]       '        <dom:snapshotVersion>\n' +
+[buildings]       '          <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>\n' +
+[buildings]       '        </dom:snapshotVersion>\n' +
+[buildings]       '      </mat:matrikkelContext>\n' +
+[buildings]       '    </mat:findMatrikkelenheter>\n' +
+[buildings]       '  </soapenv:Body>\n' +
+[buildings]       '</soapenv:Envelope>',
+[buildings]     allowAbsoluteUrls: true
+[buildings]   },
+[buildings]   request: <ref *1> ClientRequest {
+[buildings]     _events: [Object: null prototype] {
+[buildings]       abort: [Function (anonymous)],
+[buildings]       aborted: [Function (anonymous)],
+[buildings]       connect: [Function (anonymous)],
+[buildings]       error: [Function (anonymous)],
+[buildings]       socket: [Function (anonymous)],
+[buildings]       timeout: [Function (anonymous)],
+[buildings]       finish: [Function: requestOnFinish]
+[buildings]     },
+[buildings]     _eventsCount: 7,
+[buildings]     _maxListeners: undefined,
+[buildings]     outputData: [],
+[buildings]     outputSize: 0,
+[buildings]     writable: true,
+[buildings]     destroyed: true,
+[buildings]     _last: false,
+[buildings]     chunkedEncoding: false,
+[buildings]     shouldKeepAlive: true,
+[buildings]     maxRequestsOnConnectionReached: false,
+[buildings]     _defaultKeepAlive: true,
+[buildings]     useChunkedEncodingByDefault: true,
+[buildings]     sendDate: false,
+[buildings]     _removedConnection: false,
+[buildings]     _removedContLen: false,
+[buildings]     _removedTE: false,
+[buildings]     strictContentLength: false,
+[buildings]     _contentLength: 1296,
+[buildings]     _hasBody: true,
+[buildings]     _trailer: '',
+[buildings]     finished: true,
+[buildings]     _headerSent: true,
+[buildings]     _closed: true,
+[buildings]     _header: 'POST /matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS HTTP/1.1\r\n' +
+[buildings]       'Accept: application/json, text/plain, */*\r\n' +
+[buildings]       'Content-Type: text/xml;charset=UTF-8\r\n' +
+[buildings]       'SOAPAction: findMatrikkelenheter\r\n' +
+[buildings]       'User-Agent: axios/1.9.0\r\n' +
+[buildings]       'Content-Length: 1296\r\n' +
+[buildings]       'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+[buildings]       'Host: prodtest.matrikkel.no\r\n' +
+[buildings]       'Authorization: Basic OjEyMzRLbGltYWV0YXRlbmlvc2xva29tbXVuZXRpbGdhbmdtYXRyaWtrZWw=\r\n' +
+[buildings]       'Connection: keep-alive\r\n' +
+[buildings]       '\r\n',
+[buildings]     _keepAliveTimeout: 0,
+[buildings]     _onPendingData: [Function: nop],
+[buildings]     agent: Agent {
+[buildings]       _events: [Object: null prototype],
+[buildings]       _eventsCount: 2,
+[buildings]       _maxListeners: undefined,
+[buildings]       defaultPort: 443,
+[buildings]       protocol: 'https:',
+[buildings]       options: [Object: null prototype],
+[buildings]       requests: [Object: null prototype] {},
+[buildings]       sockets: [Object: null prototype] {},
+[buildings]       freeSockets: [Object: null prototype],
+[buildings]       keepAliveMsecs: 1000,
+[buildings]       keepAlive: true,
+[buildings]       maxSockets: Infinity,
+[buildings]       maxFreeSockets: 256,
+[buildings]       scheduling: 'lifo',
+[buildings]       maxTotalSockets: Infinity,
+[buildings]       totalSocketCount: 2,
+[buildings]       maxCachedSessions: 100,
+[buildings]       _sessionCache: [Object],
+[buildings]       Symbol(shapeMode): false,
+[buildings]       Symbol(kCapture): false
+[buildings]     },
+[buildings]     socketPath: undefined,
+[buildings]     method: 'POST',
+[buildings]     maxHeaderSize: undefined,
+[buildings]     insecureHTTPParser: undefined,
+[buildings]     joinDuplicateHeaders: undefined,
+[buildings]     path: '/matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS',
+[buildings]     _ended: true,
+[buildings]     res: IncomingMessage {
+[buildings]       _events: [Object],
+[buildings]       _readableState: [ReadableState],
+[buildings]       _maxListeners: undefined,
+[buildings]       socket: null,
+[buildings]       httpVersionMajor: 1,
+[buildings]       httpVersionMinor: 1,
+[buildings]       httpVersion: '1.1',
+[buildings]       complete: true,
+[buildings]       rawHeaders: [Array],
+[buildings]       rawTrailers: [],
+[buildings]       joinDuplicateHeaders: undefined,
+[buildings]       aborted: false,
+[buildings]       upgrade: false,
+[buildings]       url: '',
+[buildings]       method: null,
+[buildings]       statusCode: 401,
+[buildings]       statusMessage: 'Unauthorized',
+[buildings]       client: [TLSSocket],
+[buildings]       _consuming: false,
+[buildings]       _dumped: false,
+[buildings]       req: [Circular *1],
+[buildings]       _eventsCount: 4,
+[buildings]       responseUrl: 'https://:1234Klimaetatenioslokommunetilgangmatrikkel@prodtest.matrikkel.no/matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS',
+[buildings]       redirects: [],
+[buildings]       Symbol(shapeMode): true,
+[buildings]       Symbol(kCapture): false,
+[buildings]       Symbol(kHeaders): [Object],
+[buildings]       Symbol(kHeadersCount): 26,
+[buildings]       Symbol(kTrailers): null,
+[buildings]       Symbol(kTrailersCount): 0
+[buildings]     },
+[buildings]     aborted: false,
+[buildings]     timeoutCb: null,
+[buildings]     upgradeOrConnect: false,
+[buildings]     parser: null,
+[buildings]     maxHeadersCount: null,
+[buildings]     reusedSocket: true,
+[buildings]     host: 'prodtest.matrikkel.no',
+[buildings]     protocol: 'https:',
+[buildings]     _redirectable: Writable {
+[buildings]       _events: [Object],
+[buildings]       _writableState: [WritableState],
+[buildings]       _maxListeners: undefined,
+[buildings]       _options: [Object],
+[buildings]       _ended: true,
+[buildings]       _ending: true,
+[buildings]       _redirectCount: 0,
+[buildings]       _redirects: [],
+[buildings]       _requestBodyLength: 1296,
+[buildings]       _requestBodyBuffers: [],
+[buildings]       _eventsCount: 3,
+[buildings]       _onNativeResponse: [Function (anonymous)],
+[buildings]       _currentRequest: [Circular *1],
+[buildings]       _currentUrl: 'https://:1234Klimaetatenioslokommunetilgangmatrikkel@prodtest.matrikkel.no/matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS',
+[buildings]       Symbol(shapeMode): true,
+[buildings]       Symbol(kCapture): false
+[buildings]     },
+[buildings]     Symbol(shapeMode): false,
+[buildings]     Symbol(kCapture): false,
+[buildings]     Symbol(kBytesWritten): 0,
+[buildings]     Symbol(kNeedDrain): false,
+[buildings]     Symbol(corked): 0,
+[buildings]     Symbol(kChunkedBuffer): [],
+[buildings]     Symbol(kChunkedLength): 0,
+[buildings]     Symbol(kSocket): TLSSocket {
+[buildings]       _tlsOptions: [Object],
+[buildings]       _secureEstablished: true,
+[buildings]       _securePending: false,
+[buildings]       _newSessionPending: false,
+[buildings]       _controlReleased: true,
+[buildings]       secureConnecting: false,
+[buildings]       _SNICallback: null,
+[buildings]       servername: 'prodtest.matrikkel.no',
+[buildings]       alpnProtocol: false,
+[buildings]       authorized: true,
+[buildings]       authorizationError: null,
+[buildings]       encrypted: true,
+[buildings]       _events: [Object: null prototype],
+[buildings]       _eventsCount: 9,
+[buildings]       connecting: false,
+[buildings]       _hadError: false,
+[buildings]       _parent: null,
+[buildings]       _host: 'prodtest.matrikkel.no',
+[buildings]       _closeAfterHandlingError: false,
+[buildings]       _readableState: [ReadableState],
+[buildings]       _writableState: [WritableState],
+[buildings]       allowHalfOpen: false,
+[buildings]       _maxListeners: undefined,
+[buildings]       _sockname: null,
+[buildings]       _pendingData: null,
+[buildings]       _pendingEncoding: '',
+[buildings]       server: undefined,
+[buildings]       _server: null,
+[buildings]       ssl: [TLSWrap],
+[buildings]       _requestCert: true,
+[buildings]       _rejectUnauthorized: true,
+[buildings]       timeout: 5000,
+[buildings]       parser: null,
+[buildings]       _httpMessage: null,
+[buildings]       Symbol(alpncallback): null,
+[buildings]       Symbol(res): [TLSWrap],
+[buildings]       Symbol(verified): true,
+[buildings]       Symbol(pendingSession): null,
+[buildings]       Symbol(async_id_symbol): -1,
+[buildings]       Symbol(kHandle): [TLSWrap],
+[buildings]       Symbol(lastWriteQueueSize): 0,
+[buildings]       Symbol(timeout): Timeout {
+[buildings]         _idleTimeout: 5000,
+[buildings]         _idlePrev: [TimersList],
+[buildings]         _idleNext: [Timeout],
+[buildings]         _idleStart: 14937,
+[buildings]         _onTimeout: [Function: bound ],
+[buildings]         _timerArgs: undefined,
+[buildings]         _repeat: null,
+[buildings]         _destroyed: false,
+[buildings]         Symbol(refed): false,
+[buildings]         Symbol(kHasPrimitive): false,
+[buildings]         Symbol(asyncId): 836,
+[buildings]         Symbol(triggerId): 834,
+[buildings]         Symbol(kAsyncContextFrame): undefined
+[buildings]       },
+[buildings]       Symbol(kBuffer): null,
+[buildings]       Symbol(kBufferCb): null,
+[buildings]       Symbol(kBufferGen): null,
+[buildings]       Symbol(shapeMode): true,
+[buildings]       Symbol(kCapture): false,
+[buildings]       Symbol(kSetNoDelay): false,
+[buildings]       Symbol(kSetKeepAlive): true,
+[buildings]       Symbol(kSetKeepAliveInitialDelay): 1,
+[buildings]       Symbol(kBytesRead): 0,
+[buildings]       Symbol(kBytesWritten): 0,
+[buildings]       Symbol(connect-options): [Object]
+[buildings]     },
+[buildings]     Symbol(kOutHeaders): [Object: null prototype] {
+[buildings]       accept: [Array],
+[buildings]       'content-type': [Array],
+[buildings]       soapaction: [Array],
+[buildings]       'user-agent': [Array],
+[buildings]       'content-length': [Array],
+[buildings]       'accept-encoding': [Array],
+[buildings]       host: [Array],
+[buildings]       authorization: [Array]
+[buildings]     },
+[buildings]     Symbol(errored): null,
+[buildings]     Symbol(kHighWaterMark): 65536,
+[buildings]     Symbol(kRejectNonStandardBodyWrites): false,
+[buildings]     Symbol(kUniqueHeaders): null
+[buildings]   },
+[buildings]   response: {
+[buildings]     status: 401,
+[buildings]     statusText: 'Unauthorized',
+[buildings]     headers: Object [AxiosHeaders] {
+[buildings]       date: 'Fri, 30 May 2025 09:04:45 GMT',
+[buildings]       server: 'istio-envoy',
+[buildings]       'x-frame-options': 'SAMEORIGIN',
+[buildings]       'content-security-policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-ancestors 'self'",
+[buildings]       'x-content-type-options': 'nosniff',
+[buildings]       'referrer-policy': 'strict-origin-when-cross-origin',
+[buildings]       'permissions-policy': 'geolocation=(),midi=(),microphone=(),camera=()',
+[buildings]       'strict-transport-security': 'max-age=31536000; includeSubdomains',
+[buildings]       'www-authenticate': 'Basic realm="matrikkel-test-server", charset="UTF-8"',
+[buildings]       'content-type': 'text/html;charset=utf-8',
+[buildings]       'content-language': 'en',
+[buildings]       'content-length': '437',
+[buildings]       'x-envoy-upstream-service-time': '4'
+[buildings]     },
+[buildings]     config: {
+[buildings]       transitional: [Object],
+[buildings]       adapter: [Array],
+[buildings]       transformRequest: [Array],
+[buildings]       transformResponse: [Array],
+[buildings]       timeout: 0,
+[buildings]       xsrfCookieName: 'XSRF-TOKEN',
+[buildings]       xsrfHeaderName: 'X-XSRF-TOKEN',
+[buildings]       maxContentLength: -1,
+[buildings]       maxBodyLength: -1,
+[buildings]       env: [Object],
+[buildings]       validateStatus: [Function: validateStatus],
+[buildings]       headers: [Object [AxiosHeaders]],
+[buildings]       auth: [Object],
+[buildings]       method: 'post',
+[buildings]       url: 'https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS',
+[buildings]       data: '<?xml version="1.0" encoding="UTF-8"?>\n' +
+[buildings]         '<soapenv:Envelope\n' +
+[buildings]         '  xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"\n' +
+[buildings]         '  xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"\n' +
+[buildings]         '  xmlns:mid="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet"\n' +
+[buildings]         '  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">\n' +
+[buildings]         '  <soapenv:Header/>\n' +
+[buildings]         '  <soapenv:Body>\n' +
+[buildings]         '    <mat:findMatrikkelenheter>\n' +
+[buildings]         '      <mat:matrikkelenhetsokModel>\n' +
+[buildings]         '        <mid:kommunenummer>0301</mid:kommunenummer>\n' +
+[buildings]         '        <mid:status>BESTAENDE</mid:status>\n' +
+[buildings]         '        <mid:gardsnummer>72</mid:gardsnummer>\n' +
+[buildings]         '        <mid:bruksnummer>110</mid:bruksnummer>\n' +
+[buildings]         '      </mat:matrikkelenhetsokModel>\n' +
+[buildings]         '      <mat:matrikkelContext>\n' +
+[buildings]         '        <dom:locale>no_NO_B</dom:locale>\n' +
+[buildings]         '        <dom:brukOriginaleKoordinater>false</dom:brukOriginaleKoordinater>\n' +
+[buildings]         '        <dom:koordinatsystemKodeId>\n' +
+[buildings]         '          <dom:value>25833</dom:value>\n' +
+[buildings]         '        </dom:koordinatsystemKodeId>\n' +
+[buildings]         '        <dom:systemVersion>trunk</dom:systemVersion>\n' +
+[buildings]         '        <dom:klientIdentifikasjon>proxy</dom:klientIdentifikasjon>\n' +
+[buildings]         '        <dom:snapshotVersion>\n' +
+[buildings]         '          <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>\n' +
+[buildings]         '        </dom:snapshotVersion>\n' +
+[buildings]         '      </mat:matrikkelContext>\n' +
+[buildings]         '    </mat:findMatrikkelenheter>\n' +
+[buildings]         '  </soapenv:Body>\n' +
+[buildings]         '</soapenv:Envelope>',
+[buildings]       allowAbsoluteUrls: true
+[buildings]     },
+[buildings]     request: <ref *1> ClientRequest {
+[buildings]       _events: [Object: null prototype],
+[buildings]       _eventsCount: 7,
+[buildings]       _maxListeners: undefined,
+[buildings]       outputData: [],
+[buildings]       outputSize: 0,
+[buildings]       writable: true,
+[buildings]       destroyed: true,
+[buildings]       _last: false,
+[buildings]       chunkedEncoding: false,
+[buildings]       shouldKeepAlive: true,
+[buildings]       maxRequestsOnConnectionReached: false,
+[buildings]       _defaultKeepAlive: true,
+[buildings]       useChunkedEncodingByDefault: true,
+[buildings]       sendDate: false,
+[buildings]       _removedConnection: false,
+[buildings]       _removedContLen: false,
+[buildings]       _removedTE: false,
+[buildings]       strictContentLength: false,
+[buildings]       _contentLength: 1296,
+[buildings]       _hasBody: true,
+[buildings]       _trailer: '',
+[buildings]       finished: true,
+[buildings]       _headerSent: true,
+[buildings]       _closed: true,
+[buildings]       _header: 'POST /matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS HTTP/1.1\r\n' +
+[buildings]         'Accept: application/json, text/plain, */*\r\n' +
+[buildings]         'Content-Type: text/xml;charset=UTF-8\r\n' +
+[buildings]         'SOAPAction: findMatrikkelenheter\r\n' +
+[buildings]         'User-Agent: axios/1.9.0\r\n' +
+[buildings]         'Content-Length: 1296\r\n' +
+[buildings]         'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+[buildings]         'Host: prodtest.matrikkel.no\r\n' +
+[buildings]         'Authorization: Basic OjEyMzRLbGltYWV0YXRlbmlvc2xva29tbXVuZXRpbGdhbmdtYXRyaWtrZWw=\r\n' +
+[buildings]         'Connection: keep-alive\r\n' +
+[buildings]         '\r\n',
+[buildings]       _keepAliveTimeout: 0,
+[buildings]       _onPendingData: [Function: nop],
+[buildings]       agent: [Agent],
+[buildings]       socketPath: undefined,
+[buildings]       method: 'POST',
+[buildings]       maxHeaderSize: undefined,
+[buildings]       insecureHTTPParser: undefined,
+[buildings]       joinDuplicateHeaders: undefined,
+[buildings]       path: '/matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS',
+[buildings]       _ended: true,
+[buildings]       res: [IncomingMessage],
+[buildings]       aborted: false,
+[buildings]       timeoutCb: null,
+[buildings]       upgradeOrConnect: false,
+[buildings]       parser: null,
+[buildings]       maxHeadersCount: null,
+[buildings]       reusedSocket: true,
+[buildings]       host: 'prodtest.matrikkel.no',
+[buildings]       protocol: 'https:',
+[buildings]       _redirectable: [Writable],
+[buildings]       Symbol(shapeMode): false,
+[buildings]       Symbol(kCapture): false,
+[buildings]       Symbol(kBytesWritten): 0,
+[buildings]       Symbol(kNeedDrain): false,
+[buildings]       Symbol(corked): 0,
+[buildings]       Symbol(kChunkedBuffer): [],
+[buildings]       Symbol(kChunkedLength): 0,
+[buildings]       Symbol(kSocket): [TLSSocket],
+[buildings]       Symbol(kOutHeaders): [Object: null prototype],
+[buildings]       Symbol(errored): null,
+[buildings]       Symbol(kHighWaterMark): 65536,
+[buildings]       Symbol(kRejectNonStandardBodyWrites): false,
+[buildings]       Symbol(kUniqueHeaders): null
+[buildings]     },
+[buildings]     data: '<!doctype html><html lang="en"><head><title>HTTP Status 401 – Unauthorized</title><style type="text/css">body {font-family:Tahoma,Arial,sans-serif;} h1, h2, h3, b {color:white;background-color:#525D76;} h1 {font-size:22px;} h2 {font-size:16px;} h3 {font-size:14px;} p {font-size:12px;} a {color:black;} .line {height:1px;background-color:#525D76;border:none;}</style></head><body><h1>HTTP Status 401 – Unauthorized</h1></body></html>'
+[buildings]   },
+[buildings]   status: 401
+[buildings] }
