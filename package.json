@@ -5,16 +5,17 @@
   "type": "module",
   "scripts": {
     "dev:client": "vite",
-    "dev:server": "nodemon --exec ts-node --swc server/index.ts",
-    "dev:buildings": "nodemon --exec ts-node --swc services/building-info-service/index.ts",
+    "dev:server": "cross-env NODE_OPTIONS=\"--no-experimental-strip-types --loader ts-node/esm\" nodemon server/index.ts",
+    "dev:buildings": "cross-env NODE_OPTIONS='--no-experimental-strip-types --loader ts-node/esm' nodemon services/building-info-service/index.ts",
     "dev:subsidy": "node services/subsidy-service/index.js",
-    "dev": "concurrently -k -n client,server,buildings,subsidy -c blue,green,yellow,magenta \"pnpm run dev:client\" \"pnpm run dev:server\" \"pnpm run dev:buildings\" \"pnpm run dev:subsidy\"",
+    "dev": "concurrently -k -n client,server,buildings,solar -c blue,green,yellow,magenta \"pnpm run dev:client\" \"pnpm run dev:server\" \"pnpm run dev:buildings\" \"pnpm run dev:solar\"",
     "dev:local": "cross-env API_ENV=test concurrently -k -n client,server,buildings,subsidy -c blue,green,yellow,magenta \"pnpm run dev:client\" \"pnpm run dev:server\" \"pnpm run dev:buildings\" \"pnpm run dev:subsidy\"",
     "start:prod": "cross-env API_ENV=prod ts-node server/index.ts",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "start:solar-service": "node services/solar-service/index.js",
+    "dev:solar": "cross-env PORT=4003 NODE_OPTIONS='--no-experimental-strip-types' nodemon services/solar-service/index.js",
     "test:matrikkel": "node scripts/testMatrikkel.cjs"
   },
   "dependencies": {
@@ -29,7 +30,8 @@
     "proj4": "^2.16.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "soap": "^1.1.11"
+    "soap": "^1.1.11",
+    "swr": "^2.3.3"
   },
   "devDependencies": {
     "@swc/core": "^1.7.0",

@@ -1,15 +1,14 @@
 // src/clients/BygningClient.ts
-// ---------------------------------------------------------------------------
-// Klient mot Matrikkels BygningServiceWS ‑ henter bygg‑ID‑er for en
-// matrikkelenhets‑ID.  Prefikset på <matrikkelContext> må være byg: for at
-// tjenesten skal kjenne igjen parametret.
-// ---------------------------------------------------------------------------
-
-console.log("<<<<< BygningClient.ts LADES NÅ - Siste versjon med findByggForMatrikkelenhet og SOAPAction >>>>>");
+// -------------------------------------------------------------
+// Klient mot Matrikkels BygningServiceWS
+// Henter alle bygg for en matrikkelenhets-ID
+// -------------------------------------------------------------
+console.log("<<<<< BygningClient.ts lastet – robust id-parsing >>>>>");
 
 import axios, { AxiosResponse } from "axios";
 import { XMLParser } from "fast-xml-parser";
 
+/* ────────────── felles typer ─────────────────────────────── */
 export interface MatrikkelContext {
   locale: string;
   brukOriginaleKoordinater: boolean;
@@ -19,106 +18,124 @@ export interface MatrikkelContext {
   snapshotVersion: string;
 }
 
+export interface ByggInfoMinimal {
+  byggId: number;
+}
+
+/* ────────────── klientklasse ─────────────────────────────── */
 export class BygningClient {
   constructor(
-    private baseUrl: string,
-    private username: string,
-    private password: string
+    private readonly baseUrl: string,
+    private readonly username: string,
+    private readonly password: string
   ) {}
 
-  /**
-   * Returnerer en liste bygg‑ID‑er (ByggId) for gitt matrikkelenhets‑ID.
-   */
-  async findByggIds(
+  /* ---------- public: finn bygg for matrikkelenhet ---------- */
+  async findByggForMatrikkelenhet(
     matrikkelenhetsId: number,
     ctx: MatrikkelContext
-  ): Promise<number[]> {
-    const operationName = "findByggForMatrikkelenhet";
-    const soapAction = `http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning/BygningService/${operationName}Request`;
-    const xml = this.renderRequest(matrikkelenhetsId, ctx);
+  ): Promise<ByggInfoMinimal[]> {
+    const soapAction =
+      "http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning/BygningService/findByggForMatrikkelenhetRequest";
 
-    const responseAxios: AxiosResponse<string> = await axios.post(
+    const xmlRequest = this.renderRequest(matrikkelenhetsId, ctx);
+
+    /* ---- kall tjenesten ------------------------------------ */
+    const resp: AxiosResponse<string> = await axios.post(
       `${this.baseUrl}/BygningServiceWS`,
-      xml,
+      xmlRequest,
       {
         headers: {
           "Content-Type": "text/xml;charset=UTF-8",
           SOAPAction: soapAction,
         },
         auth: { username: this.username, password: this.password },
-        validateStatus: (s: number) => s < 500, // Håndterer 500-feil manuelt nedenfor
+        timeout: 10_000,
+        validateStatus: (s) => s < 500,
       }
     );
 
+    /* ---- XML → JS ------------------------------------------ */
     const parser = new XMLParser({
-      ignoreAttributes: false, // Behold attributter hvis nødvendig for fremtiden
-      attributeNamePrefix: "@_", // Standard prefiks for attributter
-      parseTagValue: true, // Konverter tall og boolske verdier automatisk
+      ignoreAttributes: false,
+      attributeNamePrefix: "@_",
+      parseTagValue: true,
       trimValues: true,
     });
+    const parsed = parser.parse(resp.data) as Record<string, unknown>;
 
-    const parsedXml = parser.parse(responseAxios.data) as any;
+    /* ---- naviger til <return> ------------------------------ */
+    const body =
+      (parsed["soap:Envelope"] as any)?.["soap:Body"] ??
+      (parsed.Envelope as any)?.Body ??
+      (parsed["soapenv:Envelope"] as any)?.["soapenv:Body"];
+    if (!body) throw new Error("SOAP-body mangler");
 
-    const envelope = parsedXml["soap:Envelope"] ?? parsedXml.Envelope;
-    const body = envelope?.["soap:Body"] ?? envelope?.Body;
-
-    if (!body) {
-      throw new Error(
-        "BygningServiceWS: Uventet SOAP‑struktur (mangler Body)"
-      );
-    }
-
-    // soap:Fault?
-    const faultKey = Object.keys(body).find(k => k.endsWith("Fault"));
-    if (faultKey && body[faultKey]) {
-      const fault = body[faultKey];
-      const faultStringKey = Object.keys(fault).find(k => k.endsWith("faultstring"));
-      const faultMessage = faultStringKey ? fault[faultStringKey] : "Ukjent SOAP-feil fra BygningServiceWS";
-      throw new Error(`BygningServiceWS: ${faultMessage}`);
-    }
-
-    // Finn respons-elementet, f.eks. <...:findByggForMatrikkelenhetResponse>
-    const responseKey = Object.keys(body).find((k) =>
+    const respKey = Object.keys(body).find((k) =>
       k.endsWith("findByggForMatrikkelenhetResponse")
     );
-    if (!responseKey) {
-      throw new Error(
-        "BygningServiceWS: Uventet SOAP‑struktur (mangler Response-element)"
-      );
-    }
-    const responseData = body[responseKey];
 
-    // 'return' elementet inneholder listen av 'item' (ByggId-objekter)
-    const returnElement = responseData.return ?? responseData["ns2:return"]; // ns2 er et eksempel, kan variere
-    if (!returnElement) return []; // Ingen bygg funnet eller uventet struktur
+    const ret = respKey
+      ? (body as any)[respKey].return ?? (body as any)[respKey]["ns2:return"]
+      : null;
+    if (!ret) return []; // ingen bygg
 
-    // Hvert 'item' er et ByggId-objekt, som typisk har en 'value' eller 'dom:value'
-    const items = Array.isArray(returnElement.item) ? returnElement.item : (returnElement.item ? [returnElement.item] : []);
+    /* ---- item[] → byggId[] -------------------------------- */
+    const items: unknown[] = Array.isArray(ret.item)
+      ? ret.item
+      : ret.item
+      ? [ret.item]
+      : [];
 
-    const idStrings: string[] = items.map((item: any) => String(item.value ?? item["dom:value"] ?? "")).filter(Boolean);
+    const extractNumber = (o: unknown): number | undefined => {
+      if (o == null) return;
+      if (typeof o === "string" || typeof o === "number") {
+        const n = Number(o);
+        return Number.isFinite(n) && n > 0 ? n : undefined;
+      }
+      if (typeof o === "object") {
+        for (const v of Object.values(o as Record<string, unknown>)) {
+          const n = extractNumber(v);
+          if (n !== undefined) return n;
+        }
+      }
+      return;
+    };
 
-    return idStrings
-      .map((n: string): number => Number(n))
-      .filter((x) => Number.isFinite(x) && x > 0);
+    const byggIds: number[] = items
+      .map((item: unknown): number | undefined => extractNumber(item))
+      .filter((id): id is number => typeof id === "number");
+
+    return byggIds.map(
+      (id): ByggInfoMinimal => ({
+        byggId: id,
+      })
+    );
   }
 
-  // -------------------- helpers --------------------
+  /* ---------- private helper: bygg SOAP-request ------------ */
   private renderRequest(id: number, ctx: MatrikkelContext): string {
-  console.log("<<<<< BygningClient.renderRequest KALLER MED findByggForMatrikkelenhet >>>>>");
-    return `<?xml version="1.0"?>
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
                   xmlns:byg="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning"
                   xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
   <soapenv:Body>
     <byg:findByggForMatrikkelenhet>
-      <byg:matrikkelenhetId>${id}</byg:matrikkelenhetId>
+      <byg:matrikkelenhetId>
+        <dom:value>${id}</dom:value>
+      </byg:matrikkelenhetId>
+
       <byg:matrikkelContext>
         <dom:locale>${ctx.locale}</dom:locale>
         <dom:brukOriginaleKoordinater>${ctx.brukOriginaleKoordinater}</dom:brukOriginaleKoordinater>
-        <dom:koordinatsystemKodeId><dom:value>${ctx.koordinatsystemKodeId}</dom:value></dom:koordinatsystemKodeId>
+        <dom:koordinatsystemKodeId>
+          <dom:value>${ctx.koordinatsystemKodeId}</dom:value>
+        </dom:koordinatsystemKodeId>
         <dom:systemVersion>${ctx.systemVersion}</dom:systemVersion>
         <dom:klientIdentifikasjon>${ctx.klientIdentifikasjon}</dom:klientIdentifikasjon>
-        <dom:snapshotVersion><dom:timestamp>${ctx.snapshotVersion}</dom:timestamp></dom:snapshotVersion>
+        <dom:snapshotVersion>
+          <dom:timestamp>${ctx.snapshotVersion}</dom:timestamp>
+        </dom:snapshotVersion>
       </byg:matrikkelContext>
     </byg:findByggForMatrikkelenhet>
   </soapenv:Body>

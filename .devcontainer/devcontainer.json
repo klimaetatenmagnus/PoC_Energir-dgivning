@@ -1,9 +1,16 @@
 {
   "name": "Node + Python",
-  "image": "mcr.microsoft.com/vscode/devcontainers/python:3.11", 
+  "image": "mcr.microsoft.com/vscode/devcontainers/python:3.11",
   "postCreateCommand": "apt-get update && apt-get install -y python3-venv",
+
+  // ⬇︎ NB: bare FEATURES her
   "features": {
-    "node": "latest"
+    // bruk den nye node-feature-syntaksen (den gamle er “deprecated”)
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    }
   },
-  "workspaceFolder": "/project/workspace"
+
+  // ⬇︎ Dette er *utenfor* `features`
+  "workspaceFolder": "/project/sandbox"
 }

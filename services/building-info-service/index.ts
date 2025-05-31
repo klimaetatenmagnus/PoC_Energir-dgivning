@@ -1,34 +1,62 @@
-// services/building-info-service/index.js
+// services/building-info-service/index.ts
 // ---------------------------------------------------------------------------
-// Henter bygningsdata for én adresse:
-//   • Kartverket → kommune/gnr/bnr/lat/lon
-//   • Matrikkel → matrikkelenhetsID, byggID, Bygg-boble
-//   • Enova → energimerke (fallback BRA/byggår)
-//   • Kulturminne-WFS
+// Henter bygningsdata for én adresse og returnerer også et _diag-objekt.
+//   • Kartverket   → kommune / gnr / bnr / snr / bruksenhetnr
+//   • Matrikkel    → matrikkelenhetsID
+//   • Bygg-bobler  → byggIDs og bygg-info (byggår, BRA, enheter)
+//   • Enova        → energimerke (fallback BRA/byggår)
+//   • PBE Solkart  → takflater, solinnstråling & potensial
+//   • Kulturminne  → WFS-sjekk
 // ---------------------------------------------------------------------------
 
-import "dotenv/config"; // ← laster .env automatisk
-import express from "express";
+import "dotenv/config";
+import express, { Request, Response, RequestHandler } from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 import NodeCache from "node-cache";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore – proj4 har ingen typings
 import proj4 from "proj4";
 
-import { MatrikkelClient } from "../../src/clients/MatrikkelClient.ts";
+import {
+  MatrikkelClient,
+  MatrikkelenhetMeta,
+} from "../../src/clients/MatrikkelClient.ts";
 import { BygningClient } from "../../src/clients/BygningClient.ts";
 import { StoreClient } from "../../src/clients/StoreClient.ts";
 
 // ──────────────── instanser & konstanter ──────────────────────
 const {
-  MATRIKKEL_API_BASE_URL_TEST: BASE,
-  MATRIKKEL_USERNAME_TEST: USER,
-  MATRIKKEL_PASSWORD: PASS,
+  MATRIKKEL_API_BASE_URL_TEST,
+  MATRIKKEL_USERNAME_TEST,
+  MATRIKKEL_PASSWORD,
   ENOVA_API_KEY,
+  SOLAR_BASE, // f.eks. "http://localhost:4003"
 } = process.env;
 
-const matrikkelClient = new MatrikkelClient(BASE, USER, PASS);
-const bygningClient = new BygningClient(BASE, USER, PASS);
-const storeClient = new StoreClient(BASE, USER, PASS);
+if (
+  !MATRIKKEL_API_BASE_URL_TEST ||
+  !MATRIKKEL_USERNAME_TEST ||
+  !MATRIKKEL_PASSWORD
+) {
+  throw new Error("Matrikkel-credentials mangler i miljøvariabler");
+}
+
+const matrikkelClient = new MatrikkelClient(
+  MATRIKKEL_API_BASE_URL_TEST,
+  MATRIKKEL_USERNAME_TEST,
+  MATRIKKEL_PASSWORD
+);
+const bygningClient = new BygningClient(
+  MATRIKKEL_API_BASE_URL_TEST,
+  MATRIKKEL_USERNAME_TEST,
+  MATRIKKEL_PASSWORD
+);
+const storeClient = new StoreClient(
+  MATRIKKEL_API_BASE_URL_TEST,
+  MATRIKKEL_USERNAME_TEST,
+  MATRIKKEL_PASSWORD
+);
 
 const cache = new NodeCache({ stdTTL: 86_400, checkperiod: 600 });
 
@@ -39,8 +67,15 @@ const PROT_WFS_URL =
 const PROT_TYPENAME = "hbf_histbygning";
 const ENOVA_API_URL =
   "https://api.data.enova.no/ems/offentlige-data/v1/Energiattest";
+const SOLAR_URL = (SOLAR_BASE ?? "http://localhost:4003") + "/solinnstraling";
 
-// ──────────────── helper: MatrikkelContext ────────────────────
+// ──────────────── hjelpemetoder ───────────────────────────────
+const pad5 = (v: string | number) => String(v).padStart(5, "0");
+const pad4 = (v: string | number) => String(v).padStart(4, "0");
+const pad4str = (v?: string | null) =>
+  v ? String(v).padStart(4, "0").toUpperCase() : undefined;
+
+// MatrikkelContext
 const ctx = () => ({
   locale: "no_NO_B",
   brukOriginaleKoordinater: false,
@@ -50,33 +85,59 @@ const ctx = () => ({
   snapshotVersion: "9999-01-01T00:00:00+01:00",
 });
 
-// ──────────────── helper: Kartverket, Enova, Geocode ───────────
-async function lookupKartverket(adresse) {
+// ───────── Kartverket (adresse → gnr/bnr/…) ───────────────────
+async function lookupKartverket(adresse: string) {
   const r = await fetch(
     "https://ws.geonorge.no/adresser/v1/sok?sok=" +
       encodeURIComponent(adresse) +
       "&treffPerSide=1&fuzzy=true",
     { headers: { "User-Agent": "Energiverktøy/1.0" } }
   );
-  const j = await r.json();
+  const j: any = await r.json();
   if (!j.adresser?.length) throw new Error("Kartverket fant ikke adresse");
   const a = j.adresser[0];
+
   return {
     kommunenummer: a.kommunenummer ?? a.kommunekode ?? null,
     gnr: a.matrikkelnummer?.gaardsnummer ?? a.gardsnummer ?? null,
     bnr: a.matrikkelnummer?.bruksnummer ?? a.bruksnummer ?? null,
+    snr:
+      a.matrikkelnummer?.seksjonsnummer ??
+      (a.undernummer ? String(a.undernummer).padStart(2, "0") : null),
+    bruksenhetnr:
+      a.matrikkelnummer?.bruksenhetsnummer ??
+      (Array.isArray(a.bruksenhetsnummer) && a.bruksenhetsnummer.length
+        ? a.bruksenhetsnummer[0]
+        : null),
   };
 }
 
-async function fetchEnergiattest({ kommunenummer, gnr, bnr }) {
-  if (!kommunenummer || !gnr || !bnr) return null;
-  const payload = {
+/* ---------- ENOVA ---------- */
+interface EnergiPayload {
+  kommunenummer: string;
+  gnr: string | number;
+  bnr: string | number;
+  snr?: string | null;
+  bruksenhetnr?: string | null;
+}
+
+async function fetchEnergiattest(
+  input: EnergiPayload
+): Promise<{ httpStatus: number; data: any | null }> {
+  const { kommunenummer, gnr, bnr, snr, bruksenhetnr } = input;
+
+  if (!kommunenummer || !gnr || !bnr || !ENOVA_API_KEY) {
+    return { httpStatus: 0, data: null };
+  }
+
+  const payload: Record<string, string> = {
     kommunenummer,
-    gardsnummer: String(gnr),
-    bruksnummer: String(bnr),
-    bruksenhetnummer: "",
-    seksjonsnummer: "",
+    gardsnummer: pad5(gnr),
+    bruksnummer: pad4(bnr),
   };
+  if (snr) payload.seksjonsnummer = pad4str(snr)!;
+  if (bruksenhetnr) payload.bruksenhetsnummer = pad4str(bruksenhetnr)!;
+
   const r = await fetch(ENOVA_API_URL, {
     method: "POST",
     headers: {
@@ -86,46 +147,82 @@ async function fetchEnergiattest({ kommunenummer, gnr, bnr }) {
     },
     body: JSON.stringify(payload),
   });
-  if (!r.ok) throw new Error("Enova " + r.status);
-  const list = await r.json();
-  return Array.isArray(list) && list[0] ? list[0] : null;
+
+  if (!r.ok) return { httpStatus: r.status, data: await r.text() };
+
+  const list: any = await r.json();
+  return {
+    httpStatus: 200,
+    data: Array.isArray(list) && list[0] ? list[0] : null,
+  };
 }
 
-async function geocode(adresse) {
+/* ---------- Geokoding ---------- */
+async function geocode(adresse: string) {
   const r = await fetch(
     "https://nominatim.openstreetmap.org/search?format=json&q=" +
       encodeURIComponent(adresse) +
       "&limit=1",
     { headers: { "User-Agent": "Energiverktøy/1.0" } }
   );
-  const j = await r.json();
+  const j: any = await r.json();
   if (!j[0]) throw new Error("Adresse ikke funnet i Nominatim");
   return { lat: +j[0].lat, lon: +j[0].lon };
 }
 
-// ──────────────── route ────────────────────────────────────────
+/* ---------- Typer fra solar-service ---------- */
+interface SolarResponse {
+  reference: number;
+  takflater: {
+    tak_id: number;
+    area_m2: number;
+    irr_kwh_m2_yr: number;
+    kWh_tot: number;
+  }[];
+  takAreal_m2: number | null;
+  sol_kwh_m2_yr: number | null;
+  sol_kwh_bygg_tot: number | null;
+  category: string | null;
+}
+
+/* =======================================================================
+   Express-route
+   ======================================================================= */
 const app = express();
 app.use(cors());
 
-app.get("/lookup", async (req, res) => {
+const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
   const adresse = req.query.adresse;
-  if (typeof adresse !== "string")
-    return res.status(400).json({ error: "Mangler adresse" });
+  if (typeof adresse !== "string") {
+    res.status(400).json({ error: "Mangler adresse" });
+    return;
+  }
 
   const cacheKey = `build:${adresse}`;
-  if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
+  if (cache.has(cacheKey)) {
+    res.json(cache.get(cacheKey));
+    return;
+  }
+
+  const diag: Record<string, any> = {};
 
   try {
-    // 1) Kartverket
-    const { kommunenummer, gnr, bnr } = await lookupKartverket(adresse);
-    if (!gnr || !bnr)
-      return res
+    /* ── 1) Kartverket ───────────────────────────────────────── */
+    const { kommunenummer, gnr, bnr, snr, bruksenhetnr } =
+      await lookupKartverket(adresse);
+    diag.kartverket = { ok: true };
+
+    if (!gnr || !bnr) {
+      res
         .status(404)
         .json({ error: "Adressen mangler entydig gnr/bnr i Kartverket." });
+      return;
+    }
 
-    // 2) matrikkelenhets-ID
-    const [matrikkelenhetsId] =
-      (await matrikkelClient.findMatrikkelenheter(
+    /* ── 2) Matrikkel-enhet ─────────────────────────────────── */
+    let matrikkelenhetsId: number | null = null;
+    try {
+      const ids = await matrikkelClient.findMatrikkelenheter(
         {
           kommunenummer,
           status: "BESTAENDE",
@@ -133,38 +230,154 @@ app.get("/lookup", async (req, res) => {
           bruksnummer: bnr,
         },
         ctx()
-      )) ?? [];
-
-    // 3) Bygg-ID → Bygg-boble
-    let byggår = null,
-      bra_m2 = null,
-      bruksenheter = null;
-    if (matrikkelenhetsId) {
-      const byggIds = await bygningClient.findByggIds(matrikkelenhetsId, ctx());
-      if (byggIds.length) {
-        const info = await storeClient.getBygg(byggIds[0], ctx());
-        byggår = info.byggeår;
-        bra_m2 = info.bruksareal;
-        bruksenheter = info.antBruksenheter;
+      );
+      if (ids?.length) {
+        matrikkelenhetsId = ids[0];
+        diag.matrikkel = { ok: true, id: matrikkelenhetsId };
+      } else {
+        diag.matrikkel = { ok: false, error: "Ingen matrikkelenhet funnet" };
       }
+    } catch (e: any) {
+      diag.matrikkel = { ok: false, error: e.message };
     }
 
-    // 4) Enova energimerke (+ fallback)
-    let energi = null;
+    /* ── 3) Bygg-bobler ─────────────────────────────────────── */
+    let byggår: number | null = null;
+    let bra_m2: number | null = null;
+    let bruksenheter: number | null = null;
+    let byggIds: number[] = [];
+
+    diag.bygg = {
+      ok: false,
+      byggCount: 0,
+      felter: {} as Record<string, boolean>,
+    };
+
+    if (matrikkelenhetsId !== null) {
+      try {
+        const byggListe = await bygningClient.findByggForMatrikkelenhet(
+          matrikkelenhetsId,
+          ctx()
+        );
+        byggIds = byggListe.map((b) => b.byggId);
+        diag.bygg.byggCount = byggIds.length;
+
+        for (const id of byggIds) {
+          const info = await storeClient.getBygg(id, ctx());
+          if (!byggår && info.byggeår) {
+            byggår = info.byggeår;
+            diag.bygg.felter.byggeår = true;
+          }
+          if (!bra_m2 && info.bruksareal) {
+            bra_m2 = info.bruksareal;
+            diag.bygg.felter.bruksareal = true;
+          }
+          if (!bruksenheter && info.antBruksenheter) {
+            bruksenheter = info.antBruksenheter;
+            diag.bygg.felter.bruksenheter = true;
+          }
+          if (byggår && bra_m2 && bruksenheter) break;
+        }
+        diag.bygg.ok =
+          byggår !== null || bra_m2 !== null || bruksenheter !== null;
+      } catch (e: any) {
+        diag.bygg.error = e.message;
+      }
+    } else {
+      diag.bygg.error = "Hopper over bygg-sjekk – ingen matrikkelenhetsId";
+    }
+
+    /* ── 4) Enova  ──────────────────────────────────────────── */
+    let energi: any = null;
+    let enovaStatus = 0;
+    diag.enova = { ok: false as boolean, httpStatus: null as number | null };
+
     try {
-      energi = await fetchEnergiattest({ kommunenummer, gnr, bnr });
-      if (!byggår && energi?.enhet?.bygg?.byggeår)
-        byggår = energi.enhet.bygg.byggeår;
-      if (!bra_m2 && energi?.enhet?.bruksareal)
-        bra_m2 = energi.enhet.bruksareal;
-    } catch (e) {
-      console.warn("Enova:", e.message);
+      const first = await fetchEnergiattest({
+        kommunenummer,
+        gnr,
+        bnr,
+        snr,
+        bruksenhetnr,
+      });
+      energi = first.data;
+      enovaStatus = first.httpStatus;
+      diag.enova.httpStatus = enovaStatus;
+      diag.enova.ok = enovaStatus === 200;
+
+      if (
+        enovaStatus === 400 &&
+        !snr &&
+        !bruksenhetnr &&
+        matrikkelenhetsId !== null
+      ) {
+        const meta: MatrikkelenhetMeta =
+          await matrikkelClient.getMatrikkelenhet(matrikkelenhetsId, ctx());
+
+        if (meta.seksjonsnummer || meta.bruksenhetnummer) {
+          const retry = await fetchEnergiattest({
+            kommunenummer,
+            gnr,
+            bnr,
+            snr: meta.seksjonsnummer ?? undefined,
+            bruksenhetnr: meta.bruksenhetnummer ?? undefined,
+          });
+          if (retry.httpStatus === 200) {
+            energi = retry.data;
+            enovaStatus = 200;
+            diag.enova.ok = true;
+            diag.enova.retried = true;
+          }
+          diag.enova.httpStatus = retry.httpStatus;
+        }
+      }
+
+      if (enovaStatus === 200) {
+        if (!byggår && energi?.enhet?.bygg?.byggeår)
+          byggår = energi.enhet.bygg.byggeår;
+        if (!bra_m2 && energi?.enhet?.bruksareal)
+          bra_m2 = energi.enhet.bruksareal;
+      }
+    } catch (e: any) {
+      diag.enova.error = e.message;
     }
 
-    // 5) geokoding
+    /* ── 5) Geokoding  ──────────────────────────────────────── */
     const { lat, lon } = await geocode(adresse);
+    diag.geokoding = { ok: true, lat, lon };
 
-    // 6) kulturminne
+    /* ── 6) PBE Solkart  ────────────────────────────────────── */
+    let takflater: SolarResponse["takflater"] = [];
+    let takAreal_m2: number | null = null;
+    let sol_kwh_bygg_tot: number | null = null;
+    let sol_kwh_m2_yr: number | null = null;
+    let solKategori: string | null = null;
+
+    diag.solar = { ok: false as boolean, reference: null as number | null };
+
+    try {
+      const solarFetch = await fetch(
+        `${SOLAR_URL}?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(
+          lon
+        )}`
+      );
+      if (!solarFetch.ok)
+        throw new Error(`Solar-service returnerte ${solarFetch.status}`);
+      const solarRes = (await solarFetch.json()) as SolarResponse;
+
+      takflater = solarRes.takflater;
+      takAreal_m2 = solarRes.takAreal_m2;
+      sol_kwh_bygg_tot = solarRes.sol_kwh_bygg_tot;
+      sol_kwh_m2_yr = solarRes.sol_kwh_m2_yr;
+      solKategori = solarRes.category;
+
+      diag.solar.ok = true;
+      diag.solar.reference = solarRes.reference;
+    } catch (e: any) {
+      diag.solar.error = e.message;
+    }
+
+    /* ── 7) Kulturminne-sjekk  ─────────────────────────────── */
     let isProtected = false;
     try {
       const bbox = `${lon - 0.001},${lat - 0.001},${lon + 0.001},${
@@ -176,14 +389,18 @@ app.get("/lookup", async (req, res) => {
         )
       ).text();
       isProtected = /<gml:featureMember>/i.test(xml);
-    } catch (e) {
-      console.warn("Kulturminne:", e.message);
+      diag.kulturminne = { ok: !isProtected, protected: isProtected };
+    } catch (e: any) {
+      diag.kulturminne = { ok: false, error: e.message };
     }
 
+    /* ── 8) Returner resultat  ─────────────────────────────── */
     const result = {
       kommunenummer,
       gardsnummer: gnr,
       bruksnummer: bnr,
+      seksjonsnummer: snr,
+      bruksenhetnummer: bruksenhetnr,
       matrikkelenhetsId,
       byggår,
       bra_m2,
@@ -191,18 +408,31 @@ app.get("/lookup", async (req, res) => {
       lat,
       lon,
       isProtected,
+
       energikarakter: energi?.energiytelse?.energikarakter ?? null,
       oppvarmingskarakter: energi?.energiytelse?.oppvarmingskarakter ?? null,
+
+      takAreal_m2,
+      sol_kwh_m2_yr,
+      sol_kwh_bygg_tot,
+      solKategori,
+      takflater,
+
+      _diag: diag,
     };
 
     cache.set(cacheKey, result);
     res.json(result);
-  } catch (e) {
+  } catch (e: any) {
     console.error(e);
     res.status(500).json({ error: e.message });
   }
-});
+};
 
-app.listen(process.env.PORT || 4002, "0.0.0.0", () =>
-  console.log("building-info-service ▶ 4002")
+app.get("/lookup", lookupHandler);
+
+// ──────────────── start server ───────────────────────────────
+const PORT = Number(process.env.BUILDINGS_PORT) || 4002;
+app.listen(PORT, "0.0.0.0", () =>
+  console.log(`building-info-service ▶ ${PORT}`)
 );
