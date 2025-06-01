@@ -26,37 +26,26 @@ import { BygningClient } from "../../src/clients/BygningClient.ts";
 import { StoreClient } from "../../src/clients/StoreClient.ts";
 
 // ──────────────── instanser & konstanter ──────────────────────
+// BASE skal peke til “…/v1” – uten “/service” eller “/store”.
+const BASE =
+  process.env.MATRIKKEL_API_BASE_URL_TEST?.trim() ||
+  "https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1";
+
 const {
-  MATRIKKEL_API_BASE_URL_TEST,
-  MATRIKKEL_USERNAME_TEST,
-  MATRIKKEL_PASSWORD,
+  MATRIKKEL_USERNAME_TEST: USER,
+  MATRIKKEL_PASSWORD: PASS,
   ENOVA_API_KEY,
   SOLAR_BASE, // f.eks. "http://localhost:4003"
 } = process.env;
 
-if (
-  !MATRIKKEL_API_BASE_URL_TEST ||
-  !MATRIKKEL_USERNAME_TEST ||
-  !MATRIKKEL_PASSWORD
-) {
+if (!USER || !PASS) {
   throw new Error("Matrikkel-credentials mangler i miljøvariabler");
 }
 
-const matrikkelClient = new MatrikkelClient(
-  MATRIKKEL_API_BASE_URL_TEST,
-  MATRIKKEL_USERNAME_TEST,
-  MATRIKKEL_PASSWORD
-);
-const bygningClient = new BygningClient(
-  MATRIKKEL_API_BASE_URL_TEST,
-  MATRIKKEL_USERNAME_TEST,
-  MATRIKKEL_PASSWORD
-);
-const storeClient = new StoreClient(
-  MATRIKKEL_API_BASE_URL_TEST,
-  MATRIKKEL_USERNAME_TEST,
-  MATRIKKEL_PASSWORD
-);
+// Én klient per tjeneste – klientene legger selv på “/MatrikkelenhetServiceWS”, “/BygningServiceWS” og “/StoreServiceWS”
+const storeClient = new StoreClient(BASE, USER, PASS);
+const bygningClient = new BygningClient(BASE, USER, PASS);
+const matrikkelClient = new MatrikkelClient(BASE, USER, PASS);
 
 const cache = new NodeCache({ stdTTL: 86_400, checkperiod: 600 });
 
@@ -143,7 +132,7 @@ async function fetchEnergiattest(
     headers: {
       "Content-Type": "application/json",
       "User-Agent": "Energiverktøy/1.0",
-      "x-api-key": ENOVA_API_KEY,
+      "x-api-key": ENOVA_API_KEY!,
     },
     body: JSON.stringify(payload),
   });
@@ -262,25 +251,34 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
         byggIds = byggListe.map((b) => b.byggId);
         diag.bygg.byggCount = byggIds.length;
 
+        // Hver ByggId kan feile (500) dersom objektet ikke finnes
         for (const id of byggIds) {
-          const info = await storeClient.getBygg(id, ctx());
-          if (!byggår && info.byggeår) {
-            byggår = info.byggeår;
-            diag.bygg.felter.byggeår = true;
+          try {
+            const info = await storeClient.getBygg(id, ctx());
+
+            if (!byggår && info.byggeår) {
+              byggår = info.byggeår;
+              diag.bygg.felter.byggeår = true;
+            }
+            if (!bra_m2 && info.bruksareal) {
+              bra_m2 = info.bruksareal;
+              diag.bygg.felter.bruksareal = true;
+            }
+            if (!bruksenheter && info.antBruksenheter) {
+              bruksenheter = info.antBruksenheter;
+              diag.bygg.felter.bruksenheter = true;
+            }
+            // Hvis alle tre funnet, kan bryte
+            if (byggår && bra_m2 && bruksenheter) break;
+          } catch {
+            // Ignorer error for denne ByggId (objekt ikke funnet). Gå til neste.
+            continue;
           }
-          if (!bra_m2 && info.bruksareal) {
-            bra_m2 = info.bruksareal;
-            diag.bygg.felter.bruksareal = true;
-          }
-          if (!bruksenheter && info.antBruksenheter) {
-            bruksenheter = info.antBruksenheter;
-            diag.bygg.felter.bruksenheter = true;
-          }
-          if (byggår && bra_m2 && bruksenheter) break;
         }
         diag.bygg.ok =
           byggår !== null || bra_m2 !== null || bruksenheter !== null;
       } catch (e: any) {
+        // Dersom selve findByggForMatrikkelenhet kaster, registrer feilen
         diag.bygg.error = e.message;
       }
     } else {
@@ -349,8 +347,8 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
     /* ── 6) PBE Solkart  ────────────────────────────────────── */
     let takflater: SolarResponse["takflater"] = [];
     let takAreal_m2: number | null = null;
-    let sol_kwh_bygg_tot: number | null = null;
     let sol_kwh_m2_yr: number | null = null;
+    let sol_kwh_bygg_tot: number | null = null;
     let solKategori: string | null = null;
 
     diag.solar = { ok: false as boolean, reference: null as number | null };
@@ -366,7 +364,7 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
       const solarRes = (await solarFetch.json()) as SolarResponse;
 
       takflater = solarRes.takflater;
-      takAreal_m2 = solarRes.takAreal_m2;
+      takAreal_m2 = solarRes.takflater.reduce((sum, t) => sum + t.area_m2, 0);
       sol_kwh_bygg_tot = solarRes.sol_kwh_bygg_tot;
       sol_kwh_m2_yr = solarRes.sol_kwh_m2_yr;
       solKategori = solarRes.category;
@@ -400,7 +398,7 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
       gardsnummer: gnr,
       bruksnummer: bnr,
       seksjonsnummer: snr,
-      bruksenhetnummer: bruksenhetnr,
+      bruksenhetnr: bruksenhetnr,
       matrikkelenhetsId,
       byggår,
       bra_m2,
