@@ -1,13 +1,55 @@
 // src/components/DebugDataTable.tsx
 import { House } from "../types/House";
 
-/** Tillat et _diag-felt i prop-typen */
+/** suppler med feltene vi kan få fra StoreClient */
+type Etasje = { etasjenummer: number; bruksarealTotalt: number | null };
 type DebugData = Partial<House> & {
+  /* nye varianter som kan dukke opp */
+  bruksareal?: number | null;
+  antEtasjer?: number | null;
+  etasjer?: Etasje[];
+  bruksarealEtasjer?: Record<number | string, number | null>;
   _diag?: Record<string, any>;
 };
 
 export default function DebugDataTable({ data }: { data: DebugData | null }) {
   if (!data) return <p className="p-4">Henter data…</p>;
+
+  /* --- se hva som faktisk sendes inn --- */
+  // eslint-disable-next-line no-console
+  console.log("[DebugDataTable] data =", data);
+
+  /* ---------- normaliser etasjer ---------- */
+  let etasjeListe: Etasje[] = [];
+
+  if (Array.isArray(data.etasjer) && data.etasjer.length) {
+    etasjeListe = data.etasjer;
+  } else if (
+    data.bruksarealEtasjer &&
+    Object.keys(data.bruksarealEtasjer).length
+  ) {
+    etasjeListe = Object.entries(data.bruksarealEtasjer).map(([nr, areal]) => ({
+      etasjenummer: Number(nr),
+      bruksarealTotalt: areal ?? null,
+    }));
+  }
+
+  etasjeListe.sort((a, b) => a.etasjenummer - b.etasjenummer);
+
+  const antEtasjer =
+    data.antEtasjer != null ? data.antEtasjer : etasjeListe.length || null;
+
+  /* ---------- areal-summer ---------- */
+  const sumEtasjer = etasjeListe.reduce(
+    (s, e) => s + (e.bruksarealTotalt ?? 0),
+    0
+  );
+  const bruksTot =
+    data.bruksareal ?? data.bra_m2 ?? (sumEtasjer ? sumEtasjer : null);
+
+  /* ---------- helpers ---------- */
+  const fmt = (v: number | null | undefined) =>
+    v != null ? v.toFixed(1) : null;
 
   const Row = (label: string, value: any) => (
     <tr key={label} className="border-t">
@@ -18,7 +60,7 @@ export default function DebugDataTable({ data }: { data: DebugData | null }) {
     </tr>
   );
 
-  /* ---------- hovedverdier ---------- */
+  /* ---------- hovedrader ---------- */
   const rows = [
     Row(
       "G/B/S",
@@ -27,44 +69,47 @@ export default function DebugDataTable({ data }: { data: DebugData | null }) {
       }`
     ),
     Row("Byggeår", data.byggår),
-    Row("BRA m²", data.bra_m2),
+    Row("BRA totalt (m²)", fmt(bruksTot)),
+    Row("Antall etasjer", antEtasjer),
     Row("E-merke", data.energikarakter),
     Row("Oppv.karakter", data.oppvarmingskarakter),
     Row(
       "Kulturminne",
       data.isProtected != null ? (data.isProtected ? "Ja" : "Nei") : null
     ),
-    Row("Tak-areal (m²)", data.takAreal_m2),
+    Row("Tak-areal (m²)", fmt(data.takAreal_m2)),
     Row("Irr. kWh/m²·år", data.sol_kwh_m2_yr),
     Row("Potensial kWh/år", data.sol_kwh_bygg_tot),
     Row("Sol-kategori", data.solKategori),
   ];
 
-  /* ---------- full diagnostikk ---------- */
-  const diagRows = Object.entries(data._diag ?? {}).map(([key, info]) => {
-    const ok = info?.ok === true;
-    const details = (() => {
-      // fjern ok-flagget fra utskriften
-      const { ok: _ignored, ...rest } = info ?? {};
-      if (Object.keys(rest).length === 0) return "—";
-      return JSON.stringify(rest, null, 0);
-    })();
+  /* ---------- etasje-rader (kun dersom >1) ---------- */
+  if (etasjeListe.length > 1) {
+    etasjeListe.forEach((e) =>
+      rows.push(
+        Row(`Areal ${e.etasjenummer}. etasje (m²)`, fmt(e.bruksarealTotalt))
+      )
+    );
+  }
 
+  /* ---------- diagnostikk-rader ---------- */
+  const diagRows = Object.entries(data._diag ?? {}).map(([k, v]) => {
+    const ok = (v as any)?.ok === true;
+    const { ok: _ignored, ...rest } = (v as any) ?? {};
+    const details =
+      Object.keys(rest).length > 0 ? JSON.stringify(rest, null, 0) : "—";
     return (
-      <tr
-        key={key}
-        className={`border-t ${ok ? "" : "bg-red-50 text-red-700"}`}
-      >
-        <td className="px-3 py-1 font-medium">{key}</td>
+      <tr key={k} className={`border-t ${ok ? "" : "bg-red-50 text-red-700"}`}>
+        <td className="px-3 py-1 font-medium">{k}</td>
         <td className="px-3 py-1">{ok ? "✔︎" : "✖︎"}</td>
         <td className="px-3 py-1 break-all">{details}</td>
       </tr>
     );
   });
 
+  /* ---------- render ---------- */
   return (
     <div className="p-4 space-y-6">
-      {/* ---------------- main table ---------------- */}
       <div>
         <h1 className="text-xl font-semibold mb-4">Diagnostikk</h1>
         <table className="border text-sm w-full">
@@ -72,7 +117,6 @@ export default function DebugDataTable({ data }: { data: DebugData | null }) {
         </table>
       </div>
 
-      {/* ---------------- diag table ---------------- */}
       {diagRows.length > 0 && (
         <div>
           <h2 className="font-semibold mb-2">Tjeneste-diagnostikk</h2>
@@ -89,10 +133,9 @@ export default function DebugDataTable({ data }: { data: DebugData | null }) {
         </div>
       )}
 
-      {/* ---------------- takflater ---------------- */}
       {data.takflater?.length ? (
         <div>
-          <h2 className="font-semibold mt-2">Takflater</h2>
+          <h2 className="font-semibold mt-4">Takflater</h2>
           <table className="border text-sm mt-2 w-full">
             <thead className="bg-gray-50">
               <tr>
