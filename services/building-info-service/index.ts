@@ -1,11 +1,11 @@
 // services/building-info-service/index.ts
 // ---------------------------------------------------------------------------
 // Henter bygningsdata for én adresse og returnerer også et _diag-objekt.
-//   • Kartverket   → kommune / gnr / bnr / snr / bruksenhetnr
+//   • Kartverket   → gnr/bnr/snr
 //   • Matrikkel    → matrikkelenhetsID
-//   • Bygg-bobler  → byggIDs, bygg-info (byggår, BRA, etasjer, enheter)
-//   • Enova        → energimerke (fallback BRA/byggår)
-//   • PBE Solkart  → takflater, solinnstråling & potensial
+//   • StoreService → byggeår, BRA (sum), etasjer, enheter
+//   • Enova        → energimerke
+//   • PBE Solkart  → sol­innstråling
 //   • Kulturminne  → WFS-sjekk
 // ---------------------------------------------------------------------------
 
@@ -15,7 +15,7 @@ import cors from "cors";
 import fetch from "node-fetch";
 import NodeCache from "node-cache";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore – proj4 har ingen typings
+// @ts-ignore
 import proj4 from "proj4";
 
 import {
@@ -24,7 +24,7 @@ import {
 } from "../../src/clients/MatrikkelClient.ts";
 import { BygningClient } from "../../src/clients/BygningClient.ts";
 import { StoreClient } from "../../src/clients/StoreClient.ts";
-import type { ByggInfo } from "../../src/clients/StoreClient.ts"; // ⇽ nye felter
+import type { ByggInfo } from "../../src/clients/StoreClient.ts";
 
 // ──────────────── instanser & konstanter ──────────────────────
 const BASE =
@@ -38,9 +38,7 @@ const {
   SOLAR_BASE,
 } = process.env;
 
-if (!USER || !PASS) {
-  throw new Error("Matrikkel-credentials mangler i miljøvariabler");
-}
+if (!USER || !PASS) throw new Error("Matrikkel-credentials mangler");
 
 const storeClient = new StoreClient(BASE, USER, PASS);
 const bygningClient = new BygningClient(BASE, USER, PASS);
@@ -57,7 +55,7 @@ const ENOVA_API_URL =
   "https://api.data.enova.no/ems/offentlige-data/v1/Energiattest";
 const SOLAR_URL = (SOLAR_BASE ?? "http://localhost:4003") + "/solinnstraling";
 
-// ──────────────── hjelpemetoder ───────────────────────────────
+// ──────────────── div. helpers ───────────────────────────────
 const pad5 = (v: string | number) => String(v).padStart(5, "0");
 const pad4 = (v: string | number) => String(v).padStart(4, "0");
 const pad4str = (v?: string | null) =>
@@ -203,9 +201,7 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
     diag.kartverket = { ok: true };
 
     if (!gnr || !bnr) {
-      res
-        .status(404)
-        .json({ error: "Adressen mangler entydig gnr/bnr i Kartverket." });
+      res.status(404).json({ error: "Adressen mangler entydig gnr/bnr." });
       return;
     }
 
@@ -231,9 +227,9 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
       diag.matrikkel = { ok: false, error: e.message };
     }
 
-    /* ── 3) Bygg-bobler ─────────────────────────────────── */
+    /* ── 3) Bygg-bobler (StoreService) ──────────────────── */
     let byggår: number | null = null;
-    let bra_m2: number | null = null;
+    let bra_m2_sum: number = 0;
     let bruksenheter: number | null = null;
     let antEtasjer: number | null = null;
     const bruksarealEtasjer: Record<number, number> = {};
@@ -259,28 +255,28 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
           try {
             info = await storeClient.getBygg(id, ctx());
           } catch {
-            continue; // neste bygg
+            continue; // hopp til neste bygg
           }
 
-          // byggår
+          /* ---- byggeår ---- */
           if (!byggår && info.byggeår) {
             byggår = info.byggeår;
             diag.bygg.felter.byggeår = true;
           }
 
-          // BRA
-          if (!bra_m2 && info.bruksareal) {
-            bra_m2 = info.bruksareal;
-            diag.bygg.felter.bruksareal = true;
+          /* ---- BRA ---- */
+          if (info.bra_m2 != null) {
+            bra_m2_sum += info.bra_m2;
+            diag.bygg.felter.bra_m2 = true;
           }
 
-          // antall etasjer
+          /* ---- antall etasjer ---- */
           if (!antEtasjer && info.antEtasjer) {
             antEtasjer = info.antEtasjer;
             diag.bygg.felter.antEtasjer = true;
           }
 
-          // etasjearealer
+          /* ---- areal per etasje ---- */
           if (info.etasjer?.length) {
             for (const e of info.etasjer) {
               if (e.bruksarealTotalt != null) {
@@ -291,27 +287,31 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
             diag.bygg.felter.etasjer = true;
           }
 
-          // bruksenheter
+          /* ---- bruksenheter ---- */
           if (!bruksenheter && info.antBruksenheter) {
             bruksenheter = info.antBruksenheter;
             diag.bygg.felter.bruksenheter = true;
           }
         }
 
+        const bra_m2_total = bra_m2_sum > 0 ? bra_m2_sum : null;
+
         diag.bygg.ok =
           byggår !== null ||
-          bra_m2 !== null ||
+          bra_m2_total !== null ||
           antEtasjer !== null ||
           Object.keys(bruksarealEtasjer).length > 0 ||
           bruksenheter !== null;
+
+        if (bra_m2_total !== null) diag.bygg.bra_m2_total = bra_m2_total;
       } catch (e: any) {
         diag.bygg.error = e.message;
       }
     } else {
-      diag.bygg.error = "Hopper over bygg-sjekk – ingen matrikkelenhetsId";
+      diag.bygg.error = "Hopper over bygg-sjekk – mangler matrikkelenhetsId";
     }
 
-    /* ── 4) Enova   (uforandret) ─────────────────────────── */
+    /* ── 4) Enova  (uforandret) ─────────────────────────── */
     let energi: any = null;
     let enovaStatus = 0;
     diag.enova = { ok: false as boolean, httpStatus: null as number | null };
@@ -356,11 +356,12 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
         }
       }
 
+      /* Enova kan gi BRA / byggeår hvis vi mangler det */
       if (enovaStatus === 200) {
         if (!byggår && energi?.enhet?.bygg?.byggeår)
           byggår = energi.enhet.bygg.byggeår;
-        if (!bra_m2 && energi?.enhet?.bruksareal)
-          bra_m2 = energi.enhet.bruksareal;
+        if (bra_m2_sum === 0 && energi?.enhet?.bruksareal)
+          bra_m2_sum = energi.enhet.bruksareal;
       }
     } catch (e: any) {
       diag.enova.error = e.message;
@@ -386,11 +387,11 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
         )}`
       );
       if (!solarFetch.ok)
-        throw new Error(`Solar-service returnerte ${solarFetch.status}`);
+        throw new Error(`Solar-service → ${solarFetch.status}`);
       const solarRes = (await solarFetch.json()) as SolarResponse;
 
       takflater = solarRes.takflater;
-      takAreal_m2 = solarRes.takflater.reduce((sum, t) => sum + t.area_m2, 0);
+      takAreal_m2 = solarRes.takflater.reduce((s, t) => s + t.area_m2, 0);
       sol_kwh_bygg_tot = solarRes.sol_kwh_bygg_tot;
       sol_kwh_m2_yr = solarRes.sol_kwh_m2_yr;
       solKategori = solarRes.category;
@@ -401,7 +402,7 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
       diag.solar.error = e.message;
     }
 
-    /* ── 7) Kulturminne-sjekk  (uforandret) ─────────────── */
+    /* ── 7) Kulturminne-sjekk (uforandret) ──────────────── */
     let isProtected = false;
     try {
       const bbox = `${lon - 0.001},${lat - 0.001},${lon + 0.001},${
@@ -427,10 +428,10 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
       bruksenhetnr,
       matrikkelenhetsId,
       byggår,
-      bra_m2,
+      bra_m2: bra_m2_sum > 0 ? bra_m2_sum : null,
       bruksenheter,
       antEtasjer,
-      bruksarealEtasjer, // ⇽ nytt
+      bruksarealEtasjer,
       lat,
       lon,
       isProtected,

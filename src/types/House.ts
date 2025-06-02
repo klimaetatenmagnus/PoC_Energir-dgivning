@@ -1,60 +1,69 @@
 // src/types/House.ts
 // ---------------------------------------------------------------------------
-// Type-definisjoner som deles mellom komponenter.
+//  Felles type-definisjoner (frontend)
 // ---------------------------------------------------------------------------
 
 export interface Tiltak {
   navn: string; // f.eks. «Loftisolering»
   kwh_sparing: number; // årlig spart energi
   kost_kr: number; // investeringskostnad
-  enova_støtte_kr?: number; // settes i steg 3
+  enova_støtte_kr?: number;
 }
 
-// -------------------- Solkart ---------------------------------------------
+/* ------------------- Solkart ------------------------------------------- */
 export interface Takflate {
-  // ← NY
   tak_id: number;
   area_m2: number;
   irr_kwh_m2_yr: number;
   kWh_tot: number;
 }
 
-// -------------------- Hovedobjekt -----------------------------------------
+/* ------------------- Selve huset --------------------------------------- */
 export interface House {
-  // Matrikkel / adresse
+  /* ----- Matrikkel / adresse ----- */
   adresse: string;
   kommunenummer?: string;
   gardsnummer?: number;
   bruksnummer?: number;
-  seksjonsnummer?: string; // ← NEW
-  bruksenhetnummer?: string; // ← NEW
+  seksjonsnummer?: string | null;
+  bruksenhetnummer?: string | null; //  (lang form – kan brukes i POST-skjema)
+  bruksenhetnr?: string | null; //  (kort form fra back-end)
+  matrikkelenhetsId?: number | null;
 
-  // Bygningsinfo
+  /* ----- Bygnings-info (StoreService) ----- */
   byggår?: number | null;
+  /** Sum BRA for alle bygg på eiendommen */
   bra_m2?: number | null;
-  bruksenheter?: number | null; // ← NEW (fra StoreService)
+  bruksenheter?: number | null;
 
-  // Energimerke (Enova)
+  antEtasjer?: number | null;
+  /** Oppslagstabell pr. etasje { 1: 74, 2: 58 }  */
+  bruksarealEtasjer?: Record<number, number | null>;
+
+  /** Back-end diagnostikk – kun til visning/debug */
+  _diag?: Record<string, any>;
+
+  /* ----- Energimerke (Enova) ----- */
   energikarakter?: string | null; // "A"–"G"
-  oppvarmingskarakter?: string | null; // "GRØNN", "GUL", "RØD"
-  energiattest_kwh?: number | null; // levert energi
+  oppvarmingskarakter?: string | null; // "GRØNN" | "GUL" | "RØD"
+  energiattest_kwh?: number | null;
 
-  // Solkart
-  takAreal_m2?: number | null; // ← NEW
-  sol_kwh_m2_yr?: number | null; // ← NEW
-  sol_kwh_bygg_tot?: number | null; // ← NEW
-  solKategori?: string | null; // ← NEW
-  takflater?: Takflate[]; // ← NEW
+  /* ----- Solkart ----- */
+  takAreal_m2?: number | null;
+  sol_kwh_m2_yr?: number | null;
+  sol_kwh_bygg_tot?: number | null;
+  solKategori?: string | null;
+  takflater?: Takflate[];
 
-  // Øvrig
+  /* ----- Øvrig ----- */
   lat?: number;
   lon?: number;
-  isProtected?: boolean | null; // ← kulturminne
+  isProtected?: boolean | null;
 
-  // Bruker-input / estimat
+  /* ----- Brukerinput ----- */
   forbruk_kwh: number;
   oppvarming: string;
 
-  // Forslag til tiltak
+  /* ----- Foreslåtte tiltak ----- */
   tiltak: Tiltak[];
 }
