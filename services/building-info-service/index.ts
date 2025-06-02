@@ -1,13 +1,17 @@
 // services/building-info-service/index.ts
 // ---------------------------------------------------------------------------
 // Henter bygningsdata for én adresse og returnerer også et _diag-objekt.
-//   • Kartverket   → kommune / gnr / bnr / snr / bruksenhetnr
+//   • Kartverket   → gnr / bnr / snr / bruksenhetnr
 //   • Matrikkel    → matrikkelenhetsID
-//   • Bygg-bobler  → byggIDs og bygg-info (byggår, BRA, enheter)
+//   • Bygg (Store) → byggeår / BRA / antBruksenheter
 //   • Enova        → energimerke (fallback BRA/byggår)
-//   • PBE Solkart  → takflater, solinnstråling & potensial
-//   • Kulturminne  → WFS-sjekk
+//   • PBE Solkart  → solinnstråling & potensial
+//   • Kulturminne  → historiske bygg-sjekk
 // ---------------------------------------------------------------------------
+
+console.log("[BIS] starting file …");
+process.on("beforeExit", () => console.log("[BIS] beforeExit"));
+process.on("exit", () => console.log("[BIS] exit"));
 
 import "dotenv/config";
 import express, { Request, Response, RequestHandler } from "express";
@@ -26,7 +30,6 @@ import { BygningClient } from "../../src/clients/BygningClient.ts";
 import { StoreClient } from "../../src/clients/StoreClient.ts";
 
 // ──────────────── instanser & konstanter ──────────────────────
-// BASE skal peke til “…/v1” – uten “/service” eller “/store”.
 const BASE =
   process.env.MATRIKKEL_API_BASE_URL_TEST?.trim() ||
   "https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1";
@@ -42,7 +45,6 @@ if (!USER || !PASS) {
   throw new Error("Matrikkel-credentials mangler i miljøvariabler");
 }
 
-// Én klient per tjeneste – klientene legger selv på “/MatrikkelenhetServiceWS”, “/BygningServiceWS” og “/StoreServiceWS”
 const storeClient = new StoreClient(BASE, USER, PASS);
 const bygningClient = new BygningClient(BASE, USER, PASS);
 const matrikkelClient = new MatrikkelClient(BASE, USER, PASS);
@@ -64,7 +66,6 @@ const pad4 = (v: string | number) => String(v).padStart(4, "0");
 const pad4str = (v?: string | null) =>
   v ? String(v).padStart(4, "0").toUpperCase() : undefined;
 
-// MatrikkelContext
 const ctx = () => ({
   locale: "no_NO_B",
   brukOriginaleKoordinater: false,
@@ -115,9 +116,8 @@ async function fetchEnergiattest(
 ): Promise<{ httpStatus: number; data: any | null }> {
   const { kommunenummer, gnr, bnr, snr, bruksenhetnr } = input;
 
-  if (!kommunenummer || !gnr || !bnr || !ENOVA_API_KEY) {
+  if (!kommunenummer || !gnr || !bnr || !ENOVA_API_KEY)
     return { httpStatus: 0, data: null };
-  }
 
   const payload: Record<string, string> = {
     kommunenummer,
@@ -125,7 +125,9 @@ async function fetchEnergiattest(
     bruksnummer: pad4(bnr),
   };
   if (snr) payload.seksjonsnummer = pad4str(snr)!;
-  if (bruksenhetnr) payload.bruksenhetsnummer = pad4str(bruksenhetnr)!;
+  if (bruksenhetnr) payload.bruksenhetnummer = pad4str(bruksenhetnr)!;
+
+  if (process.env.LOG_SOAP) console.log("[Enova] payload →", payload);
 
   const r = await fetch(ENOVA_API_URL, {
     method: "POST",
@@ -175,7 +177,7 @@ interface SolarResponse {
 }
 
 /* =======================================================================
-   Express-route
+   Express-oppsett
    ======================================================================= */
 const app = express();
 app.use(cors());
@@ -251,11 +253,9 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
         byggIds = byggListe.map((b) => b.byggId);
         diag.bygg.byggCount = byggIds.length;
 
-        // Hver ByggId kan feile (500) dersom objektet ikke finnes
         for (const id of byggIds) {
           try {
             const info = await storeClient.getBygg(id, ctx());
-
             if (!byggår && info.byggeår) {
               byggår = info.byggeår;
               diag.bygg.felter.byggeår = true;
@@ -268,21 +268,18 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
               bruksenheter = info.antBruksenheter;
               diag.bygg.felter.bruksenheter = true;
             }
-            // Hvis alle tre funnet, kan bryte
             if (byggår && bra_m2 && bruksenheter) break;
           } catch {
-            // Ignorer error for denne ByggId (objekt ikke funnet). Gå til neste.
-            continue;
+            /* ignorér 500 for enkelt-ID */
           }
         }
         diag.bygg.ok =
           byggår !== null || bra_m2 !== null || bruksenheter !== null;
       } catch (e: any) {
-        // Dersom selve findByggForMatrikkelenhet kaster, registrer feilen
         diag.bygg.error = e.message;
       }
     } else {
-      diag.bygg.error = "Hopper over bygg-sjekk – ingen matrikkelenhetsId";
+      diag.bygg.error = "Ingen matrikkelenhetsId – hopper over bygg-sjekk";
     }
 
     /* ── 4) Enova  ──────────────────────────────────────────── */
@@ -300,8 +297,7 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
       });
       energi = first.data;
       enovaStatus = first.httpStatus;
-      diag.enova.httpStatus = enovaStatus;
-      diag.enova.ok = enovaStatus === 200;
+      diag.enova = { ok: enovaStatus === 200, httpStatus: enovaStatus };
 
       if (
         enovaStatus === 400 &&
@@ -323,10 +319,10 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
           if (retry.httpStatus === 200) {
             energi = retry.data;
             enovaStatus = 200;
-            diag.enova.ok = true;
-            diag.enova.retried = true;
+            diag.enova = { ok: true, httpStatus: 200, retried: true };
+          } else {
+            diag.enova.httpStatus = retry.httpStatus;
           }
-          diag.enova.httpStatus = retry.httpStatus;
         }
       }
 
@@ -354,23 +350,18 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
     diag.solar = { ok: false as boolean, reference: null as number | null };
 
     try {
-      const solarFetch = await fetch(
-        `${SOLAR_URL}?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(
-          lon
-        )}`
-      );
+      const solarFetch = await fetch(`${SOLAR_URL}?lat=${lat}&lon=${lon}`);
       if (!solarFetch.ok)
         throw new Error(`Solar-service returnerte ${solarFetch.status}`);
       const solarRes = (await solarFetch.json()) as SolarResponse;
 
       takflater = solarRes.takflater;
-      takAreal_m2 = solarRes.takflater.reduce((sum, t) => sum + t.area_m2, 0);
+      takAreal_m2 = solarRes.takflater.reduce((s, t) => s + t.area_m2, 0);
       sol_kwh_bygg_tot = solarRes.sol_kwh_bygg_tot;
       sol_kwh_m2_yr = solarRes.sol_kwh_m2_yr;
       solKategori = solarRes.category;
 
-      diag.solar.ok = true;
-      diag.solar.reference = solarRes.reference;
+      diag.solar = { ok: true, reference: solarRes.reference };
     } catch (e: any) {
       diag.solar.error = e.message;
     }
@@ -398,7 +389,7 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
       gardsnummer: gnr,
       bruksnummer: bnr,
       seksjonsnummer: snr,
-      bruksenhetnr: bruksenhetnr,
+      bruksenhetnr,
       matrikkelenhetsId,
       byggår,
       bra_m2,
@@ -406,16 +397,13 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
       lat,
       lon,
       isProtected,
-
       energikarakter: energi?.energiytelse?.energikarakter ?? null,
       oppvarmingskarakter: energi?.energiytelse?.oppvarmingskarakter ?? null,
-
       takAreal_m2,
       sol_kwh_m2_yr,
       sol_kwh_bygg_tot,
       solKategori,
       takflater,
-
       _diag: diag,
     };
 
@@ -431,6 +419,7 @@ app.get("/lookup", lookupHandler);
 
 // ──────────────── start server ───────────────────────────────
 const PORT = Number(process.env.BUILDINGS_PORT) || 4002;
+console.log("[BIS] about to listen on", PORT);
 app.listen(PORT, "0.0.0.0", () =>
   console.log(`building-info-service ▶ ${PORT}`)
 );

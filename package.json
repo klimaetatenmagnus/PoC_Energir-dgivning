@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev:client": "vite",
-    "dev:server": "cross-env NODE_OPTIONS=\"--no-experimental-strip-types --loader ts-node/esm\" nodemon server/index.ts",
-    "dev:buildings": "cross-env NODE_OPTIONS='--no-experimental-strip-types --loader ts-node/esm' nodemon services/building-info-service/index.ts",
+    "dev:server":    "cross-env LOG_SOAP=1 NODE_OPTIONS='--no-experimental-strip-types --loader ts-node/esm' nodemon server/index.ts",
+    "dev:buildings": "cross-env LOG_SOAP=1 nodemon --exec \"node --no-experimental-strip-types --loader ts-node/esm\" services/building-info-service/index.ts",
     "dev:subsidy": "node services/subsidy-service/index.js",
-    "dev": "concurrently -k -n client,server,buildings,solar -c blue,green,yellow,magenta \"pnpm run dev:client\" \"pnpm run dev:server\" \"pnpm run dev:buildings\" \"pnpm run dev:solar\"",
+    "dev":           "concurrently -k -n client,server,buildings,solar -c blue,green,yellow,magenta \"pnpm run dev:client\" \"pnpm run dev:server\" \"pnpm run dev:buildings\" \"pnpm run dev:solar\"",
     "dev:local": "cross-env API_ENV=test concurrently -k -n client,server,buildings,subsidy -c blue,green,yellow,magenta \"pnpm run dev:client\" \"pnpm run dev:server\" \"pnpm run dev:buildings\" \"pnpm run dev:subsidy\"",
     "start:prod": "cross-env API_ENV=prod ts-node server/index.ts",
     "build": "tsc && vite build",
