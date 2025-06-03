@@ -1,6 +1,6 @@
 // services/solar-service/index.js
 // ---------------------------------------------------------------------------
-//  Henter solinnstråling fra PBE Solkart – enten
+//  Henter solinnstråling fra PBE Solkart – enten
 //    • for alle takflater på en matrikkelenhet (gnr/bnr/snr), ELLER
 //    • for ett punkt (lat/lon) hvor én eller flere takflater treffer.
 //  Returnerer liste over flater { tak_id, area_m2, irr_kwh_m2_yr, kWh_tot }.
@@ -17,51 +17,19 @@ proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
 const app = express();
 app.use(cors());
 
-// Cache 1 time
+// Cache 1 time
 const cache = new NodeCache({ stdTTL: 3600, checkperiod: 120 });
 
-// Konstant referanse (kWh/m²·år) – brukt til kategori-inndeling
+// Konstant referanse (kWh/m²·år) – brukt til kategori‑inndeling
 const REF_OSLO = 1005;
 
-// ArcGIS FeatureService for takflater
-const ARCGIS_URL =
-  "https://od2.pbe.oslo.kommune.no/arcgis/rest/services/Solkart/Solkart_Takflater/MapServer/0/query";
-
-// MapServer-WFS (punkt-oppslag)
+// MapServer‑WFS (brukes både til punkt‑ og matrikkel‑oppslag)
 const WFS_URL = "https://od2.pbe.oslo.kommune.no/cgi-bin/wms";
 const MAP_FILE = "d:/data_mapserver/kartfiler/solkart.map";
 const LAYER = "takflater2024";
 
 // ---------------------------------------------------------------------------
-// 1. FeatureService-kall – matrikkelenhet
-// ---------------------------------------------------------------------------
-async function queryTakflater(where) {
-  const params = new URLSearchParams({
-    where,
-    outFields: "tak_id,areal_m2,irr_år",
-    returnGeometry: "false",
-    f: "json",
-  });
-
-  const res = await fetch(`${ARCGIS_URL}?${params.toString()}`);
-  if (!res.ok) throw new Error(`ArcGIS ${res.status}`);
-  const j = await res.json();
-  if (!Array.isArray(j.features)) return [];
-
-  return j.features.map((f) => {
-    const area = Number(String(f.attributes.areal_m2).replace(",", "."));
-    const irr = Number(String(f.attributes.irr_år).replace(",", "."));
-    return {
-      tak_id: f.attributes.tak_id,
-      area_m2: area,
-      irr_kwh_m2_yr: irr,
-      kWh_tot: irr * area,
-    };
-  });
-}
-
-// ---------------------------------------------------------------------------
-// 2. WFS-kall – liten BBOX rundt punkt
+//  Felles XML‑parser for WFS‑svar
 // ---------------------------------------------------------------------------
 function parseFeatureMembers(xml) {
   const blocks =
@@ -82,6 +50,41 @@ function parseFeatureMembers(xml) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// 1. WFS‑kall – matrikkelenhet (gnr/bnr/snr)
+// ---------------------------------------------------------------------------
+async function takflaterForMatrikkel(gnr, bnr, snr) {
+  // Bygg CQL‐uttrykket i stedet for XML‐filter:
+  let cql = `GNR='${gnr}' AND BNR='${bnr}'`;
+  if (snr) {
+    cql += ` AND SNR='${snr}'`;
+  }
+
+  // Logg for debugging:
+  console.log("[solar-service] CQL_FILTER:", cql);
+
+  const params = new URLSearchParams({
+    map: MAP_FILE,
+    SERVICE: "WFS",
+    VERSION: "1.1.0",
+    REQUEST: "GetFeature",
+    TYPENAME: LAYER, // typeName på laget
+    CQL_FILTER: cql, // i stedet for FILTER=<XML>
+    OUTPUTFORMAT: "text/xml; subtype=gml/3.1.1",
+  });
+
+  const url = `${WFS_URL}?${params.toString()}`;
+  console.log("[solar-service] WFS-URL:", url);
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`WFS ${res.status}`);
+  const xml = await res.text();
+  return parseFeatureMembers(xml);
+}
+
+// ---------------------------------------------------------------------------
+// 2. WFS‑kall – liten BBOX rundt punkt (lat/lon)
+// ---------------------------------------------------------------------------
 async function takflaterFromPoint(lat, lon) {
   // transform WGS84 → UTM32
   const [easting, northing] = proj4("EPSG:4326", "EPSG:32632", [
@@ -114,7 +117,7 @@ async function takflaterFromPoint(lat, lon) {
 }
 
 // ---------------------------------------------------------------------------
-// Kategori basert på referanse
+//  Kategori basert på referanse
 // ---------------------------------------------------------------------------
 function categorize(avgIrr, ref = REF_OSLO) {
   const pct = (avgIrr / ref) * 100;
@@ -126,7 +129,7 @@ function categorize(avgIrr, ref = REF_OSLO) {
 }
 
 // ---------------------------------------------------------------------------
-// HTTP-endpoint
+//  HTTP‑endpoint
 // ---------------------------------------------------------------------------
 app.get("/solinnstraling", async (req, res) => {
   try {
@@ -140,15 +143,16 @@ app.get("/solinnstraling", async (req, res) => {
 
     let takflater = [];
 
-    // ------- A) matrikkelenhet
     if (gnr && bnr) {
-      const where =
-        `gnr=${Number(gnr)} AND bnr=${Number(bnr)}` +
-        (snr ? ` AND snr=${Number(snr)}` : "");
-      takflater = await queryTakflater(where);
-    }
-    // ------- B) punkt
-    else if (lat && lon) {
+      // Pad GNR/BNR til lengdene som brukes i lag-attributtene
+      const gnrPad = String(gnr).padStart(5, "0"); // 00073
+      const bnrPad = String(bnr).padStart(4, "0"); // 0704
+      takflater = await takflaterForMatrikkel(gnrPad, bnrPad, snr);
+      // fallback: hvis ingen treff, prøv punkt-metoden
+      if (takflater.length === 0 && lat && lon) {
+        takflater = await takflaterFromPoint(lat, lon);
+      }
+    } else if (lat && lon) {
       takflater = await takflaterFromPoint(lat, lon);
     } else {
       return res.status(400).json({ error: "Oppgi lat/lon eller gnr/bnr" });
@@ -177,7 +181,7 @@ app.get("/solinnstraling", async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// Start server
+//  Start server
 // ---------------------------------------------------------------------------
 const PORT = process.env.PORT || 4003;
 app.listen(PORT, "0.0.0.0", () =>

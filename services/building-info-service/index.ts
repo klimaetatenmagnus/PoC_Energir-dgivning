@@ -381,11 +381,13 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
     diag.solar = { ok: false as boolean, reference: null as number | null };
 
     try {
-      const solarFetch = await fetch(
-        `${SOLAR_URL}?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(
-          lon
-        )}`
-      );
+      const gnrPad = String(gnr).padStart(5, "0"); // 00073
+      const bnrPad = String(bnr).padStart(4, "0"); // 0704
+
+      const solarUrl = snr
+        ? `${SOLAR_URL}?gnr=${gnrPad}&bnr=${bnrPad}&snr=${snr}`
+        : `${SOLAR_URL}?gnr=${gnrPad}&bnr=${bnrPad}`;
+      const solarFetch = await fetch(solarUrl);
       if (!solarFetch.ok)
         throw new Error(`Solar-service → ${solarFetch.status}`);
       const solarRes = (await solarFetch.json()) as SolarResponse;
