@@ -2,10 +2,10 @@
 // ---------------------------------------------------------------------------
 // Henter bygningsdata for én adresse og returnerer også et _diag-objekt.
 //   • Kartverket   → gnr/bnr/snr
-//   • Matrikkel    → matrikkelenhetsID
+//   • Matrikkel    → matrikkelenhetsID (+ mulig seksjons‐ eller bygg‐polygon)
 //   • StoreService → byggeår, BRA (sum), etasjer, enheter
 //   • Enova        → energimerke
-//   • PBE Solkart  → sol­innstråling
+//   • PBE Solkart  → sol­innstråling (via polygon eller gnr/bnr eller punkt)
 //   • Kulturminne  → WFS-sjekk
 // ---------------------------------------------------------------------------
 
@@ -311,6 +311,42 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
       diag.bygg.error = "Hopper over bygg-sjekk – mangler matrikkelenhetsId";
     }
 
+    /* ── (new) Fetch injeksjonspunkt: Polygon for seksjon eller bygg ───────────── */
+    let polygonWKT: string | null = null;
+    if (matrikkelenhetsId !== null && snr) {
+      // Hvis adresse har seksjonsnummer, hent polygon for den seksjonen
+      try {
+        polygonWKT = await matrikkelClient.getSectionPolygonWKT(
+          {
+            kommunenummer,
+            gardsnummer: gnr,
+            bruksnummer: bnr,
+            seksjonsnummer: snr,
+          },
+          ctx()
+        );
+      } catch (e: any) {
+        // Hvis det feiler (f.eks. ingen geometri for seksjon), la polygonWKT være null
+        polygonWKT = null;
+      }
+    }
+    if (!polygonWKT && matrikkelenhetsId !== null) {
+      // Hvis vi ikke fikk en seksjons‐polygon, så prøv å hente polygon for hele matrikkelenheten (hele bygget)
+      try {
+        polygonWKT = await matrikkelClient.getBuildingPolygonWKT(
+          {
+            kommunenummer,
+            gardsnummer: gnr,
+            bruksnummer: bnr,
+          },
+          ctx()
+        );
+      } catch {
+        polygonWKT = null;
+      }
+    }
+    diag.polygon = { ok: !!polygonWKT, wkt: polygonWKT };
+
     /* ── 4) Enova  (uforandret) ─────────────────────────── */
     let energi: any = null;
     let enovaStatus = 0;
@@ -371,7 +407,7 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
     const { lat, lon } = await geocode(adresse);
     diag.geokoding = { ok: true, lat, lon };
 
-    /* ── 6) PBE Solkart  (uforandret) ────────────────────── */
+    /* ── 6) PBE Solkart  (ENDRET: polygonWKT / gnr/bnr‐fallback / punkt 5m) ── */
     let takflater: SolarResponse["takflater"] = [];
     let takAreal_m2: number | null = null;
     let sol_kwh_m2_yr: number | null = null;
@@ -381,12 +417,32 @@ const lookupHandler: RequestHandler = async (req: Request, res: Response) => {
     diag.solar = { ok: false as boolean, reference: null as number | null };
 
     try {
-      const gnrPad = String(gnr).padStart(5, "0"); // 00073
-      const bnrPad = String(bnr).padStart(4, "0"); // 0704
+      let solarUrl: string;
 
-      const solarUrl = snr
-        ? `${SOLAR_URL}?gnr=${gnrPad}&bnr=${bnrPad}&snr=${snr}`
-        : `${SOLAR_URL}?gnr=${gnrPad}&bnr=${bnrPad}`;
+      // 6.A) Hvis vi har polygonWKT, bruk den
+      if (polygonWKT) {
+        const encoded = encodeURIComponent(polygonWKT);
+        solarUrl = `${SOLAR_URL}?polygon=${encoded}`;
+      }
+      // 6.B) Ellers, hvis vi har matrikkel‐parametre, bruk gnr/bnr(snr)
+      else if (gnr && bnr) {
+        const gnrPad = String(gnr).padStart(5, "0"); // 00073
+        const bnrPad = String(bnr).padStart(4, "0"); // 0704
+        solarUrl = snr
+          ? `${SOLAR_URL}?gnr=${gnrPad}&bnr=${bnrPad}&snr=${snr}`
+          : `${SOLAR_URL}?gnr=${gnrPad}&bnr=${bnrPad}`;
+      }
+      // 6.C) Ellers, hvis vi har lat/lon, bruk punktmetoden med delta=5
+      else if (lat && lon) {
+        solarUrl = `${SOLAR_URL}?lat=${lat}&lon=${lon}`;
+      }
+      // 6.D) Hvis ingen gyldige parametere, feilmeld
+      else {
+        throw new Error(
+          "Ingen gyldig parameter for sol‐oppslag (polygon, gnr/bnr eller lat/lon)"
+        );
+      }
+
       const solarFetch = await fetch(solarUrl);
       if (!solarFetch.ok)
         throw new Error(`Solar-service → ${solarFetch.status}`);

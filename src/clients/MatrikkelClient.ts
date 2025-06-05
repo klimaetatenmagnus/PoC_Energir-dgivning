@@ -60,7 +60,7 @@ export class MatrikkelClient {
       }
     );
 
-    // ---- parse som før -----------------------------------------------------
+    // Parse responsen akkurat som før
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: "@_",
@@ -183,6 +183,41 @@ export class MatrikkelClient {
       seksjonsnummer: snr ? String(snr).padStart(2, "0") : null,
       bruksenhetnummer: benr ? String(benr) : null,
     };
+  }
+
+  // ------------------- Nye metoder for polygon-henting -------------------
+
+  /**
+   * Hent WKT‐polygon for en seksjon (snr) gitt kommunenr/gnr/bnr.
+   * Krever at Matrikkel‐API returnerer geometri for seksjonen i EPSG:32632.
+   */
+  async getSectionPolygonWKT(
+    params: {
+      kommunenummer: string;
+      gardsnummer: string;
+      bruksnummer: string;
+      seksjonsnummer: string;
+    },
+    ctx: MatrikkelContext
+  ): Promise<string | null> {
+    // Eksempel på hvordan man kan gjøre dette:
+    // 1. Bygg en SOAP‐forespørsel for getObject med <hentGeometri>true</hentGeometri>.
+    // 2. Send mot riktig tjeneste, parse GML‐geometri.
+    // 3. Konverter GML til WKT (evt. bruke et hjelpebibliotek).
+    // For nå stubber vi med en feilmelding:
+    throw new Error("getSectionPolygonWKT ikke implementert ennå");
+  }
+
+  /**
+   * Hent WKT‐polygon for hele bygget (uten hensyn til seksjoner) gitt gnr/bnr.
+   * Krever at Matrikkel‐API returnerer geometri for hele bygget i EPSG:32632.
+   */
+  async getBuildingPolygonWKT(
+    params: { kommunenummer: string; gardsnummer: string; bruksnummer: string },
+    ctx: MatrikkelContext
+  ): Promise<string | null> {
+    // Tilsvarende som getSectionPolygonWKT, men henter polygon for matrikkelenheten/bygget.
+    throw new Error("getBuildingPolygonWKT ikke implementert ennå");
   }
 
   // ----------------------- XML-byggere -----------------------------
