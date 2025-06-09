@@ -38,6 +38,18 @@ export interface ByggInfo {
   bruksarealEtasjer: Record<number, number | null>;
 }
 
+export interface Koordinat25833 {
+  øst: number; // EPSG:25833
+  nord: number;
+}
+
+export interface ByggInfo {
+  byggeår: number | null;
+  bra_m2: number | null;
+  antBruksenheter: number | null;
+  koordinat?: Koordinat25833 | null; //  ← NYTT
+}
+
 /* ---------------------------------------------------------------------------
  * XML-parser
  * ------------------------------------------------------------------------- */

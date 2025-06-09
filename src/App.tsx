@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import type { House } from "./types/House";
 import DebugDataTable from "./components/DebugDataTable";
-import { useBuildingInfo } from "./hooks/useBuildingInfo";
+import useBuildingInfo from "./hooks/useBuildingInfo";
 
 /* ------------------------------------------------------------------ */
 /*  Konstanter                                                        */

@@ -2,42 +2,49 @@
 import { useEffect, useState } from "react";
 import type { House } from "../types/House";
 
-export function useBuildingInfo(adresse: string) {
+/** Basen til building-info-service (fra .env eller dev-proxy). */
+const BIS_BASE =
+  import.meta.env.VITE_BIS_BASE?.toString().replace(/\/$/, "") || "";
+
+/**
+ * React-hook som henter /lookup-data hver gang `adresse` endrer seg.
+ * Returnerer { data, error, loading }.
+ */
+export function useBuildingInfo(adresse: string | null) {
   const [data, setData] = useState<House | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoad] = useState(false);
 
-  /* -------------------------------------------------------
-   *  Hent /lookup hver gang adressen endrer seg
-   * ----------------------------------------------------- */
   useEffect(() => {
-    if (!adresse) return;
+    if (!adresse) return; // ingen adresse → gjør ingenting
 
     const controller = new AbortController();
-    setLoading(true);
+    setLoad(true);
 
-    fetch(`/lookup?adresse=${encodeURIComponent(adresse)}`, {
+    fetch(`${BIS_BASE}/lookup?adresse=${encodeURIComponent(adresse)}`, {
       signal: controller.signal,
     })
-      .then((r) => (r.ok ? r.json() : r.text().then((t) => Promise.reject(t))))
-      .then((info: Partial<House>) => {
-        /*  Slå sammen tidligere state med ny /lookup-info
-            – vi sprer først *eksisterende* verdier, slik at bruker-input
-              (forbruk_kwh, tiltak osv.) bevares
-            – deretter sprer vi svaret fra back-end, som dermed overskriver
-              kun de feltene den faktisk har                                                                      */
+      .then(async (r) => {
+        const body = await (r.ok ? r.json() : r.text());
+        if (!r.ok) throw new Error(body as string);
+        return body as Partial<House>;
+      })
+      .then((info) => {
+        // Bevar eventuelle bruker-felter (forbruk_kwh, tiltak …)
         setData((prev) => (prev ? { ...prev, ...info } : (info as House)));
         setError(null);
       })
-      .catch((e) => {
-        if (e.name !== "AbortError") setError(String(e));
+      .catch((e: any) => {
+        if (e.name !== "AbortError") setError(String(e.message ?? e));
       })
-      .finally(() => setLoading(false));
+      .finally(() => setLoad(false));
 
-    /*  Avbryt fetch hvis komponenten unmountes eller adressen
-        endrer seg før kallet er ferdig                                           */
+    // Avbryt fetch ved unmount eller adresse-endring
     return () => controller.abort();
   }, [adresse]);
 
   return { data, error, loading };
 }
+
+/* Default-eksport for dem som foretrekker   `import useBuildingInfo from …`  */
+export default useBuildingInfo;

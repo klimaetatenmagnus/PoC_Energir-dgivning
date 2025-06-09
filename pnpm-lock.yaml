@@ -57,6 +57,9 @@ importers:
       '@types/express':
         specifier: ^5.0.2
         version: 5.0.2
+      '@types/proj4':
+        specifier: ^2.5.6
+        version: 2.5.6
       '@types/react':
         specifier: ^19.1.6
         version: 19.1.6
@@ -1044,6 +1047,9 @@ packages:
 
   '@types/node@22.15.27':
     resolution: {integrity: sha512-5fF+eu5mwihV2BeVtX5vijhdaZOfkQTATrePEaXTcKqI16LhJ7gi2/Vhd9OZM0UojcdmiOCVg5rrax+i1MdoQQ==}
+
+  '@types/proj4@2.5.6':
+    resolution: {integrity: sha512-zfMrPy9fx+8DchqM0kIUGeu2tTVB5ApO1KGAYcSGFS8GoqRIkyL41xq2yCx/iV3sOLzo7v4hEgViSLTiPI1L0w==}
 
   '@types/qs@6.14.0':
     resolution: {integrity: sha512-eOunJqu0K1923aExK6y8p6fsihYEn/BYuQ4g0CxAAgFc4b/ZLN4CrsRZ55srTdqoiLzU2B2evC+apEIxprEzkQ==}
@@ -4157,6 +4163,8 @@ snapshots:
   '@types/node@22.15.27':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/proj4@2.5.6': {}
 
   '@types/qs@6.14.0': {}
 

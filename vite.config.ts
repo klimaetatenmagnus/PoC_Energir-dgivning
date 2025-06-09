@@ -1,43 +1,36 @@
 // vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const root = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
 
-  /* ----------------------------------------------------------- */
-  /*  Viktig! Sørger for ÉN kopi av React/React-DOM i bundle.     */
-  /* ----------------------------------------------------------- */
   resolve: {
+    /** ⚑  Viktig: sørg for ÉN fysisk sti  */
+    alias: {
+      react: resolve(root, "node_modules/react"),
+      "react-dom": resolve(root, "node_modules/react-dom"),
+    },
+    /** ⚑  dedupe hindrer ny kopi i optimize-cache */
     dedupe: ["react", "react-dom"],
   },
+
   optimizeDeps: {
     include: ["react", "react-dom"],
+    exclude: [], // ingen avhengigheter skal bringe inn egen React
   },
 
-  /* ----------------------------------------------------------- */
-  /*  Dev-server med lokale proxyruter                           */
-  /* ----------------------------------------------------------- */
   server: {
     port: 5173,
     proxy: {
-      "/lookup": {
-        target: "http://localhost:4002",
-        changeOrigin: true,
-      },
-      "/solinnstraling": {
-        target: "http://localhost:4003",
-        changeOrigin: true,
-      },
-      "/subsidy": {
-        target: "http://localhost:4001",
-        changeOrigin: true,
-      },
-      "/api": {
-        // SOAP/REST-proxy (Matrikkel-tjenesten)
-        target: "http://localhost:3000",
-        changeOrigin: true,
-      },
+      "/lookup": "http://localhost:4002",
+      "/solinnstraling": "http://localhost:4003",
+      "/subsidy": "http://localhost:4001",
+      "/api": "http://localhost:3000",
     },
   },
 });
