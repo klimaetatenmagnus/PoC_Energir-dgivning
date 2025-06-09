@@ -1,10 +1,14 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // services/building-info-service/index.ts
 // ---------------------------------------------------------------------------
-//  • Henter matrikkeldata → presist bygningspunkt (EPSG:25832)
-//  • Konverterer til EPSG:32632, finner BYGG_ID via PBE-Identify
-//  • Faller tilbake til polygon eller lat/lon mot solar-service
-//  • Tar inn Enova-energimerke og returnerer samlet JSON til frontend
+//  ▸ Mottar en adresse‑streng ("Kapellveien 156C, 0493 Oslo")
+//  ▸ AdresseServiceWS   → gnr / bnr / (snr)
+//  ▸ MatrikkelenhetWS   → matrikkelenhets‑ID
+//  ▸ BygningServiceWS   → bygg‑liste & punkt (EPSG:25832)
+//  ▸ Konverterer punkt → EPSG:32632, henter BYGG_ID via PBE‑Identify
+//  ▸ PBE bygg‑ID eller (lat,lon) sendes til solar‑service
+//  ▸ Energiattest hentes fra Enova‑API
+//  ▸ Returnerer samlet JSON til frontend (DebugDataTable)
 // ---------------------------------------------------------------------------
 
 import "dotenv/config";
@@ -20,12 +24,6 @@ import { BygningClient } from "../../src/clients/BygningClient.js";
 import { StoreClient, ByggInfo } from "../../src/clients/StoreClient.js";
 
 /* ─────────── Typer ───────────────────────────────────────────────────── */
-interface KartverketHit {
-  kommunenummer: string;
-  gnr: string;
-  bnr: string;
-  snr: string | null;
-}
 interface SolarTakflate {
   tak_id: number;
   bygg_id: number | null;
@@ -97,18 +95,11 @@ const ENOVA_URL =
   "https://api.data.enova.no/ems/offentlige-data/v1/Energiattest";
 
 /* ─────────── Helpers ─────────────────────────────────────────────────── */
-const pad5 = (v: string | number) => String(v).padStart(5, "0");
-const pad4 = (v: string | number) => String(v).padStart(4, "0");
-/** Hent første tallsekvens i en streng – ellers returner null. */
-const onlyDigits = (s: string | null | undefined): string | null => {
-  const m = String(s ?? "").match(/\d+/);
-  return m ? m[0] : null;
-};
-/** Konverterer Matrikkel‐punkt (EPSG:25832) → PBE (EPSG:32632) */
+/** Konverter Matrikkel‑koordinat (EPSG:25832) → EPSG:32632 (PBE) */
 const toPbeCrs = (e32: number, n32: number): [number, number] =>
   proj4("EPSG:25832", "EPSG:32632", [e32, n32]) as [number, number];
 
-/** Oppretter Matrikkel‐kontekst med EPSG:25832 */
+/** Oppretter Matrikkel‑kontekst med EPSG:25832 */
 const ctx = () => ({
   locale: "no_NO_B",
   brukOriginaleKoordinater: false,
@@ -118,23 +109,31 @@ const ctx = () => ({
   snapshotVersion: MATRIKKEL_SNAPSHOT_VERSION,
 });
 
-/* ─────────── Eksterne kall ──────────────────────────────────────────── */
-/** 1) Adressestreng → Kartverket (via Nominatim‐demo) */
-async function lookupKartverket(adresse: string): Promise<KartverketHit> {
-  const url =
-    "https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=" +
-    encodeURIComponent(adresse);
-  const hit = (await (await fetch(url)).json()) as any[]; // cast for å unngå ‘unknown’
-  const house = hit?.[0]?.address ?? {};
-  return {
-    kommunenummer: house?.municipality_code ?? "0301",
-    gnr: pad5(house?.road_number ?? "1"),
-    bnr: pad4(house?.house_number ?? "1"),
-    snr: null,
-  };
+/**  Fetch Enova‑energimerke  */
+const pad5 = (v: string | number) => String(v).padStart(5, "0");
+const pad4 = (v: string | number) => String(v).padStart(4, "0");
+async function fetchEnergiattest(
+  kommunenummer: string,
+  gnr: number,
+  bnr: number,
+  snr?: string | null
+): Promise<EnovaEnergiattest | null> {
+  const qs = new URLSearchParams({
+    Kommunenummer: kommunenummer,
+    Gardsnummer: pad5(gnr),
+    Bruksnummer: pad4(bnr),
+  });
+  if (snr) qs.set("Seksjonsnummer", pad4(snr));
+
+  const response = await fetch(`${ENOVA_URL}?${qs}`, {
+    headers: { "Ocp-Apim-Subscription-Key": ENOVA_API_KEY ?? "" },
+  });
+  if (!response.ok) return null;
+  const arr = (await response.json()) as EnovaEnergiattest[];
+  return arr?.[0] ?? null;
 }
 
-/** 2) PBE Identify – finn BYGG_ID ut fra punkt i EPSG:32632 */
+/**  PBE Identify – finn BYGG_ID ut fra punkt i EPSG:32632 */
 async function fetchPbeByggId(
   øst32632: number,
   nord32632: number,
@@ -157,170 +156,118 @@ async function fetchPbeByggId(
 
   const response = await fetch(`${mapBase}/identify?${params.toString()}`);
   if (!response.ok) return null;
-  const json = (await response.json()) as any; // uspesifisert JSON‐objekt
+  const json = (await response.json()) as any;
   const idFieldVal = json?.results?.[0]?.attributes?.BYGG_ID;
   const idNum = Number(idFieldVal);
   return Number.isFinite(idNum) && idNum > 0 ? idNum : null;
 }
 
-/** 3) Hent Enova‐energimerke (forenklet) */
-async function fetchEnergiattest(
-  kommunenummer: string,
-  gnrNum: number,
-  bnrNum: number,
-  snr?: string | null
-): Promise<EnovaEnergiattest | null> {
-  const qs = new URLSearchParams({
-    Kommunenummer: kommunenummer,
-    Gardsnummer: pad5(gnrNum),
-    Bruksnummer: pad4(bnrNum),
-  });
-  if (snr) qs.set("Seksjonsnummer", pad4(snr));
-
-  const response = await fetch(`${ENOVA_URL}?${qs}`, {
-    headers: { "Ocp-Apim-Subscription-Key": ENOVA_API_KEY ?? "" },
-  });
-  if (!response.ok) return null;
-  const arr = (await response.json()) as EnovaEnergiattest[];
-  return arr?.[0] ?? null;
-}
-
-/* ─────────── Express‐endpoint ───────────────────────────────────────── */
+/* ─────────── Express‑endpoint ───────────────────────────────────────── */
 const app = express();
 app.use(cors());
 
 app.get("/lookup", async (req: Request, res: Response) => {
   const adresse = String(req.query.adresse ?? "").trim();
-  if (!adresse) {
-    res.status(400).json({ error: "Mangler adresse‐parameter" });
-    return;
-  }
+  if (!adresse) return res.status(400).json({ error: "Mangler adresse" });
 
-  if (cache.has(adresse)) {
-    res.json(cache.get(adresse));
-    return;
-  }
+  if (cache.has(adresse)) return res.json(cache.get(adresse));
 
   try {
-    /* 1) Kartverket (Nominatim‐demo) */
-    const { kommunenummer, gnr, bnr, snr } = await lookupKartverket(adresse);
+    /* 1) AdresseService → gnr/bnr/(snr) */
+    const bruksenheter =
+      await matrikkelClient.findBruksenheterForVegadresseIKommune(
+        { adresse },
+        ctx()
+      );
+    const first = bruksenheter[0];
+    if (!first)
+      return res.status(404).json({ error: "Fant ingen bruksenheter" });
 
-    /* 1b) Fjern alt som ikke er sifre – kun tall til Matrikkelen */
-    const gnrDigits = onlyDigits(gnr);
-    const bnrDigits = onlyDigits(bnr);
-    if (!gnrDigits || !bnrDigits) {
-      res
-        .status(400)
-        .json({ error: "Ugyldig gnr/bnr i adressen – kun tall tillatt" });
-      return;
-    }
-    // Vi beholder digit-strengene kun for validering; konverterer til number når de skal sendes videre:
-    const gnrNum = Number(gnrDigits);
-    const bnrNum = Number(bnrDigits);
+    const { kommunenummer, gardsnummer, bruksnummer, seksjonsnummer } = first;
 
-    /* 2) Hent matrikkelenhets‐ID – gardsnummer/bruksnummer som NUMBERS */
-     const [matrikkelenhetsId] = await matrikkelClient.findMatrikkelenheter(
-         {
-           kommunenummer,
-           status: "BESTAENDE",
-           gardsnummer: pad5(gnrNum),  // NÅ: string → korrekt
-           bruksnummer: pad4(bnrNum),  // NÅ: string → korrekt
-         },
-      +   ctx()
-      + );
-    if (!matrikkelenhetsId) throw new Error("Ingen matrikkelenhet funnet");
+    /* 2) Matrikkelenhet‑ID */
+    const [matrikkelenhetsId] = await matrikkelClient.findMatrikkelenheter(
+      {
+        kommunenummer,
+        status: "ALLE",
+        gardsnummer,
+        bruksnummer,
+      },
+      ctx()
+    );
+    if (!matrikkelenhetsId)
+      throw new Error("Ingen matrikkelenhet funnet (gnr/bnr feil?)");
 
-    /* 3) Hent liste av bygg for matrikkelenheten */
+    /* 3) Bygg‑liste og punkt */
     const byggListe = await bygningClient.findByggForMatrikkelenhet(
       matrikkelenhetsId,
       ctx()
     );
     if (!byggListe.length)
-      throw new Error("Ingen bygg funnet i matrikkelenhet");
+      throw new Error("Ingen bygg funnet i matrikkelenheten");
 
-    let rp: { øst: number; nord: number } | null = null;
+    let øst32632: number | null = null;
+    let nord32632: number | null = null;
     let braSum = 0;
     let byggår: number | null = null;
     let isProtected = false;
 
-    /* 3a) Hent ByggInfo én om gangen */
     for (const { byggId } of byggListe) {
       const info = (await storeClient.getBygg(byggId, ctx())) as ByggInfo & {
-        representasjonspunkt?:
-          | { øst: number; nord: number }
-          | { x: number; y: number };
+        representasjonspunkt?: { øst: number; nord: number };
         harKulturminne?: boolean;
       };
-
       if (info.harKulturminne) isProtected = true;
 
-      const p: any = info.representasjonspunkt ?? (info as any).koordinat;
-      const øst25832 = p?.øst ?? p?.x;
-      const nord25832 = p?.nord ?? p?.y;
-      if (
-        !rp &&
-        typeof øst25832 === "number" &&
-        typeof nord25832 === "number"
-      ) {
-        const [øst32632, nord32632] = toPbeCrs(øst25832, nord25832);
-        rp = { øst: øst32632, nord: nord32632 };
+      if (!øst32632) {
+        const p = info.representasjonspunkt; // EPSG:25832
+        if (p) {
+          [øst32632, nord32632] = toPbeCrs(p.øst, p.nord);
+        }
       }
 
       if (typeof info.bra_m2 === "number") braSum += info.bra_m2;
       if (!byggår && typeof info.byggeår === "number") byggår = info.byggeår;
     }
 
-    /* 4) Hent BYGG_ID fra PBE via identify‐kall */
-    const pbeByggId = rp ? await fetchPbeByggId(rp.øst, rp.nord) : null;
+    /* 4) PBE BYGG_ID */
+    const pbeByggId =
+      øst32632 && nord32632 ? await fetchPbeByggId(øst32632, nord32632) : null;
 
-    /* 5) Polygon‐fallback – kun hvis vi ikke fikk pbeByggId */
-    let polygonWKT: string | null = null;
-    if (!pbeByggId) {
-      try {
-         polygonWKT = await matrikkelClient.getBuildingPolygonWKT(
-             {
-               kommunenummer,
-               gardsnummer: pad5(gnrNum),  // string → korrekt
-               bruksnummer: pad4(bnrNum),  // string → korrekt
-             },
-             ctx()
-           );
-      } catch {
-        // ignore: vi kan likevel bruke punkt‐fallback
-      }
-    }
+    /* 5) Energiattest */
+    const energi = await fetchEnergiattest(
+      kommunenummer,
+      gardsnummer,
+      bruksnummer,
+      seksjonsnummer
+    );
 
-    /* 6) Hent Enova‐energimerke – her sender vi numre */
-    const energi = await fetchEnergiattest(kommunenummer, gnrNum, bnrNum, snr);
-
-    /* 7) Kall mot solar‐service */
+    /* 6) Solar‑service */
     let solarQ = "";
-    if (pbeByggId) {
-      solarQ = `bygg_id=${pbeByggId}`;
-    } else if (polygonWKT) {
-      solarQ = `polygon=${encodeURIComponent(polygonWKT)}`;
-    } else if (rp) {
+    if (pbeByggId) solarQ = `bygg_id=${pbeByggId}`;
+    else if (øst32632 && nord32632) {
       const [lon, lat] = proj4("EPSG:32632", "EPSG:4326", [
-        rp.øst,
-        rp.nord,
+        øst32632,
+        nord32632,
       ]) as [number, number];
       solarQ = `lat=${lat}&lon=${lon}`;
     } else {
-      throw new Error("Manglet BYGG_ID, polygon og bygg‐punkt");
+      throw new Error("Manglet både BYGG_ID og koordinat");
     }
 
     const solarRes = (await (
       await fetch(`${SOLAR_URL}?${solarQ}`)
     ).json()) as unknown as SolarResponse;
 
-    const takAreal = solarRes.takflater.reduce((sum, t) => sum + t.area_m2, 0);
+    const takAreal = solarRes.takflater.reduce((s, t) => s + t.area_m2, 0);
 
-    /* 8) Bygg og returner JSON‐svar */
+    /* 7) Compose response */
     const result = {
+      adresse,
       kommunenummer,
-      gnr: gnrDigits, // vi kan vise dem som rene digit-strenger tilbake
-      bnr: bnrDigits,
-      snr,
+      gnr: gardsnummer,
+      bnr: bruksnummer,
+      snr: seksjonsnummer ?? null,
       matrikkelenhetsId,
       pbeByggId,
       byggår,

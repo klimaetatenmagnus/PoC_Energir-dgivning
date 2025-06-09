@@ -7,7 +7,7 @@ import useBuildingInfo from "./hooks/useBuildingInfo";
 /* ------------------------------------------------------------------ */
 /*  Konstanter                                                        */
 /* ------------------------------------------------------------------ */
-const DEFAULT_ADDRESS = "Kapellveien 156C";
+const DEFAULT_ADDRESS = "Kapellveien 156C, 0493 Oslo";
 
 /* ------------------------------------------------------------------ */
 /*  App – starter i diagnose-modus                                    */
