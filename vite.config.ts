@@ -16,6 +16,7 @@ export default defineConfig({
       "react-dom": resolve(root, "node_modules/react-dom"),
     },
     /** ⚑  dedupe hindrer ny kopi i optimize-cache */
+
     dedupe: ["react", "react-dom"],
   },
 
