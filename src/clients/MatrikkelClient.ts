@@ -174,28 +174,7 @@ export class MatrikkelClient {
     if (!gnr || !bnr) return null;
     return { gnr, bnr, seksjonsnummere };
   }
-  private renderFindMatrikkelenheterXml(
-    s: MatrikkelehetsøkModel,
-    ctx: MatrikkelContext
-  ): string {
-    const kommune = String(s.kommunenummer).padStart(4, "0");
 
-    return `<?xml version="1.0" encoding="UTF-8"?>
-  <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-                    xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
-                    xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
-    <soapenv:Header/>
-    <soapenv:Body>
-      <mat:findMatrikkelenheter>
-        <mat:kommunenummer>${kommune}</mat:kommunenummer>
-        <mat:status>${s.status}</mat:status>
-        <mat:gardsnummer>${s.gardsnummer}</mat:gardsnummer>
-        <mat:bruksnummer>${s.bruksnummer}</mat:bruksnummer>
-  ${this.renderContext(ctx)}
-      </mat:findMatrikkelenheter>
-    </soapenv:Body>
-  </soapenv:Envelope>`;
-  }
   // -------------------------------------------------------------------
   // ---------------- Matrikkelenhet‑oppslag ----------------------------
   // -------------------------------------------------------------------
@@ -272,8 +251,49 @@ export class MatrikkelClient {
 </soapenv:Envelope>`;
   }
 
+  private renderFindMatrikkelenheterXml(
+    s: MatrikkelehetsøkModel,
+    ctx: MatrikkelContext
+  ): string {
+    const kommune = String(s.kommunenummer).padStart(4, "0");
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+  <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                    xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
+                    xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet"
+                    xmlns:ctx="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+    <soapenv:Header/>
+    <soapenv:Body>
+      <mat:findMatrikkelenheter>
+        <mat:matrikkelenhetsokModel>
+          <dom:kommunenummer>${kommune}</dom:kommunenummer>
+          <dom:gardsnummer>${s.gardsnummer}</dom:gardsnummer>
+          <dom:bruksnummer>${s.bruksnummer}</dom:bruksnummer>
+        </mat:matrikkelenhetsokModel>
+  ${this.renderContext(ctx)}
+      </mat:findMatrikkelenheter>
+    </soapenv:Body>
+  </soapenv:Envelope>`;
+  }
+
   /** Felles kontekst‑fragment som kan gjenbrukes i flere SOAP‑kall */
   private renderContext(ctx: MatrikkelContext): string {
-    return `      <mat:matrikkelContext>\n        <dom:locale>${ctx.locale}</dom:locale>\n        <dom:brukOriginaleKoordinater>${ctx.brukOriginaleKoordinater}</dom:brukOriginaleKoordinater>\n        <dom:koordinatsystemKodeId><dom:value>${ctx.koordinatsystemKodeId}</dom:value></dom:koordinatsystemKodeId>\n        <dom:systemVersion>${ctx.systemVersion}</dom:systemVersion>\n        <dom:klientIdentifikasjon>${ctx.klientIdentifikasjon}</dom:klientIdentifikasjon>\n        <dom:snapshotVersion><dom:timestamp>${ctx.snapshotVersion}</dom:timestamp></dom:snapshotVersion>\n      </mat:matrikkelContext>`;
+    return `
+          <mat:matrikkelContext>
+            <ctx:locale>${ctx.locale}</ctx:locale>
+  
+            <ctx:brukOriginaleKoordinater>${ctx.brukOriginaleKoordinater}</ctx:brukOriginaleKoordinater>
+  
+            <ctx:koordinatsystemKodeId>
+              <ctx:value>${ctx.koordinatsystemKodeId}</ctx:value>
+            </ctx:koordinatsystemKodeId>
+  
+            <ctx:systemVersion>${ctx.systemVersion}</ctx:systemVersion>
+            <ctx:klientIdentifikasjon>${ctx.klientIdentifikasjon}</ctx:klientIdentifikasjon>
+  
+            <ctx:snapshotVersion>
+              <ctx:timestamp>${ctx.snapshotVersion}</ctx:timestamp>
+            </ctx:snapshotVersion>
+          </mat:matrikkelContext>`;
   }
 }

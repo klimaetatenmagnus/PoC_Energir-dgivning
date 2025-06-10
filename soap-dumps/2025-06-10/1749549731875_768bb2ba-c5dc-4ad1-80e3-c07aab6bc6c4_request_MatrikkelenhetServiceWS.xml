@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                    xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
+                    xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet"
+                    xmlns:ctx="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+    <soapenv:Header/>
+    <soapenv:Body>
+      <mat:findMatrikkelenheter>
+        <mat:matrikkelenhetsokModel>
+          <dom:kommunenummer>0301</dom:kommunenummer>
+          <dom:gardsnummer>73</dom:gardsnummer>
+          <dom:bruksnummer>704</dom:bruksnummer>
+        </mat:matrikkelenhetsokModel>
+  
+    <mat:matrikkelContext>
+    <ctx:locale>no_NO_B</ctx:locale>
+            <ctx:brukOriginaleKoordinater>false</ctx:brukOriginaleKoordinater>
+            <ctx:koordinatsystemKodeId>25833</ctx:koordinatsystemKodeId>
+            <ctx:systemVersion>trunk</ctx:systemVersion>
+            <ctx:klientIdentifikasjon>bis</ctx:klientIdentifikasjon>
+            <ctx:snapshotVersion>9999-01-01T00:00:00+01:00</ctx:snapshotVersion>
+          </mat:context>
+      </mat:findMatrikkelenheter>
+    </soapenv:Body>
+  </soapenv:Envelope>

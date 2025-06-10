@@ -1,0 +1,2 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><soap:Fault><faultcode>soap:Client</faultcode><faultstring>Unmarshalling Error: Unexpected close tag &lt;/ctx:brukOriginaleKoordinato>; expected &lt;/ctx:brukOriginaleKoordinater>.
+ at [row,col {unknown-source}]: [17,76] </faultstring></soap:Fault></soap:Body></soap:Envelope>

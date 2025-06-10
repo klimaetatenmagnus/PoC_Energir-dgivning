@@ -15,9 +15,9 @@ import {
   MatrikkelClient,
   MatrikkelContext,
   MatrikkelehetsøkModel,
-} from "../../src/clients/MatrikkelClient";
-import { BygningClient } from "../../src/clients/BygningClient";
-import { StoreClient } from "../../src/clients/StoreClient";
+} from "../../src/clients/MatrikkelClient.ts";
+import { BygningClient } from "../../src/clients/BygningClient.ts";
+import { StoreClient } from "../../src/clients/StoreClient.ts";
 
 // ──────────────────────── Lokale typer ────────────────────────────────
 interface SolarTakflate {
