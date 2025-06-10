@@ -1,1 +1,0 @@
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><soap:Fault><faultcode>soap:Client</faultcode><faultstring>Unmarshalling Error: cvc-complex-type.2.3: Element 'ctx:snapshotVersion' cannot have character [children], because the type's content type is element-only. </faultstring></soap:Fault></soap:Body></soap:Envelope>

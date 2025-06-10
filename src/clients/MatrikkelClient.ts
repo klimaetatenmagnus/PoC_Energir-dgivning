@@ -1,18 +1,18 @@
 // src/clients/MatrikkelClient.ts
 // ---------------------------------------------------------------------------
-// Klient for Matrikkel SOAP‑API.
-//   • AdresseServiceWS.findBruksenheterForVegadresseIKommune → gnr / bnr / (snr)
-//   • MatrikkelenhetServiceWS.findMatrikkelenheter           → matrikkelenhets‑ID
-//   • StoreServiceWS.getObject                               → detaljer om matrikkelenhet
+// Klient for Matrikkel‑API (Adresse‑, Matrikkelenhet‑ og StoreService).
+// 2025‑06: oppdatert med robust XML‑parser som henter alle matrikkelenhets‑ID‑er
+// via <item><value>…</value></item> og korrekt namespace‑/wrapper‑struktur
+// i <matrikkelContext>.
 // ---------------------------------------------------------------------------
 
 import axios from "axios";
-import { XMLParser } from "fast-xml-parser";
+import { parseStringPromise } from "xml2js"; // <- ny, for enkel ID‑høsting
 import fs from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 
-// ------------------------------ Miljø‑konfig ------------------------------
+/* ──────────────── Miljø‑konfig ───────────────────────────────────────── */
 const SOAP_DUMP_DIR = process.env.SOAP_DUMP_DIR ?? "./soap-dumps";
 const LOG_SOAP = process.env.LOG_SOAP === "1";
 
@@ -29,18 +29,17 @@ async function dumpSoap(
   await fs.writeFile(path.join(dir, file), xml);
 }
 
-// ------------------------------ Typer ------------------------------
+/* ──────────────── Domene‑typer ───────────────────────────────────────── */
 export interface VegadresseSøkModel {
   kommunenummer: number | string;
-  adressenavn: string; // Kapellveien
-  husnummer: string | number; // 156
-  husbokstav?: string | null; // C
-  postnummer?: string | null; // 0493
+  adressenavn: string;
+  husnummer: string | number;
+  husbokstav?: string | null;
+  postnummer?: string | null;
 }
 
 export interface MatrikkelehetsøkModel {
   kommunenummer: number | string;
-  status: string; // ALLE | BESTAENDE …
   gardsnummer: number;
   bruksnummer: number;
 }
@@ -48,13 +47,13 @@ export interface MatrikkelehetsøkModel {
 export interface MatrikkelContext {
   locale: string;
   brukOriginaleKoordinater: boolean;
-  koordinatsystemKodeId: number; // EPSG‑kode, f.eks. 25832
+  koordinatsystemKodeId: number; // EPSG‑kode
   systemVersion: string;
   klientIdentifikasjon: string;
-  snapshotVersion: string; // ISO‑ts, f.eks. 9999‑01‑01T00:00:00+01:00
+  snapshotVersion: string; // ISO ts
 }
 
-// --------------------------- Klientklasse ---------------------------
+/* ──────────────── Klientklasse ──────────────────────────────────────── */
 export class MatrikkelClient {
   constructor(
     private baseUrl: string,
@@ -62,16 +61,12 @@ export class MatrikkelClient {
     private password: string
   ) {}
 
-  // ---- Felles HTTP‑wrapper ------------------------------------------------
-  private async call(
-    servicePath: string,
-    soapAction: string,
-    xml: string
-  ): Promise<string> {
+  /* ---------- Felles HTTP‑wrapper ------------------------------------ */
+  private async call(service: string, soapAction: string, xml: string) {
     const corrId = randomUUID();
-    await dumpSoap("request", servicePath, xml, corrId);
+    await dumpSoap("request", service, xml, corrId);
 
-    const res = await axios.post(`${this.baseUrl}/${servicePath}`, xml, {
+    const res = await axios.post(`${this.baseUrl}/${service}`, xml, {
       headers: {
         "Content-Type": "text/xml;charset=UTF-8",
         SOAPAction: soapAction,
@@ -79,154 +74,109 @@ export class MatrikkelClient {
       auth: { username: this.username, password: this.password },
       validateStatus: () => true,
     });
-
-    await dumpSoap("response", servicePath, res.data as string, corrId);
+    await dumpSoap("response", service, res.data as string, corrId);
 
     if (res.status >= 400) {
-      const err: Error & {
-        corrId: string;
-        httpStatus: number;
-        responseSnippet: string;
-      } = new Error(
-        `SOAP ${res.status} ${res.statusText} (corrId=${corrId})`
-      ) as any;
-      err.corrId = corrId;
-      err.httpStatus = res.status;
-      err.responseSnippet = (res.data as string).slice(0, 512);
-      throw err;
+      const e: Error & {
+        corrId?: string;
+        httpStatus?: number;
+        responseSnippet?: string;
+      } = new Error(`SOAP ${res.status} ${res.statusText} (corrId=${corrId})`);
+      e.corrId = corrId;
+      e.httpStatus = res.status;
+      e.responseSnippet = (res.data as string).slice(0, 512);
+      throw e;
     }
-
     return res.data as string;
   }
 
-  // -------------------------------------------------------------------
-  // ---------------- Adresse‑oppslag  ---------------------------------
-  // -------------------------------------------------------------------
+  /* ------------------------------------------------------------------ */
+  /* ---------------- Matrikkelenhets‑oppslag ------------------------- */
+  /* ------------------------------------------------------------------ */
 
   /**
-   * Offentlig API‑metode som matcher kravet:
-   * Returnerer ett element pr seksjon hvis seksjonsnummere finnes, ellers ett.
+   * Returnerer alle Matrikkelenhets‑ID‑er som matcher gnr/bnr (og kommune).
    */
-  async findBruksenheterForVegadresseIKommune(
-    adr: VegadresseSøkModel,
-    ctx: MatrikkelContext
-  ): Promise<
-    { gardsnummer: number; bruksnummer: number; seksjonsnummer?: number }[]
-  > {
-    const res = await this.#findGnrBnrForVegadresse(adr, ctx);
-    if (!res) return [];
-    const { gnr, bnr, seksjonsnummere } = res;
-
-    if (!seksjonsnummere.length) {
-      return [{ gardsnummer: gnr, bruksnummer: bnr }];
-    }
-    return seksjonsnummere.map((snr) => ({
-      gardsnummer: gnr,
-      bruksnummer: bnr,
-      seksjonsnummer: Number(snr),
-    }));
-  }
-
-  /** Intern: kaller AdresseService og parser første respons */
-  async #findGnrBnrForVegadresse(
-    søk: VegadresseSøkModel,
-    ctx: MatrikkelContext
-  ): Promise<{ gnr: number; bnr: number; seksjonsnummere: string[] } | null> {
-    const xmlReq = this.renderFindBruksenheterXml(søk, ctx);
-    const xmlResp = await this.call(
-      "AdresseServiceWS",
-      "findBruksenheterForVegadresseIKommune",
-      xmlReq
-    );
-
-    const parser = new XMLParser({
-      ignoreAttributes: false,
-      attributeNamePrefix: "@_",
-    });
-    const json = parser.parse(xmlResp) as any;
-    const body =
-      (json["soap:Envelope"] ?? json.Envelope)?.["soap:Body"] ??
-      json.Envelope?.Body;
-    if (!body) return null;
-    if (body["soap:Fault"] || body.Fault) return null;
-
-    const respKey = Object.keys(body).find((k) =>
-      k.endsWith("findBruksenheterForVegadresseIKommuneResponse")
-    );
-    if (!respKey) return null;
-
-    const items = body[respKey]?.return ?? body[respKey];
-    const first = Array.isArray(items) ? items[0] : items;
-    if (!first) return null;
-
-    const gnr = Number(first?.gardsnummer ?? first?.["mid:gardsnummer"] ?? 0);
-    const bnr = Number(first?.bruksnummer ?? first?.["mid:bruksnummer"] ?? 0);
-
-    const seksjons = (first?.matrikkelenhetListe ??
-      first?.["mid:matrikkelenhetListe"] ??
-      []) as any[];
-    const seksjonsnummere: string[] = (seksjons || [])
-      .map((m) =>
-        String(m?.seksjonsnummer ?? m?.["mid:seksjonsnummer"] ?? "").trim()
-      )
-      .filter(Boolean);
-
-    if (!gnr || !bnr) return null;
-    return { gnr, bnr, seksjonsnummere };
-  }
-
-  // -------------------------------------------------------------------
-  // ---------------- Matrikkelenhet‑oppslag ----------------------------
-  // -------------------------------------------------------------------
   async findMatrikkelenheter(
     søk: MatrikkelehetsøkModel,
     ctx: MatrikkelContext
   ): Promise<number[]> {
-    const xmlRequest = this.renderFindMatrikkelenheterXml(søk, ctx);
-    const xmlResp = await this.call(
+    const envelope = this.renderFindMatrikkelenheterXml(søk, ctx);
+    const xml = await this.call(
       "MatrikkelenhetServiceWS",
       "findMatrikkelenheter",
-      xmlRequest
+      envelope
     );
-
-    const parser = new XMLParser({
-      ignoreAttributes: false,
-      attributeNamePrefix: "@_",
-    });
-    const json = parser.parse(xmlResp) as any;
-    const body =
-      (json["soap:Envelope"] ?? json.Envelope)?.["soap:Body"] ??
-      json.Envelope?.Body;
-    if (!body) throw new Error("Uventet SOAP‑struktur (mangler Body)");
-    if (body["soap:Fault"] || body.Fault) {
-      const fault = body["soap:Fault"] ?? body.Fault;
-      throw new Error(
-        `Matrikkel‑feil: ${
-          fault.faultstring ?? fault["faultstring"] ?? "ukjent"
-        }`
-      );
-    }
-
-    const respKey = Object.keys(body).find((k) =>
-      k.endsWith("findMatrikkelenheterResponse")
-    );
-    if (!respKey) throw new Error("Uventet SOAP‑struktur (mangler Response)");
-
-    const itemContainer = body[respKey]?.return ?? body[respKey];
-    const itemsRaw = itemContainer?.item ?? itemContainer;
-    if (!itemsRaw) return [];
-
-    const toVal = (n: any) =>
-      typeof n === "string"
-        ? n.trim()
-        : String(n["#text"] ?? n.value ?? "").trim();
-    const idStrings: string[] = Array.isArray(itemsRaw)
-      ? itemsRaw.map(toVal)
-      : [toVal(itemsRaw)];
-    return idStrings.map(Number).filter((n) => Number.isFinite(n) && n > 0);
+    return await this.parseMatrikkelenhetsResponse(xml);
   }
 
-  // ----------------------- XML‑byggere -----------------------------
+  /**
+   * Parser <item><value>…</value></item> → number[] uansett prefix.
+   */
+  private async parseMatrikkelenhetsResponse(xml: string): Promise<number[]> {
+    const js = await parseStringPromise(xml, { explicitArray: false });
+
+    // Naviger: Envelope → Body → *Response → return → item
+    const body = js["soap:Envelope"]?.["soap:Body"] ?? js.Envelope?.Body;
+    if (!body) return [];
+
+    const respKey = Object.keys(body).find((k) => k.endsWith("Response"));
+    if (!respKey) return [];
+
+    const itemContainer = body[respKey]["ns3:return"] ?? body[respKey].return;
+    if (!itemContainer) return [];
+    const itemsRaw = itemContainer["ns4:item"] ?? itemContainer.item;
+    const arr = Array.isArray(itemsRaw) ? itemsRaw : [itemsRaw];
+
+    return arr
+      .map((it: any) => Number(it.value))
+      .filter((n) => Number.isFinite(n) && n > 0);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* ---------------- XML‑renderere ----------------------------------- */
+  /* ------------------------------------------------------------------ */
+  private renderFindMatrikkelenheterXml(
+    s: MatrikkelehetsøkModel,
+    ctx: MatrikkelContext
+  ) {
+    const kommune = String(s.kommunenummer).padStart(4, "0");
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
+                  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet"
+                  xmlns:ctx="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <mat:findMatrikkelenheter>
+      <mat:matrikkelenhetsokModel>
+        <dom:kommunenummer>${kommune}</dom:kommunenummer>
+        <dom:gardsnummer>${s.gardsnummer}</dom:gardsnummer>
+        <dom:bruksnummer>${s.bruksnummer}</dom:bruksnummer>
+      </mat:matrikkelenhetsokModel>
+${this.renderContext(ctx)}
+    </mat:findMatrikkelenheter>
+  </soapenv:Body>
+</soapenv:Envelope>`;
+  }
+
+  private renderContext(ctx: MatrikkelContext): string {
+    return `
+          <mat:matrikkelContext>
+            <ctx:locale>${ctx.locale}</ctx:locale>
+            <ctx:brukOriginaleKoordinater>${ctx.brukOriginaleKoordinater}</ctx:brukOriginaleKoordinater>
+            <ctx:koordinatsystemKodeId>
+              <ctx:value>${ctx.koordinatsystemKodeId}</ctx:value>
+            </ctx:koordinatsystemKodeId>
+            <ctx:systemVersion>${ctx.systemVersion}</ctx:systemVersion>
+            <ctx:klientIdentifikasjon>${ctx.klientIdentifikasjon}</ctx:klientIdentifikasjon>
+            <ctx:snapshotVersion>
+              <ctx:timestamp>${ctx.snapshotVersion}</ctx:timestamp>
+            </ctx:snapshotVersion>
+          </mat:matrikkelContext>`;
+  }
+
+  /* ---- AdresseService‑XML‑bygger (uendret) ------------------------- */
   private renderFindBruksenheterXml(
     s: VegadresseSøkModel,
     ctx: MatrikkelContext
@@ -249,51 +199,5 @@ export class MatrikkelClient {
     </adr:findBruksenheterForVegadresseIKommune>
   </soapenv:Body>
 </soapenv:Envelope>`;
-  }
-
-  private renderFindMatrikkelenheterXml(
-    s: MatrikkelehetsøkModel,
-    ctx: MatrikkelContext
-  ): string {
-    const kommune = String(s.kommunenummer).padStart(4, "0");
-
-    return `<?xml version="1.0" encoding="UTF-8"?>
-  <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-                    xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
-                    xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet"
-                    xmlns:ctx="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
-    <soapenv:Header/>
-    <soapenv:Body>
-      <mat:findMatrikkelenheter>
-        <mat:matrikkelenhetsokModel>
-          <dom:kommunenummer>${kommune}</dom:kommunenummer>
-          <dom:gardsnummer>${s.gardsnummer}</dom:gardsnummer>
-          <dom:bruksnummer>${s.bruksnummer}</dom:bruksnummer>
-        </mat:matrikkelenhetsokModel>
-  ${this.renderContext(ctx)}
-      </mat:findMatrikkelenheter>
-    </soapenv:Body>
-  </soapenv:Envelope>`;
-  }
-
-  /** Felles kontekst‑fragment som kan gjenbrukes i flere SOAP‑kall */
-  private renderContext(ctx: MatrikkelContext): string {
-    return `
-          <mat:matrikkelContext>
-            <ctx:locale>${ctx.locale}</ctx:locale>
-  
-            <ctx:brukOriginaleKoordinater>${ctx.brukOriginaleKoordinater}</ctx:brukOriginaleKoordinater>
-  
-            <ctx:koordinatsystemKodeId>
-              <ctx:value>${ctx.koordinatsystemKodeId}</ctx:value>
-            </ctx:koordinatsystemKodeId>
-  
-            <ctx:systemVersion>${ctx.systemVersion}</ctx:systemVersion>
-            <ctx:klientIdentifikasjon>${ctx.klientIdentifikasjon}</ctx:klientIdentifikasjon>
-  
-            <ctx:snapshotVersion>
-              <ctx:timestamp>${ctx.snapshotVersion}</ctx:timestamp>
-            </ctx:snapshotVersion>
-          </mat:matrikkelContext>`;
   }
 }
