@@ -174,7 +174,28 @@ export class MatrikkelClient {
     if (!gnr || !bnr) return null;
     return { gnr, bnr, seksjonsnummere };
   }
+  private renderFindMatrikkelenheterXml(
+    s: MatrikkelehetsøkModel,
+    ctx: MatrikkelContext
+  ): string {
+    const kommune = String(s.kommunenummer).padStart(4, "0");
 
+    return `<?xml version="1.0" encoding="UTF-8"?>
+  <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                    xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
+                    xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+    <soapenv:Header/>
+    <soapenv:Body>
+      <mat:findMatrikkelenheter>
+        <mat:kommunenummer>${kommune}</mat:kommunenummer>
+        <mat:status>${s.status}</mat:status>
+        <mat:gardsnummer>${s.gardsnummer}</mat:gardsnummer>
+        <mat:bruksnummer>${s.bruksnummer}</mat:bruksnummer>
+  ${this.renderContext(ctx)}
+      </mat:findMatrikkelenheter>
+    </soapenv:Body>
+  </soapenv:Envelope>`;
+  }
   // -------------------------------------------------------------------
   // ---------------- Matrikkelenhet‑oppslag ----------------------------
   // -------------------------------------------------------------------
