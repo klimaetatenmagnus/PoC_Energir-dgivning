@@ -155,7 +155,6 @@ app.get(
       // 2) Matrikkelenhets-ID
       const søk: MatrikkelehetsøkModel = {
         kommunenummer,
-        status: "AKTIV",
         gardsnummer: gnr,
         bruksnummer: bnr,
       };
