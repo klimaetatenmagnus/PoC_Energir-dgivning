@@ -1,11 +1,12 @@
 // services/building-info-service/index.ts
 // ---------------------------------------------------------------------------
-//  REST-endepunkt som kobler Adresse → Matrikkel → Bygning → Solkart → Enova
+//  REST-tjeneste som kobler Adresse → Matrikkel → Bygning → Solkart → Enova
+//  Oppdatert 2025-06-10: fjernet overload-feil på app.get-handler (linje 193)
 // ---------------------------------------------------------------------------
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import "dotenv/config";
-import express, { Request, Response, NextFunction } from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import NodeCache from "node-cache";
 import fetch from "node-fetch";
@@ -14,12 +15,11 @@ import proj4 from "proj4";
 import {
   MatrikkelClient,
   MatrikkelContext,
-  MatrikkelehetsøkModel,
 } from "../../src/clients/MatrikkelClient.ts";
 import { BygningClient } from "../../src/clients/BygningClient.ts";
 import { StoreClient } from "../../src/clients/StoreClient.ts";
 
-// ──────────────────────── Lokale typer ────────────────────────────────
+/*────────────────────────  Lokale typer  ────────────────────────*/
 interface SolarTakflate {
   tak_id: number;
   bygg_id: number | null;
@@ -42,7 +42,23 @@ interface EnovaEnergiattest {
   };
 }
 
-// ──────────────────────── SRID-definisjoner ───────────────────────────
+type SeksjonInfo = { id: number; snr: number; byggNr: string };
+
+/*────────────────────  Helper-funksjoner  ──────────────────────*/
+function snrFraAdresse(bokstav?: string): number | undefined {
+  if (!bokstav) return undefined;
+  const c = bokstav.trim().toUpperCase();
+  return c >= "A" && c <= "Z" ? c.charCodeAt(0) - 64 : undefined;
+}
+
+function velgSeksjon(
+  seksjoner: SeksjonInfo[],
+  ønsketSnr?: number
+): SeksjonInfo {
+  return seksjoner.find((s) => s.snr === ønsketSnr) ?? seksjoner[0];
+}
+
+/*────────────────────  SRID-definisjoner  ──────────────────────*/
 proj4.defs("EPSG:25833", "+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs");
 proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
 proj4.defs("EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs");
@@ -50,7 +66,7 @@ proj4.defs("EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs");
 const toPbeCrs = (e33: number, n33: number): [number, number] =>
   proj4("EPSG:25833", "EPSG:32632", [e33, n33]) as [number, number];
 
-// ──────────────────────── Miljøvariabler ──────────────────────────────
+/*────────────────────  Miljøvariabler  ─────────────────────────*/
 const {
   MATRIKKEL_API_BASE_URL_TEST:
     MATRIKKEL_BASE = "https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1",
@@ -67,7 +83,7 @@ if (!MATRIKKEL_USER || !MATRIKKEL_PASS) {
   throw new Error("Mangler Matrikkel-bruker/passord i .env");
 }
 
-// ──────────────────────── Klient-instanser ────────────────────────────
+/*────────────────────  Klient-instanser  ───────────────────────*/
 const matrikkelClient = new MatrikkelClient(
   MATRIKKEL_BASE,
   MATRIKKEL_USER,
@@ -84,7 +100,7 @@ const storeClient = new StoreClient(
   MATRIKKEL_PASS
 );
 
-// ──────────────────────── Cache & helpers ─────────────────────────────
+/*────────────────────  Cache & helpers  ─────────────────────────*/
 const cache = new NodeCache({ stdTTL: 3_600, checkperiod: 600 });
 
 const ctx = (): MatrikkelContext => ({
@@ -96,151 +112,148 @@ const ctx = (): MatrikkelContext => ({
   snapshotVersion: MATRIKKEL_SNAPSHOT_VERSION,
 });
 
+/** Kartverket-helper → kommunenummer, gnr, bnr, bokstav */
 async function lookupAdresse(adresse: string) {
   const cached = cache.get<any>(`adr:${adresse}`);
   if (cached) return cached;
 
   const r = await fetch(
-    `https://ws.geonorge.no/adresser/v1/sok?sok=${encodeURIComponent(
-      adresse
-    )}&treffPerSide=1&fuzzy=true`
+    "https://ws.geonorge.no/adresser/v1/sok?sok=" +
+      encodeURIComponent(adresse) +
+      "&treffPerSide=1&fuzzy=true",
+    { headers: { "User-Agent": "Energiverktøy/1.0" } }
   );
-  const data: any = await r.json();
-  if (!data.adresser?.length)
-    throw new Error("Adresse ikke funnet i Kartverket");
-  const a = data.adresser[0];
-  const res = {
-    kommunenummer: Number(a.kommunenummer ?? a.kommunekode),
-    gnr: Number(a.matrikkelnummer?.gaardsnummer ?? a.gardsnummer),
-    bnr: Number(a.matrikkelnummer?.bruksnummer ?? a.bruksnummer),
-    snr: a.matrikkelnummer?.seksjonsnummer
-      ? Number(a.matrikkelnummer.seksjonsnummer)
-      : undefined,
-  } as const;
-  cache.set(`adr:${adresse}`, res);
-  return res;
+  const j = await r.json();
+  if (!j.adresser?.length) throw new Error("Kartverket fant ikke adresse");
+
+  const a = j.adresser[0];
+  const out = {
+    kommunenummer: +(a.kommunenummer ?? a.kommunekode ?? 0),
+    gnr: +(a.matrikkelnummer?.gaardsnummer ?? a.gardsnummer ?? 0),
+    bnr: +(a.matrikkelnummer?.bruksnummer ?? a.bruksnummer ?? 0),
+    bokstav: a.adressekode?.bokstav ?? a.bokstav ?? undefined,
+  };
+  cache.set(`adr:${adresse}`, out);
+  return out;
 }
 
-function composeMatrikkelNummer(
-  kommune: number,
-  gnr: number,
-  bnr: number,
-  snr?: number
-) {
-  const k = String(kommune).padStart(4, "0");
-  const g = String(gnr).padStart(5, "0");
-  const b = String(bnr).padStart(4, "0");
-  const s = snr != null ? String(snr) : "0";
-  return `${k}-${g}/${b}/0/${s}`;
+/** 3-trinns fallback mot Enova API */
+async function fetchEnergiattest({
+  kommunenummer,
+  gnr,
+  bnr,
+  snr,
+  byggNr,
+}: {
+  kommunenummer: number;
+  gnr: number;
+  bnr: number;
+  snr?: number;
+  byggNr?: string;
+}) {
+  const payload: Record<string, any> = { kommunenummer };
+
+  if (byggNr) payload.bygningsnummer = byggNr;
+  else {
+    payload.gardsnummer = String(gnr);
+    payload.bruksnummer = String(bnr);
+    if (snr) payload.seksjonsnummer = String(snr);
+  }
+
+  const r = await fetch(
+    "https://api.data.enova.no/ems/offentlige-data/v1/Energiattest",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "Energiverktøy/1.0",
+        "x-api-key": ENOVA_API_KEY,
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!r.ok) return null;
+  const list = await r.json();
+  return Array.isArray(list) && list[0] ? (list[0] as EnovaEnergiattest) : null;
 }
 
-// ──────────────────────── Express-app ─────────────────────────────────
+/*────────────────────  Express-app  ────────────────────────────*/
 const app = express();
 app.use(cors());
 
-// ---------- HOVEDROUTE -------------------------------------------------
-app.get(
-  "/lookup",
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const adresse = String(req.query.adresse ?? "").trim();
-      if (!adresse) {
-        res.status(400).json({ error: "adresse mangler" });
-        return;
-      }
-
-      // 1) Adresse → grunn­nummer
-      const { kommunenummer, gnr, bnr, snr } = await lookupAdresse(adresse);
-
-      // 2) Matrikkelenhets-ID
-      const søk: MatrikkelehetsøkModel = {
-        kommunenummer,
-        gardsnummer: gnr,
-        bruksnummer: bnr,
-      };
-      const [matrikkelenhetsId] = await matrikkelClient.findMatrikkelenheter(
-        søk,
-        ctx()
-      );
-      if (!matrikkelenhetsId) {
-        res.status(404).json({ error: "Ingen matrikkelenhet funnet" });
-        return;
-      }
-
-      // 3) Byggliste
-      const byggListe = await bygningClient.findByggForMatrikkelenhet(
-        matrikkelenhetsId,
-        ctx()
-      );
-      if (!byggListe.length) {
-        res.status(404).json({ error: "Matrikkelenheten har ingen bygg" });
-        return;
-      }
-      const byggId = byggListe[0].byggId;
-
-      // 4) StoreService
-      const byggInfo = await storeClient.getBygg(byggId, ctx());
-
-      // 5) Koordinat → PBE XY
-      let pbeXY: [number, number] | null = null;
-      if (byggInfo.koordinat) {
-        pbeXY = toPbeCrs(byggInfo.koordinat.øst, byggInfo.koordinat.nord);
-      }
-
-      // 6) Solar-service
-      let solar: SolarResponse | null = null;
-      try {
-        solar = (await fetch(
-          `${SOLAR_SERVICE_URL}/solinnstraling?bygg_id=${byggId}`
-        ).then((r) => r.json())) as SolarResponse;
-      } catch {
-        if (pbeXY) {
-          const [x, y] = pbeXY;
-          const [lon, lat] = proj4("EPSG:32632", "EPSG:4326", [x, y]);
-          solar = (await fetch(
-            `${SOLAR_SERVICE_URL}/solinnstraling?lat=${lat}&lon=${lon}`
-          ).then((r) => r.json())) as SolarResponse;
-        }
-      }
-
-      // 7) Enova energiattest
-      let energiattest: EnovaEnergiattest | null = null;
-      if (ENOVA_API_KEY) {
-        try {
-          const matNr = composeMatrikkelNummer(kommunenummer, gnr, bnr, snr);
-          energiattest = (await fetch(
-            `https://www.enova.no/api/energiattest/${matNr}?key=${ENOVA_API_KEY}`
-          ).then((r) => (r.ok ? r.json() : null))) as EnovaEnergiattest | null;
-        } catch {
-          // ignorer feil
-        }
-      }
-
-      res.json({
-        adresse,
-        kommunenummer,
-        gnr,
-        bnr,
-        snr: snr ?? null,
-        matrikkelenhetsId,
-        byggId,
-        bygg: byggInfo,
-        solar,
-        energiattest,
-      });
-    } catch (err) {
-      next(err as Error);
-    }
+/**
+ * GET /lookup?adresse=...
+ * Full flyt med seksjonsvalg → byggdata → (solkart / energiattest)
+ */
+app.get("/lookup", async (req: Request, res: Response) => {
+  const adresseParam = req.query.adresse;
+  if (typeof adresseParam !== "string") {
+    res.status(400).json({ error: "Mangler adresse" });
+    return;
   }
-);
 
-// ---------- Error-middleware -----------------------------------------
-app.use((err: any, _req: Request, res: Response, _next: NextFunction): void => {
-  console.error("[bis]", err);
-  res.status(500).json({ error: err?.message ?? String(err) });
+  try {
+    /* 1) adresse → gnr/bnr + bokstav */
+    const adr = await lookupAdresse(adresseParam);
+
+    /* 2) alle matrikkelenhets-ID-er */
+    const ids: number[] = await matrikkelClient.findMatrikkelenheter(
+      {
+        kommunenummer: adr.kommunenummer,
+        gardsnummer: adr.gnr,
+        bruksnummer: adr.bnr,
+      },
+      ctx()
+    );
+    if (!ids.length)
+      throw new Error(`Fant ingen matrikkelenheter for ${adresseParam}`);
+
+    /* 3) slå opp hver ID parallelt */
+    const seksjoner: SeksjonInfo[] = await Promise.all(
+      ids.map(async (id) => {
+        const m = await matrikkelClient.getMatrikkelenhet(id, ctx());
+        return {
+          id,
+          snr: Number(m.seksjonsnummer ?? 0),
+          byggNr: m.bygningsnummer,
+        };
+      })
+    );
+
+    /* 4) velg korrekt seksjon */
+    const snrWanted = snrFraAdresse(adr.bokstav);
+    const valgt = velgSeksjon(seksjoner, snrWanted);
+    console.log("Valgt ➜", valgt); // mid-dev logging
+
+    /* 5) byggdata – StoreClient forventer number */
+    const bygg = await storeClient.getBygg(Number(valgt.byggNr), ctx());
+
+    /* 6) energiattest */
+    const energiattest = await fetchEnergiattest({
+      kommunenummer: adr.kommunenummer,
+      gnr: adr.gnr,
+      bnr: adr.bnr,
+      snr: valgt.snr,
+      byggNr: valgt.byggNr,
+    });
+
+    res.json({
+      adresse: adresseParam,
+      gnr: adr.gnr,
+      bnr: adr.bnr,
+      snr: valgt.snr || null,
+      bygningsnummer: valgt.byggNr,
+      bygg,
+      energiattest,
+      // solar-data kommer i neste iterasjon
+    });
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ error: err?.message || "Ukjent feil" });
+  }
 });
 
-// ---------- Start server ---------------------------------------------
-app.listen(Number(PORT), () =>
-  console.log(`building-info-service ▶ http://localhost:${PORT}`)
+app.listen(+PORT, () =>
+  console.log(`building-info-service kjører på http://localhost:${PORT}`)
 );

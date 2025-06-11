@@ -21,4 +21,8 @@ const ctx = () => ({
     ctx()
   );
   console.log("Matrikkelenhets-ID-liste:", ids);
+  for (const id of ids) {
+    const info = await client.getMatrikkelenhet(id, ctx());
+    console.log(id, info);
+  }
 })();

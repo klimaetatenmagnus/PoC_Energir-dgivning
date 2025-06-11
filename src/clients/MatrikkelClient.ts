@@ -134,23 +134,24 @@ export class MatrikkelClient {
   }
 
   async getMatrikkelenhet(id: number, ctx: MatrikkelContext) {
-    const envelope = this.renderGetMatrikkelenhetXml(id, ctx);
+    // NB: ny XML-bygger + SOAPAction = findMatrikkelenhet
+    const envelope = this.renderFindMatrikkelenhetXml(id, ctx);
     const xml = await this.call(
       "MatrikkelenhetServiceWS",
-      "getMatrikkelenhet",
+      "findMatrikkelenhet",
       envelope
     );
 
     const js = await parseStringPromise(xml, { explicitArray: false });
-    // soap:Envelope → soap:Body → ns3:getMatrikkelenhetResponse → ns4:return
+    // soap:Envelope → soap:Body → ns3:findMatrikkelenhetResponse → ns4:return
     const me =
-      js["soap:Envelope"]["soap:Body"]["ns3:getMatrikkelenhetResponse"][
+      js["soap:Envelope"]["soap:Body"]["ns3:findMatrikkelenhetResponse"][
         "ns4:return"
       ];
 
     return {
       id,
-      seksjonsnummer: Number(me["ns4:seksjonsnummer"] ?? 0), // 0 = ikke seksjonert
+      seksjonsnummer: Number(me["ns4:seksjonsnummer"] ?? 0),
       bygningsnummer: me["ns4:bygningsnummer"],
     } as const;
   }
@@ -201,7 +202,7 @@ ${this.renderContext(ctx)}
   private renderGetMatrikkelenhetXml(id: number, ctx: MatrikkelContext) {
     return `<?xml version="1.0" encoding="UTF-8"?>
   <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-                    xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
+                    xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/MatrikkelenhetService"
                     xmlns:ctx="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
     <soapenv:Header/>
     <soapenv:Body>
@@ -211,6 +212,25 @@ ${this.renderContext(ctx)}
       </mat:getMatrikkelenhet>
     </soapenv:Body>
   </soapenv:Envelope>`;
+  }
+
+  private renderFindMatrikkelenhetXml(id: number, ctx: MatrikkelContext) {
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+                  xmlns:ctx="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <mat:findMatrikkelenhet>
+      <mat:id xsi:type="dom:MatrikkelenhetId">
+        <dom:value>${id}</dom:value>
+      </mat:id>
+${this.renderContext(ctx)}
+    </mat:findMatrikkelenhet>
+  </soapenv:Body>
+</soapenv:Envelope>`;
   }
 
   /* ---- AdresseService‑XML‑bygger (uendret) ------------------------- */
