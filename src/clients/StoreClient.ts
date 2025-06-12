@@ -19,7 +19,7 @@ export interface MatrikkelCtx {
   koordinatsystemKodeId: number;
   systemVersion: string;
   klientIdentifikasjon: string;
-  snapshotVersion: string; // ISO-timestamp fra /versions-endepunktet
+  snapshotVersion: string | { timestamp: string }; // ISO-timestamp fra /versions-endepunktet
 }
 
 export interface EtasjeInfo {
@@ -296,15 +296,33 @@ export class StoreClient {
    *     mens barna skal ligge i *domain*-navnerom – ellers får vi SOAP 500.
    *     Rekkefølgen **må** være identisk med XSD-en.
    */
-  private ctxFragment(ctx: MatrikkelCtx) {
-    return `<sto:matrikkelContext xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
-                                 xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
-  <dom:locale>${ctx.locale}</dom:locale>
-  <dom:brukOriginaleKoordinater>${ctx.brukOriginaleKoordinater}</dom:brukOriginaleKoordinater>
-  <dom:koordinatsystemKodeId><dom:value>${ctx.koordinatsystemKodeId}</dom:value></dom:koordinatsystemKodeId>
-  <dom:systemVersion>${ctx.systemVersion}</dom:systemVersion>
-  <dom:klientIdentifikasjon>${ctx.klientIdentifikasjon}</dom:klientIdentifikasjon>
-  <dom:snapshotVersion><dom:timestamp>${ctx.snapshotVersion}</dom:timestamp></dom:snapshotVersion>
-</sto:matrikkelContext>`;
+  private ctxFragment(ctx: MatrikkelCtx): string {
+    /* resolve snapshot-timestamp – støtter både string og { timestamp } */
+    const timestamp =
+      typeof ctx.snapshotVersion === "string"
+        ? ctx.snapshotVersion
+        : ctx.snapshotVersion.timestamp;
+  
+    /* koordinatsystemKodeId er valgfri → bygg XML bare om feltet finnes */
+    const koordinatXml =
+      ctx.koordinatsystemKodeId != null
+        ? `<dom:koordinatsystemKodeId>
+             <dom:value>${ctx.koordinatsystemKodeId}</dom:value>
+           </dom:koordinatsystemKodeId>`
+        : "";
+  
+    /* returnér ferdig kontekstblokk – variablene blir nå brukt */
+    return `
+      <sto:matrikkelContext xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+        <dom:locale>${ctx.locale}</dom:locale>
+        <dom:brukOriginaleKoordinater>${ctx.brukOriginaleKoordinater}</dom:brukOriginaleKoordinater>
+        ${koordinatXml}
+        <dom:systemVersion>${ctx.systemVersion}</dom:systemVersion>
+        <dom:klientIdentifikasjon>${ctx.klientIdentifikasjon}</dom:klientIdentifikasjon>
+        <dom:snapshotVersion>
+          <dom:timestamp>${timestamp}</dom:timestamp>
+        </dom:snapshotVersion>
+      </sto:matrikkelContext>
+    `.trim();
   }
 }

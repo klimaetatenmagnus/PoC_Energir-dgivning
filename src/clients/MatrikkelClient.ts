@@ -50,7 +50,7 @@ export interface MatrikkelContext {
   koordinatsystemKodeId: number; // EPSG‑kode
   systemVersion: string;
   klientIdentifikasjon: string;
-  snapshotVersion: string; // ISO ts
+  snapshotVersion: string | { timestamp: string }; // ISO ts
 }
 
 /* ──────────────── Klientklasse ──────────────────────────────────────── */
@@ -184,6 +184,11 @@ ${this.renderContext(ctx)}
   }
 
   private renderContext(ctx: MatrikkelContext): string {
+    const ts =
+      typeof ctx.snapshotVersion === "string"
+        ? ctx.snapshotVersion
+        : ctx.snapshotVersion.timestamp;
+
     return `
           <mat:matrikkelContext>
             <ctx:locale>${ctx.locale}</ctx:locale>
@@ -194,7 +199,7 @@ ${this.renderContext(ctx)}
             <ctx:systemVersion>${ctx.systemVersion}</ctx:systemVersion>
             <ctx:klientIdentifikasjon>${ctx.klientIdentifikasjon}</ctx:klientIdentifikasjon>
             <ctx:snapshotVersion>
-              <ctx:timestamp>${ctx.snapshotVersion}</ctx:timestamp>
+            <ctx:timestamp>${ts}</ctx:timestamp>
             </ctx:snapshotVersion>
           </mat:matrikkelContext>`;
   }

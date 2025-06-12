@@ -3,7 +3,7 @@
 // Klient mot Matrikkels BygningServiceWS
 // Henter alle bygg for en matrikkelenhets-ID
 // -------------------------------------------------------------
-console.log("<<<<< BygningClient.ts lastet – robust id-parsing >>>>>");
+console.log("<<<<< BygningClient.ts lastet – robust id-parsing (v2) >>>>>");
 
 import axios, { AxiosResponse } from "axios";
 import { XMLParser } from "fast-xml-parser";
@@ -12,10 +12,12 @@ import { XMLParser } from "fast-xml-parser";
 export interface MatrikkelContext {
   locale: string;
   brukOriginaleKoordinater: boolean;
-  koordinatsystemKodeId: number;
+  /** Valgfri – sendes bare om den er definert */
+  koordinatsystemKodeId?: number;
   systemVersion: string;
   klientIdentifikasjon: string;
-  snapshotVersion: string;
+  /** Påkrevd objekt – følger samme form i alle klienter */
+  snapshotVersion: { timestamp: string };
 }
 
 export interface ByggInfoMinimal {
@@ -35,8 +37,8 @@ export class BygningClient {
     matrikkelenhetsId: number,
     ctx: MatrikkelContext
   ): Promise<ByggInfoMinimal[]> {
-    const soapAction =
-      "http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning/BygningService/findByggForMatrikkelenhetRequest";
+    /* SOAPAction må kun være operasjons-navnet – ikke full URI */
+    const soapAction = "findByggForMatrikkelenhet";
 
     const xmlRequest = this.renderRequest(matrikkelenhetsId, ctx);
 
@@ -115,29 +117,35 @@ export class BygningClient {
 
   /* ---------- private helper: bygg SOAP-request ------------ */
   private renderRequest(id: number, ctx: MatrikkelContext): string {
-    return `<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-                  xmlns:byg="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning"
-                  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
-  <soapenv:Body>
-    <byg:findByggForMatrikkelenhet>
-      <byg:matrikkelenhetId>
-        <dom:value>${id}</dom:value>
-      </byg:matrikkelenhetId>
-
-      <byg:matrikkelContext>
-        <dom:locale>${ctx.locale}</dom:locale>
-        <dom:brukOriginaleKoordinater>${ctx.brukOriginaleKoordinater}</dom:brukOriginaleKoordinater>
+    /* bygg <dom:koordinatsystemKodeId> bare hvis feltet finnes  */
+    const koordinatXml = ctx.koordinatsystemKodeId
+      ? `
         <dom:koordinatsystemKodeId>
           <dom:value>${ctx.koordinatsystemKodeId}</dom:value>
-        </dom:koordinatsystemKodeId>
+        </dom:koordinatsystemKodeId>`
+      : "";
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning"
+                  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+  <soapenv:Body>
+    <sto:findByggForMatrikkelenhet>
+      <sto:matrikkelenhetId>
+        <dom:value>${id}</dom:value>
+      </sto:matrikkelenhetId>
+
+      <sto:matrikkelContext>
+        <dom:locale>${ctx.locale}</dom:locale>
+        <dom:brukOriginaleKoordinater>${ctx.brukOriginaleKoordinater}</dom:brukOriginaleKoordinater>
+        ${koordinatXml}
         <dom:systemVersion>${ctx.systemVersion}</dom:systemVersion>
         <dom:klientIdentifikasjon>${ctx.klientIdentifikasjon}</dom:klientIdentifikasjon>
         <dom:snapshotVersion>
-          <dom:timestamp>${ctx.snapshotVersion}</dom:timestamp>
+          <dom:timestamp>${ctx.snapshotVersion.timestamp}</dom:timestamp>
         </dom:snapshotVersion>
-      </byg:matrikkelContext>
-    </byg:findByggForMatrikkelenhet>
+      </sto:matrikkelContext>
+    </sto:findByggForMatrikkelenhet>
   </soapenv:Body>
 </soapenv:Envelope>`;
   }

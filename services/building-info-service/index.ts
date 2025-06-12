@@ -1,7 +1,7 @@
 // services/building-info-service/index.ts
 // ---------------------------------------------------------------------------
-//  REST-tjeneste som kobler Adresse → Matrikkel → Bygning → Solkart → Enova
-//  Oppdatert 2025-06-10: fjernet overload-feil på app.get-handler (linje 193)
+// REST-tjeneste som kobler Adresse → Matrikkel → Bygning → (Energiattest / sol)
+// Minimal patch 2025-06-11: fjernet “unknown”-feil på j.*  i lookupAdresse()
 // ---------------------------------------------------------------------------
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
@@ -103,6 +103,21 @@ const storeClient = new StoreClient(
 /*────────────────────  Cache & helpers  ─────────────────────────*/
 const cache = new NodeCache({ stdTTL: 3_600, checkperiod: 600 });
 
+/* ---------- ⬇︎  P A T C H  :  Kartverket-respons-typer ⬇︎ ---------- */
+interface KartverketAdresse {
+  kommunenummer?: string;
+  kommunekode?: string; // eldre felt
+  matrikkelnummer?: { gaardsnummer?: string; bruksnummer?: string };
+  gardsnummer?: string;
+  bruksnummer?: string;
+  adressekode?: { bokstav?: string };
+  bokstav?: string;
+}
+interface KartverketSokResponse {
+  adresser?: KartverketAdresse[];
+}
+/* ---------- ⬆︎  P A T C H  ⬆︎ ------------------------------------ */
+
 const ctx = (): MatrikkelContext => ({
   locale: "no_NO_B",
   brukOriginaleKoordinater: false,
@@ -123,10 +138,12 @@ async function lookupAdresse(adresse: string) {
       "&treffPerSide=1&fuzzy=true",
     { headers: { "User-Agent": "Energiverktøy/1.0" } }
   );
-  const j = await r.json();
+  /* --------  P A T C H  :  cast away 'unknown' ------------------- */
+  const j = (await r.json()) as KartverketSokResponse;
+  /* ----------------------------------------------------------------*/
   if (!j.adresser?.length) throw new Error("Kartverket fant ikke adresse");
 
-  const a = j.adresser[0];
+  const a = j.adresser[0]!;
   const out = {
     kommunenummer: +(a.kommunenummer ?? a.kommunekode ?? 0),
     gnr: +(a.matrikkelnummer?.gaardsnummer ?? a.gardsnummer ?? 0),
@@ -137,7 +154,7 @@ async function lookupAdresse(adresse: string) {
   return out;
 }
 
-/** 3-trinns fallback mot Enova API */
+/** 3-trinns fallback mot Enova-API (uendret) */
 async function fetchEnergiattest({
   kommunenummer,
   gnr,
@@ -172,7 +189,6 @@ async function fetchEnergiattest({
       body: JSON.stringify(payload),
     }
   );
-
   if (!r.ok) return null;
   const list = await r.json();
   return Array.isArray(list) && list[0] ? (list[0] as EnovaEnergiattest) : null;
@@ -183,8 +199,8 @@ const app = express();
 app.use(cors());
 
 /**
- * GET /lookup?adresse=...
- * Full flyt med seksjonsvalg → byggdata → (solkart / energiattest)
+ * GET /lookup?adresse=…
+ * Full flyt (seksjonsvalg → byggdata → energiattest)
  */
 app.get("/lookup", async (req: Request, res: Response) => {
   const adresseParam = req.query.adresse;
@@ -197,7 +213,7 @@ app.get("/lookup", async (req: Request, res: Response) => {
     /* 1) adresse → gnr/bnr + bokstav */
     const adr = await lookupAdresse(adresseParam);
 
-    /* 2) alle matrikkelenhets-ID-er */
+    /* 2) alle matrikkelenhets-ID-er (gammel flyt beholdes inntil vegadresse-klient tas i bruk) */
     const ids: number[] = await matrikkelClient.findMatrikkelenheter(
       {
         kommunenummer: adr.kommunenummer,
