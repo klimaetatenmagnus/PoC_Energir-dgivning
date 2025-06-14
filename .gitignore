@@ -9,6 +9,7 @@ package-lock.json
 dist/
 build/
 coverage/
+/soap-dumps
 *.tsbuildinfo
 
 # --- 2  Codesandbox / VS Code / macOS ---

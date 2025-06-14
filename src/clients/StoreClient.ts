@@ -1,328 +1,164 @@
-// src/clients/StoreClient.ts
-// ---------------------------------------------------------------------------
-// Klient mot Matrikkel-APIets StoreServiceWS (henter komplette «Bygg»-objekter)
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+//  StoreClient – henter komplette «Bygg»-bobler via StoreServiceWS
+// -----------------------------------------------------------------------------
 
-import axios from "axios";
+import axios, { AxiosRequestConfig } from "axios";
 import { XMLParser } from "fast-xml-parser";
-import fs from "fs";
-import path from "path";
+import proj4 from "proj4";
+import { dumpSoap } from "../utils/soapDump";
 
-console.log("[StoreClient] LOG_SOAP =", process.env.LOG_SOAP);
+// ──────────────────────────────────────────────────────────────────────────────
+// 1.  Koordinatsystem-definisjoner  (EPSG:25833 ↔ 32632)
+// ──────────────────────────────────────────────────────────────────────────────
+proj4.defs("EPSG:25833", "+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs");
+proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
+export const PBE_EPSG = "EPSG:32632" as const;
+export type EpsgCode = "EPSG:25833" | "EPSG:32632";
 
-/* ---------------------------------------------------------------------------
- * Type-definisjoner
- * ------------------------------------------------------------------------- */
-export interface MatrikkelCtx {
-  locale: string;
-  brukOriginaleKoordinater: boolean;
-  koordinatsystemKodeId: number;
-  systemVersion: string;
-  klientIdentifikasjon: string;
-  snapshotVersion: string | { timestamp: string }; // ISO-timestamp fra /versions-endepunktet
-}
-
-export interface EtasjeInfo {
-  etasjenummer: number;
-  bruksarealTotalt: number | null;
-}
-
-export interface ByggInfo {
-  byggeår: number | null;
-  /** Totalt bruksareal (BRA) for bygget – i m² */
-  bra_m2: number | null;
-  antBruksenheter: number | null;
-  antEtasjer: number | null;
-  etasjer: EtasjeInfo[];
-  /** Oppslagstabell { etasjenummer: BRA } */
-  bruksarealEtasjer: Record<number, number | null>;
-}
-
-export interface Koordinat25833 {
-  øst: number; // EPSG:25833
-  nord: number;
+// ──────────────────────────────────────────────────────────────────────────────
+// 2.  Domenetyper (+ hjelpe­funksjoner)
+// ──────────────────────────────────────────────────────────────────────────────
+export interface RepPoint {
+  east: number;
+  north: number;
+  epsg: EpsgCode;
+  /**  Konverterer til PBE-systemet (EPSG 32632).  */
+  toPBE(): { east: number; north: number };
 }
 
 export interface ByggInfo {
-  byggeår: number | null;
-  bra_m2: number | null;
-  antBruksenheter: number | null;
-  koordinat?: Koordinat25833 | null; //  ← NYTT
+  id: number;
+  byggeaar?: number;
+  bruksarealM2?: number;
+  representasjonspunkt?: RepPoint;
 }
 
-/* ---------------------------------------------------------------------------
- * XML-parser
- * ------------------------------------------------------------------------- */
-const parser = new XMLParser({
-  ignoreAttributes: false,
-  removeNSPrefix: true, // <ns10:etasjedata> → etasjedata
-});
-
-/* ---------------------------------------------------------------------------
- * Hjelper: Dump rå SOAP til disk ved LOG_SOAP=1 (nyttig for feilsøking)
- * ------------------------------------------------------------------------- */
-function dumpToFile(pretty: string) {
-  try {
-    const dir = path.resolve(process.cwd(), "soap-dumps");
-    fs.mkdirSync(dir, { recursive: true });
-    const filename = `store-${new Date()
-      .toISOString()
-      .replace(/[:.]/g, "-")}.xml`;
-    fs.writeFileSync(path.join(dir, filename), pretty, "utf-8");
-  } catch (e) {
-    console.error(
-      "[StoreClient] Klarte ikke å skrive SOAP-dump:",
-      (e as Error).message
-    );
-  }
+function maybeNumber(v: any): number | undefined {
+  const n = Number(v);
+  return isFinite(n) ? n : undefined;
 }
 
-/* ---------------------------------------------------------------------------
- * Utfør selve SOAP-kallet
- * ------------------------------------------------------------------------- */
-async function soap(
-  url: string,
-  xml: string,
-  auth: { username: string; password: string }
-) {
-  try {
-    const { data } = await axios.post(url, xml, {
-      headers: { "Content-Type": "text/xml;charset=UTF-8" },
-      auth,
-    });
+// ──────────────────────────────────────────────────────────────────────────────
+// 3.  HTTP/SOAP-klienten
+// ──────────────────────────────────────────────────────────────────────────────
+const DEFAULT_URL =
+  process.env.STORE_BASE_URL ??
+  "https://ws.geonorge.no/matrikkelapi/wsapi/v1/service/store/StoreServiceWS";
 
-    if (process.env.LOG_SOAP) {
-      const pretty =
-        typeof data === "string"
-          ? data.replace(/></g, ">\n<")
-          : JSON.stringify(data, null, 2);
-      console.log(
-        "\n── StoreServiceWS XML START ──\n" +
-          pretty +
-          "\n── StoreServiceWS XML SLUTT ──"
-      );
-      dumpToFile(pretty);
-    }
-    return parser.parse(data) as any;
-  } catch (e: any) {
-    // Logg også SOAP-faults (HTTP 500)
-    if (process.env.LOG_SOAP && e.response?.data) {
-      const pretty =
-        typeof e.response.data === "string"
-          ? e.response.data.replace(/></g, ">\n<")
-          : JSON.stringify(e.response.data, null, 2);
-      console.error(
-        `[StoreClient] SOAP-feil ${e.response.status} ${e.response.statusText}\n${pretty}`
-      );
-      dumpToFile(pretty);
-    }
-    throw e;
-  }
-}
-
-/* ---------------------------------------------------------------------------
- * Hovedklient
- * ------------------------------------------------------------------------- */
 export class StoreClient {
+  private readonly baseUrl: string;
+  private readonly auth?: { username: string; password: string };
+  private readonly xml = new XMLParser({ ignoreAttributes: false });
+
   constructor(
-    private readonly baseUrl: string,
-    private readonly username: string,
-    private readonly password: string
-  ) {}
-
-  /** Henter et Bygg-objekt og returnerer kun feltene vi trenger. */
-  async getBygg(id: number, ctx: MatrikkelCtx): Promise<ByggInfo> {
-    try {
-      return await this.#hent(id, ctx);
-    } catch (e: any) {
-      const fault: string = e?.response?.data ?? "";
-      const isTransform35 =
-        typeof fault === "string" &&
-        fault.includes("Transformasjon feilet med kode 35");
-
-      if (isTransform35 && !ctx.brukOriginaleKoordinater) {
-        console.warn(
-          "[StoreClient] Transformasjon feilet (kode 35). Prøver med originale koordinater …"
-        );
-        return await this.#hent(id, { ...ctx, brukOriginaleKoordinater: true });
-      }
-      throw e; // ukjent feil
-    }
+    baseUrl: string = DEFAULT_URL,
+    username?: string,
+    password?: string
+  ) {
+    this.baseUrl = baseUrl;
+    if (username && password) this.auth = { username, password };
   }
 
-  /* -------------------------------------------------------------------------
-   * Intern: gjør selve henting + XML-parsing
-   * ----------------------------------------------------------------------- */
-  async #hent(id: number, ctx: MatrikkelCtx): Promise<ByggInfo> {
-    const xml = this.renderGetObjectXml(id, ctx);
-    const json = await soap(`${this.baseUrl}/StoreServiceWS`, xml, {
-      username: this.username,
-      password: this.password,
-    });
+  /**  Hoved-API: hent ett bygg  */
+  async getObject(byggId: number, ctxKoordsys = 25833): Promise<ByggInfo> {
+    const body = buildRequestXml(byggId, ctxKoordsys);
+    const raw = await this.soapCall(body, "getObject");
 
-    /* ───── Pakk ut envelope/body ───── */
-    const envelope = json.Envelope ?? json["soap:Envelope"];
-    const body = envelope?.Body ?? envelope?.["soap:Body"];
+    const parsed: any =
+      this.xml.parse(raw)["soap:Envelope"]["soap:Body"][
+        "ns2:getObjectResponse"
+      ]?.["ns2:return"];
 
-    /* ───── Håndter evt. SOAP-fault ──── */
-    if (body?.Fault || body?.faultcode) {
-      const msg =
-        body.Fault?.faultstring ??
-        body["soap:Fault"]?.faultstring ??
-        "Ukjent SOAP-fault";
-      throw new Error(`StoreServiceWS fault: ${msg}`);
+    if (!parsed) {
+      throw new Error("Uventet SOAP-respons – mangler getObjectResponse");
     }
 
-    /* ───── Hent <return> ────────────── */
-    const ret =
-      body?.getObjectResponse?.return ??
-      body?.return ??
-      body?.["ns2:getObjectResponse"]?.return;
-    if (!ret)
-      throw new Error("StoreServiceWS ga uventet struktur – mangler <return>");
+    const bygg = parsed["no.sk:Bygg"] ?? parsed;
 
-    const bygg = (ret as any).bygg ?? ret; // namespace-prefiks fjernet av XMLParser
+    const rp = bygg?.representasjonspunkt;
+    const repPoint: RepPoint | undefined =
+      rp && rp.aust && rp.nord
+        ? {
+            east: Number(rp.aust),
+            north: Number(rp.nord),
+            epsg: "EPSG:25833",
+            toPBE() {
+              const [x, y] = proj4("EPSG:25833", PBE_EPSG, [
+                this.east,
+                this.north,
+              ]);
+              return { east: x, north: y };
+            },
+          }
+        : undefined;
 
-    if (process.env.LOG_SOAP) {
-      console.log("[StoreClient] RÅ <Bygg> →", JSON.stringify(bygg, null, 2));
-    }
-
-    /* ---------------------------------------------------------------------
-       1) Byggeår + antall boenheter
-     --------------------------------------------------------------------- */
-    const etasjeData = (bygg as any)?.etasjedata ?? {};
-    const histRaw = (bygg as any)?.bygningsstatusHistorikker?.item;
-    const hist = Array.isArray(histRaw) ? histRaw[0] : histRaw ?? {};
-
-    let byggeår: number | null = null;
-    const datoStr = hist?.dato?.date;
-
-    if (typeof datoStr === "string") {
-      // forventet format "YYYY-MM-DD"
-      const yy = Number(datoStr.slice(0, 4));
-      byggeår = isNaN(yy) ? null : yy;
-    } else if (datoStr != null) {
-      // kunne i teorien komme som årstall uten bindestreker
-      const yy = Number(datoStr);
-      byggeår = isNaN(yy) ? null : yy;
-    }
-
-    const antBruksenheter: number | null =
-      etasjeData?.antallBoenheter != null
-        ? Number(etasjeData.antallBoenheter)
-        : null;
-
-    /* ---------------------------------------------------------------------
-       2) Detaljer pr. etasje
-     --------------------------------------------------------------------- */
-    const etasjeItems: any[] = Array.isArray((bygg as any)?.etasjer?.item)
-      ? (bygg as any).etasjer.item
-      : (bygg as any)?.etasjer?.item
-      ? [(bygg as any).etasjer.item]
-      : [];
-
-    const etasjer: EtasjeInfo[] = etasjeItems.map((e) => ({
-      etasjenummer: Number(e.etasjenummer),
-      bruksarealTotalt:
-        e.bruksarealTotalt != null ? Number(e.bruksarealTotalt) : null,
-    }));
-
-    /* ---------------------------------------------------------------------
-       3) Antall etasjer
-     --------------------------------------------------------------------- */
-    const antEtasjer: number | null =
-      etasjer.length > 0
-        ? etasjer.length
-        : etasjeData?.antallEtasjer != null
-        ? Number(etasjeData.antallEtasjer)
-        : null;
-
-    /* ---------------------------------------------------------------------
-       4) Totalt BRA  (bra_m2)
-     --------------------------------------------------------------------- */
-    let bra_m2: number | null = null;
-
-    if (etasjeData?.bruksarealTotalt != null) {
-      bra_m2 = Number(etasjeData.bruksarealTotalt);
-    } else if (etasjer.length) {
-      const sum = etasjer.reduce((s, e) => s + (e.bruksarealTotalt ?? 0), 0);
-      bra_m2 = sum || null;
-    }
-
-    /* ---------------------------------------------------------------------
-       5) Oppslagstabell { etasje: BRA }
-     --------------------------------------------------------------------- */
-    const bruksarealEtasjer: Record<number, number | null> = {};
-    etasjer.forEach(
-      (e) => (bruksarealEtasjer[e.etasjenummer] = e.bruksarealTotalt)
-    );
-
-    /* ---------------------------------------------------------------------
-       6) Returnér resultatet
-     --------------------------------------------------------------------- */
     return {
-      byggeår,
-      bra_m2,
-      antBruksenheter,
-      antEtasjer,
-      etasjer,
-      bruksarealEtasjer,
+      id: byggId,
+      byggeaar: maybeNumber(bygg.byggeaar),
+      bruksarealM2: maybeNumber(bygg.bruksarealM2),
+      representasjonspunkt: repPoint,
     };
   }
 
-  /* -------------------------------------------------------------------------
-   * SOAP-payload helpers
-   * ----------------------------------------------------------------------- */
-  private renderGetObjectXml(id: number, ctx: MatrikkelCtx) {
-    return `<?xml version="1.0"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-                  xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
-                  xmlns:byg="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning"
-                  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
-                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <soapenv:Body>
+  // ──────────────────────────────────────────────────────────────────────────
+  // 3.1  Intern SOAP-helper
+  // ──────────────────────────────────────────────────────────────────────────
+  private async soapCall(xml: string, action: string): Promise<string> {
+    const cfg: AxiosRequestConfig = {
+      headers: {
+        "Content-Type": "text/xml; charset=utf-8",
+        SOAPAction: `"${action}"`,
+      },
+      timeout: 20_000,
+    };
+    if (this.auth) cfg.auth = this.auth;
+
+    if (process.env.LOG_SOAP) dumpSoap("store", "request", xml);
+
+    const { data, status } = await axios.post(this.baseUrl, xml, cfg);
+
+    if (process.env.LOG_SOAP) {
+      dumpSoap(
+        "store",
+        `http${status}`,
+        typeof data === "string" ? data : JSON.stringify(data)
+      );
+    }
+
+    // Både suksess og fault kan komme med HTTP 200 – sjekk derfor innholdet
+    if (typeof data === "string" && data.includes("<soap:Fault>")) {
+      throw new Error("SOAP Fault mottatt – detaljer i dump");
+    }
+
+    if (status >= 400) throw new Error(`HTTP ${status}`);
+    return String(data);
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 4.  XML-builder
+// ──────────────────────────────────────────────────────────────────────────────
+function buildRequestXml(byggId: number, ctxKoordsys: number): string {
+  return `<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
+               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+               xmlns:byg="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Body>
     <sto:getObject>
       <sto:id xsi:type="byg:ByggId">
-        <dom:value>${id}</dom:value>
+        <dom:value>${byggId}</dom:value>
       </sto:id>
-      ${this.ctxFragment(ctx)}
-    </sto:getObject>
-  </soapenv:Body>
-</soapenv:Envelope>`;
-  }
-
-  /**
-   * NB: Ytter-elementet ligger i *service/store*-navnerom,
-   *     mens barna skal ligge i *domain*-navnerom – ellers får vi SOAP 500.
-   *     Rekkefølgen **må** være identisk med XSD-en.
-   */
-  private ctxFragment(ctx: MatrikkelCtx): string {
-    /* resolve snapshot-timestamp – støtter både string og { timestamp } */
-    const timestamp =
-      typeof ctx.snapshotVersion === "string"
-        ? ctx.snapshotVersion
-        : ctx.snapshotVersion.timestamp;
-  
-    /* koordinatsystemKodeId er valgfri → bygg XML bare om feltet finnes */
-    const koordinatXml =
-      ctx.koordinatsystemKodeId != null
-        ? `<dom:koordinatsystemKodeId>
-             <dom:value>${ctx.koordinatsystemKodeId}</dom:value>
-           </dom:koordinatsystemKodeId>`
-        : "";
-  
-    /* returnér ferdig kontekstblokk – variablene blir nå brukt */
-    return `
-      <sto:matrikkelContext xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
-        <dom:locale>${ctx.locale}</dom:locale>
-        <dom:brukOriginaleKoordinater>${ctx.brukOriginaleKoordinater}</dom:brukOriginaleKoordinater>
-        ${koordinatXml}
-        <dom:systemVersion>${ctx.systemVersion}</dom:systemVersion>
-        <dom:klientIdentifikasjon>${ctx.klientIdentifikasjon}</dom:klientIdentifikasjon>
-        <dom:snapshotVersion>
-          <dom:timestamp>${timestamp}</dom:timestamp>
-        </dom:snapshotVersion>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>false</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>${ctxKoordsys}</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
       </sto:matrikkelContext>
-    `.trim();
-  }
+    </sto:getObject>
+  </soap:Body>
+</soap:Envelope>`;
 }

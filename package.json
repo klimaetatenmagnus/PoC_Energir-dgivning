@@ -16,7 +16,8 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "start:solar-service": "node services/solar-service/index.js",
     "dev:solar": "cross-env PORT=4003 NODE_OPTIONS='--no-experimental-strip-types' nodemon services/solar-service/index.js",
-    "test:matrikkel": "node scripts/testMatrikkel.cjs"
+    "test:matrikkel": "node scripts/testMatrikkel.cjs",
+    "test:e2e:live": "cross-env LIVE=1 LOG_SOAP=1 node --loader ts-node/esm scripts/test-e2e-building.ts"
   },
   "dependencies": {
     "@turf/turf": "7.2.0",
@@ -37,6 +38,7 @@
     "@swc/core": "^1.7.0",
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
+    "@types/node": "^24.0.1",
     "@types/proj4": "^2.5.6",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
@@ -50,6 +52,7 @@
     "eslint": "^9.16.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.16",
+    "nock": "^14.0.5",
     "nodemon": "^3.1.10",
     "postcss": "8.4.49",
     "tailwindcss": "3.4.16",

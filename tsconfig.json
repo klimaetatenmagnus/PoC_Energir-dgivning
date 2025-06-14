@@ -9,6 +9,7 @@
     "jsx": "react-jsx",
     "useDefineForClassFields": true,
     "skipLibCheck": true,
+    "typeRoots": ["./node_modules/@types"],
 
     /* ---------------------------------------------------------- */
     /*  Sti-alias slik at TS finner SWR-typene                    */
@@ -21,11 +22,15 @@
     /* ---------------------------------------------------------- */
     /*  Bundler-modus (Vite)                                      */
     /* ---------------------------------------------------------- */
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
+    "types": ["node"],
     "allowImportingTsExtensions": true,
+    "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "esModuleInterop": true,
+
 
     /* ---------------------------------------------------------- */
     /*  Linting-strenger                                          */
@@ -39,7 +44,7 @@
   /* ------------------------------------------------------------ */
   /*  Filsett                                                     */
   /* ------------------------------------------------------------ */
-  "include": ["src/**/*", "server/**/*", "services/**/*"],
+  "include": ["src/**/*", "server/**/*", "services/**/*", "scripts/**/*"],
   "references": [{ "path": "./tsconfig.node.json" }],
 
   /* ------------------------------------------------------------ */

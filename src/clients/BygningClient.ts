@@ -1,27 +1,22 @@
 // src/clients/BygningClient.ts
-// -------------------------------------------------------------
+// ------------------------------------------------------------------
 // Klient mot Matrikkels BygningServiceWS
-// Henter alle bygg for en matrikkelenhets-ID
-// -------------------------------------------------------------
-console.log("<<<<< BygningClient.ts lastet – robust id-parsing (v2) >>>>>");
+// ------------------------------------------------------------------
+console.log("<<<<< BygningClient.ts lastet – robust id-parsing (v5) >>>>>");
 
 import axios, { AxiosResponse } from "axios";
+import crypto from "node:crypto";
 import { XMLParser } from "fast-xml-parser";
+import { dumpSoap } from "../utils/soapDump";
 
 /* ────────────── felles typer ─────────────────────────────── */
 export interface MatrikkelContext {
   locale: string;
   brukOriginaleKoordinater: boolean;
-  /** Valgfri – sendes bare om den er definert */
-  koordinatsystemKodeId?: number;
+  koordinatsystemKodeId?: number; // valgfri
   systemVersion: string;
   klientIdentifikasjon: string;
-  /** Påkrevd objekt – følger samme form i alle klienter */
   snapshotVersion: { timestamp: string };
-}
-
-export interface ByggInfoMinimal {
-  byggId: number;
 }
 
 /* ────────────── klientklasse ─────────────────────────────── */
@@ -32,17 +27,25 @@ export class BygningClient {
     private readonly password: string
   ) {}
 
-  /* ---------- public: finn bygg for matrikkelenhet ---------- */
+  /* ---------- public: hent liste med bygg-ID-er -------------- */
   async findByggForMatrikkelenhet(
     matrikkelenhetsId: number,
     ctx: MatrikkelContext
-  ): Promise<ByggInfoMinimal[]> {
-    /* SOAPAction må kun være operasjons-navnet – ikke full URI */
+  ): Promise<number[]> {
     const soapAction = "findByggForMatrikkelenhet";
-
+    const corrId = crypto.randomUUID();
     const xmlRequest = this.renderRequest(matrikkelenhetsId, ctx);
 
-    /* ---- kall tjenesten ------------------------------------ */
+    // dump + ev. konsoll-logg av request
+    await dumpSoap(corrId, "request", xmlRequest);
+    if (process.env.LOG_SOAP === "1") {
+      console.log(
+        `\n===== SOAP Request (${soapAction}, corrId=${corrId}) =====\n`
+      );
+      console.log(xmlRequest, "\n");
+    }
+
+    // — kall webservicen —
     const resp: AxiosResponse<string> = await axios.post(
       `${this.baseUrl}/BygningServiceWS`,
       xmlRequest,
@@ -53,11 +56,39 @@ export class BygningClient {
         },
         auth: { username: this.username, password: this.password },
         timeout: 10_000,
-        validateStatus: (s) => s < 500,
+        validateStatus: () => true, // vi håndterer fault under
       }
     );
 
-    /* ---- XML → JS ------------------------------------------ */
+    // — dump responsen —
+    const phase =
+      resp.status >= 400 || resp.data.includes("<soap:Fault>")
+        ? ("fault" as const)
+        : ("response" as const);
+    await dumpSoap(corrId, phase, resp.data);
+
+    // event. konsoll-logg
+    if (process.env.LOG_SOAP === "1") {
+      const tag =
+        phase === "fault"
+          ? "SOAP Fault"
+          : `SOAP Response (HTTP ${resp.status})`;
+      console.log(`===== ${tag}, corrId=${corrId} =====\n`);
+      console.log(
+        resp.data.slice(0, 1200),
+        resp.data.length > 1200 ? "…" : "",
+        "\n"
+      );
+    }
+
+    // fault-håndtering
+    if (phase === "fault") {
+      throw new Error(
+        `SOAP ${resp.status} fra BygningServiceWS (corrId=${corrId})`
+      );
+    }
+
+    /* — XML → JS — */
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: "@_",
@@ -66,58 +97,51 @@ export class BygningClient {
     });
     const parsed = parser.parse(resp.data) as Record<string, unknown>;
 
-    /* ---- naviger til <return> ------------------------------ */
+    /* — finn <return>-noden — */
     const body =
       (parsed["soap:Envelope"] as any)?.["soap:Body"] ??
       (parsed.Envelope as any)?.Body ??
       (parsed["soapenv:Envelope"] as any)?.["soapenv:Body"];
+
     if (!body) throw new Error("SOAP-body mangler");
 
     const respKey = Object.keys(body).find((k) =>
       k.endsWith("findByggForMatrikkelenhetResponse")
     );
+    const retBlock = respKey ? (body as any)[respKey] : undefined;
+    const ret = retBlock?.return ?? retBlock?.["ns2:return"];
 
-    const ret = respKey
-      ? (body as any)[respKey].return ?? (body as any)[respKey]["ns2:return"]
-      : null;
-    if (!ret) return []; // ingen bygg
+    if (!ret) return []; // ingen bygg assosiert med matrikkelenheten
 
-    /* ---- item[] → byggId[] -------------------------------- */
-    const items: unknown[] = Array.isArray(ret.item)
+    /* — <item>-liste → array med number — */
+    const rawItems = Array.isArray(ret.item)
       ? ret.item
       : ret.item
       ? [ret.item]
       : [];
 
-    const extractNumber = (o: unknown): number | undefined => {
-      if (o == null) return;
-      if (typeof o === "string" || typeof o === "number") {
-        const n = Number(o);
+    const extractNumber = (v: unknown): number | undefined => {
+      if (v == null) return;
+      if (typeof v === "string" || typeof v === "number") {
+        const n = Number(v);
         return Number.isFinite(n) && n > 0 ? n : undefined;
       }
-      if (typeof o === "object") {
-        for (const v of Object.values(o as Record<string, unknown>)) {
-          const n = extractNumber(v);
+      if (typeof v === "object") {
+        for (const val of Object.values(v)) {
+          const n = extractNumber(val);
           if (n !== undefined) return n;
         }
       }
       return;
     };
 
-    const byggIds: number[] = items
-      .map((item: unknown): number | undefined => extractNumber(item))
-      .filter((id): id is number => typeof id === "number");
-
-    return byggIds.map(
-      (id): ByggInfoMinimal => ({
-        byggId: id,
-      })
-    );
+    return rawItems
+      .map(extractNumber)
+      .filter((n: number | undefined): n is number => typeof n === "number");
   }
 
-  /* ---------- private helper: bygg SOAP-request ------------ */
+  /* ---------- private helper: bygg SOAP-request -------------- */
   private renderRequest(id: number, ctx: MatrikkelContext): string {
-    /* bygg <dom:koordinatsystemKodeId> bare hvis feltet finnes  */
     const koordinatXml = ctx.koordinatsystemKodeId
       ? `
         <dom:koordinatsystemKodeId>
