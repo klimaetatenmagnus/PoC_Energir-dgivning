@@ -1,0 +1,73 @@
+(node:12982) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("ts-node/esm", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12982) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+<<<<< BygningClient.ts lastet – robust id-parsing (v6) >>>>>
+🌐 LIVE – ekte HTTP-trafikk tillatt
+✓ building-info-service på http://localhost:4000
+
+===== SOAP Request » findMatrikkelenheter (4de5f896-0f09-462e-8d29-6fbc84a9d6b3) =====
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+        <soapenv:Header/><soapenv:Body>
+      <mat:findMatrikkelenheter
+           xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
+           xmlns:mid="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet">
+        <mat:matrikkelenhetsokModel>
+          <mid:kommunenummer>0301</mid:kommunenummer>
+          <mid:gardsnummer>73</mid:gardsnummer>
+          <mid:bruksnummer>704</mid:bruksnummer>
+          <mid:adressekode>13616</mid:adressekode>
+          <mid:husnummer>156</mid:husnummer>
+          <mid:bokstav>C</mid:bokstav>
+        </mat:matrikkelenhetsokModel>
+        <mat:matrikkelContext xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
+                            xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>false</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>building-info-service</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </mat:matrikkelContext>
+      </mat:findMatrikkelenheter></soapenv:Body>
+      </soapenv:Envelope>
+
+===== SOAP Response (4de5f896-0f09-462e-8d29-6fbc84a9d6b3) HTTP 200 =====
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><ns3:findMatrikkelenheterResponse xmlns="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain" xmlns:ns2="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/adresse" xmlns:ns3="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet" xmlns:ns4="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet" xmlns:ns5="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/exception" xmlns:ns6="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/geometri" xmlns:ns7="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/util" xmlns:ns8="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/forretning" xmlns:ns9="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kommunetillegg" xmlns:ns10="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning  …
+
+===== SOAP Request » getMatrikkelenheter (bd5eed43-7947-40f4-92a2-d85b169e0fdb) =====
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+        <soapenv:Header/><soapenv:Body>
+      <mat:getMatrikkelenheter
+           xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
+           xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+        <mat:matrikkelenhetIdList><dom:item><dom:value>510390945</dom:value></dom:item><dom:item><dom:value>284466634</dom:value></dom:item></mat:matrikkelenhetIdList>
+        <mat:matrikkelContext xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
+                            xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>false</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>building-info-service</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </mat:matrikkelContext>
+      </mat:getMatrikkelenheter></soapenv:Body>
+      </soapenv:Envelope>
+
+===== SOAP Fault (bd5eed43-7947-40f4-92a2-d85b169e0fdb) HTTP 500 =====
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><soap:Fault><faultcode>soap:Client</faultcode><faultstring>Message part {http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet}getMatrikkelenheter was not recognized.  (Does it exist in service WSDL?)</faultstring></soap:Fault></soap:Body></soap:Envelope> 
+file:///project/workspace/src/clients/MatrikkelClient.ts:55
+            throw new Error(`SOAP fault (${action}) HTTP ${status}`);
+                  ^
+
+Error: SOAP fault (getMatrikkelenheter) HTTP 500
+    at MatrikkelClient.postSoap (file:///project/workspace/src/clients/MatrikkelClient.ts:55:19)
+    at async resolveBuildingData (file:///project/workspace/services/building-info-service/index.ts:112:82)
+    at async file:///project/workspace/scripts/test-e2e-building.ts:50:20
+
+Node.js v22.16.0

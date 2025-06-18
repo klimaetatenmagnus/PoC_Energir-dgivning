@@ -1,3 +1,4 @@
+// src/clients/StoreClient.ts
 // -----------------------------------------------------------------------------
 //  StoreClient – henter komplette «Bygg»-bobler via StoreServiceWS
 // -----------------------------------------------------------------------------
@@ -5,19 +6,26 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { XMLParser } from "fast-xml-parser";
 import proj4 from "proj4";
-import { dumpSoap } from "../utils/soapDump";
+import { dumpSoap, SoapPhase } from "../utils/soapDump.ts";
+import { randomUUID } from "crypto";
 
-// ──────────────────────────────────────────────────────────────────────────────
-// 1.  Koordinatsystem-definisjoner  (EPSG:25833 ↔ 32632)
-// ──────────────────────────────────────────────────────────────────────────────
+/* ──────────────────────────────────────────────────────────────────────────
+   0.  Miljøflagg
+   ──────────────────────────────────────────────────────────────────────── */
+const LOG_SOAP = process.env.LOG_SOAP === "1";
+const IS_LIVE  = process.env.LIVE === "1";
+
+/* ──────────────────────────────────────────────────────────────────────────
+   1.  Koordinatsystem-definisjoner  (EPSG:25833 ↔ 32632)
+   ──────────────────────────────────────────────────────────────────────── */
 proj4.defs("EPSG:25833", "+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs");
 proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
 export const PBE_EPSG = "EPSG:32632" as const;
 export type EpsgCode = "EPSG:25833" | "EPSG:32632";
 
-// ──────────────────────────────────────────────────────────────────────────────
-// 2.  Domenetyper (+ hjelpe­funksjoner)
-// ──────────────────────────────────────────────────────────────────────────────
+/* ──────────────────────────────────────────────────────────────────────────
+   2.  Domenetyper (+ hjelpe­funksjoner)
+   ──────────────────────────────────────────────────────────────────────── */
 export interface RepPoint {
   east: number;
   north: number;
@@ -33,31 +41,26 @@ export interface ByggInfo {
   representasjonspunkt?: RepPoint;
 }
 
-function maybeNumber(v: any): number | undefined {
+function maybeNumber(v: unknown): number | undefined {
   const n = Number(v);
-  return isFinite(n) ? n : undefined;
+  return Number.isFinite(n) ? n : undefined;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// 3.  HTTP/SOAP-klienten
-// ──────────────────────────────────────────────────────────────────────────────
+/* ──────────────────────────────────────────────────────────────────────────
+   3.  HTTP/SOAP-klienten
+   ──────────────────────────────────────────────────────────────────────── */
 const DEFAULT_URL =
   process.env.STORE_BASE_URL ??
   "https://ws.geonorge.no/matrikkelapi/wsapi/v1/service/store/StoreServiceWS";
 
 export class StoreClient {
-  private readonly baseUrl: string;
-  private readonly auth?: { username: string; password: string };
   private readonly xml = new XMLParser({ ignoreAttributes: false });
 
   constructor(
-    baseUrl: string = DEFAULT_URL,
-    username?: string,
-    password?: string
-  ) {
-    this.baseUrl = baseUrl;
-    if (username && password) this.auth = { username, password };
-  }
+    private readonly baseUrl: string = DEFAULT_URL,
+    private readonly username?: string,
+    private readonly password?: string
+  ) {}
 
   /**  Hoved-API: hent ett bygg  */
   async getObject(byggId: number, ctxKoordsys = 25833): Promise<ByggInfo> {
@@ -100,10 +103,11 @@ export class StoreClient {
     };
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // 3.1  Intern SOAP-helper
-  // ──────────────────────────────────────────────────────────────────────────
+  /* ────────────────────────────────────────────────────────────────
+     3.1 Intern SOAP-helper med dump/logg-kontroll
+     ────────────────────────────────────────────────────────────── */
   private async soapCall(xml: string, action: string): Promise<string> {
+    const corrId = randomUUID();                    // én unik dump per kall
     const cfg: AxiosRequestConfig = {
       headers: {
         "Content-Type": "text/xml; charset=utf-8",
@@ -111,33 +115,67 @@ export class StoreClient {
       },
       timeout: 20_000,
     };
-    if (this.auth) cfg.auth = this.auth;
+    if (this.username && this.password) {
+      cfg.auth = { username: this.username, password: this.password };
+    }
 
-    if (process.env.LOG_SOAP) dumpSoap("store", "request", xml);
+    /* — dump &/eller logg request — */
+    if (IS_LIVE) {
+      await dumpSoap(corrId, "request", xml);
+    }
+    if (LOG_SOAP) {
+      console.log(
+        `\n===== SOAP Request (${action}, corrId=${corrId}) =====\n`
+      );
+      console.log(xml, "\n");
+    }
 
+    /* — call — */
     const { data, status } = await axios.post(this.baseUrl, xml, cfg);
 
-    if (process.env.LOG_SOAP) {
-      dumpSoap(
-        "store",
-        `http${status}`,
+    /* — dump &/eller logg response/fault — */
+    const phase: SoapPhase =
+      status >= 400 || (typeof data === "string" && data.includes("<soap:Fault>"))
+        ? "fault"
+        : "response";
+
+    if (IS_LIVE) {
+      await dumpSoap(
+        corrId,
+        phase,
         typeof data === "string" ? data : JSON.stringify(data)
       );
     }
-
-    // Både suksess og fault kan komme med HTTP 200 – sjekk derfor innholdet
-    if (typeof data === "string" && data.includes("<soap:Fault>")) {
-      throw new Error("SOAP Fault mottatt – detaljer i dump");
+    if (LOG_SOAP) {
+      const tag =
+        phase === "fault"
+          ? "SOAP Fault"
+          : `SOAP Response (HTTP ${status})`;
+      console.log(`===== ${tag}, corrId=${corrId} =====\n`);
+      console.log(
+        typeof data === "string" ? data.slice(0, 1200) : data,
+        typeof data === "string" && data.length > 1200 ? "…" : "",
+        "\n"
+      );
     }
 
-    if (status >= 400) throw new Error(`HTTP ${status}`);
+    /* — feil-håndtering — */
+    if (phase === "fault") {
+      throw new Error(
+        `SOAP ${status} fra StoreServiceWS (corrId=${corrId})`
+      );
+    }
+    if (status >= 400) {
+      throw new Error(`HTTP ${status} fra StoreServiceWS`);
+    }
+
     return String(data);
   }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// 4.  XML-builder
-// ──────────────────────────────────────────────────────────────────────────────
+/* ──────────────────────────────────────────────────────────────────────────
+   4.  XML-builder
+   ──────────────────────────────────────────────────────────────────────── */
 function buildRequestXml(byggId: number, ctxKoordsys: number): string {
   return `<?xml version="1.0"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
@@ -153,10 +191,14 @@ function buildRequestXml(byggId: number, ctxKoordsys: number): string {
       <sto:matrikkelContext>
         <dom:locale>no_NO_B</dom:locale>
         <dom:brukOriginaleKoordinater>false</dom:brukOriginaleKoordinater>
-        <dom:koordinatsystemKodeId><dom:value>${ctxKoordsys}</dom:value></dom:koordinatsystemKodeId>
+        <dom:koordinatsystemKodeId>
+          <dom:value>${ctxKoordsys}</dom:value>
+        </dom:koordinatsystemKodeId>
         <dom:systemVersion>trunk</dom:systemVersion>
         <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
-        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+        <dom:snapshotVersion>
+          <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
+        </dom:snapshotVersion>
       </sto:matrikkelContext>
     </sto:getObject>
   </soap:Body>

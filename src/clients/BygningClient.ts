@@ -2,12 +2,12 @@
 // ------------------------------------------------------------------
 // Klient mot Matrikkels BygningServiceWS
 // ------------------------------------------------------------------
-console.log("<<<<< BygningClient.ts lastet – robust id-parsing (v5) >>>>>");
+console.log("<<<<< BygningClient.ts lastet – robust id-parsing (v6) >>>>>");
 
 import axios, { AxiosResponse } from "axios";
 import crypto from "node:crypto";
 import { XMLParser } from "fast-xml-parser";
-import { dumpSoap } from "../utils/soapDump";
+import { dumpSoap, SoapPhase } from "../utils/soapDump.ts";
 
 /* ────────────── felles typer ─────────────────────────────── */
 export interface MatrikkelContext {
@@ -36,8 +36,11 @@ export class BygningClient {
     const corrId = crypto.randomUUID();
     const xmlRequest = this.renderRequest(matrikkelenhetsId, ctx);
 
-    // dump + ev. konsoll-logg av request
-    await dumpSoap(corrId, "request", xmlRequest);
+    /* — dump + ev. logg av request — */
+    const isLive = process.env.LIVE === "1";
+    if (isLive) {
+      await dumpSoap(corrId, "request", xmlRequest);
+    }
     if (process.env.LOG_SOAP === "1") {
       console.log(
         `\n===== SOAP Request (${soapAction}, corrId=${corrId}) =====\n`
@@ -45,7 +48,7 @@ export class BygningClient {
       console.log(xmlRequest, "\n");
     }
 
-    // — kall webservicen —
+    /* — kall webservicen — */
     const resp: AxiosResponse<string> = await axios.post(
       `${this.baseUrl}/BygningServiceWS`,
       xmlRequest,
@@ -60,20 +63,22 @@ export class BygningClient {
       }
     );
 
-    // — dump responsen —
+    /* — dump respons eller fault — */
     const phase =
       resp.status >= 400 || resp.data.includes("<soap:Fault>")
         ? ("fault" as const)
         : ("response" as const);
-    await dumpSoap(corrId, phase, resp.data);
+    if (isLive) {
+      await dumpSoap(corrId, phase, resp.data);
+    }
 
-    // event. konsoll-logg
+    /* — ev. konsoll-logg av responsen — */
     if (process.env.LOG_SOAP === "1") {
       const tag =
         phase === "fault"
           ? "SOAP Fault"
           : `SOAP Response (HTTP ${resp.status})`;
-      console.log(`===== ${tag}, corrId=${corrId} =====\n`);
+      console.log(`===== ${tag}, corrId=${corrId}) =====\n`);
       console.log(
         resp.data.slice(0, 1200),
         resp.data.length > 1200 ? "…" : "",
@@ -81,7 +86,7 @@ export class BygningClient {
       );
     }
 
-    // fault-håndtering
+    /* — fault-håndtering — */
     if (phase === "fault") {
       throw new Error(
         `SOAP ${resp.status} fra BygningServiceWS (corrId=${corrId})`
@@ -113,7 +118,7 @@ export class BygningClient {
 
     if (!ret) return []; // ingen bygg assosiert med matrikkelenheten
 
-    /* — <item>-liste → array med number — */
+    /* — <item>-liste → number[] — */
     const rawItems = Array.isArray(ret.item)
       ? ret.item
       : ret.item
@@ -136,8 +141,11 @@ export class BygningClient {
     };
 
     return rawItems
-      .map(extractNumber)
-      .filter((n: number | undefined): n is number => typeof n === "number");
+      .map(extractNumber) // (number | undefined)[]
+      .filter(
+        //  ↓↓↓  legg på type her
+        (n: number | undefined): n is number => typeof n === "number"
+      );
   }
 
   /* ---------- private helper: bygg SOAP-request -------------- */

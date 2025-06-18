@@ -1,9 +1,8 @@
 // ---------------------------------------------------------------------------
 // src/clients/adresseClient.ts
-// Adresse (husnr + bokstav) ► matrikkelenhets-ID
+// Adresse (husnr + bokstav) ► én matrikkelenhets-ID                v1.1
 // ---------------------------------------------------------------------------
 import axios, { AxiosRequestConfig } from "axios";
-
 
 /* ------------------------------------------------------------------ */
 /* 1. Offentlig API                                                   */
@@ -11,8 +10,8 @@ import axios, { AxiosRequestConfig } from "axios";
 
 export interface ParsedAddress {
   kommunenummer: string;
-  adressekode: string;
-  husnummer: string;
+  adressekode: number; // ★ var string → number
+  husnummer: number; // ★ var string → number
   bokstav?: string | null;
 }
 
@@ -22,7 +21,7 @@ export interface ParsedAddress {
 export async function findMatrikkelenhetIdForAddress(
   adr: ParsedAddress
 ): Promise<string> {
-  /* ─── 1) AdresseServiceWS: findAdresseIdForIdent ───────────────── */
+  /* ─── 1) AdresseServiceWS: findAdresseIdForIdent ──────────────── */
   const ctxXml = buildContextXml();
 
   const soapBody = `
@@ -46,8 +45,9 @@ export async function findMatrikkelenhetIdForAddress(
       ${ctxXml}
     </adr:findAdresseIdForIdent>`.trim();
 
+  /* ★ riktig path:  …/service/adresse/AdresseServiceWS */
   const { data: responseXml } = await soapPost({
-    url: `${process.env.MATRIKKEL_API_BASE_URL_TEST}/AdresseServiceWS`,
+    url: `${process.env.MATRIKKEL_API_BASE_URL_TEST}/service/adresse/AdresseServiceWS`,
     action: "findAdresseIdForIdent",
     body: soapBody,
   });
@@ -55,7 +55,7 @@ export async function findMatrikkelenhetIdForAddress(
   const vegadresseId = extractTag(responseXml, "value");
   if (!vegadresseId) throw new Error("vegadresseId not found");
 
-  /* ─── 2) StoreServiceWS: getObject(VegadresseId) ────────────────── */
+  /* ─── 2) StoreServiceWS: getObject(VegadresseId) ──────────────── */
   const vegadresseBubbleXml = await fetchVegadresseBubble(Number(vegadresseId));
 
   const matrikkelenhetId = extractIdValue(
@@ -73,23 +73,14 @@ export async function findMatrikkelenhetIdForAddress(
 /* ------------------------------------------------------------------ */
 
 async function fetchVegadresseBubble(id: number): Promise<string> {
-  /* samme felter, men prefiks MÅ være sto: i Store-kallet */
   const ctxXml = `
   <sto:matrikkelContext>
     <dom:locale>no_NO_B</dom:locale>
     <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
-
-   
-    <dom:koordinatsystemKodeId>
-      <dom:value>25833</dom:value>
-    </dom:koordinatsystemKodeId>
-
+    <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
     <dom:systemVersion>trunk</dom:systemVersion>
     <dom:klientIdentifikasjon>bygg-info-service</dom:klientIdentifikasjon>
-
-    <dom:snapshotVersion>
-      <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
-    </dom:snapshotVersion>
+    <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
   </sto:matrikkelContext>`.trim();
 
   const body = `
@@ -104,10 +95,11 @@ async function fetchVegadresseBubble(id: number): Promise<string> {
       ${ctxXml}
     </sto:getObject>`.trim();
 
+  /* ★ riktig path: …/service/store/StoreServiceWS */
   const { data } = await soapPost({
-    url: `${process.env.MATRIKKEL_API_BASE_URL_TEST}/StoreServiceWS`,
+    url: `${process.env.MATRIKKEL_API_BASE_URL_TEST}/service/store/StoreServiceWS`,
     action: "getObject",
-    body: body,
+    body,
   });
 
   return data;
@@ -116,7 +108,7 @@ async function fetchVegadresseBubble(id: number): Promise<string> {
 async function soapPost(opts: { url: string; action: string; body: string }) {
   const requestXml = wrapEnvelope(opts.body);
 
-  if (process.env.LOG_SOAP) {
+  if (process.env.LOG_SOAP === "1") {
     console.log(
       "\n=== SOAP REQUEST to",
       opts.action,
@@ -144,7 +136,7 @@ async function soapPost(opts: { url: string; action: string; body: string }) {
 
   const resp = await axios.request<string>(cfg);
 
-  if (process.env.LOG_SOAP) {
+  if (process.env.LOG_SOAP === "1") {
     console.log(
       "\n=== SOAP RESPONSE from",
       opts.action,
@@ -165,7 +157,7 @@ function wrapEnvelope(inner: string) {
 }
 
 /* ------------------------------------------------------------------ */
-/* 3. XML-build & utils                                               */
+/* 3. XML utils                                                       */
 /* ------------------------------------------------------------------ */
 
 function buildContextXml() {
@@ -187,7 +179,6 @@ function extractTag(xml: string, local: string): string | undefined {
   );
   return re.exec(xml)?.[1].trim();
 }
-
 function extractIdValue(xml: string, local: string): string | undefined {
   const re = new RegExp(
     `<(?:[^\\s:>]+:)?${local}[^>]*>[\\s\\S]*?<value>([^<]+)</value>[\\s\\S]*?</(?:[^\\s:>]+:)?${local}>`

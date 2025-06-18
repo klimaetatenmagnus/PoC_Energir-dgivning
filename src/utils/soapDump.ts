@@ -1,43 +1,41 @@
 // src/utils/soapDump.ts
-import { promises as fs } from "node:fs";
+import fs from "node:fs/promises";
 import path from "node:path";
 
-/** Hvor dumpene lagres – endre om du ønsker en annen mappe. */
-export const SOAP_DUMP_DIR = "/soap-dumps";
+/** mappe der alle dump-filer havner  */
+const DIR = path.resolve("soap-dumps");
+
+// lag mappen én gang ved oppstart
+await fs.mkdir(DIR, { recursive: true });
+
+/** Fasen filen kan ha – samme som i klientene */
+export type SoapPhase = "request" | "response" | "fault";
 
 /**
- * Fase‐/statusfeltet som havner i filnavnet.
- *  - request/response/fault brukes av klientene
- *  - `http${number}` brukes når vi dumper et HTTP-feil-svar (f.eks. «http500»)
- */
-export type SoapPhase = "request" | "response" | "fault" | `http${number}`;
-
-/** Sørg for at dump‐mappen finnes (kjøres én gang ved import). */
-await fs.mkdir(SOAP_DUMP_DIR, { recursive: true });
-
-/**
- * Skriv SOAP‐/XML‐dump til fil.
+ * Klientenes variant: (corrId, phase, xml)
  *
- * @param prefix  F.eks. «store», «bygning», «matrikkel»
- * @param phase   Se `SoapPhase`
- * @param xml     Selve meldingen / fault‐en
- * @param corrId  (valgfritt) correlation-id – tas med i filnavnet hvis den finnes
+ * Filnavn: 2025-06-15T10-22-13.456Z.{corrId}.{phase}.xml
  */
 export async function dumpSoap(
-  prefix: string,
+  corrId: string,
   phase: SoapPhase,
-  xml: string,
-  corrId?: string
+  xml: string
 ): Promise<void> {
+  if (process.env.LIVE !== "1") return; // bare i live-modus
+
   try {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const fname = corrId
-      ? `${stamp}-${prefix}-${phase}-${corrId}.xml`
-      : `${stamp}-${prefix}-${phase}.xml`;
-
-    await fs.writeFile(path.join(SOAP_DUMP_DIR, fname), xml, "utf8");
+    const file = path.join(DIR, `${stamp}.${corrId}.${phase}.xml`);
+    await fs.writeFile(file, xml, "utf8");
   } catch (err) {
-    // Unngå at feil i logging krasjer appen
-    console.error("Kunne ikke skrive SOAP-dump:", err);
+    console.error("⚠️  Klarte ikke å skrive SOAP-dump-fil:", err);
   }
 }
+
+/**
+ * Valgfri hjelper som bevarer det gamle (prefix, phase, xml, corrId)-mønsteret.
+ *   dumpSoapWithPrefix("store")("request", xml, corrId)
+ */
+export const dumpSoapWithPrefix =
+  (prefix: string) => async (phase: SoapPhase, xml: string, corrId?: string) =>
+    dumpSoap(corrId ?? prefix, phase, xml);
