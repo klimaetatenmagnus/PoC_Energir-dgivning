@@ -1,7 +1,6 @@
 // src/clients/StoreClient.ts
 // -----------------------------------------------------------------------------
-//  StoreClient – henter komplette «Bygg»- og andre domeneobjekter via
-//  StoreServiceWS (Matrikkel API)
+//  StoreClient – henter og parser «Bygg»-data via Matrikkels StoreServiceWS
 // -----------------------------------------------------------------------------
 
 import axios, { AxiosRequestConfig } from "axios";
@@ -10,17 +9,17 @@ import proj4 from "proj4";
 import { dumpSoap, type SoapPhase } from "../utils/soapDump.ts";
 import { randomUUID } from "crypto";
 
-/* ─────────────────────────── Miljø ─────────────────────────── */
+/* ─────────────────────────── Miljøflagg ─────────────────────────── */
 const LOG_SOAP = process.env.LOG_SOAP === "1";
 const IS_LIVE = process.env.LIVE === "1";
 
-/* ────────────────── Koordinatsystem-defs ───────────────────── */
+/* ───────────────── Koordinatsystem-definisjoner ─────────────────── */
 proj4.defs("EPSG:25833", "+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs");
 proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
 export const PBE_EPSG = "EPSG:32632" as const;
 export type EpsgCode = "EPSG:25833" | "EPSG:32632";
 
-/* ───────────────────── Domenetyper ─────────────────────────── */
+/* ───────────────────── Typedefinisjoner ─────────────────────────── */
 export interface RepPoint {
   east: number;
   north: number;
@@ -35,15 +34,7 @@ export interface ByggInfo {
   representasjonspunkt?: RepPoint;
 }
 
-function maybeNumber(v: unknown): number | undefined {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : undefined;
-}
-
-/* ───────────────────── SOAP-klient ─────────────────────────── */
-const DEFAULT_URL =
-  "https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1/StoreServiceWS";
-
+/* ──────────────────── ID-typer for getObjectXml ─────────────────── */
 const ID_NS = {
   ByggId: {
     prefix: "byg",
@@ -56,89 +47,125 @@ const ID_NS = {
 } as const;
 type IdType = keyof typeof ID_NS;
 
+/* ───────────────────────── Hjelpefunksjoner ─────────────────────── */
+
+/** Rekursiv – returnerer første *rene* tall i node/streng. Ignorerer strenger som inneholder bokstaver. */
+function numDeepStrict(node: unknown): number | undefined {
+  if (node == null) return undefined;
+  if (typeof node === "number") return node;
+  if (typeof node === "string") {
+    const cleaned = node.replace(/\s+/g, "").replace(",", ".");
+    if (/^[+-]?\d+(\.\d+)?$/.test(cleaned)) return Number(cleaned);
+    return undefined; // strengen inneholder noe annet (f.eks. «m2»)
+  }
+  if (typeof node === "object") {
+    // typisk wrapper: { 'dom:value': '162', '@_unitCode': 'm2' }
+    // prøv kjente feltnavn først, så alle verdier
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const o = node as Record<string, unknown>;
+    return (
+      numDeepStrict(o["dom:value"]) ||
+      numDeepStrict(o.value) ||
+      Object.values(o).map(numDeepStrict).find(Number.isFinite)
+    );
+  }
+  return undefined;
+}
+
+/** Gå rekursivt i XML-treet og finn første forekomst av *localName* */
+function find(node: unknown, local: string): unknown {
+  if (node == null || typeof node !== "object") return undefined;
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const obj = node as Record<string, unknown>;
+  for (const [key, val] of Object.entries(obj)) {
+    if (key.split(":").pop() === local) return val;
+    const hit = find(val, local);
+    if (hit !== undefined) return hit;
+  }
+  return undefined;
+}
+
+/** Ekstraher tall ved å prøve flere taggnavn i rekkefølge */
+function extractNumber(tree: unknown, ...keys: string[]): number | undefined {
+  for (const k of keys) {
+    const n = numDeepStrict(find(tree, k));
+    if (Number.isFinite(n)) return n;
+  }
+  return undefined;
+}
+
+/** Hent representasjonspunkt fra <position><x>/<y> eller <øst>/<nord>/<aust>/<east>/<north> */
+function extractRepPoint(
+  tree: unknown
+): { east: number; north: number } | undefined {
+  const pos = find(tree, "position");
+  const x = numDeepStrict(
+    find(pos ?? tree, "x") ??
+      find(tree, "øst") ??
+      find(tree, "aust") ??
+      find(tree, "east")
+  );
+  const y = numDeepStrict(
+    find(pos ?? tree, "y") ?? find(tree, "nord") ?? find(tree, "north")
+  );
+  return Number.isFinite(x) && Number.isFinite(y)
+    ? { east: x!, north: y! }
+    : undefined;
+}
+
+/* ─────────────────────────── StoreClient ────────────────────────── */
 export class StoreClient {
   private readonly xml = new XMLParser({ ignoreAttributes: false });
 
   constructor(
-    private readonly baseUrl: string = DEFAULT_URL,
+    private readonly baseUrl: string = "https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1/StoreServiceWS",
     private readonly username?: string,
     private readonly password?: string
   ) {}
 
-  /* ---------- 3.1  Rå XML for vilkårlig ID ---------- */
+  /** Rå SOAP-respons for vilkårlig ID (Brukes av index.ts) */
   async getObjectXml(
     id: number | string,
-    idType: IdType = "MatrikkelenhetId",
+    idType: IdType = "ByggId",
     ctxKoordsys = 25833
   ): Promise<string> {
     const body = buildGenericRequestXml(id, idType, ctxKoordsys);
     return this.soapCall(body, "getObject");
   }
 
-  /* ---------- 3.2  Hent ByggInfo som struktur ---------- */
-  async getObject(byggId: number, ctxKoordsys = 25833): Promise<ByggInfo> {
-    const raw = await this.getObjectXml(byggId, "ByggId", ctxKoordsys);
-
-    // --- A.  Regex-plukk direkte fra hele SOAP-strengen ---------------
-    const rx = (tag: string, digits = "\\d+") =>
-      new RegExp(
-        `<[^>]*:?${tag}[^>]*>\\s*(${digits})\\s*</[^>]*:?${tag}>`,
-        "i"
-      );
-
-    const byggaarRX = Number(rx("byggeaar", "\\d{3,4}").exec(raw)?.[1]);
-    const braRX = Number(rx("bruksarealM2").exec(raw)?.[1]);
-    const austRX = Number(rx("aust").exec(raw)?.[1]);
-    const nordRX = Number(rx("nord").exec(raw)?.[1]);
-
-    // --- B.  Fallback – rekursiv søk (skulle regex feile helt) --------
+  /** Parsed ByggInfo */
+  async getObject(id: number, ctxKoordsys = 25833): Promise<ByggInfo> {
+    const raw = await this.getObjectXml(id, "ByggId", ctxKoordsys);
     const tree = this.xml.parse(raw);
 
-    const find = (o: any, local: string): any => {
-      if (!o || typeof o !== "object") return undefined;
-      for (const [k, v] of Object.entries(o)) {
-        if (k.split(":").pop() === local) return Array.isArray(v) ? v[0] : v;
-        const hit = find(v, local);
-        if (hit !== undefined) return hit;
-      }
-      return undefined;
-    };
+    const byggeaar = extractNumber(tree, "byggeaar", "byggeår", "byggaar");
+    const bruksarealM2 = extractNumber(
+      tree,
+      "bruksarealM2",
+      "bruksareal",
+      "bebygdAreal"
+    );
+    const repXY = extractRepPoint(tree);
 
-    const byggaar = Number.isFinite(byggaarRX)
-      ? byggaarRX
-      : Number(find(tree, "byggeaar"));
-    const bra = Number.isFinite(braRX)
-      ? braRX
-      : Number(find(tree, "bruksarealM2"));
-    const aust = Number.isFinite(austRX) ? austRX : Number(find(tree, "aust"));
-    const nord = Number.isFinite(nordRX) ? nordRX : Number(find(tree, "nord"));
+    const representasjonspunkt: RepPoint | undefined = repXY
+      ? {
+          east: repXY.east,
+          north: repXY.north,
+          epsg: "EPSG:25833",
+          toPBE() {
+            const [x, y] = proj4("EPSG:25833", PBE_EPSG, [
+              this.east,
+              this.north,
+            ]);
+            return { east: x, north: y };
+          },
+        }
+      : undefined;
 
-    // --- C.  Representasjonspunkt og retur ----------------------------
-    const repPoint: RepPoint | undefined =
-      Number.isFinite(aust) && Number.isFinite(nord)
-        ? {
-            east: aust,
-            north: nord,
-            epsg: "EPSG:25833",
-            toPBE() {
-              const [x, y] = proj4("EPSG:25833", PBE_EPSG, [
-                this.east,
-                this.north,
-              ]);
-              return { east: x, north: y };
-            },
-          }
-        : undefined;
-
-    return {
-      id: byggId,
-      byggeaar: Number.isFinite(byggaar) ? byggaar : undefined,
-      bruksarealM2: Number.isFinite(bra) ? bra : undefined,
-      representasjonspunkt: repPoint,
-    };
+    return { id, byggeaar, bruksarealM2, representasjonspunkt };
   }
 
-  /* ---------- 3.3  SOAP-helper m/logg & dump ---------- */
+  /* ────────────────────── SOAP-helper med logging ───────────────────── */
   private async soapCall(xml: string, action: string): Promise<string> {
     const corrId = randomUUID();
     const cfg: AxiosRequestConfig = {
@@ -154,11 +181,11 @@ export class StoreClient {
       validateStatus: () => true,
     };
 
-    if (IS_LIVE) await dumpSoap(corrId, "request", xml);
     if (LOG_SOAP)
       console.log(
-        `\n===== SOAP Request (${action}, ${corrId}) =====\n${xml}\n`
+        `\n===== SOAP Request » ${action} (${corrId}) =====\n${xml}\n`
       );
+    if (IS_LIVE) await dumpSoap(corrId, "request", xml);
 
     const { data, status } = await axios.post(this.baseUrl, xml, cfg);
 
@@ -182,27 +209,20 @@ export class StoreClient {
       );
 
     if (phase === "fault")
-      throw new Error(`SOAP ${status} fra StoreServiceWS (corrId=${corrId})`);
+      throw new Error(`SOAP fault fra StoreServiceWS (corrId=${corrId})`);
     if (status >= 400) throw new Error(`HTTP ${status} fra StoreServiceWS`);
 
     return String(data);
   }
 }
 
-/* ────────────────── 4.  XML-builder ────────────────── */
+/* ───────────────────── XML-builder for getObjectXml ────────────────── */
 function buildGenericRequestXml(
   id: number | string,
   idType: IdType,
   ctxKoordsys: number
 ): string {
   const { prefix, ns } = ID_NS[idType];
-
-  /* transformasjon AV – schema krever likevel taggen */
-  const transformBlock = `
-        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
-        <dom:koordinatsystemKodeId>
-          <dom:value>${ctxKoordsys}</dom:value>
-        </dom:koordinatsystemKodeId>`;
 
   return `<?xml version="1.0"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
@@ -216,12 +236,12 @@ function buildGenericRequestXml(
         <dom:value>${id}</dom:value>
       </sto:id>
       <sto:matrikkelContext>
-        <dom:locale>no_NO_B</dom:locale>${transformBlock}
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>false</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>${ctxKoordsys}</dom:value></dom:koordinatsystemKodeId>
         <dom:systemVersion>trunk</dom:systemVersion>
         <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
-        <dom:snapshotVersion>
-          <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
-        </dom:snapshotVersion>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
       </sto:matrikkelContext>
     </sto:getObject>
   </soap:Body>

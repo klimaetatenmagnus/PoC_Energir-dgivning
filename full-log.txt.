@@ -1,13 +1,13 @@
-(node:22748) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+(node:24711) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
 --import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("ts-node/esm", pathToFileURL("./"));'
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:22748) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(node:24711) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 <<<<< BygningClient.ts lastet – robust id-parsing (v6) >>>>>
 🌐 LIVE – ekte HTTP-trafikk tillatt
 ✓ building-info-service på http://localhost:4000
 
-===== SOAP Request » findMatrikkelenheter (864227d8-c691-4658-b43a-2d0913adfb3a) =====
+===== SOAP Request » findMatrikkelenheter (513ff6bf-c82a-49d1-9947-901691940c0a) =====
 
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
         <soapenv:Header/><soapenv:Body>
@@ -34,11 +34,11 @@
       </mat:findMatrikkelenheter></soapenv:Body>
       </soapenv:Envelope>
 
-===== SOAP Response (864227d8-c691-4658-b43a-2d0913adfb3a) HTTP 200 =====
+===== SOAP Response (513ff6bf-c82a-49d1-9947-901691940c0a) HTTP 200 =====
 
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><ns3:findMatrikkelenheterResponse xmlns="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain" xmlns:ns2="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/adresse" xmlns:ns3="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet" xmlns:ns4="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet" xmlns:ns5="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/exception" xmlns:ns6="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/geometri" xmlns:ns7="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/util" xmlns:ns8="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/forretning" xmlns:ns9="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kommunetillegg" xmlns:ns10="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning  …
 
-===== SOAP Request (getObject, ec995459-88c6-4cc1-92e5-096de929c144) =====
+===== SOAP Request » getObject (9ee100ce-1dce-4b34-a545-4395602e1459) =====
 <?xml version="1.0"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
                xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
@@ -52,140 +52,25 @@
       </sto:id>
       <sto:matrikkelContext>
         <dom:locale>no_NO_B</dom:locale>
-        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
-        <dom:koordinatsystemKodeId>
-          <dom:value>25833</dom:value>
-        </dom:koordinatsystemKodeId>
+        <dom:brukOriginaleKoordinater>false</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
         <dom:systemVersion>trunk</dom:systemVersion>
         <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
-        <dom:snapshotVersion>
-          <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
-        </dom:snapshotVersion>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
       </sto:matrikkelContext>
     </sto:getObject>
   </soap:Body>
 </soap:Envelope>
 
-===== SOAP Response (HTTP 200) (ec995459-88c6-4cc1-92e5-096de929c144) =====
+===== SOAP Fault (9ee100ce-1dce-4b34-a545-4395602e1459) =====
 
+file:///project/workspace/src/clients/StoreClient.ts:135
+        if (phase === "fault") throw new Error(`SOAP fault fra StoreServiceWS (corrId=${corrId})`);
+                                     ^
 
-===== SOAP Request (getObject, 80e171b5-93a6-44f5-b779-94fe60974f11) =====
-<?xml version="1.0"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
-               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
-               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
-               xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet"
-               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <soap:Body>
-    <sto:getObject>
-      <sto:id xsi:type="mat:MatrikkelenhetId">
-        <dom:value>284466634</dom:value>
-      </sto:id>
-      <sto:matrikkelContext>
-        <dom:locale>no_NO_B</dom:locale>
-        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
-        <dom:koordinatsystemKodeId>
-          <dom:value>25833</dom:value>
-        </dom:koordinatsystemKodeId>
-        <dom:systemVersion>trunk</dom:systemVersion>
-        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
-        <dom:snapshotVersion>
-          <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
-        </dom:snapshotVersion>
-      </sto:matrikkelContext>
-    </sto:getObject>
-  </soap:Body>
-</soap:Envelope>
-
-===== SOAP Response (HTTP 200) (80e171b5-93a6-44f5-b779-94fe60974f11) =====
-
-
-===== SOAP Request (findByggForMatrikkelenhet, corrId=26e76326-1d2e-4162-8d45-39addcadede3) =====
-
-<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-                  xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning"
-                  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
-  <soapenv:Body>
-    <sto:findByggForMatrikkelenhet>
-      <sto:matrikkelenhetId>
-        <dom:value>510390945</dom:value>
-      </sto:matrikkelenhetId>
-
-      <sto:matrikkelContext>
-      <dom:locale>no_NO_B</dom:locale>
-      <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>   
-      <dom:koordinatsystemKodeId>
-        <dom:value>25833</dom:value>                                     
-      </dom:koordinatsystemKodeId>
-      <dom:systemVersion>trunk</dom:systemVersion>
-      <dom:klientIdentifikasjon>building-info-service</dom:klientIdentifikasjon>
-      <dom:snapshotVersion>
-        <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
-      </dom:snapshotVersion>
-    </sto:matrikkelContext>
-    </sto:findByggForMatrikkelenhet>
-  </soapenv:Body>
-</soapenv:Envelope> 
-
-===== SOAP Response (HTTP 200), corrId=26e76326-1d2e-4162-8d45-39addcadede3) =====
-
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><ns2:findByggForMatrikkelenhetResponse xmlns="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning" xmlns:ns2="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning" xmlns:ns3="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain" xmlns:ns4="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/exception" xmlns:ns5="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/geometri" xmlns:ns6="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet" xmlns:ns7="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/adresse" xmlns:ns8="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/util" xmlns:ns9="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/forretning" xmlns:ns10="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kommunetillegg" xmlns:ns11="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/sefrak" xmlns:ns12="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kulturminne" xmlns:ns13="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/grunnforurensing" xmlns:ns14="http://matrikkel.statkart.no/matrikkela … 
-
-
-===== SOAP Request (getObject, 70640456-deea-4a95-abcc-fec36d6ac093) =====
-<?xml version="1.0"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
-               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
-               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
-               xmlns:byg="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning"
-               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <soap:Body>
-    <sto:getObject>
-      <sto:id xsi:type="byg:ByggId">
-        <dom:value>286103541</dom:value>
-      </sto:id>
-      <sto:matrikkelContext>
-        <dom:locale>no_NO_B</dom:locale>
-        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
-        <dom:koordinatsystemKodeId>
-          <dom:value>25833</dom:value>
-        </dom:koordinatsystemKodeId>
-        <dom:systemVersion>trunk</dom:systemVersion>
-        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
-        <dom:snapshotVersion>
-          <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
-        </dom:snapshotVersion>
-      </sto:matrikkelContext>
-    </sto:getObject>
-  </soap:Body>
-</soap:Envelope>
-
-===== SOAP Response (HTTP 200) (70640456-deea-4a95-abcc-fec36d6ac093) =====
-
-RESULTAT: {
-  "gnr": 73,
-  "bnr": 704,
-  "matrikkelenhetsId": 510390945,
-  "byggId": 286103541,
-  "byggeaar": null,
-  "bruksarealM2": null,
-  "representasjonspunkt": null,
-  "representasjonspunktPBE": null,
-  "energiattest": null
-}
-node:internal/process/promises:394
-    triggerUncaughtException(err, true /* fromPromise */);
-    ^
-
-AssertionError [ERR_ASSERTION]: false == true
-    at file:///project/workspace/scripts/test-e2e-building.ts:62:16
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
-  generatedMessage: true,
-  code: 'ERR_ASSERTION',
-  actual: false,
-  expected: true,
-  operator: '=='
-}
+Error: SOAP fault fra StoreServiceWS (corrId=9ee100ce-1dce-4b34-a545-4395602e1459)
+    at StoreClient.soapCall (file:///project/workspace/src/clients/StoreClient.ts:135:38)
+    at async resolveBuildingData (file:///project/workspace/services/building-info-service/index.ts:111:21)
+    at async file:///project/workspace/scripts/test-e2e-building.ts:50:20
 
 Node.js v22.16.0
