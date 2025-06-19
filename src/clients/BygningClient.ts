@@ -9,6 +9,18 @@ import crypto from "node:crypto";
 import { XMLParser } from "fast-xml-parser";
 import { dumpSoap, SoapPhase } from "../utils/soapDump.ts";
 
+function serviceUrl(base: string, svc = "BygningServiceWS"): string {
+  // 1) full URL sendt inn?  → bruk som den er
+  if (base.includes("://")) return base;
+
+  // 2) base *slutter allerede* med /BygningServiceWS  → bruk som den er
+  if (base.replace(/\/$/, "").endsWith(`/${svc}`)) return base;
+
+  // 3) ellers bygg normal sti  “…/service/bygning/BygningServiceWS”
+  const root = base.replace(/\/$/, "");
+  return `${root}/service/bygning/${svc}`;
+}
+
 /* ────────────── felles typer ─────────────────────────────── */
 export interface MatrikkelContext {
   locale: string;
@@ -49,19 +61,21 @@ export class BygningClient {
     }
 
     /* — kall webservicen — */
-    const resp: AxiosResponse<string> = await axios.post(
-      `${this.baseUrl}/BygningServiceWS`,
-      xmlRequest,
-      {
-        headers: {
-          "Content-Type": "text/xml;charset=UTF-8",
-          SOAPAction: soapAction,
-        },
-        auth: { username: this.username, password: this.password },
-        timeout: 10_000,
-        validateStatus: () => true, // vi håndterer fault under
-      }
-    );
+    const endpoint = this.baseUrl
+      .replace(/\/$/, "")
+      .endsWith("/BygningServiceWS")
+      ? this.baseUrl.replace(/\/$/, "") // full URL gitt inn
+      : `${this.baseUrl.replace(/\/$/, "")}/BygningServiceWS`; // legg til suffix
+
+    const resp: AxiosResponse<string> = await axios.post(endpoint, xmlRequest, {
+      headers: {
+        "Content-Type": "text/xml;charset=UTF-8",
+        SOAPAction: soapAction,
+      },
+      auth: { username: this.username, password: this.password },
+      timeout: 10_000,
+      validateStatus: () => true, // vi håndterer ev. fault under
+    });
 
     /* — dump respons eller fault — */
     const phase =
@@ -168,15 +182,17 @@ export class BygningClient {
       </sto:matrikkelenhetId>
 
       <sto:matrikkelContext>
-        <dom:locale>${ctx.locale}</dom:locale>
-        <dom:brukOriginaleKoordinater>${ctx.brukOriginaleKoordinater}</dom:brukOriginaleKoordinater>
-        ${koordinatXml}
-        <dom:systemVersion>${ctx.systemVersion}</dom:systemVersion>
-        <dom:klientIdentifikasjon>${ctx.klientIdentifikasjon}</dom:klientIdentifikasjon>
-        <dom:snapshotVersion>
-          <dom:timestamp>${ctx.snapshotVersion.timestamp}</dom:timestamp>
-        </dom:snapshotVersion>
-      </sto:matrikkelContext>
+      <dom:locale>no_NO_B</dom:locale>
+      <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>   
+      <dom:koordinatsystemKodeId>
+        <dom:value>25833</dom:value>                                     
+      </dom:koordinatsystemKodeId>
+      <dom:systemVersion>trunk</dom:systemVersion>
+      <dom:klientIdentifikasjon>building-info-service</dom:klientIdentifikasjon>
+      <dom:snapshotVersion>
+        <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
+      </dom:snapshotVersion>
+    </sto:matrikkelContext>
     </sto:findByggForMatrikkelenhet>
   </soapenv:Body>
 </soapenv:Envelope>`;

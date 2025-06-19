@@ -44,10 +44,18 @@ export class MatrikkelClient {
 
   /* ================ 1. Hjelpefunksjoner ===================== */
 
-  private serviceUrl(pathOrSvc: string): string {
-    if (pathOrSvc.includes("://")) return pathOrSvc;
+  private serviceUrl(svc: string): string {
+    // 1) full URL sendt inn? → bruk som den er
+    if (svc.includes("://")) return svc;
+
+    // 2) base already *is* the full endpoint? → bruk base som den er
+    //    (hindrer …WS/…WS-duplikat)
+    if (this.base.replace(/\/$/, "").endsWith(`/${svc}`)) return this.base;
+
+    // 3) ellers: bygg normal sti   “…/service/<domene>/<svc>”
     const root = this.base.replace(/\/$/, "");
-    return `${root}/${pathOrSvc}`; //  ← ikke «/service/matrikkelenhet/…»
+    const domain = svc.replace(/ServiceWS$/, "").toLowerCase(); // matrikkelenhet …
+    return `${root}/service/${domain}/${svc}`;
   }
 
   private async postSoap(

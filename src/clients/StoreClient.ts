@@ -1,36 +1,30 @@
 // src/clients/StoreClient.ts
 // -----------------------------------------------------------------------------
-//  StoreClient – henter komplette «Bygg»-bobler via StoreServiceWS
+//  StoreClient – henter komplette «Bygg»- og andre domeneobjekter via
+//  StoreServiceWS (Matrikkel API)
 // -----------------------------------------------------------------------------
 
 import axios, { AxiosRequestConfig } from "axios";
 import { XMLParser } from "fast-xml-parser";
 import proj4 from "proj4";
-import { dumpSoap, SoapPhase } from "../utils/soapDump.ts";
+import { dumpSoap, type SoapPhase } from "../utils/soapDump.ts";
 import { randomUUID } from "crypto";
 
-/* ──────────────────────────────────────────────────────────────────────────
-   0.  Miljøflagg
-   ──────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────── Miljø ─────────────────────────── */
 const LOG_SOAP = process.env.LOG_SOAP === "1";
-const IS_LIVE  = process.env.LIVE === "1";
+const IS_LIVE = process.env.LIVE === "1";
 
-/* ──────────────────────────────────────────────────────────────────────────
-   1.  Koordinatsystem-definisjoner  (EPSG:25833 ↔ 32632)
-   ──────────────────────────────────────────────────────────────────────── */
+/* ────────────────── Koordinatsystem-defs ───────────────────── */
 proj4.defs("EPSG:25833", "+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs");
 proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
 export const PBE_EPSG = "EPSG:32632" as const;
 export type EpsgCode = "EPSG:25833" | "EPSG:32632";
 
-/* ──────────────────────────────────────────────────────────────────────────
-   2.  Domenetyper (+ hjelpe­funksjoner)
-   ──────────────────────────────────────────────────────────────────────── */
+/* ───────────────────── Domenetyper ─────────────────────────── */
 export interface RepPoint {
   east: number;
   north: number;
   epsg: EpsgCode;
-  /**  Konverterer til PBE-systemet (EPSG 32632).  */
   toPBE(): { east: number; north: number };
 }
 
@@ -46,12 +40,21 @@ function maybeNumber(v: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   3.  HTTP/SOAP-klienten
-   ──────────────────────────────────────────────────────────────────────── */
+/* ───────────────────── SOAP-klient ─────────────────────────── */
 const DEFAULT_URL =
-  process.env.STORE_BASE_URL ??
-  "https://ws.geonorge.no/matrikkelapi/wsapi/v1/service/store/StoreServiceWS";
+  "https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1/StoreServiceWS";
+
+const ID_NS = {
+  ByggId: {
+    prefix: "byg",
+    ns: "http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning",
+  },
+  MatrikkelenhetId: {
+    prefix: "mat",
+    ns: "http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet",
+  },
+} as const;
+type IdType = keyof typeof ID_NS;
 
 export class StoreClient {
   private readonly xml = new XMLParser({ ignoreAttributes: false });
@@ -62,28 +65,60 @@ export class StoreClient {
     private readonly password?: string
   ) {}
 
-  /**  Hoved-API: hent ett bygg  */
+  /* ---------- 3.1  Rå XML for vilkårlig ID ---------- */
+  async getObjectXml(
+    id: number | string,
+    idType: IdType = "MatrikkelenhetId",
+    ctxKoordsys = 25833
+  ): Promise<string> {
+    const body = buildGenericRequestXml(id, idType, ctxKoordsys);
+    return this.soapCall(body, "getObject");
+  }
+
+  /* ---------- 3.2  Hent ByggInfo som struktur ---------- */
   async getObject(byggId: number, ctxKoordsys = 25833): Promise<ByggInfo> {
-    const body = buildRequestXml(byggId, ctxKoordsys);
-    const raw = await this.soapCall(body, "getObject");
+    const raw = await this.getObjectXml(byggId, "ByggId", ctxKoordsys);
 
-    const parsed: any =
-      this.xml.parse(raw)["soap:Envelope"]["soap:Body"][
-        "ns2:getObjectResponse"
-      ]?.["ns2:return"];
+    // --- A.  Regex-plukk direkte fra hele SOAP-strengen ---------------
+    const rx = (tag: string, digits = "\\d+") =>
+      new RegExp(
+        `<[^>]*:?${tag}[^>]*>\\s*(${digits})\\s*</[^>]*:?${tag}>`,
+        "i"
+      );
 
-    if (!parsed) {
-      throw new Error("Uventet SOAP-respons – mangler getObjectResponse");
-    }
+    const byggaarRX = Number(rx("byggeaar", "\\d{3,4}").exec(raw)?.[1]);
+    const braRX = Number(rx("bruksarealM2").exec(raw)?.[1]);
+    const austRX = Number(rx("aust").exec(raw)?.[1]);
+    const nordRX = Number(rx("nord").exec(raw)?.[1]);
 
-    const bygg = parsed["no.sk:Bygg"] ?? parsed;
+    // --- B.  Fallback – rekursiv søk (skulle regex feile helt) --------
+    const tree = this.xml.parse(raw);
 
-    const rp = bygg?.representasjonspunkt;
+    const find = (o: any, local: string): any => {
+      if (!o || typeof o !== "object") return undefined;
+      for (const [k, v] of Object.entries(o)) {
+        if (k.split(":").pop() === local) return Array.isArray(v) ? v[0] : v;
+        const hit = find(v, local);
+        if (hit !== undefined) return hit;
+      }
+      return undefined;
+    };
+
+    const byggaar = Number.isFinite(byggaarRX)
+      ? byggaarRX
+      : Number(find(tree, "byggeaar"));
+    const bra = Number.isFinite(braRX)
+      ? braRX
+      : Number(find(tree, "bruksarealM2"));
+    const aust = Number.isFinite(austRX) ? austRX : Number(find(tree, "aust"));
+    const nord = Number.isFinite(nordRX) ? nordRX : Number(find(tree, "nord"));
+
+    // --- C.  Representasjonspunkt og retur ----------------------------
     const repPoint: RepPoint | undefined =
-      rp && rp.aust && rp.nord
+      Number.isFinite(aust) && Number.isFinite(nord)
         ? {
-            east: Number(rp.aust),
-            north: Number(rp.nord),
+            east: aust,
+            north: nord,
             epsg: "EPSG:25833",
             toPBE() {
               const [x, y] = proj4("EPSG:25833", PBE_EPSG, [
@@ -97,103 +132,91 @@ export class StoreClient {
 
     return {
       id: byggId,
-      byggeaar: maybeNumber(bygg.byggeaar),
-      bruksarealM2: maybeNumber(bygg.bruksarealM2),
+      byggeaar: Number.isFinite(byggaar) ? byggaar : undefined,
+      bruksarealM2: Number.isFinite(bra) ? bra : undefined,
       representasjonspunkt: repPoint,
     };
   }
 
-  /* ────────────────────────────────────────────────────────────────
-     3.1 Intern SOAP-helper med dump/logg-kontroll
-     ────────────────────────────────────────────────────────────── */
+  /* ---------- 3.3  SOAP-helper m/logg & dump ---------- */
   private async soapCall(xml: string, action: string): Promise<string> {
-    const corrId = randomUUID();                    // én unik dump per kall
+    const corrId = randomUUID();
     const cfg: AxiosRequestConfig = {
       headers: {
         "Content-Type": "text/xml; charset=utf-8",
         SOAPAction: `"${action}"`,
       },
       timeout: 20_000,
+      auth:
+        this.username && this.password
+          ? { username: this.username, password: this.password }
+          : undefined,
+      validateStatus: () => true,
     };
-    if (this.username && this.password) {
-      cfg.auth = { username: this.username, password: this.password };
-    }
 
-    /* — dump &/eller logg request — */
-    if (IS_LIVE) {
-      await dumpSoap(corrId, "request", xml);
-    }
-    if (LOG_SOAP) {
+    if (IS_LIVE) await dumpSoap(corrId, "request", xml);
+    if (LOG_SOAP)
       console.log(
-        `\n===== SOAP Request (${action}, corrId=${corrId}) =====\n`
+        `\n===== SOAP Request (${action}, ${corrId}) =====\n${xml}\n`
       );
-      console.log(xml, "\n");
-    }
 
-    /* — call — */
     const { data, status } = await axios.post(this.baseUrl, xml, cfg);
 
-    /* — dump &/eller logg response/fault — */
     const phase: SoapPhase =
-      status >= 400 || (typeof data === "string" && data.includes("<soap:Fault>"))
+      status >= 400 ||
+      (typeof data === "string" && data.includes("<soap:Fault>"))
         ? "fault"
         : "response";
 
-    if (IS_LIVE) {
+    if (IS_LIVE)
       await dumpSoap(
         corrId,
         phase,
         typeof data === "string" ? data : JSON.stringify(data)
       );
-    }
-    if (LOG_SOAP) {
-      const tag =
-        phase === "fault"
-          ? "SOAP Fault"
-          : `SOAP Response (HTTP ${status})`;
-      console.log(`===== ${tag}, corrId=${corrId} =====\n`);
+    if (LOG_SOAP)
       console.log(
-        typeof data === "string" ? data.slice(0, 1200) : data,
-        typeof data === "string" && data.length > 1200 ? "…" : "",
-        "\n"
+        `===== ${
+          phase === "fault" ? "SOAP Fault" : `SOAP Response (HTTP ${status})`
+        } (${corrId}) =====\n`
       );
-    }
 
-    /* — feil-håndtering — */
-    if (phase === "fault") {
-      throw new Error(
-        `SOAP ${status} fra StoreServiceWS (corrId=${corrId})`
-      );
-    }
-    if (status >= 400) {
-      throw new Error(`HTTP ${status} fra StoreServiceWS`);
-    }
+    if (phase === "fault")
+      throw new Error(`SOAP ${status} fra StoreServiceWS (corrId=${corrId})`);
+    if (status >= 400) throw new Error(`HTTP ${status} fra StoreServiceWS`);
 
     return String(data);
   }
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   4.  XML-builder
-   ──────────────────────────────────────────────────────────────────────── */
-function buildRequestXml(byggId: number, ctxKoordsys: number): string {
+/* ────────────────── 4.  XML-builder ────────────────── */
+function buildGenericRequestXml(
+  id: number | string,
+  idType: IdType,
+  ctxKoordsys: number
+): string {
+  const { prefix, ns } = ID_NS[idType];
+
+  /* transformasjon AV – schema krever likevel taggen */
+  const transformBlock = `
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId>
+          <dom:value>${ctxKoordsys}</dom:value>
+        </dom:koordinatsystemKodeId>`;
+
   return `<?xml version="1.0"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
                xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
                xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
-               xmlns:byg="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning"
+               xmlns:${prefix}="${ns}"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <soap:Body>
     <sto:getObject>
-      <sto:id xsi:type="byg:ByggId">
-        <dom:value>${byggId}</dom:value>
+      <sto:id xsi:type="${prefix}:${idType}">
+        <dom:value>${id}</dom:value>
       </sto:id>
       <sto:matrikkelContext>
-        <dom:locale>no_NO_B</dom:locale>
-        <dom:brukOriginaleKoordinater>false</dom:brukOriginaleKoordinater>
-        <dom:koordinatsystemKodeId>
-          <dom:value>${ctxKoordsys}</dom:value>
-        </dom:koordinatsystemKodeId>
+        <dom:locale>no_NO_B</dom:locale>${transformBlock}
         <dom:systemVersion>trunk</dom:systemVersion>
         <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
         <dom:snapshotVersion>

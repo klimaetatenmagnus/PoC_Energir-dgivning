@@ -1,7 +1,7 @@
 // services/building-info-service/index.ts
 // ---------------------------------------------------------------------------
 // REST-tjeneste: Adresse → Matrikkel → Bygg (+ valgfri Energiattest)
-// Oppdatert: juni 2025 (v2.2) – fikser Response-type-kollisjon
+// Oppdatert: juni 2025 (v2.3) – bytter ut SOAP-kallet som gav fault
 // ---------------------------------------------------------------------------
 
 import "dotenv/config";
@@ -14,6 +14,7 @@ import cors from "cors";
 import NodeCache from "node-cache";
 import fetch, { Response as FetchResponse } from "node-fetch"; // ← alias
 
+import { matrikkelEndpoint } from "../../src/utils/endpoints.ts";
 import { MatrikkelClient } from "../../src/clients/MatrikkelClient.ts";
 import { BygningClient } from "../../src/clients/BygningClient.ts";
 import { StoreClient, ByggInfo } from "../../src/clients/StoreClient.ts";
@@ -27,10 +28,20 @@ const PORT = Number(process.env.PORT) || 4000;
 const LOG = process.env.LOG_SOAP === "1";
 
 /* ───────────── Klient-instanser ─────────── */
-const matrikkelClient = new MatrikkelClient(BASE_URL, USERNAME, PASSWORD);
-const bygningClient = new BygningClient(BASE_URL, USERNAME, PASSWORD);
 const storeClient = new StoreClient(
-  `${BASE_URL}/service/store/StoreServiceWS`,
+  matrikkelEndpoint(BASE_URL, "StoreService"),
+  USERNAME,
+  PASSWORD
+);
+
+const bygningClient = new BygningClient(
+  matrikkelEndpoint(BASE_URL, "BygningService"),
+  USERNAME,
+  PASSWORD
+);
+
+const matrikkelClient = new MatrikkelClient(
+  matrikkelEndpoint(BASE_URL, "MatrikkelenhetService"),
   USERNAME,
   PASSWORD
 );
@@ -48,15 +59,15 @@ const ctx = () => ({
   snapshotVersion: { timestamp: "9999-01-01T00:00:00+01:00" },
 });
 
-/* ───────────── Geonorge-oppslag ─────────── */
+/* ───────────── Hoved-flyt ─────────────── */
 interface GeoResp {
   adresser: {
     kommunenummer: string;
     gardsnummer: number;
     bruksnummer: number;
     adressekode: number;
-    nummer: string; // ← NYTT
-    husnummer?: string; // (finnes av og til)
+    nummer?: string;
+    husnummer?: string;
     bokstav?: string;
   }[];
 }
@@ -79,25 +90,21 @@ async function lookupAdresse(str: string) {
       gnr: a.gardsnummer,
       bnr: a.bruksnummer,
       adressekode: a.adressekode,
-      husnummer: Number(a.nummer ?? a.husnummer ?? 0), // ← endret
+      husnummer: Number(a.nummer ?? a.husnummer ?? 0),
       bokstav: a.bokstav ?? "",
     };
   };
 
-  // ① Første forsøk – original streng
+  /* ① Prøv original streng */
   const r1 = await fetch(buildUrl(str), headers);
   if (r1.ok) return parse(r1);
 
-  // ② Fallback – erstatt komma med mellomrom, trim og slank ut dobbelts mellomrom
-  const alt = str.replace(/,/g, " ").trim().replace(/\s+/g, " ");
+  /* ② Fallback-varianter (komma-/whitespace-vask) */
   const variants = [
-    str, // 1) uendret
+    str,
+    str.replace(/,/g, " ").trim().replace(/\s+/g, " "),
     str
-      .replace(/,/g, " ") // 2) komma → mellomrom
-      .trim()
-      .replace(/\s+/g, " "),
-    str
-      .replace(/,/g, " ") // 3) + mellomrom før husbokstav
+      .replace(/,/g, " ")
       .replace(/(\d+)([A-Za-z])/, "$1 $2")
       .trim()
       .replace(/\s+/g, " "),
@@ -105,10 +112,8 @@ async function lookupAdresse(str: string) {
 
   for (const v of variants) {
     const resp = await fetch(buildUrl(v), headers);
-    if (resp.ok) return parse(resp); // suksess → returnér
-    if (LOG) console.log("  • Geonorge", resp.status, v);
+    if (resp.ok) return parse(resp);
   }
-
   throw new Error("Geonorge gav 400 på alle varianter");
 }
 
@@ -119,12 +124,14 @@ async function fetchEnergiattest(p: {
   bnr: number;
 }) {
   if (!ENOVA_KEY) return null;
+
   const r = await fetch(
     "https://api.data.enova.no/ems/offentlige-data/v1/Energiattest",
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "User-Agent": "Energitiltak/1.0",
         "x-api-key": ENOVA_KEY,
       },
       body: JSON.stringify({
@@ -136,17 +143,20 @@ async function fetchEnergiattest(p: {
       }),
     }
   );
-  if (!r.ok) return r.status === 404 ? null : Promise.reject(r.statusText);
+
+  if (!r.ok) {
+    if (r.status === 404) return null;
+    throw new Error("Enova " + r.status);
+  }
   const list = await r.json();
-  return Array.isArray(list) ? list[0] : null;
+  return Array.isArray(list) && list[0] ? list[0] : null;
 }
 
-/* ───────────── Hoved-flyt ─────────────── */
 export async function resolveBuildingData(adresse: string) {
   /* 1) Geonorge → vegadresse + gnr/bnr */
   const adr = await lookupAdresse(adresse);
 
-  /* 2) kandidat-ID-liste fra findMatrikkelenheter (med adresse-feltene) */
+  /* 2) kandidat-ID-liste fra findMatrikkelenheter */
   const ids = await matrikkelClient.findMatrikkelenheter(
     {
       kommunenummer: adr.kommunenummer,
@@ -158,28 +168,32 @@ export async function resolveBuildingData(adresse: string) {
     },
     ctx()
   );
-  if (ids.length === 0) {
+  if (!ids.length)
     throw new Error("Fant ingen matrikkelenhets-ID for adressen");
+
+  /* 3) Nytt: loop over hver ID og sjekk om den har <hovedadresse>true</hovedadresse> */
+  let matrikkelenhetsId: number | undefined;
+  for (const id of ids) {
+    const xml = await storeClient.getObjectXml(id, "MatrikkelenhetId");
+
+    // fanger <hovedadresse>true</hovedadresse>  **eller**  hovedadresse="true"
+    const isMain =
+      /<hovedadresse>\s*true\s*<\/hovedadresse>/i.test(xml) ||
+      /hovedadresse\s*=\s*["']?true["']?/i.test(xml);
+
+    if (isMain) {
+      matrikkelenhetsId = id;
+      break;
+    }
   }
 
-  /* 3) Bulk-hent, filtrer på <hovedadresse>true</hovedadresse> */
-  const xml = await matrikkelClient.getMatrikkelenheter(ids, ctx());
-
-  const hovedIds = ids.filter((id) =>
-    new RegExp(
-      `<matrikkelenhetId>\\s*<dom:value>${id}</dom:value>[\\s\\S]*?<hovedadresse>true<\\/hovedadresse>`,
-      "m"
-    ).test(xml)
-  );
-
-  if (hovedIds.length !== 1) {
+  // fallback: ta første ID dersom ingen eksplisitt hovedadresse funnet
+  if (!matrikkelenhetsId) matrikkelenhetsId = ids[0];
+  if (!matrikkelenhetsId) {
     throw new Error(
-      `Forventet én matrikkelenhet med hovedadresse, fikk ${
-        hovedIds.length
-      }: [${hovedIds.join(", ")}]`
+      "Fant ingen matrikkelenhet hvor <hovedadresse>true</hovedadresse>"
     );
   }
-  const matrikkelenhetsId = hovedIds[0];
 
   /* 4) matrikkelenhet → bygg-ID-liste */
   const byggIdListe = await bygningClient.findByggForMatrikkelenhet(
@@ -217,6 +231,9 @@ export async function resolveBuildingData(adresse: string) {
     energiattest: attest,
   } as const;
 }
+
+/* ───────────── Express-app (uendret) ────────────── */
+/* ... resten av filen er identisk – oppretter /lookup-endepunkt, logger osv ... */
 
 /* ───────────── Express-app ────────────── */
 const app = express();
