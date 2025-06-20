@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:adr="http://ws.geonorge.no/AdresseServiceWS-v1">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <adr:hentEiendomRequest>
+      <kommunenummer>301</kommunenummer>
+      <gårdsnummer>79</gårdsnummer>
+      <bruksnummer>4</bruksnummer>
+    </adr:hentEiendomRequest>
+  </soapenv:Body>
+</soapenv:Envelope>
