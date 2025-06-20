@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet">
+  <soapenv:Body>
+    <mat:getCapabilities/>
+  </soapenv:Body>
+</soapenv:Envelope>

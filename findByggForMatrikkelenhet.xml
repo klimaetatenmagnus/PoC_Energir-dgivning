@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope
+    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning"
+    xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <sto:findByggForMatrikkelenhet>
+      <sto:matrikkelenhetId xsi:type="dom:MatrikkelenhetId">
+        <dom:value>510390946</dom:value>
+      </sto:matrikkelenhetId>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>false</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId>
+          <dom:value>25833</dom:value>
+        </dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>curl-prodtest</dom:klientIdentifikasjon>
+        <dom:snapshotVersion>
+          <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
+        </dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:findByggForMatrikkelenhet>
+  </soapenv:Body>
+</soapenv:Envelope>

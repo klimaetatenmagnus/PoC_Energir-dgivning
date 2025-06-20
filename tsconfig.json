@@ -1,0 +1,57 @@
+{
+  "compilerOptions": {
+    /* ---------------------------------------------------------- */
+    /*  Generelt                                                  */
+    /* ---------------------------------------------------------- */
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "jsx": "react-jsx",
+    "useDefineForClassFields": true,
+    "skipLibCheck": true,
+    "typeRoots": ["./node_modules/@types"],
+
+    /* ---------------------------------------------------------- */
+    /*  Sti-alias slik at TS finner SWR-typene                    */
+    /* ---------------------------------------------------------- */
+    "baseUrl": ".",                          // nødvendig for "paths"
+    "paths": {
+      "swr": ["node_modules/swr/dist/index.d.ts"]
+    },
+
+    /* ---------------------------------------------------------- */
+    /*  Bundler-modus (Vite)                                      */
+    /* ---------------------------------------------------------- */
+    "moduleResolution": "node",
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+
+
+    /* ---------------------------------------------------------- */
+    /*  Linting-strenger                                          */
+    /* ---------------------------------------------------------- */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+
+  /* ------------------------------------------------------------ */
+  /*  Filsett                                                     */
+  /* ------------------------------------------------------------ */
+  "include": ["src/**/*", "server/**/*", "services/**/*", "scripts/**/*"],
+  "references": [{ "path": "./tsconfig.node.json" }],
+
+  /* ------------------------------------------------------------ */
+  /*  ts-node (brukes i Nodemon / dev-scripts)                    */
+  /* ------------------------------------------------------------ */
+  "ts-node": {
+    "esm": true,
+    "swc": true
+  }
+}
