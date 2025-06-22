@@ -8,6 +8,7 @@ import nock from "nock";
 import { resolveBuildingData } from "../services/building-info-service/index.ts";
 import { StoreClient } from "../src/clients/StoreClient.ts";
 import { matrikkelEndpoint } from "../src/utils/endpoints.ts";
+import { cleanupSoapDumps } from "../src/utils/soapDump.ts";
 
 // Import environment
 import "../loadEnv.ts";
@@ -231,4 +232,15 @@ if (!process.env.LIVE) {
   }
 
   console.log("✅  Integrasjonstesten passerte");
-})();
+  
+  // Rydd opp i gamle SOAP-dump filer (behold kun 12 nyeste)
+  if (process.env.LIVE === "1") {
+    await cleanupSoapDumps();
+  }
+  
+  // Eksplisitt avslutt prosessen for å unngå timeout
+  process.exit(0);
+})().catch((error) => {
+  console.error("❌ Test feilet:", error);
+  process.exit(1);
+});
