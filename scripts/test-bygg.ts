@@ -7,6 +7,7 @@ import { strict as assert } from "assert";
 import nock from "nock";
 import { BygningClient } from "../src/clients/BygningClient.ts";
 import type { MatrikkelContext } from "../src/clients/BygningClient.ts";
+import 'dotenv/config'
 
 /* ────────────── 1. Lokal ctx() med nøyaktig type ───────────── */
 function ctx(): MatrikkelContext {

@@ -9,7 +9,7 @@
     "dev:buildings": "cross-env LOG_SOAP=1 nodemon --watch services/building-info-service --exec \"node --loader ts-node/esm services/building-info-service/index.ts\"",
     "dev:subsidy": "node services/subsidy-service/index.js",
     "dev:solar": "cross-env PORT=4003 nodemon --watch services/solar-service --exec \"node services/solar-service/index.js\"",
-    "dev": "concurrently -k -n client,server,buildings,solar -c blue,green,yellow,magenta \"pnpm run dev:client\" \"pnpm run dev:server\" \"pnpm run dev:buildings\" \"pnpm run dev:solar\"",
+    "dev": "cross-env DOTENV_CONFIG_PATH=./.env concurrently -k -n client,server,buildings,solar -c blue,green,yellow,magenta \"pnpm run dev:client\" \"pnpm run dev:server\" \"pnpm run dev:buildings\" \"pnpm run dev:solar\"",
     "dev:local": "cross-env API_ENV=test concurrently -k -n client,server,buildings,subsidy -c blue,green,yellow,magenta \"pnpm run dev:client\" \"pnpm run dev:server\" \"pnpm run dev:buildings\" \"pnpm run dev:subsidy\"",
     "start:prod": "cross-env API_ENV=prod ts-node server/index.ts",
     "build": "tsc && vite build",

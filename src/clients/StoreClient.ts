@@ -8,6 +8,7 @@ import { XMLParser } from "fast-xml-parser";
 import proj4 from "proj4";
 import { dumpSoap, type SoapPhase } from "../utils/soapDump.ts";
 import { randomUUID } from "crypto";
+import "../../loadEnv.ts"; 
 
 /* ─────────────────────────── Miljøflagg ─────────────────────────── */
 const LOG_SOAP = process.env.LOG_SOAP === "1";
@@ -113,6 +114,72 @@ function extractRepPoint(
     : undefined;
 }
 
+/** Hent byggeår fra bygningsstatusHistorikker */
+function extractByggeaar(tree: unknown): number | undefined {
+  // Finn bygningsstatusHistorikker eller andre årstal-kilder
+  const historikker = find(tree, "bygningsstatusHistorikker") ?? find(tree, "bygningstatusHistorikker");
+  
+  if (historikker && typeof historikker === "object") {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const hist = historikker as Record<string, unknown>;
+    const items = hist.item ?? Object.values(hist);
+    
+    if (Array.isArray(items)) {
+      for (const item of items) {
+        const dato = find(item, "dato");
+        if (dato && typeof dato === "object") {
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+          const datoObj = dato as Record<string, unknown>;
+          const dateStr = datoObj.date;
+          if (typeof dateStr === "string") {
+            const year = parseInt(dateStr.substring(0, 4), 10);
+            if (year > 1800 && year < 2100) return year;
+          }
+        }
+      }
+    }
+  }
+  
+  // Fallback: søk etter andre byggeår-felter
+  return extractNumber(tree, "byggeaar", "byggeår", "byggaar");
+}
+
+/** Hent totalt bruksareal fra etasjedata */
+function extractBruksareal(tree: unknown): number | undefined {
+  // Prøv først etasjedata (summert fra alle etasjer)
+  const etasjedata = find(tree, "etasjedata");
+  if (etasjedata) {
+    const totalt = extractNumber(etasjedata, "bruksarealTotalt");
+    if (Number.isFinite(totalt)) return totalt;
+  }
+  
+  // Prøv så individuelle etasjer og summer dem
+  const etasjer = find(tree, "etasjer");
+  if (etasjer && typeof etasjer === "object") {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const etasjerObj = etasjer as Record<string, unknown>;
+    const items = etasjerObj.item ?? Object.values(etasjerObj);
+    
+    if (Array.isArray(items)) {
+      let totalSum = 0;
+      for (const etasje of items) {
+        const areal = extractNumber(etasje, "bruksarealTotalt", "bruksareal");
+        if (Number.isFinite(areal)) totalSum += areal!;
+      }
+      if (totalSum > 0) return totalSum;
+    }
+  }
+  
+  // Fallback til normale søk
+  return extractNumber(
+    tree,
+    "bruksarealTotalt",
+    "bruksarealM2", 
+    "bruksareal",
+    "bebygdAreal"
+  );
+}
+
 /* ─────────────────────────── StoreClient ────────────────────────── */
 export class StoreClient {
   private readonly xml = new XMLParser({ ignoreAttributes: false });
@@ -138,13 +205,11 @@ export class StoreClient {
     const raw = await this.getObjectXml(id, "ByggId", ctxKoordsys);
     const tree = this.xml.parse(raw);
 
-    const byggeaar = extractNumber(tree, "byggeaar", "byggeår", "byggaar");
-    const bruksarealM2 = extractNumber(
-      tree,
-      "bruksarealM2",
-      "bruksareal",
-      "bebygdAreal"
-    );
+    // Hent byggeår fra bygningsstatusHistorikker (første dato funnet)
+    const byggeaar = extractByggeaar(tree);
+    
+    // Hent totalt bruksareal fra etasjedata (ikke bebygdAreal som er 1m²)
+    const bruksarealM2 = extractBruksareal(tree);
     const repXY = extractRepPoint(tree);
 
     const representasjonspunkt: RepPoint | undefined = repXY
@@ -237,7 +302,7 @@ function buildGenericRequestXml(
       </sto:id>
       <sto:matrikkelContext>
         <dom:locale>no_NO_B</dom:locale>
-        <dom:brukOriginaleKoordinater>false</dom:brukOriginaleKoordinater>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
         <dom:koordinatsystemKodeId><dom:value>${ctxKoordsys}</dom:value></dom:koordinatsystemKodeId>
         <dom:systemVersion>trunk</dom:systemVersion>
         <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>

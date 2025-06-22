@@ -8,6 +8,7 @@ import axios, { AxiosResponse } from "axios";
 import crypto from "node:crypto";
 import { XMLParser } from "fast-xml-parser";
 import { dumpSoap, SoapPhase } from "../utils/soapDump.ts";
+import "../../loadEnv.ts"; 
 
 function serviceUrl(base: string, svc = "BygningServiceWS"): string {
   // 1) full URL sendt inn?  → bruk som den er
