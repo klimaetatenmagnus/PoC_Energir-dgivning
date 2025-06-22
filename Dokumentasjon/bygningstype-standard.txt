@@ -1,0 +1,305 @@
+22.06.2025, 12:53
+
+Standard for bygningstype / Matrikkelen
+
+Søk i hele ssb.no
+
+Vi bruker cookies
+
+Forsiden > Metadata > Klassifikasjoner og kodelister (Klass) > Standard for bygningstype / Matrikkelen
+
+https://www.ssb.no/klass/klassifikasjoner/31
+
+1/8
+
+22.06.2025, 12:53
+
+Standard for bygningstype / Matrikkelen
+
+Enhetstype: Bygning
+
+Velg språk for kodeverk:
+Bokmål
+
+Standard for bygningstype /
+Matrikkelen
+
+KONTAKT
+
+Standarden viser inndeling av bygninger etter hva slags funksjon bygningen skal ha. Kombinerte bygninger, for
+eksempel kombinerte bolig- og forretningsbygninger, lager- og produksjonsbygninger o.a. er gruppert etter
+den funksjonen som har størst del av bruksarealet i bygningen.
+
+E-post
+
+Bygningstype / Matrikkelen 2000
+Om versjonen
+
+Endringer
+
+Alle versjoner
+
+Korrespondanser
+
+Filtrer
+
+Nullstill
+
+Filtrer etter koder eller navn
+
+ABONNEMENT
+
+Abonner på endringer i kodeverket
+
+Gjeldende versjon: (Gyldig fra og med januar 2000)
+
+Koder
+
+Mathiesen, Jens
+E-post: Jens.Mathiesen@ssb.no
+Tlf: 40811398
+
+Abonner
+
+Varianter
+
+MER PÅ SSB.NO
+Klass API med XML, JSON og CSV
+
+Åpne hierarkiet
+
+Last ned CSV
+
+1 - Bolig
+11 - Enebolig
+111 - Enebolig
+112 - Enebolig med hybelleilighet, sokkelleilighet o.l.
+113 - Våningshus
+12 - Tomannsbolig
+121 - Tomannsbolig, vertikaldelt
+122 - Tomannsbolig, horisontaldelt
+123 - Våningshus, tomannsbolig, vertikaldelt
+124 - Våningshus, tomannsbolig, horisontaldelt
+13 - Rekkehus, kjedehus, andre småhus
+131 - Rekkehus
+133 - Kjedehus inkl. atriumhus
+135 - Terrassehus
+136 - Andre småhus med 3 boliger eller flere
+14 - Store boligbygg
+141 - Store frittliggende boligbygg på 2 etasjer
+142 - Store frittliggende boligbygg på 3 og 4 etasjer
+143 - Store frittliggende boligbygg på 5 etasjer eller over
+
+https://www.ssb.no/klass/klassifikasjoner/31
+
+2/8
+
+22.06.2025, 12:53
+
+Standard for bygningstype / Matrikkelen
+
+144 - Store sammenbygde boligbygg på 2 etasjer
+145 - Store sammenbygde boligbygg på 3 og 4 etasjer
+146 - Store sammenbygde boligbygg på 5 etasjer og over
+15 - Bygning for bofellesskap
+151 - Bo- og servicesenter
+152 - Studenthjem/studentboliger
+159 - Annen bygning for bofellesskap
+16 - Fritidsbolig
+161 - Fritidsbygning (hytter, sommerhus o.l.)
+162 - Helårsbolig benyttet som fritidsbolig
+163 - Våningshus benyttet som fritidsbolig
+17 - Koie, seterhus og lignende
+171 - Seterhus, sel, rorbu o.l.
+172 - Skogs- og utmarkskoie, gamme
+18 - Garasje og uthus til bolig
+181 - Garasje, uthus, anneks knyttet til bolig
+182 - Garasje, uthus, anneks knyttet til fritidsbolig
+183 - Naust, båthus, sjøbu
+19 - Annen boligbygning
+193 - Boligbrakker
+199 - Annen boligbygning (f.eks. sekundærbolig reindrift)
+2 - Industri og lagerbygning
+21 - Industribygning
+211 - Fabrikkbygning
+212 - Verkstedbygning
+214 - Bygning for renseanlegg
+216 - Bygning for vannforsyning, bl.a. pumpestasjon
+219 - Annen industribygning
+22 - Energiforsyningsbygning
+https://www.ssb.no/klass/klassifikasjoner/31
+
+3/8
+
+22.06.2025, 12:53
+
+Standard for bygningstype / Matrikkelen
+
+221 - Kraftstasjon (>15 000 kVA)
+223 - Transformatorstasjon (>10 000 kVA)
+229 - Annen energiforsyningsbygning
+23 - Lagerbygning
+231 - Lagerhall
+232 - Kjøle- og fryselager
+233 - Silobygning
+239 - Annen lagerbygning
+24 - Fiskeri- og landbruksbygning
+241 - Hus for dyr, fôrlager, strølager, frukt- og grønnsakslager, landbrukssilo,
+høy-/korntørke
+243 - Veksthus
+244 - Driftsbygning for fiske og fangst, inkl. oppdrettsanlegg
+245 - Naust/redskapshus for fiske
+248 - Annen fiskeri- og fangstbygning
+249 - Annen landbruksbygning
+3 - Kontor- og forretningsbygning
+31 - Kontorbygning
+311 - Kontor- og administrasjonsbygning, rådhus
+312 - Bankbygning, posthus
+313 - Mediebygning
+319 - Annen kontorbygning
+32 - Forretningsbygning
+321 - Kjøpesenter, varehus
+322 - Butikkbygning
+323 - Bensinstasjon
+329 - Annen forretningsbygning
+330 - Messe- og kongressbygning
+4 - Samferdsels- og kommunikasjonsbygning
+https://www.ssb.no/klass/klassifikasjoner/31
+
+4/8
+
+22.06.2025, 12:53
+
+Standard for bygningstype / Matrikkelen
+
+41 - Ekspedisjonsbygning, terminal
+411 - Ekspedisjonsbygning, flyterminal, kontrolltårn
+412 - Jernbane- og T-banestasjon
+415 - Godsterminal
+416 - Postterminal
+419 - Annen ekspedisjons- og terminalbygning
+42 - Telekommunikasjonsbygning
+429 - Telekommunikasjonsbygning
+43 - Garasje- og hangarbygning
+431 - Parkeringshus
+439 - Annen garasje- hangarbygning
+44 - Veg- og trafikktilsynsbygning
+441 - Trafikktilsynsbygning
+449 - Annen veg- og trafikktilsynsbygning
+5 - Hotell- og restaurantbygning
+51 - Hotellbygning
+511 - Hotellbygning
+512 - Motellbygning
+519 - Annen hotellbygning
+52 - Bygning for overnatting
+521 - Hospits, pensjonat
+522 - Vandrerhjem, feriehjem/-koloni, turisthytte
+523 - Appartement
+524 - Campinghytte/utleiehytte
+529 - Annen bygning for overnatting
+53 - Restaurantbygning
+531 - Restaurantbygning, kafébygning
+532 - Sentralkjøkken, kantinebygning
+533 - Gatekjøkken, kioskbygning
+https://www.ssb.no/klass/klassifikasjoner/31
+
+5/8
+
+22.06.2025, 12:53
+
+Standard for bygningstype / Matrikkelen
+
+539 - Annen restaurantbygning
+6 - Kultur- og forskningsbygning
+61 - Skolebygning
+611 - Lekepark
+612 - Barnehage
+613 - Barneskole
+614 - Ungdomsskole
+615 - Kombinert barne- og ungdomsskole
+616 - Videregående skole
+619 - Annen skolebygning
+62 - Universitet- og høgskolebygning
+621 - Universitets- og høgskolebygning med integrerte funksjoner, auditorium, lesesal
+o.a.
+623 - Laboratoriebygning
+629 - Annen universitets-, høgskole- og forskningsbygning
+64 - Museums- og biblioteksbygning
+641 - Museum, kunstgalleri
+642 - Bibliotek, mediatek
+643 - Zoologisk og botanisk hage
+649 - Annen museums- og bibliotekbygning
+65 - Idrettsbygning
+651 - Idrettshall
+652 - Ishall
+653 - Svømmehall
+654 - Tribune og idrettsgarderobe
+655 - Helsestudio
+659 - Annen idrettsbygning
+66 - Kulturhus
+661 - Kinobygning, teaterbygning, opera/konserthus
+
+https://www.ssb.no/klass/klassifikasjoner/31
+
+6/8
+
+22.06.2025, 12:53
+
+Standard for bygningstype / Matrikkelen
+
+662 - Samfunnshus, grendehus
+663 - Diskotek
+669 - Annet kulturhus
+67 - Bygning for religiøse aktiviteter
+671 - Kirke, kapell
+672 - Bedehus, menighetshus
+673 - Krematorium, gravkapell, bårehus
+674 - Synagoge, moské
+675 - Kloster
+679 - Annen bygning for religiøse aktiviteter
+7 - Helsebygning
+71 - Sykehus
+719 - Sykehus
+72 - Sykehjem
+721 - Sykehjem
+722 - Bo- og behandlingssenter, aldershjem
+723 - Rehabiliteringsinstitusjon, kurbad
+729 - Annet sykehjem
+73 - Primærhelsebygning
+731 - Klinikk, legekontor/-senter/-vakt
+732 - Helse- og sosialsenter, helsestasjon
+739 - Annen primærhelsebygning
+8 - Fengsel, beredskapsbygning mv.
+81 - Fengselsbygning
+819 - Fengselsbygning
+82 - Beredskapsbygning
+821 - Politistasjon
+822 - Brannstasjon, ambulansestasjon
+823 - Fyrstasjon, losstasjon
+https://www.ssb.no/klass/klassifikasjoner/31
+
+7/8
+
+22.06.2025, 12:53
+
+Standard for bygningstype / Matrikkelen
+
+824 - Stasjon for radarovervåkning av fly- og/eller skipstrafikk
+825 - Tilfluktsrom/bunker
+829 - Annen beredskapsbygning
+83 - Monument
+830 - Monument
+84 - Offentlig toalett
+840 - Offentlig toalett
+
+Kontakt oss
+
+https://www.ssb.no/klass/klassifikasjoner/31
+
+Tilgjengelighet
+
+© Statistisk sentralbyrå
+
+8/8
+
+

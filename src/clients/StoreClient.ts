@@ -33,6 +33,7 @@ export interface ByggInfo {
   byggeaar?: number;
   bruksarealM2?: number;
   representasjonspunkt?: RepPoint;
+  bygningstypeKodeId?: number;
 }
 
 /* ──────────────────── ID-typer for getObjectXml ─────────────────── */
@@ -144,6 +145,11 @@ function extractByggeaar(tree: unknown): number | undefined {
   return extractNumber(tree, "byggeaar", "byggeår", "byggaar");
 }
 
+/** Hent bygningstype-kode */
+function extractBygningstypeKodeId(tree: unknown): number | undefined {
+  return extractNumber(tree, "bygningstypeKodeId", "byggningstype", "bygningstype");
+}
+
 /** Hent totalt bruksareal fra etasjedata */
 function extractBruksareal(tree: unknown): number | undefined {
   // Prøv først etasjedata (summert fra alle etasjer)
@@ -211,6 +217,9 @@ export class StoreClient {
     // Hent totalt bruksareal fra etasjedata (ikke bebygdAreal som er 1m²)
     const bruksarealM2 = extractBruksareal(tree);
     const repXY = extractRepPoint(tree);
+    
+    // Hent bygningstype-kode
+    const bygningstypeKodeId = extractBygningstypeKodeId(tree);
 
     const representasjonspunkt: RepPoint | undefined = repXY
       ? {
@@ -227,7 +236,7 @@ export class StoreClient {
         }
       : undefined;
 
-    return { id, byggeaar, bruksarealM2, representasjonspunkt };
+    return { id, byggeaar, bruksarealM2, representasjonspunkt, bygningstypeKodeId };
   }
 
   /* ────────────────────── SOAP-helper med logging ───────────────────── */
