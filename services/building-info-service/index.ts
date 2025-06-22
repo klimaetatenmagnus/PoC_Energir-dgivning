@@ -17,6 +17,12 @@ import { matrikkelEndpoint } from "../../src/utils/endpoints.ts";
 import { MatrikkelClient } from "../../src/clients/MatrikkelClient.ts";
 import { BygningClient } from "../../src/clients/BygningClient.ts";
 import { StoreClient, ByggInfo } from "../../src/clients/StoreClient.ts";
+import { 
+  determineBuildingTypeStrategy, 
+  shouldProcessBuildingType,
+  shouldReportSectionLevel,
+  shouldReportBuildingLevel 
+} from "../../src/utils/buildingTypeUtils.ts";
 
 
 /* ───────────── Miljøvariabler ───────────── */
@@ -205,33 +211,100 @@ export async function resolveBuildingData(adresse: string) {
     throw new Error("Ingen bygg tilknyttet matrikkelenheten");
   }
 
-  /* 5) velg hovedbygg basert på størst bruksareal */
-  let bestBygg: ByggInfo | null = null;
-  let bestByggId = 0;
+  /* 5) Hent info om alle bygg og filtrer basert på bygningstype */
+  const allBygningsInfo: (ByggInfo & { id: number })[] = [];
   
   for (const id of byggIdListe) {
-    const testBygg = await storeClient.getObject(id);
-    
-    if (!bestBygg || (testBygg.bruksarealM2 ?? 0) > (bestBygg.bruksarealM2 ?? 0)) {
-      bestBygg = testBygg;
-      bestByggId = id;
+    const byggInfo = await storeClient.getObject(id);
+    allBygningsInfo.push({ ...byggInfo, id });
+  }
+  
+  // Debug: Log alle bygninger og deres typer
+  if (LOG) {
+    console.log(`🔍 Found ${allBygningsInfo.length} buildings:`);
+    for (const bygg of allBygningsInfo) {
+      console.log(`  Building ${bygg.id}: type=${bygg.bygningstypeKodeId}, area=${bygg.bruksarealM2}m²`);
     }
   }
   
-  const byggId = bestByggId;
-  const bygg = bestBygg!;
+  // Filtrer til kun boligbygg som skal prosesseres
+  let eligibleBuildings = allBygningsInfo.filter(bygg => 
+    shouldProcessBuildingType(bygg.bygningstypeKodeId)
+  );
+  
+  // Fallback: hvis ingen bygg klassifiseres som bolig, aksepter alle bygg
+  // Dette håndterer feilklassifiserte bygninger i Matrikkel-data
+  if (eligibleBuildings.length === 0) {
+    console.log("⚠️  Ingen bygg klassifisert som bolig, aksepterer alle bygg som fallback");
+    eligibleBuildings = allBygningsInfo;
+  }
+  
+  if (LOG) {
+    console.log(`🏠 Eligible buildings after filtering: ${eligibleBuildings.length}`);
+    for (const bygg of eligibleBuildings) {
+      const strategy = determineBuildingTypeStrategy(bygg.bygningstypeKodeId);
+      console.log(`  Building ${bygg.id}: ${strategy.description} (${strategy.reportingLevel})`);
+    }
+  }
+  
+  if (eligibleBuildings.length === 0) {
+    throw new Error("Ingen bygninger funnet på denne adressen");
+  }
+  
+  /* 6) Velg bygg basert på bygningstype-strategi */
+  let selectedBygg: ByggInfo & { id: number };
+  
+  // For seksjonsnivå: finn bygg med minst bruksareal (mest sannsynlig en seksjon)
+  // For bygningsnivå: finn bygg med størst bruksareal (hele bygget)
+  const sectionLevelBuildings = eligibleBuildings.filter(bygg => 
+    shouldReportSectionLevel(bygg.bygningstypeKodeId)
+  );
+  const buildingLevelBuildings = eligibleBuildings.filter(bygg => 
+    shouldReportBuildingLevel(bygg.bygningstypeKodeId)
+  );
+  
+  if (sectionLevelBuildings.length > 0) {
+    // For individual houses: velg bygg med størst areal (mest sannsynlig hovedbygget)
+    // ENDRET: Fra minst til størst areal for å unngå tilbygg/garasjer
+    selectedBygg = sectionLevelBuildings.reduce((prev, curr) => 
+      (curr.bruksarealM2 ?? 0) > (prev.bruksarealM2 ?? 0) ? curr : prev
+    );
+    if (LOG) console.log(`🏠 Section-level reporting for building type ${selectedBygg.bygningstypeKodeId}`);
+  } else if (buildingLevelBuildings.length > 0) {
+    // For collective housing: velg bygg med størst areal (hele bygget)
+    selectedBygg = buildingLevelBuildings.reduce((prev, curr) => 
+      (curr.bruksarealM2 ?? 0) > (prev.bruksarealM2 ?? 0) ? curr : prev
+    );
+    if (LOG) console.log(`🏢 Building-level reporting for building type ${selectedBygg.bygningstypeKodeId}`);
+  } else {
+    // Fallback: velg bygg med størst areal
+    selectedBygg = eligibleBuildings.reduce((prev, curr) => 
+      (curr.bruksarealM2 ?? 0) > (prev.bruksarealM2 ?? 0) ? curr : prev
+    );
+    if (LOG) console.log(`🔄 Fallback: selecting largest building ${selectedBygg.id}`);
+  }
+  
+  const byggId = selectedBygg.id;
+  const bygg = selectedBygg;
+  
+  if (LOG) {
+    const strategy = determineBuildingTypeStrategy(bygg.bygningstypeKodeId);
+    console.log(`📋 Building type strategy: ${strategy.description} (${strategy.reportingLevel})`);
+  }
 
-  /* 6) representasjonspunkt til PBE-koordinat */
+  /* 7) representasjonspunkt til PBE-koordinat */
   const rpPBE = bygg.representasjonspunkt?.toPBE();
 
-  /* 7) valgfri energiattest */
+  /* 8) valgfri energiattest */
   const attest = await fetchEnergiattest({
     kommunenummer: adr.kommunenummer,
     gnr: adr.gnr,
     bnr: adr.bnr,
   });
 
-  /* 8) resultatobjekt */
+  /* 9) resultatobjekt */
+  const strategy = determineBuildingTypeStrategy(bygg.bygningstypeKodeId);
+  
   return {
     gnr: adr.gnr,
     bnr: adr.bnr,
@@ -242,6 +315,9 @@ export async function resolveBuildingData(adresse: string) {
     representasjonspunkt: bygg.representasjonspunkt ?? null,
     representasjonspunktPBE: rpPBE ?? null,
     energiattest: attest,
+    bygningstypeKodeId: bygg.bygningstypeKodeId ?? null,
+    bygningstype: strategy.description,
+    rapporteringsNivaa: strategy.reportingLevel,
   } as const;
 }
 
