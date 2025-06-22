@@ -3,6 +3,7 @@
 // Adresse (husnr + bokstav) ► én matrikkelenhets-ID                v1.1
 // ---------------------------------------------------------------------------
 import axios, { AxiosRequestConfig } from "axios";
+import "../../loadEnv.ts"; 
 
 /* ------------------------------------------------------------------ */
 /* 1. Offentlig API                                                   */

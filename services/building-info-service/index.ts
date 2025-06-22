@@ -3,8 +3,7 @@
 // REST-tjeneste: Adresse → Matrikkel → Bygg (+ valgfri Energiattest)
 // Oppdatert: juni 2025 (v2.3) – bytter ut SOAP-kallet som gav fault
 // ---------------------------------------------------------------------------
-
-import "dotenv/config";
+import "../../loadEnv.ts"; 
 import express, {
   Request,
   Response as ExpressResponse, // ← alias
@@ -19,13 +18,15 @@ import { MatrikkelClient } from "../../src/clients/MatrikkelClient.ts";
 import { BygningClient } from "../../src/clients/BygningClient.ts";
 import { StoreClient, ByggInfo } from "../../src/clients/StoreClient.ts";
 
+
 /* ───────────── Miljøvariabler ───────────── */
-const BASE_URL = process.env.MATRIKKEL_API_BASE_URL_TEST!;
-const USERNAME = process.env.MATRIKKEL_USERNAME_TEST!;
+const BASE_URL = process.env.MATRIKKEL_API_BASE_URL_PROD || "https://www.matrikkel.no/matrikkelapi/wsapi/v1";
+const USERNAME = process.env.MATRIKKEL_USERNAME!;
 const PASSWORD = process.env.MATRIKKEL_PASSWORD!;
 const ENOVA_KEY = process.env.ENOVA_API_KEY ?? "";
 const PORT = Number(process.env.PORT) || 4000;
 const LOG = process.env.LOG_SOAP === "1";
+
 
 /* ───────────── Klient-instanser ─────────── */
 const storeClient = new StoreClient(
@@ -52,7 +53,7 @@ const cache = new NodeCache({ stdTTL: 86_400, checkperiod: 600 });
 /* felles context */
 const ctx = () => ({
   locale: "no_NO_B",
-  brukOriginaleKoordinater: false,
+  brukOriginaleKoordinater: true,  // Unngå koordinattransformasjon
   koordinatsystemKodeId: 25833,
   systemVersion: "trunk",
   klientIdentifikasjon: "building-info-service",
@@ -204,9 +205,21 @@ export async function resolveBuildingData(adresse: string) {
     throw new Error("Ingen bygg tilknyttet matrikkelenheten");
   }
 
-  /* 5) hent boble for laveste bygg-ID */
-  const byggId = Math.min(...byggIdListe);
-  const bygg: ByggInfo = await storeClient.getObject(byggId);
+  /* 5) velg hovedbygg basert på størst bruksareal */
+  let bestBygg: ByggInfo | null = null;
+  let bestByggId = 0;
+  
+  for (const id of byggIdListe) {
+    const testBygg = await storeClient.getObject(id);
+    
+    if (!bestBygg || (testBygg.bruksarealM2 ?? 0) > (bestBygg.bruksarealM2 ?? 0)) {
+      bestBygg = testBygg;
+      bestByggId = id;
+    }
+  }
+  
+  const byggId = bestByggId;
+  const bygg = bestBygg!;
 
   /* 6) representasjonspunkt til PBE-koordinat */
   const rpPBE = bygg.representasjonspunkt?.toPBE();

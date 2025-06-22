@@ -1,4 +1,5 @@
 import { MatrikkelClient } from "../src/clients/MatrikkelClient.ts";
+import 'dotenv/config'
 
 const client = new MatrikkelClient(
   process.env.MATRIKKEL_API_BASE_URL_TEST!,

@@ -64,15 +64,17 @@ export class MatrikkelClient {
     envelope: string
   ): Promise<string> {
     const corr = randomUUID();
+    const url = this.serviceUrl(svc);
 
     if (LOG) {
-      console.log(`\n===== SOAP Request » ${action} (${corr}) =====\n`);
+      console.log(`\n===== SOAP Request » ${action} (${corr}) =====`);
+      console.log(`URL: ${url}`);
       console.log(envelope);
     }
     if (LIVE) await dumpSoap(corr, "request", envelope);
 
     const { data, status } = await axios.post<string>(
-      this.serviceUrl(svc),
+      url,
       envelope,
       {
         headers: {
