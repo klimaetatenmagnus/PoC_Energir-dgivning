@@ -109,12 +109,22 @@ async function lookupAdresse(str: string) {
   /* ② Fallback-varianter (komma-/whitespace-vask) */
   const variants = [
     str,
+    // Variant 2: Fjern komma
     str.replace(/,/g, " ").trim().replace(/\s+/g, " "),
+    // Variant 3: Fjern komma + legg til mellomrom mellom tall og bokstav
     str
       .replace(/,/g, " ")
       .replace(/(\d+)([A-Za-z])/, "$1 $2")
       .trim()
       .replace(/\s+/g, " "),
+    // Variant 4: Fjern komma + fjern mellomrom mellom tall og bokstav
+    str
+      .replace(/,/g, " ")
+      .replace(/(\d+)\s+([A-Za-z])/, "$1$2")
+      .trim()
+      .replace(/\s+/g, " "),
+    // Variant 5: Behold komma men fjern mellomrom mellom tall og bokstav
+    str.replace(/(\d+)\s+([A-Za-z])/, "$1$2"),
   ];
 
   for (const v of variants) {
@@ -129,8 +139,33 @@ async function fetchEnergiattest(p: {
   kommunenummer: string;
   gnr: number;
   bnr: number;
+  seksjonsnummer?: number;
+  bygningsnummer?: string;
+  bruksenhetnummer?: string;
 }) {
   if (!ENOVA_KEY) return null;
+
+  const requestBody: any = {
+    kommunenummer: p.kommunenummer,
+    gardsnummer: String(p.gnr),
+    bruksnummer: String(p.bnr),
+    bruksenhetnummer: p.bruksenhetnummer || "",
+    seksjonsnummer: p.seksjonsnummer ? String(p.seksjonsnummer) : "",
+  };
+  
+  // Legg til bygningsnummer hvis vi har det
+  if (p.bygningsnummer) {
+    requestBody.bygningsnummer = p.bygningsnummer;
+  }
+
+  if (LOG) {
+    console.log(`📋 Søker etter energiattest med:`, {
+      gnr: p.gnr,
+      bnr: p.bnr,
+      seksjon: p.seksjonsnummer || '-',
+      bygning: p.bygningsnummer || '-'
+    });
+  }
 
   const r = await fetch(
     "https://api.data.enova.no/ems/offentlige-data/v1/Energiattest",
@@ -141,27 +176,44 @@ async function fetchEnergiattest(p: {
         "User-Agent": "Energitiltak/1.0",
         "x-api-key": ENOVA_KEY,
       },
-      body: JSON.stringify({
-        kommunenummer: p.kommunenummer,
-        gardsnummer: String(p.gnr),
-        bruksnummer: String(p.bnr),
-        bruksenhetnummer: "",
-        seksjonsnummer: "",
-      }),
+      body: JSON.stringify(requestBody),
     }
   );
 
   if (!r.ok) {
     if (r.status === 404) return null;
+    if (r.status === 400) {
+      if (LOG) console.log("⚠️  Enova returnerte 400 - søket ga for mange treff (>25)");
+      return null;
+    }
     throw new Error("Enova " + r.status);
   }
+  
   const list = await r.json();
-  return Array.isArray(list) && list[0] ? list[0] : null;
+  
+  if (Array.isArray(list) && list[0]) {
+    if (LOG) {
+      console.log(`✅ Energiattest funnet!${p.seksjonsnummer ? ` (seksjon ${p.seksjonsnummer})` : ''}`);
+    }
+    return list[0];
+  }
+  
+  return null;
 }
 
 export async function resolveBuildingData(adresse: string) {
+  // TODO: Fremtidig forbedring - Borettslag/sameie-håndtering
+  // Når grunnbokstilgang er på plass, bør vi:
+  // 1. Sjekke om adressen tilhører et borettslag
+  // 2. Hvis borettslag: Hente alle boligbygg for gnr/bnr
+  // 3. Hvis ikke: Fortsette med dagens logikk (enkeltbygg/seksjon)
+  // Dette vil gi bedre håndtering av f.eks. Fallanveien 29 som er et borettslag
+  
   /* 1) Geonorge → vegadresse + gnr/bnr */
   const adr = await lookupAdresse(adresse);
+  
+  // Variabel for å holde seksjonsnummer hvis funnet
+  let seksjonsnummer: number | undefined;
 
   /* 2) kandidat-ID-liste fra findMatrikkelenheter */
   const ids = await matrikkelClient.findMatrikkelenheter(
@@ -178,8 +230,10 @@ export async function resolveBuildingData(adresse: string) {
   if (!ids.length)
     throw new Error("Fant ingen matrikkelenhets-ID for adressen");
 
-  /* 3) Nytt: loop over hver ID og sjekk om den har <hovedadresse>true</hovedadresse> */
+  /* 3) Finn riktig matrikkelenhet - prioriter hovedadresse, deretter boligbygg */
   let matrikkelenhetsId: number | undefined;
+  
+  // Først: Sjekk for hovedadresse og hent seksjonsnummer
   for (const id of ids) {
     const xml = await storeClient.getObjectXml(id, "MatrikkelenhetId");
 
@@ -190,16 +244,84 @@ export async function resolveBuildingData(adresse: string) {
 
     if (isMain) {
       matrikkelenhetsId = id;
+      
+      // Hent seksjonsnummer hvis det finnes
+      const seksjonMatch = xml.match(/<seksjonsnummer>(\d+)<\/seksjonsnummer>/i);
+      if (seksjonMatch) {
+        seksjonsnummer = parseInt(seksjonMatch[1]);
+        if (LOG) console.log(`✅ Valgte matrikkelenhet ${id} med hovedadresse=true og seksjonsnummer=${seksjonsnummer}`);
+      } else {
+        if (LOG) console.log(`✅ Valgte matrikkelenhet ${id} med hovedadresse=true (ingen seksjon)`);
+      }
       break;
     }
   }
 
-  // fallback: ta første ID dersom ingen eksplisitt hovedadresse funnet
-  if (!matrikkelenhetsId) matrikkelenhetsId = ids[0];
+  // Hvis ingen hovedadresse funnet, finn matrikkelenhet med boligbygg
   if (!matrikkelenhetsId) {
-    throw new Error(
-      "Fant ingen matrikkelenhet hvor <hovedadresse>true</hovedadresse>"
-    );
+    if (LOG) console.log("⚠️  Ingen hovedadresse funnet, sjekker for matrikkelenheter med boligbygg...");
+    
+    // Samle info om alle matrikkelenheter og deres bygg
+    const matrikkelEnheterMedBygg: Array<{id: number, byggIds: number[], harBoligbygg: boolean}> = [];
+    
+    for (const id of ids) {
+      const byggIds = await bygningClient.findByggForMatrikkelenhet(id, ctx());
+      if (byggIds.length > 0) {
+        // Sjekk om noen av byggene er boligbygg
+        let harBoligbygg = false;
+        for (const byggId of byggIds) {
+          try {
+            const byggInfo = await storeClient.getObject(byggId);
+            if (shouldProcessBuildingType(byggInfo.bygningstypeKodeId)) {
+              harBoligbygg = true;
+              if (LOG) console.log(`  Matrikkelenhet ${id} har boligbygg (type ${byggInfo.bygningstypeKodeId})`);
+              break;
+            }
+          } catch (e) {
+            if (LOG) console.log(`  Kunne ikke hente info for bygg ${byggId}: ${e.message}`);
+          }
+        }
+        matrikkelEnheterMedBygg.push({id, byggIds, harBoligbygg});
+      }
+    }
+    
+    // Prioriter matrikkelenheter med boligbygg
+    const medBoligbygg = matrikkelEnheterMedBygg.find(m => m.harBoligbygg);
+    if (medBoligbygg) {
+      matrikkelenhetsId = medBoligbygg.id;
+      
+      // Hent seksjonsnummer for valgt matrikkelenhet
+      const xml = await storeClient.getObjectXml(matrikkelenhetsId, "MatrikkelenhetId");
+      const seksjonMatch = xml.match(/<seksjonsnummer>(\d+)<\/seksjonsnummer>/i);
+      if (seksjonMatch) {
+        seksjonsnummer = parseInt(seksjonMatch[1]);
+        if (LOG) console.log(`✅ Valgte matrikkelenhet ${matrikkelenhetsId} som har boligbygg og seksjonsnummer=${seksjonsnummer}`);
+      } else {
+        if (LOG) console.log(`✅ Valgte matrikkelenhet ${matrikkelenhetsId} som har boligbygg (ingen seksjon)`);
+      }
+    } else if (matrikkelEnheterMedBygg.length > 0) {
+      // Fallback: Ta første med bygg selv om det ikke er klassifisert som bolig
+      matrikkelenhetsId = matrikkelEnheterMedBygg[0].id;
+      
+      // Hent seksjonsnummer for valgt matrikkelenhet
+      const xml = await storeClient.getObjectXml(matrikkelenhetsId, "MatrikkelenhetId");
+      const seksjonMatch = xml.match(/<seksjonsnummer>(\d+)<\/seksjonsnummer>/i);
+      if (seksjonMatch) {
+        seksjonsnummer = parseInt(seksjonMatch[1]);
+      }
+      
+      if (LOG) console.log(`⚠️  Ingen boligbygg funnet, velger matrikkelenhet ${matrikkelenhetsId} med ${matrikkelEnheterMedBygg[0].byggIds.length} bygg`);
+    }
+  }
+
+  // Siste fallback: ta første ID
+  if (!matrikkelenhetsId) {
+    matrikkelenhetsId = ids[0];
+    if (LOG) console.log(`⚠️  Fallback: velger første matrikkelenhet ${matrikkelenhetsId}`);
+  }
+  
+  if (!matrikkelenhetsId) {
+    throw new Error("Fant ingen matrikkelenhet for adressen");
   }
 
   /* 4) matrikkelenhet → bygg-ID-liste */
@@ -208,7 +330,7 @@ export async function resolveBuildingData(adresse: string) {
     ctx()
   );
   if (!byggIdListe.length) {
-    throw new Error("Ingen bygg tilknyttet matrikkelenheten");
+    throw new Error(`Ingen bygg tilknyttet matrikkelenhet ${matrikkelenhetsId}`);
   }
 
   /* 5) Hent info om alle bygg og filtrer basert på bygningstype */
@@ -232,11 +354,19 @@ export async function resolveBuildingData(adresse: string) {
     shouldProcessBuildingType(bygg.bygningstypeKodeId)
   );
   
+  // Filtrer bort bygg med svært lite areal (sannsynligvis ikke hovedbygg)
+  const MIN_AREA_THRESHOLD = 20; // m²
+  eligibleBuildings = eligibleBuildings.filter(bygg => 
+    (bygg.bruksarealM2 ?? 0) >= MIN_AREA_THRESHOLD
+  );
+  
   // Fallback: hvis ingen bygg klassifiseres som bolig, aksepter alle bygg
   // Dette håndterer feilklassifiserte bygninger i Matrikkel-data
   if (eligibleBuildings.length === 0) {
-    console.log("⚠️  Ingen bygg klassifisert som bolig, aksepterer alle bygg som fallback");
-    eligibleBuildings = allBygningsInfo;
+    console.log("⚠️  Ingen bygg klassifisert som bolig med tilstrekkelig areal, aksepterer alle bygg som fallback");
+    eligibleBuildings = allBygningsInfo.filter(bygg => 
+      (bygg.bruksarealM2 ?? 0) >= MIN_AREA_THRESHOLD
+    );
   }
   
   if (LOG) {
@@ -300,6 +430,8 @@ export async function resolveBuildingData(adresse: string) {
     kommunenummer: adr.kommunenummer,
     gnr: adr.gnr,
     bnr: adr.bnr,
+    seksjonsnummer: seksjonsnummer,
+    bygningsnummer: bygg.bygningsnummer,
   });
 
   /* 9) resultatobjekt */
@@ -308,15 +440,18 @@ export async function resolveBuildingData(adresse: string) {
   return {
     gnr: adr.gnr,
     bnr: adr.bnr,
+    seksjonsnummer: seksjonsnummer ?? null,
     matrikkelenhetsId,
     byggId,
+    bygningsnummer: bygg.bygningsnummer ?? null,
     byggeaar: bygg.byggeaar ?? null,
     bruksarealM2: bygg.bruksarealM2 ?? null,
     representasjonspunkt: bygg.representasjonspunkt ?? null,
     representasjonspunktPBE: rpPBE ?? null,
     energiattest: attest,
     bygningstypeKodeId: bygg.bygningstypeKodeId ?? null,
-    bygningstype: strategy.description,
+    bygningstypeKode: bygg.bygningstypeKode ?? null,  // Ny: 3-sifret kode
+    bygningstype: bygg.bygningstypeBeskrivelse ?? strategy.description,  // Bruk beskrivelse fra mapping hvis tilgjengelig
     rapporteringsNivaa: strategy.reportingLevel,
   } as const;
 }

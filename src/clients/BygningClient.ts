@@ -32,6 +32,12 @@ export interface MatrikkelContext {
   snapshotVersion: { timestamp: string };
 }
 
+export interface BygningstypeKode {
+  id: number;          // intern ID (f.eks. 8)
+  kodeverdi: string;   // faktisk kode (f.eks. "131")
+  beskrivelse: string; // f.eks. "Rekkehus"
+}
+
 /* ────────────── klientklasse ─────────────────────────────── */
 export class BygningClient {
   constructor(
@@ -163,6 +169,126 @@ export class BygningClient {
       );
   }
 
+  /* ---------- public: hent alle bygningstype-koder -------------- */
+  async findAlleBygningstypeKoder(ctx: MatrikkelContext): Promise<BygningstypeKode[]> {
+    const soapAction = "findAlleBygningstypeKoder";
+    const corrId = crypto.randomUUID();
+    const xmlRequest = this.renderBygningstypeKoderRequest(ctx);
+
+    /* — dump + ev. logg av request — */
+    const isLive = process.env.LIVE === "1";
+    if (isLive) {
+      await dumpSoap(corrId, "request", xmlRequest);
+    }
+    if (process.env.LOG_SOAP === "1") {
+      console.log(
+        `\n===== SOAP Request (${soapAction}, corrId=${corrId}) =====\n`
+      );
+      console.log(xmlRequest, "\n");
+    }
+
+    /* — kall webservicen — */
+    const endpoint = this.baseUrl
+      .replace(/\/$/, "")
+      .endsWith("/BygningServiceWS")
+      ? this.baseUrl.replace(/\/$/, "") // full URL gitt inn
+      : `${this.baseUrl.replace(/\/$/, "")}/BygningServiceWS`; // legg til suffix
+
+    const resp: AxiosResponse<string> = await axios.post(endpoint, xmlRequest, {
+      headers: {
+        "Content-Type": "text/xml;charset=UTF-8",
+        SOAPAction: soapAction,
+      },
+      auth: { username: this.username, password: this.password },
+      timeout: 10_000,
+      validateStatus: () => true, // vi håndterer ev. fault under
+    });
+
+    /* — dump respons eller fault — */
+    const phase =
+      resp.status >= 400 || resp.data.includes("<soap:Fault>")
+        ? ("fault" as const)
+        : ("response" as const);
+    if (isLive) {
+      await dumpSoap(corrId, phase, resp.data);
+    }
+
+    /* — ev. konsoll-logg av responsen — */
+    if (process.env.LOG_SOAP === "1") {
+      const tag =
+        phase === "fault"
+          ? "SOAP Fault"
+          : `SOAP Response (HTTP ${resp.status})`;
+      console.log(`===== ${tag}, corrId=${corrId}) =====\n`);
+      console.log(
+        resp.data.slice(0, 1200),
+        resp.data.length > 1200 ? "…" : "",
+        "\n"
+      );
+    }
+
+    /* — fault-håndtering — */
+    if (phase === "fault") {
+      throw new Error(
+        `SOAP ${resp.status} fra BygningServiceWS (corrId=${corrId})`
+      );
+    }
+
+    /* — XML → JS — */
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: "@_",
+      parseTagValue: true,
+      trimValues: true,
+    });
+    const parsed = parser.parse(resp.data) as Record<string, unknown>;
+
+    /* — finn <return>-noden — */
+    const body =
+      (parsed["soap:Envelope"] as any)?.["soap:Body"] ??
+      (parsed.Envelope as any)?.Body ??
+      (parsed["soapenv:Envelope"] as any)?.["soapenv:Body"];
+
+    if (!body) throw new Error("SOAP-body mangler");
+
+    const respKey = Object.keys(body).find((k) =>
+      k.endsWith("findAlleBygningstypeKoderResponse")
+    );
+    const retBlock = respKey ? (body as any)[respKey] : undefined;
+    const ret = retBlock?.return ?? retBlock?.["ns2:return"];
+
+    if (!ret) return []; // ingen koder funnet
+
+    /* — <item>-liste → BygningstypeKode[] — */
+    const rawItems = Array.isArray(ret.item)
+      ? ret.item
+      : ret.item
+      ? [ret.item]
+      : [];
+
+    const extractKode = (item: any): BygningstypeKode | undefined => {
+      if (!item || typeof item !== "object") return;
+      
+      // Prøv å finne id, kodeverdi og beskrivelse
+      const id = item.id?.value || item.id || item["dom:id"]?.["dom:value"] || item["dom:id"];
+      const kodeverdi = item.kodeverdi || item.kode || item["dom:kodeverdi"] || item["dom:kode"];
+      const beskrivelse = item.beskrivelse || item["dom:beskrivelse"] || "";
+      
+      if (id && kodeverdi) {
+        return {
+          id: Number(id),
+          kodeverdi: String(kodeverdi),
+          beskrivelse: String(beskrivelse),
+        };
+      }
+      return;
+    };
+
+    return rawItems
+      .map(extractKode)
+      .filter((k): k is BygningstypeKode => k !== undefined);
+  }
+
   /* ---------- private helper: bygg SOAP-request -------------- */
   private renderRequest(id: number, ctx: MatrikkelContext): string {
     const koordinatXml = ctx.koordinatsystemKodeId
@@ -195,6 +321,28 @@ export class BygningClient {
       </dom:snapshotVersion>
     </sto:matrikkelContext>
     </sto:findByggForMatrikkelenhet>
+  </soapenv:Body>
+</soapenv:Envelope>`;
+  }
+
+  /* ---------- private helper: bygg SOAP-request for bygningstype-koder -------------- */
+  private renderBygningstypeKoderRequest(ctx: MatrikkelContext): string {
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning"
+                  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+  <soapenv:Body>
+    <sto:findAlleBygningstypeKoder>
+      <sto:matrikkelContext>
+        <dom:locale>${ctx.locale}</dom:locale>
+        <dom:brukOriginaleKoordinater>${ctx.brukOriginaleKoordinater}</dom:brukOriginaleKoordinater>   
+        <dom:systemVersion>${ctx.systemVersion}</dom:systemVersion>
+        <dom:klientIdentifikasjon>${ctx.klientIdentifikasjon}</dom:klientIdentifikasjon>
+        <dom:snapshotVersion>
+          <dom:timestamp>${ctx.snapshotVersion.timestamp}</dom:timestamp>
+        </dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:findAlleBygningstypeKoder>
   </soapenv:Body>
 </soapenv:Envelope>`;
   }

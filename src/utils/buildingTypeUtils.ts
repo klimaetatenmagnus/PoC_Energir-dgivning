@@ -35,7 +35,29 @@ export function determineBuildingTypeStrategy(bygningstypeKodeId?: number): Buil
     };
   }
 
-  const code = bygningstypeKodeId;
+  let code = bygningstypeKodeId;
+  
+  // Handle internal IDs (under 100) by mapping to standard codes
+  if (code < 100) {
+    // Known mappings from internal IDs to standard codes
+    const internalIdMapping: Record<number, number> = {
+      1: 111,   // Enebolig
+      4: 121,   // Tomannsbolig, vertikaldelt
+      8: 131,   // Rekkehus
+      10: 141,  // Store frittliggende boligbygg på 2 etasjer
+      11: 142,  // Store frittliggende boligbygg på 3 og 4 etasjer
+      12: 143,  // Store frittliggende boligbygg på 5 etasjer eller over
+      13: 142,  // Store frittliggende boligbygg på 3 og 4 etasjer
+      14: 144,  // Store sammenbygde boligbygg på 2 etasjer
+      15: 145,  // Store sammenbygde boligbygg på 3 og 4 etasjer
+      16: 146,  // Store sammenbygde boligbygg på 5 etasjer og over
+      26: 181,  // Garasje, uthus, anneks knyttet til bolig
+      127: 142, // Store frittliggende boligbygg på 3 og 4 etasjer (Fallanveien 29)
+    };
+    
+    // Map internal ID to standard code
+    code = internalIdMapping[code] || code;
+  }
   
   // Check if it's a residential building (1xx)
   if (code < 100 || code >= 200) {

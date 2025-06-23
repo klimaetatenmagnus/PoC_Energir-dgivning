@@ -9,14 +9,16 @@ const DIR = path.resolve("soap-dumps");
 await fs.mkdir(DIR, { recursive: true });
 
 /**
- * Rydder opp i SOAP-dump mappen ved å beholde kun de 12 nyeste filene
+ * Rydder opp i SOAP-dump mappen ved å beholde kun de 25 nyeste filene
  */
 async function cleanupOldDumps(): Promise<void> {
+  const MAX_FILES = 25; // Beholder 25 nyeste filer for debugging
+  
   try {
     const files = await fs.readdir(DIR);
     const xmlFiles = files.filter(f => f.endsWith('.xml'));
     
-    if (xmlFiles.length <= 12) return; // Ingen opprydding nødvendig
+    if (xmlFiles.length <= MAX_FILES) return; // Ingen opprydding nødvendig
     
     // Hent filstats for sortering etter modifiseringstid
     const fileStats = await Promise.all(
@@ -27,18 +29,18 @@ async function cleanupOldDumps(): Promise<void> {
       })
     );
     
-    // Sorter etter modifiseringstid (eldste først)
-    fileStats.sort((a, b) => a.mtime.getTime() - b.mtime.getTime());
+    // Sorter etter modifiseringstid (nyeste først)
+    fileStats.sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
     
-    // Slett de eldste filene utover 12
-    const filesToDelete = fileStats.slice(0, fileStats.length - 12);
+    // Behold de MAX_FILES nyeste, slett resten
+    const filesToDelete = fileStats.slice(MAX_FILES);
     
     for (const { path: filePath } of filesToDelete) {
       await fs.unlink(filePath);
     }
     
     if (filesToDelete.length > 0) {
-      console.log(`🧹 Slettet ${filesToDelete.length} gamle SOAP-dump filer`);
+      console.log(`🧹 Slettet ${filesToDelete.length} gamle SOAP-dump filer (beholder ${MAX_FILES} nyeste)`);
     }
   } catch (err) {
     console.error("⚠️  Feil ved opprydding av SOAP-dump filer:", err);
@@ -64,6 +66,10 @@ export async function dumpSoap(
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const file = path.join(DIR, `${stamp}.${corrId}.${phase}.xml`);
     await fs.writeFile(file, xml, "utf8");
+    
+    // Kjør opprydding automatisk etter hver dump
+    // Dette sikrer at vi aldri får for mange filer
+    await cleanupOldDumps();
   } catch (err) {
     console.error("⚠️  Klarte ikke å skrive SOAP-dump-fil:", err);
   }

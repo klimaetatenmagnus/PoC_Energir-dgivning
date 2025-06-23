@@ -8,6 +8,7 @@ import { XMLParser } from "fast-xml-parser";
 import proj4 from "proj4";
 import { dumpSoap, type SoapPhase } from "../utils/soapDump.ts";
 import { randomUUID } from "crypto";
+import { mapBygningstypeId, getBygningstypeBeskrivelse } from "../utils/bygningstypeMapping.ts";
 import "../../loadEnv.ts"; 
 
 /* ─────────────────────────── Miljøflagg ─────────────────────────── */
@@ -34,6 +35,9 @@ export interface ByggInfo {
   bruksarealM2?: number;
   representasjonspunkt?: RepPoint;
   bygningstypeKodeId?: number;
+  bygningstypeKode?: string;  // Den faktiske 3-sifrede koden
+  bygningsnummer?: string;  // Bygningsnummer for Enova-oppslag
+  bygningstypeBeskrivelse?: string;  // F.eks. "Rekkehus"
 }
 
 /* ──────────────────── ID-typer for getObjectXml ─────────────────── */
@@ -142,21 +146,86 @@ function extractByggeaar(tree: unknown): number | undefined {
   }
   
   // Fallback: søk etter andre byggeår-felter
-  return extractNumber(tree, "byggeaar", "byggeår", "byggaar");
+  const fallbackYear = extractNumber(tree, "byggeaar", "byggeår", "byggaar");
+  
+  // 1901 ser ut til å være en default-verdi i Matrikkelen
+  if (fallbackYear === 1901) {
+    console.log("⚠️  Byggeår 1901 kan være en default-verdi i Matrikkelen");
+  }
+  
+  return fallbackYear;
 }
 
 /** Hent bygningstype-kode */
 function extractBygningstypeKodeId(tree: unknown): number | undefined {
-  return extractNumber(tree, "bygningstypeKodeId", "byggningstype", "bygningstype");
+  // Søk spesifikt etter bygningstypeKodeId (som har nested value-struktur)
+  const bygningstypeKodeId = find(tree, "bygningstypeKodeId");
+  if (bygningstypeKodeId && typeof bygningstypeKodeId === "object") {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const kodeObj = bygningstypeKodeId as Record<string, unknown>;
+    const value = kodeObj.value || kodeObj["dom:value"];
+    if (value) {
+      const num = Number(value);
+      if (Number.isFinite(num)) {
+        // VIKTIG: Matrikkelen returnerer ofte bare intern kode-ID (f.eks. 8)
+        // som må mappes til faktisk bygningstype-kode (f.eks. 131 for rekkehus)
+        // Dette krever trolig bruk av findAlleBygningstypeKoder fra BygningService
+        if (process.env.DEBUG_BYGNINGSTYPE === "1") {
+          console.warn(`Mottok intern bygningstype-kode ID: ${num} - dette må mappes til 3-sifret bygningstype`);
+        }
+        return num;
+      }
+    }
+  }
+  
+  // Fallback til andre mulige felt-navn
+  const direkteKode = extractNumber(tree, 
+    "bygningstypeKode", 
+    "byggningstype", 
+    "bygningstype",
+    "bygningstypenummer",
+    "bygningskode"
+  );
+  if (Number.isFinite(direkteKode)) return direkteKode;
+  
+  return undefined;
+}
+
+/** Hent bygningsnummer fra XML (unikt ID for bygget) */
+function extractBygningsnummer(tree: unknown): string | undefined {
+  // Bygningsnummer kan ligge under forskjellige navn/namespaces
+  const bygningsnummer = find(tree, "bygningsnummer") || 
+                        find(tree, "byggnummer") ||
+                        find(tree, "byggNr");
+  
+  if (bygningsnummer) {
+    if (typeof bygningsnummer === "string") {
+      return bygningsnummer;
+    }
+    if (typeof bygningsnummer === "number") {
+      return String(bygningsnummer);
+    }
+  }
+  
+  return undefined;
 }
 
 /** Hent totalt bruksareal fra etasjedata */
 function extractBruksareal(tree: unknown): number | undefined {
+  // Debug: sjekk om vi har ufullstendigAreal flagg
+  const ufullstendig = find(tree, "ufullstendigAreal");
+  if (ufullstendig === "true" || ufullstendig === true) {
+    console.log("⚠️  Bygning har ufullstendigAreal=true");
+  }
+  
   // Prøv først etasjedata (summert fra alle etasjer)
   const etasjedata = find(tree, "etasjedata");
   if (etasjedata) {
     const totalt = extractNumber(etasjedata, "bruksarealTotalt");
-    if (Number.isFinite(totalt)) return totalt;
+    if (Number.isFinite(totalt) && totalt! > 0) {
+      console.log(`✅ Fant bruksareal i etasjedata: ${totalt} m²`);
+      return totalt;
+    }
   }
   
   // Prøv så individuelle etasjer og summer dem
@@ -172,18 +241,39 @@ function extractBruksareal(tree: unknown): number | undefined {
         const areal = extractNumber(etasje, "bruksarealTotalt", "bruksareal");
         if (Number.isFinite(areal)) totalSum += areal!;
       }
-      if (totalSum > 0) return totalSum;
+      if (totalSum > 0) {
+        console.log(`✅ Summert bruksareal fra ${items.length} etasjer: ${totalSum} m²`);
+        return totalSum;
+      }
+    }
+  }
+  
+  // Sjekk alternativt areal i kommunalTilleggsdel
+  const kommunalDel = find(tree, "kommunalTilleggsdel");
+  if (kommunalDel) {
+    const altAreal = extractNumber(kommunalDel, "alternativtArealBygning");
+    if (Number.isFinite(altAreal) && altAreal! > 0) {
+      console.log(`✅ Bruker alternativtArealBygning: ${altAreal} m²`);
+      return altAreal;
     }
   }
   
   // Fallback til normale søk
-  return extractNumber(
+  const fallback = extractNumber(
     tree,
     "bruksarealTotalt",
     "bruksarealM2", 
     "bruksareal",
     "bebygdAreal"
   );
+  
+  if (Number.isFinite(fallback) && fallback! > 0) {
+    console.log(`✅ Fant bruksareal via fallback: ${fallback} m²`);
+  } else {
+    console.log("❌ Ingen bruksareal funnet i bygningsdata");
+  }
+  
+  return fallback;
 }
 
 /* ─────────────────────────── StoreClient ────────────────────────── */
@@ -211,6 +301,40 @@ export class StoreClient {
     const raw = await this.getObjectXml(id, "ByggId", ctxKoordsys);
     const tree = this.xml.parse(raw);
 
+    // Debug: logg XML-struktur for å finne bygningstype
+    if (process.env.DEBUG_BYGNINGSTYPE === "1") {
+      console.log("\n=== DEBUG: Søker etter bygningstype i XML-struktur ===");
+      console.log("Bygg ID:", id);
+      
+      // Søk etter mulige bygningstype-felt
+      const muligeFelt = ["bygningstype", "bygningstypeKode", "bygningstypenummer", "bygningskode"];
+      for (const felt of muligeFelt) {
+        const funnet = find(tree, felt);
+        if (funnet) {
+          console.log(`Fant '${felt}':`, JSON.stringify(funnet, null, 2));
+        }
+      }
+      
+      // Sjekk også koder-struktur
+      const koder = find(tree, "koder");
+      if (koder) {
+        console.log("Fant 'koder':", JSON.stringify(koder, null, 2));
+      }
+      
+      // Vis første del av rå XML for analyse
+      if (process.env.DEBUG_BYGNINGSTYPE_FULL === "1") {
+        console.log("\nRå XML (første 2000 tegn):");
+        console.log(raw.substring(0, 2000));
+      }
+      
+      // Lagre XML til fil for første bygg for analyse
+      if (process.env.SAVE_XML === "1" && id === 286115596) {
+        const fs = await import("fs/promises");
+        await fs.writeFile(`/tmp/bygg_${id}.xml`, raw);
+        console.log(`XML lagret til /tmp/bygg_${id}.xml`);
+      }
+    }
+
     // Hent byggeår fra bygningsstatusHistorikker (første dato funnet)
     const byggeaar = extractByggeaar(tree);
     
@@ -220,6 +344,9 @@ export class StoreClient {
     
     // Hent bygningstype-kode
     const bygningstypeKodeId = extractBygningstypeKodeId(tree);
+    
+    // Hent bygningsnummer (unikt ID for bygget)
+    const bygningsnummer = extractBygningsnummer(tree);
 
     const representasjonspunkt: RepPoint | undefined = repXY
       ? {
@@ -236,7 +363,40 @@ export class StoreClient {
         }
       : undefined;
 
-    return { id, byggeaar, bruksarealM2, representasjonspunkt, bygningstypeKodeId };
+    // Mapper intern bygningstype-ID til faktisk 3-sifret kode
+    let bygningstypeKode: string | undefined;
+    let bygningstypeBeskrivelse: string | undefined;
+    
+    if (bygningstypeKodeId && this.username && this.password) {
+      try {
+        bygningstypeKode = await mapBygningstypeId(
+          bygningstypeKodeId,
+          this.baseUrl.replace("/StoreServiceWS", ""),
+          this.username,
+          this.password
+        );
+        
+        bygningstypeBeskrivelse = await getBygningstypeBeskrivelse(
+          bygningstypeKodeId,
+          this.baseUrl.replace("/StoreServiceWS", ""),
+          this.username,
+          this.password
+        );
+      } catch (error) {
+        console.warn(`Kunne ikke mappe bygningstype-ID ${bygningstypeKodeId}:`, error);
+      }
+    }
+
+    return { 
+      id, 
+      byggeaar, 
+      bruksarealM2, 
+      representasjonspunkt, 
+      bygningstypeKodeId,
+      bygningstypeKode,
+      bygningstypeBeskrivelse,
+      bygningsnummer
+    };
   }
 
   /* ────────────────────── SOAP-helper med logging ───────────────────── */
