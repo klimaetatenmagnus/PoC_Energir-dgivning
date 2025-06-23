@@ -256,6 +256,14 @@ export class MatrikkelClient {
       env
     );
 
+    // Enkel regex-basert parsing som matcher XML-responsen
+    const matches = [...xml.matchAll(/<ns3:item><value>(\d+)<\/value><\/ns3:item>/g)];
+    
+    if (matches.length > 0) {
+      return matches.map(m => Number(m[1])).filter(n => n > 0);
+    }
+
+    // Fallback til xml2js parsing hvis regex feiler
     const js = await parseStringPromise(xml, { explicitArray: false });
 
     const bodyAny =

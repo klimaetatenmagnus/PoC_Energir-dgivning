@@ -1,0 +1,137 @@
+
+5. TjenesterTjenesteoppsettTjenestene i matrikkelAPl-et er delt opp basert på type, med noen spesialtilfeller som 
+unntak. Dette betyr at søk der vi ønsker å hente ut adresser ligger i Adresseservice, søk der vi ønsker å hente 
+ut matrikkelenheter ligger i MatrikkelenhetService og så videre.Unntak er spesialtjenester som StoreService for å 
+hente ut objekter, KodelisteService for å hente ut koder, RapportService for bestilling og uthenting av rapporter og 
+NedlastningService for å laste ned store mengder data.De alle fleste tjenestemetodene returnerer id-er for det man har 
+søkt på. Man skal så bruke StoreService for å hente ut objekter.Tjeneste klassifisering.Vi forholder oss til en 
+inndeling av tjenestene i: <<XService og XOppdateringService>> eksempel vis: AdresseService og 
+AdresseOppdateringService.XService håndterer kall som ønsker å hente ut data fra gitt tjeneste.XOppdateringService 
+håndterer kall som ønsker og oppdatere eller legge til data.Typer tjenestemetoderTjenestemetodene på de vanlige 
+tjenesteinterfacene kan deles inn i tre typer.Søk basert på en sammensatt modellSøk for å finne id for en 
+identInversrelasjonssøkBeskrivelse av de tre typene følgerSøk basert på sammensatt modellNoen søk kan basere seg 
+på input fra mange forskjellige deler av domenet. Det er for disse laget egne tjenestemoder som tar inn søkemodeller 
+som parameter. Eksempel på dette erMatrikkelenhetService sin metode findMatrikkelenheter. Denne metoden tar inn en 
+klasse med navn MatrikkelenhetsokModel som parameter og denne klassen gir oss mulighet til åspesifisere alt fra 
+matrikkelenhetfelter som gårdsnummer og bruksnummer, til koblingsfelter som krav om jordskifte og over til koblede 
+objekter slik at vi kan angi adressenavn og husnummer for en adresse tilknyttet matrikkelenheten, eller etternavnet til 
+en person som har eierforhold på matrikkelenheten. Siden tjenesten ligger på MatrikkelenhetService vet vi at det er 
+Matrikkelenhetld-er som blir returnert fra søket.Det er laget slike sammensatte søk for adresser, bygg, 
+matrikkelenheter og person i APl-et.Logiske identifikatorer5408676553646Under følger en tabell som viser hva som 
+benyttes som logiske identifikatorer for et objekt. Dette kan brukes dersom man for eksempel skal finne id-en til et 
+objekt for så å finne den komplette boblen via StoreService (se kapitlet om StoreService under). Utlistingen under er 
+ment for å gi en rask oversikt over hvilke felt som benyttes for å bygge opp de logiske identifikatorene. For en mer 
+komplett oversikt over hva de forskjellige feltene er henvises det til imp ementasjonsmod en hvor man kan navigere seg 
+inn på hver enkelt identifikator. Ofte er hoved-identifikatoren en abstrakt klasse, da finner man 
+implementasjons-klassen ved å velge Other Links.Eksempel for Adresseldent (som er av typen Vegadresse eller 
+Matrikkeladresse):2139695219306A:dr:e,sseldent: l?iiJblic Cl:assCreated:18.06.2013 10.17.ct5Modified&apos;.25.06.2013 
+10.52.02(±J Project(±J Mr;;,mced.lden,i&apos; ikasjon for Adresse, brulcttil s,økefunksjonarn,et i 
+p-rog:rammerimJsgrensesniltene (APl-e111�)-I  AllributesObject11agged Values  11  Other Links: 
+ITlli::i-eCoirmec,t,onDjrection  A:dr:e,sseldent: l?iiJblic Cl:assCreated:18.06.2013 10.17.ct5Modified&apos;.25.06.2013 
+10.52.02(±J Project(±J Mr;;,mced.lden,i&apos; ikasjon for Adresse, brulcttil s,økefunksjonarn,et i 
+p-rog:rammerimJsgrensesniltene (APl-e111�)-I  AllributesObject11agged Values  11  Other Links: 
+ITlli::i-eCoirmec,t,onDjrection  Requesten blir da som følger (merk at vi må angi hva slags adresseldent vi benytter 
+i dette tilfellet) i feks findAdresseldForldent (denne hadde ingen 
+bokstav):<adr:adresseidentxsi:type=&quot;adrl:Vegadresseident&quot;xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-inst
+ance&quot;><adrl:kommuneident><kom:kommunenummer>3031</kom:kommunenummer></adrl:kommuneident><adrl:adressekode>14200</ad
+rl:adressekode><adrl:nummer>109</adrl:nummer></adr:adresseldent>1011Logisk identifikatorHvilke felt brukes for å bygge 
+opp den logiske identifikatorenAdresseldentIdentifikatoren inneholder kommunenummer.Resterende opplysninger som utgjør 
+identifikatoren avhenger om adressen er av typen Vegadresse eller Matrikkeladresse.Oversikt over opplysninger finnes i 
+Vegadresseldent og MatrikkeladresseldentBrukerldentBrukernavnetForretningldentLøpenummeret til 
+forretningenKommuneldentKommunenummerMatrikkeladresseI dentGardsnummer, bruksnummer, festenummer samt 
+undernummerMatrikkelenhetlde ntKommuneldent, gardsnummer, bruksnummer, festenummer og seksjonsnummerPersonldentNummer, 
+fødselsnummer eller organisasjonsnummer avhengig av om personen er av typen AnnenPerson, FysiskPerson eller 
+JuridiskPerson. Merk at alle disse ligger i feltet nummer på Person-objektet.SefrakldentKommunenummer, 
+registreringskretsnummer og et husløpenummerVegadresseldentAdressekode, nummer og bokstavSøk for å finne id for en 
+identVi kan ikke forvente at brukere av API-et vet hva våre unike id-er er for de forskjellige objektene våre så det 
+er laget tjenester som tar inn en logisk identifikator (se kapitlet over for hvordan de bygges opp) for et objekt og 
+returnerer id-objektet som representerer denne i systemet. Disse tjenestene finnes for alle boblene som har logiske 
+identifikatorer, men ikke for absolutt alle bobler. De boblene som ikke har noen logisk identifikator (som for eksempel 
+en teig, en flate for en matrikkelenhet) vil ikke ha tjenester for å oversette fra logiske identifikatorer til 
+id-er.Det er laget både entalls og flertalls-versjoner av tjenestemetodene slik at man kan hente ut id-er for mange 
+identer om gangen hvis man ønsker det. Klasser som har disse tjenestene er eksempelvis Adresse, Veg, Bygg, Forretning, 
+Kommune og Matrikkelenhet.InversrelasjonssøkI modellen kan man alltid navigere via id-koblingene som er laget, men det 
+kan også være tilfeller der man ønsker å gå motsatt vei. Det er i disse tilfellene laget tjenester for å søke 
+opp dette. Eksempelvis kan man i AdresseService søke opp alle adresser for en eller flere veger eller alle adresser 
+for en eller flere bygg. Disse koblingene finnes ikke direkte i modellen nødvendigvis men det er mulig å navigere i 
+modellen for å finne objektene.Spesielle tjenesterStoreServiceDenne tjenesten tilbyr metoder for å hente ut en eller 
+flere bobler basert på deres id. Denne er primærmåten å navigere gjennom boblemodellen og for å hente ut 
+boblene.RapportServiceMatrikkelen tilbyr en del predefinerte rapporter og denne tjenesten brukes for å bestille og 
+hente disse. Bruksmønsteret er at man benytter en metode for å bestille en rapport. Man får da tilbake et 
+rapport-objekt som peker til et Jobb-objekt som man kan hente ut for å få status for bestillingen. Når rapporten er 
+ferdig kan man hente denne ut over HTTPS som en filnedlasting.EksempelFølgende eksempel viser hvordan vi kan bestille 
+og hente ut en rapport. Bruker rapporten &quot;Samlet rapport for matrikkelenhet&quot; som eksempel.//Finner først 
+matrikkelenheten vi vil ha rapport forMatrikkelenhetService matrikkelenhetService;Matrikkelenhetid matrikkelenhetid = 
+matrikkelenhetService.findMatrikkelenhetidForident(new Matrikkelenhetident(.,,));4//Bestiller så 
+rapportenRapportservice rapportservice;OfflineMatrikkelRapport r = 
+rapportService.createSamletRapportForMatrikkelenhet(matrikkelenhetid, ExportTypeid.PDF, true)89 //Henter rapporten ut 
+og finner URL for filen.10 MatrikkelRapport rapport= rapportService.hentRapport(r.getJobbid()); //Dette kallet feiler 
+hvis rapporten ikke er klar. 1112 String urlForRapport = rapport.getURL(); //Kan så bruke denne for å hente rapporten 
+over httpsKodelisteServiceAPI-et tilbyr en tjeneste for å hente ut alt av koder i systemet. Dette kan da brukes for å 
+cache opp kodeverdier i lokal klient. Da det i utgangspunktet kan komme til nye kodeverdier når som helst bør man i 
+klient benytte seg av denne tjenesten ofte for å være sikker på at man ikke ender opp med å få bobler fra 
+StoreService som refererer til kodeverdier man ikke vet om.Metoden getKodelister på tjenesten tar inn et tidspunkt, 
+men dette bør ikke benyttes med mindre man vet at man ikke ønsker kodelister på nåværende tidspunkt. Dette krever 
+spesielle rettigheter så man bør nok benytte seg av &quot;nåtid&quot; i de fleste tilfeller.NedlastningServiceDet 
+kan være tilfeller der man ønsker å hente ut store datamengder. NedlastningService tilbyr to metoder for å kunne 
+gjøre dette. De to metodene har samme signatur men forskjellige returtyper. Den ene metoden gir tilbake id-er og den 
+andre gir oss boblene. Det er opp til brukeren å bestemme hvilke av disse som er mest hensiktsmessige. Hvis man 
+allerede har en lokal kopi av matrikkelen og vil sjekke om man har alle id-er vil det være unødvendig å hente ut 
+alle objekter. Under følger eksempel på bruk av tjenestenEksempel1 NedlastningService service;2String filter= 
+&quot;{kommunefilter: [\&quot;1201\&quot;]}&quot;;List<Vegid> alleids = new Arraylist<>();List<Vegid> idsEtterid;Vegid 
+sisteid = null;do {idsEtterid = service.findidsEtterid(sisteid, Veg.class, filter, 
+10000);alleids.addAll(idsEtterid);sisteid = alleids.get(alleids.size() - 1);} while(idsEtterid.size() > 0);1213 return 
+alleids;Eksemplet henter ut alle veger i kommune med kommunenummer &quot;1201&quot;. Se beskrivelsen av tjenesten for 
+mer informasjon rundt de forskjellige parametrene.Tjenesten kan man da bruke for å hente ut data for en eller flere 
+kommuner (eller hele landet) og man kan så koble dette sammen med endringsloggstjenester for å bygge opp en lokal 
+kopi av matrikkeldata.EndringsloggServiceEndringsloggService kan brukes for å hente en instans av Endringer, som igjen 
+inneholder en liste av Endring. En Endring representerer en Nyoppretting, Oppdatering, Sletting elleren Typeendring for 
+ett bobleobjekt. Legg merke til at en endring inneholder ikke hva som eventuelt har blitt endret i bobleobjektet, om 
+man oppgir ReturnerBobler.Alltid som parameter til endringsloggstjenesten vil man få tilbake boblen i nåværende 
+tillstand(dvs. ikke tilstanden boblen hadde da endringen ble utført).Brukstilfelle for denne tjenesten kan være å 
+holde ett system synkronisert med matrikkelen. For å etablere en lokal kopi vil man bruke endringsloggtjenesten sammen 
+med nedlastningservice beskrevet over. Man kan da hente ut siste endring fra endringsloggservice først, før man så 
+benytter nedlastningservice for å hente ut alle objekter for typene man vil ha i lokal kopi. Etter at man har fått ut 
+alle objekter kan man lese endringer som har foregått i løpet av perioden man lastet ned data.Eksempel som går 
+igjennom alle endringerEndringsloggService endringsloggService;StoreService storeService;3Map<Bubbleid<?>, 
+BubbleObject> boblerForHenting = new HashMap<>();Set<Bubbleid<?>> leggesTil = new LinkedHashSet<>();Set<Bubbleld<?>> 
+oppdateres= new LinkedHashSet<>();Set<Bubbleld<?>> slettes= new LinkedHashSet<>();8String filter= &quot;{kommunefilter: 
+[\&quot;1201\&quot;]}&quot;;MatrikkelEndringid forsteEndringsid = null; li bruk f.eks. id fra siste endring hentet med 
+nedlastingstjenestenEndringer<MatrikkelEndring<?, ?>> endringer;do {endringer= 
+endringsloggService.findEndringer(forsteEndringsid,li returner endringsobjekter fra og med oppgitt 
+endringsID.MatrikkelBubbleObject.class, li returner endringer for alle typer i 
+matrikkelenfilter,ReturnerBobler.Aldri,10000);19li begrens til endringer for en gitt kommuneli ikke returner 
+bobleobjektene endringen gjelder for(dvs. kun endringsobjektet)li returner maksimalt 10000 endringli Samle opp id for 
+alle bobleobjekter som er Lagt til eller oppdatert, slik at de kan hentes i ett store service kallfor 
+(MatrikkelEndring<?, ?> endring : endringer.getEndringList()) {switch (endring.getEndringstype()) {case 
+Nyoppretting:leggesTil.add(endring.getEndretBubbleid());boblerForHenting.put(endring.getEndretBubbleid(), 
+null);break;case Typeendring:case 
+Oppdatering:oppdateres.add(endring.getEndretBubbleid());boblerForHenting.put(endring.getEndretBubbleid(), 
+null);break;case 
+Sletting:slettes.add(endring.getEndretBubbleid());leggesTil.remove(endring.getEndretBubbleid());35oppdateres.remove(endr
+ing.getEndretBubbleid());36break;37}38}39// hent alle nye og oppdaterte bobler med store servicefor (BubbleObject 
+bubbleObject : storeService.getObjectsignoreMissing(boblerForHenting.keySet())) 
+{boblerForHenting.put(bubbleObject.getid(), bubbleObject);43}44 } while (!endringer.isAlleEndringerFunnet()); 45for 
+(Bubbleid<?> bubbleid : leggesTil) {BubbleObject bubbleObject = boblerForHenting.get(bubbleid);//  Legg til 
+bubbleObject til system som skal synkroniseres49 }50for (Bubbleid<?> bubbleid : oppdateres) {BubbleObject bubbleObject 
+= boblerForHenting.get(bubbleid);// oppdater bubbleObject i system som skal synkroniseres54 }55for (Bubbleid<?> 
+bubbleid : slettes) {// slett bubbleid fra system som skal synkroniseres58}FeilhåndteringDersom det er en feil som 
+faktisk prosesseres på tjeneren skal dette komme tilbake i responsen som en relativt fornuftig feilmelding. Noen 
+eksempler dersom man har søkt på noe som ikke 
+finnes:9715500108468Adresseservice:<faultcode>S:Server</faultcode><faultstring>Fant ingen forekomst ved søk på krets 
+med kretsnr:359, kretstypeKode.id=4097 og kommune.id=Kommuneid{value=100000301, 
+snapshotVersion=SnapshotVersion{timestamp=CURRE<detail><ns3:ServiceException 
+...><ns3:stackTraceText>no.statkart.skif.exception.FinderException: Fant ingen forekomst ved søk på krets med 
+kretsnr:359, kretstypeKode.id=4097 og 
+kommune.id=Kommuneid{vc7Storeservice:<faultcode>S:Server</faultcode><faultstring>[Kommuneid{value=300712, 
+snapshotVersion=SnapshotVersion{timestamp=CURRENT}}]</faultstring><detail><ns32:ServiceException 
+...><ns32:category>:ServiceException:ApplicationException:FinderException:</ns32:category><ns32:stackTraceText>no.statka
+rt.skif.exception.ObjectNotFoundException:[Kommuneid{value=300712,  
+snapshotVersion=SnapshotVersion{timestamp=CURRENT}}]1516En kjent feil er dersom man skulle fått en fornuftig 
+feilmelding (ala det over), men man samtidig har ugyldig systemVersion får man ikke en gyldig feilmelding tilbake. Så 
+om man får en generell feilmelding på dette formatet under kan det være lurt å sjekke at matrikkelContext-objektet 
+er riktig satt oppt:37642763131124<S:Fault xmlns:ns4=&quot;http://www. 
+w3.org/2003/05/soap-envelope&quot;><faultcode>S:Server</faultcode><faultstring>Error mapping from 
+no.statkart.skif.exception.FinderException to java.lang.Throwable</faultstring></S:Fault>124<S:Fault 
+xmlns:ns4=&quot;http://www. w3.org/2003/05/soap-envelope&quot;><faultcode>S:Server</faultcode><faultstring>Error 
+mapping from no.statkart.skif.exception.FinderException to java.lang.Throwable</faultstring></S:Fault>374904250812

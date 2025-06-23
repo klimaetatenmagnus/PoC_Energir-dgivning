@@ -1,10 +1,11 @@
 // scripts/test-e2e-building.ts
 // -------------------------------------------------------------------
-// e2e‐test: adresse → matrikkelenhet → bygg → store-boble
-// Oppdatert juni 2025 for én-ID-flyten                         v2.0
+// e2e‐test: adresse → matrikkelenhet → bygg → store-boble → energiattest
+// Oppdatert juni 2025 for én-ID-flyten + Enova-integrasjon     v2.1
 // -------------------------------------------------------------------
 import { strict as assert } from "assert";
 import nock from "nock";
+import fetch from "node-fetch";
 import { resolveBuildingData } from "../services/building-info-service/index.ts";
 import { StoreClient } from "../src/clients/StoreClient.ts";
 import { matrikkelEndpoint } from "../src/utils/endpoints.ts";
@@ -16,12 +17,73 @@ import "../loadEnv.ts";
 // Test mot produksjonsmiljøet
 const BASE_URL = process.env.MATRIKKEL_API_BASE_URL_PROD || "https://www.matrikkel.no/matrikkelapi/wsapi/v1";
 const USERNAME = process.env.MATRIKKEL_USERNAME!;
+const ENOVA_API_KEY = process.env.ENOVA_API_KEY || "";
 
 const storeClient = new StoreClient(
   matrikkelEndpoint(BASE_URL, "StoreService"),
   USERNAME,
   process.env.MATRIKKEL_PASSWORD!
 );
+
+/* ─── Energiattest-funksjon ─── */
+async function fetchEnergiattest(p: {
+  kommunenummer: string;
+  gnr: number;
+  bnr: number;
+  seksjonsnummer?: number;
+  bygningsnummer?: string;
+}) {
+  if (!ENOVA_API_KEY) {
+    console.log("⚠️  ENOVA_API_KEY ikke satt - hopper over energiattest-oppslag");
+    return null;
+  }
+
+  try {
+    const requestBody: any = {
+      kommunenummer: p.kommunenummer,
+      gardsnummer: String(p.gnr),
+      bruksnummer: String(p.bnr),
+      bruksenhetnummer: "",
+      seksjonsnummer: p.seksjonsnummer ? String(p.seksjonsnummer) : "",
+    };
+    
+    if (p.bygningsnummer) {
+      requestBody.bygningsnummer = p.bygningsnummer;
+    }
+    
+    const response = await fetch(
+      "https://api.data.enova.no/ems/offentlige-data/v1/Energiattest",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "Energitiltak/1.0",
+          "x-api-key": ENOVA_API_KEY,
+        },
+        body: JSON.stringify(requestBody),
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log("📋 Ingen energiattest funnet");
+        return null;
+      }
+      throw new Error(`Enova API feil: ${response.status}`);
+    }
+
+    const list = await response.json();
+    if (Array.isArray(list) && list[0]) {
+      const attest = list[0];
+      console.log("✅ Energiattest funnet!");
+      return attest;
+    }
+    return null;
+  } catch (error) {
+    console.log("❌ Feil ved henting av energiattest:", error.message);
+    return null;
+  }
+}
 
 /* ─── MOCKS (brukes bare når LIVE ikke er satt) ─── */
 if (!process.env.LIVE) {
@@ -114,70 +176,170 @@ if (!process.env.LIVE) {
   console.log("Base URL:", BASE_URL);
   console.log("Username:", USERNAME);
   
-  // Test normal flyt mot produksjonsmiljø først for å få ekte bygg-ID
-  console.log("\n=== Testing Kapellveien 156C (seksjon C) mot PRODUKSJONSMILJØ ===");
+  // Test flere adresser for å verifisere problemets omfang
+  const testAdresser = [
+    { adresse: "Kjelsåsveien 97B, 0491 Oslo", type: "tomannsbolig", forventetKode: "121" }, // Har energiattest G
+    { adresse: "Fallanveien 29, 0495 Oslo", type: "boligblokk", forventetKode: "141-149" },
+    { adresse: "Hesteskoen 12K, 0493 Oslo", type: "rekkehus", forventetKode: "131-139" },
+    { adresse: "Kapellveien 156C, 0493 Oslo", type: "tomannsbolig", forventetKode: "121" },
+    { adresse: "Kapellveien 156B, 0493 Oslo", type: "tomannsbolig", forventetKode: "121" }
+  ];
+
+  for (const test of testAdresser) {
+    console.log(`\n=== Testing ${test.adresse} (${test.type}) ===`);
+    let result = null;
+    try {
+      result = await resolveBuildingData(test.adresse);
+      console.log(`SUCCESS! Resultat:`, {
+        adresse: test.adresse,
+        bygningstypeKodeId: result.bygningstypeKodeId,
+        bygningstypeKode: result.bygningstypeKode,  // Ny: viser 3-sifret kode
+        bygningstype: result.bygningstype,
+        rapporteringsNivaa: result.rapporteringsNivaa,
+        forventetKode: test.forventetKode,
+        korrekt: result.bygningstypeKode ? test.forventetKode.includes(result.bygningstypeKode) : false
+      });
+      
+      // Hent energiattest hvis tilgjengelig
+      if (result.gnr && result.bnr) {
+        console.log("\n📋 Sjekker energiattest...");
+        const energiattest = await fetchEnergiattest({
+          kommunenummer: test.adresse.includes("Oslo") ? "0301" : "0301", // Oslo
+          gnr: result.gnr,
+          bnr: result.bnr,
+          seksjonsnummer: result.seksjonsnummer || undefined,
+          bygningsnummer: result.bygningsnummer || undefined
+        });
+        
+        if (energiattest) {
+          console.log("✅ Energiattest funnet!");
+          console.log("  - Attestnummer:", energiattest.energiattest?.attestnummer);
+          console.log("  - Energikarakter:", energiattest.energiattest?.energikarakter);
+          console.log("  - Oppvarmingskarakter:", energiattest.energiattest?.oppvarmingskarakter);
+          console.log("  - Utstedelsesdato:", energiattest.energiattest?.utstedelsesdato);
+          console.log("  - Byggeår (fra attest):", energiattest.enhet?.bygg?.byggeår);
+          console.log("  - Bruksareal (fra attest):", energiattest.enhet?.bruksareal);
+          console.log("  - URL:", energiattest.energiattest?.attestUrl);
+          
+          // Lagre energiattest i resultat for senere bruk
+          result.energiattest = energiattest;
+        }
+      }
+    } catch (e) {
+      console.log(`Feil ved oppslag av ${test.adresse}:`, e.message);
+      continue;
+    }
+  }
+
+  // Velg første resultat for videre testing
   let resultC = null;
   try {
-    resultC = await resolveBuildingData("Kapellveien 156C, 0493 Oslo");
-    console.log("SUCCESS! PRODUKSJON-resultat for seksjon C:", JSON.stringify(resultC, null, 2));
+    resultC = await resolveBuildingData(testAdresser[0].adresse);
   } catch (e) {
-    console.log("Feil ved normal flyt mot PRODUKSJON for seksjon C:", e.message);
-    throw e; // Stop testen hvis grunnleggende flyt feiler
+    console.log("Feil ved testing:", e.message);
+    throw e;
   }
 
-  // Test seksjon B for sammenligning
-  console.log("\n=== Testing Kapellveien 156B (seksjon B) for sammenligning ===");
-  let resultB = null;
-  try {
-    resultB = await resolveBuildingData("Kapellveien 156B, 0493 Oslo");
-    console.log("SUCCESS! PRODUKSJON-resultat for seksjon B:", JSON.stringify(resultB, null, 2));
-  } catch (e) {
-    console.log("Feil ved seksjon B:", e.message);
+  // Vis komplett rapport for alle testadresser
+  console.log("\n=== KOMPLETT RAPPORT FOR ALLE TESTADRESSER ===");
+  console.log("┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐");
+  console.log("│ Adresse                       │ GNR  │ BNR │ SNR │ Byggeår │ Areal │ Bygningstype              │ Kode │ Bygg-ID   │ Matr.enh.ID │");
+  console.log("├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤");
+  
+  // Samle resultater for alle adresser
+  const alleResultater = [];
+  for (const test of testAdresser) {
+    try {
+      const res = await resolveBuildingData(test.adresse);
+      alleResultater.push(res);
+      
+      // Format verdier for tabellen
+      const adresse = test.adresse.padEnd(29);
+      const gnr = String(res.gnr || "-").padEnd(4);
+      const bnr = String(res.bnr || "-").padEnd(3);
+      const snr = "-".padEnd(3); // Seksjonsnummer må hentes separat om nødvendig
+      const byggeaar = String(res.byggeaar || "-").padEnd(7);
+      const areal = String(res.bruksarealM2 || "-").padEnd(5);
+      const bygningstype = (res.bygningstype || "-").substring(0, 25).padEnd(25);
+      const kode = String(res.bygningstypeKode || res.bygningstypeKodeId || "-").padEnd(4);
+      const byggId = String(res.byggId || "-").padEnd(9);
+      const matrId = String(res.matrikkelenhetsId || "-").padEnd(11);
+      
+      console.log(`│ ${adresse} │ ${gnr} │ ${bnr} │ ${snr} │ ${byggeaar} │ ${areal} │ ${bygningstype} │ ${kode} │ ${byggId} │ ${matrId} │`);
+    } catch (e) {
+      console.log(`│ ${test.adresse.padEnd(29)} │ FEIL: ${e.message.padEnd(121)} │`);
+    }
   }
-
-  // Sammenlign seksjon B og C
-  console.log("\n=== Sammenligning seksjon B vs C ===");
-  if (resultB && resultC) {
-    console.log("Seksjon B - matrikkelenhetsId:", resultB.matrikkelenhetsId);
-    console.log("Seksjon C - matrikkelenhetsId:", resultC.matrikkelenhetsId);
-    console.log("Seksjon B - byggId:", resultB.byggId);
-    console.log("Seksjon C - byggId:", resultC.byggId);
-    console.log("Er samme matrikkelenhet?", resultB.matrikkelenhetsId === resultC.matrikkelenhetsId);
-    console.log("Er samme bygg?", resultB.byggId === resultC.byggId);
+  console.log("└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘");
+  
+  // Vis også representasjonspunkt-data
+  console.log("\n=== REPRESENTASJONSPUNKT (koordinater) ===");
+  console.log("┌────────────────────────────────────────────────────────────────────────────┐");
+  console.log("│ Adresse                       │ Øst (UTM33)  │ Nord (UTM33) │ EPSG       │");
+  console.log("├────────────────────────────────────────────────────────────────────────────┤");
+  for (let i = 0; i < alleResultater.length; i++) {
+    const res = alleResultater[i];
+    if (res.representasjonspunkt) {
+      const adresse = testAdresser[i].adresse;
+      console.log(`│ ${adresse.padEnd(29)} │ ${String(Math.round(res.representasjonspunkt.east)).padEnd(12)} │ ${String(Math.round(res.representasjonspunkt.north)).padEnd(12)} │ ${res.representasjonspunkt.epsg.padEnd(10)} │`);
+    }
   }
+  console.log("└────────────────────────────────────────────────────────────────────────────┘");
+  
+  // Vis energiattest-oversikt
+  console.log("\n=== ENERGIATTEST-OVERSIKT ===");
+  console.log("┌─────────────────────────────────────────────────────────────────────────────────────────────────┐");
+  console.log("│ Adresse                       │ Energikarakter │ Oppvarmingskarakter │ Utstedelsesdato      │");
+  console.log("├─────────────────────────────────────────────────────────────────────────────────────────────────┤");
+  
+  for (let i = 0; i < alleResultater.length; i++) {
+    const res = alleResultater[i];
+    const adresse = testAdresser[i].adresse.padEnd(29);
+    
+    // Hent energiattest på nytt for visning
+    const energiattest = await fetchEnergiattest({
+      kommunenummer: "0301",
+      gnr: res.gnr,
+      bnr: res.bnr
+    });
+    
+    if (energiattest && energiattest.energiattest) {
+      const karakter = (energiattest.energiattest.energikarakter || "-").toUpperCase().padEnd(14);
+      const oppvarming = (energiattest.energiattest.oppvarmingskarakter || "-").padEnd(19);
+      const dato = energiattest.energiattest.utstedelsesdato ? 
+        new Date(energiattest.energiattest.utstedelsesdato).toLocaleDateString('nb-NO').padEnd(20) : 
+        "-".padEnd(20);
+      console.log(`│ ${adresse} │ ${karakter} │ ${oppvarming} │ ${dato} │`);
+    } else {
+      console.log(`│ ${adresse} │ Ingen attest          │ -                   │ -                    │`);
+    }
+  }
+  console.log("└─────────────────────────────────────────────────────────────────────────────────────────────────┘");
 
-  // Test direkte oppslag av ekte bygg-ID fra dataflyten for seksjon C
-  console.log("\n=== Testing direkte bygg-ID oppslag for seksjon C ===");
+  // Test direkte oppslag av ekte bygg-ID fra dataflyten
+  console.log("\n=== Testing direkte bygg-ID oppslag ===");
   if (resultC && resultC.byggId) {
     try {
       const directBygg = await storeClient.getObject(resultC.byggId);
       console.log(`SUCCESS! Direkte bygg ${resultC.byggId} fra PRODUKSJON:`, JSON.stringify(directBygg, null, 2));
       
       // Sammenlign data fra begge kilder
-      console.log("\n=== Datasammenligning for seksjon C ===");
+      console.log("\n=== Datasammenligning ===");
       console.log("Fra resolveBuildingData - bruksarealM2:", resultC.bruksarealM2);
       console.log("Fra StoreClient.getObject - bruksarealM2:", directBygg.bruksarealM2);
       console.log("Fra resolveBuildingData - byggeaar:", resultC.byggeaar);
       console.log("Fra StoreClient.getObject - byggeaar:", directBygg.byggeaar);
+      console.log("Fra StoreClient.getObject - bygningstypeKodeId:", directBygg.bygningstypeKodeId);
       
     } catch (e) {
       console.log(`Feil ved direkte oppslag av ${resultC.byggId} i PRODUKSJON:`, e.message);
     }
   } else {
-    console.log("Kan ikke teste direkte oppslag - ingen byggId fra resolveBuildingData for seksjon C");
+    console.log("Kan ikke teste direkte oppslag - ingen byggId fra resolveBuildingData");
   }
 
-  // Test med forventet korrekt bygg-ID fra se-eiendom.kartverket.no
-  console.log("\n=== Testing forventet korrekt bygg-ID 80179073 ===");
-  try {
-    const correctBygg = await storeClient.getObject(80179073);
-    console.log("SUCCESS! Korrekt bygg 80179073 fra PRODUKSJON:", JSON.stringify(correctBygg, null, 2));
-  } catch (e) {
-    console.log("Feil ved oppslag av forventet bygg-ID 80179073:", e.message);
-  }
-
-  // Undersøk alle bygg tilknyttet matrikkelenheten for seksjon C
-  console.log("\n=== Undersøkelse av alle bygg på matrikkelenheten for seksjon C ===");
+  // Undersøk alle bygg tilknyttet matrikkelenheten
+  console.log("\n=== Undersøkelse av alle bygg på matrikkelenheten ===");
   if (resultC && resultC.matrikkelenhetsId) {
     try {
       // Hent alle bygg-IDer for matrikkelenheten
@@ -205,6 +367,7 @@ if (!process.env.LIVE) {
           console.log(`Bygg ${byggId}:`, {
             bruksarealM2: byggData.bruksarealM2,
             byggeaar: byggData.byggeaar,
+            bygningstypeKodeId: byggData.bygningstypeKodeId,
             representasjonspunkt: byggData.representasjonspunkt ? "JA" : "NEI"
           });
         } catch (e) {
