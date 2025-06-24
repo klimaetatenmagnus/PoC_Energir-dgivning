@@ -1,0 +1,5 @@
+@use "@oslokommune/punkt-css/dist/scss/abstracts/variables" with (
+  $font-path: "@oslokommune/punkt-assets/dist"
+);
+
+@use "@oslokommune/punkt-css/dist/scss/pkt";

@@ -3,7 +3,12 @@ import { useState, useEffect } from "react";
 import type { House } from "./types/House";
 import DebugDataTable from "./components/DebugDataTable";
 import useBuildingInfo from "./hooks/useBuildingInfo";
-import 'dotenv/config'
+import { AddressSearch } from "./components/AddressSearch";
+import { ResultsTable } from "./components/ResultsTable";
+import { LoadingSpinner } from "./components/LoadingSpinner";
+import { ErrorDisplay } from "./components/ErrorDisplay";
+import { buildingApi } from "./services/buildingApi";
+import { PktButton } from "@oslokommune/punkt-react";
 
 /* ------------------------------------------------------------------ */
 /*  Konstanter                                                        */
@@ -15,10 +20,10 @@ const DEFAULT_ADDRESS = "Kapellveien 156C, 0493 Oslo";
 /* ------------------------------------------------------------------ */
 export default function App() {
   const [adresse, setAdresse] = useState(DEFAULT_ADDRESS);
-  const [mode, setMode] = useState<"debug" | "wizard">("debug");
+  const [mode, setMode] = useState<"debug" | "wizard" | "lookup">("lookup");
 
   /* 1. Bygg-/Enova-/sol-data  */
-  const { data: lookupData, error } = useBuildingInfo(adresse);
+  const { data: lookupData, error } = useBuildingInfo(mode === "debug" || mode === "wizard" ? adresse : "");
 
   /* 2. house.json (lagret eksempelhus) */
   const [houseJson, setHouseJson] = useState<House | null>(null);
@@ -29,46 +34,103 @@ export default function App() {
       .catch((e) => console.error("Feil ved /house.json:", e));
   }, []);
 
+  /* 3. Lookup mode state */
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState<Error | null>(null);
+  const [lookupResult, setLookupResult] = useState<any>(null);
+  const [searchedAddress, setSearchedAddress] = useState<string>("");
+
+  const handleAddressLookup = async (address: string) => {
+    setLookupLoading(true);
+    setLookupError(null);
+    setSearchedAddress(address);
+    
+    try {
+      const result = await buildingApi.lookupAddress(address);
+      setLookupResult(result);
+      console.log('[App] Lookup successful:', result);
+    } catch (error) {
+      console.error('[App] Lookup failed:', error);
+      setLookupError(error instanceof Error ? error : new Error('Ukjent feil'));
+      setLookupResult(null);
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
   /* --- RENDER ---------------------------------------------------- */
-  if (error) return <p className="text-red-600 p-4">Feil: {error}</p>;
+  if (error && mode !== "lookup") return <p className="text-red-600 p-4">Feil: {error}</p>;
 
   return (
-    <main className="max-w-4xl mx-auto p-4 space-y-6">
-      {/* Adresse-input */}
-      <div className="flex gap-2">
-        <input
-          className="border p-2 flex-1"
-          value={adresse}
-          onChange={(e) => setAdresse(e.target.value)}
-          placeholder="Skriv adresse …"
-        />
-        {mode === "wizard" ? (
-          <button
-            className="px-3 py-2 bg-gray-200 rounded"
-            onClick={() => setMode("debug")}
-          >
-            Tilbake til diagnose
-          </button>
-        ) : (
-          <button
-            className="px-3 py-2 bg-green-600 text-white rounded"
-            onClick={() => setMode("wizard")}
-            disabled={!lookupData || !houseJson}
-          >
-            Start veileder
-          </button>
-        )}
+    <main className="container">
+      <h1 className="page-title">Adresseoppslag - Matrikkel og Energiattest</h1>
+      
+      {/* Mode selector */}
+      <div className="flex gap-2 mb-4">
+        <PktButton
+          onClick={() => setMode("lookup")}
+        >
+          Adresseoppslag
+        </PktButton>
+        <PktButton
+          onClick={() => setMode("debug")}
+        >
+          Debug-modus
+        </PktButton>
+        <PktButton
+          onClick={() => setMode("wizard")}
+          disabled={!lookupData || !houseJson}
+        >
+          Veileder
+        </PktButton>
       </div>
 
-      {/* ➊ Diagnose-tabell */}
+      {/* ➊ Adresseoppslag mode */}
+      {mode === "lookup" && (
+        <>
+          <AddressSearch 
+            onSearch={handleAddressLookup} 
+            isLoading={lookupLoading}
+          />
+          
+          {lookupLoading && (
+            <LoadingSpinner text="Henter bygningsdata..." />
+          )}
+          
+          {lookupError && !lookupLoading && (
+            <ErrorDisplay 
+              error={lookupError}
+              onRetry={() => searchedAddress && handleAddressLookup(searchedAddress)}
+              context={{ address: searchedAddress }}
+            />
+          )}
+          
+          {lookupResult && !lookupLoading && (
+            <ResultsTable 
+              data={lookupResult}
+              searchAddress={searchedAddress}
+            />
+          )}
+        </>
+      )}
+
+      {/* ➋ Diagnose-tabell */}
       {mode === "debug" && (
         <>
+          <div className="flex gap-2 mb-4">
+            <input
+              className="border p-2 flex-1"
+              value={adresse}
+              onChange={(e) => setAdresse(e.target.value)}
+              placeholder="Skriv adresse …"
+            />
+          </div>
           {!lookupData && <p>Laster data …</p>}
           {lookupData && <DebugDataTable data={lookupData} />}
         </>
       )}
 
-      {/* ➋ Trinn-veileder */}
+      {/* ➌ Trinn-veileder */}
       {mode === "wizard" && lookupData && houseJson && (
         <WizardFlow
           initialHouse={{ ...houseJson, ...lookupData }}

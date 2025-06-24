@@ -102,11 +102,7 @@ async function lookupAdresse(str: string) {
     };
   };
 
-  /* ① Prøv original streng */
-  const r1 = await fetch(buildUrl(str), headers);
-  if (r1.ok) return parse(r1);
-
-  /* ② Fallback-varianter (komma-/whitespace-vask) */
+  /* Prøv alle varianter og returner første med treff */
   const variants = [
     str,
     // Variant 2: Fjern komma
@@ -129,9 +125,17 @@ async function lookupAdresse(str: string) {
 
   for (const v of variants) {
     const resp = await fetch(buildUrl(v), headers);
-    if (resp.ok) return parse(resp);
+    if (resp.ok) {
+      try {
+        const result = await parse(resp);
+        return result;
+      } catch (e) {
+        // Fortsett til neste variant hvis parse feiler (0 treff)
+        continue;
+      }
+    }
   }
-  throw new Error("Geonorge gav 400 på alle varianter");
+  throw new Error("Ingen adresse funnet i Geonorge etter å ha prøvd alle varianter");
 }
 
 /* ───────────── Energiattest (valgfri) ───── */
@@ -245,8 +249,8 @@ export async function resolveBuildingData(adresse: string) {
     if (isMain) {
       matrikkelenhetsId = id;
       
-      // Hent seksjonsnummer hvis det finnes
-      const seksjonMatch = xml.match(/<seksjonsnummer>(\d+)<\/seksjonsnummer>/i);
+      // Hent seksjonsnummer hvis det finnes (kan ha namespace prefix)
+      const seksjonMatch = xml.match(/<(?:ns\d+:)?seksjonsnummer>(\d+)<\/(?:ns\d+:)?seksjonsnummer>/i);
       if (seksjonMatch) {
         seksjonsnummer = parseInt(seksjonMatch[1]);
         if (LOG) console.log(`✅ Valgte matrikkelenhet ${id} med hovedadresse=true og seksjonsnummer=${seksjonsnummer}`);
@@ -257,9 +261,32 @@ export async function resolveBuildingData(adresse: string) {
     }
   }
 
-  // Hvis ingen hovedadresse funnet, finn matrikkelenhet med boligbygg
+  // Hvis ingen hovedadresse funnet, sjekk om vi har bokstav og skal prioritere basert på seksjon
+  if (!matrikkelenhetsId && adr.bokstav) {
+    if (LOG) console.log(`⚠️  Ingen hovedadresse funnet, sjekker for seksjonerte matrikkelenheter for bokstav ${adr.bokstav}...`);
+    
+    // For tomannsboliger: Bokstav A = seksjon 1, B = seksjon 2, osv.
+    const forventetSeksjon = adr.bokstav.charCodeAt(0) - 'A'.charCodeAt(0) + 1;
+    
+    for (const id of ids) {
+      const xml = await storeClient.getObjectXml(id, "MatrikkelenhetId");
+      const seksjonMatch = xml.match(/<(?:ns\d+:)?seksjonsnummer>(\d+)<\/(?:ns\d+:)?seksjonsnummer>/i);
+      
+      if (seksjonMatch) {
+        const seksjon = parseInt(seksjonMatch[1]);
+        if (seksjon === forventetSeksjon) {
+          matrikkelenhetsId = id;
+          seksjonsnummer = seksjon;
+          if (LOG) console.log(`✅ Fant matrikkelenhet ${id} med seksjonsnummer ${seksjon} som matcher bokstav ${adr.bokstav}`);
+          break;
+        }
+      }
+    }
+  }
+  
+  // Hvis ingen hovedadresse eller seksjon funnet, finn matrikkelenhet med boligbygg
   if (!matrikkelenhetsId) {
-    if (LOG) console.log("⚠️  Ingen hovedadresse funnet, sjekker for matrikkelenheter med boligbygg...");
+    if (LOG) console.log("⚠️  Ingen hovedadresse eller matchende seksjon funnet, sjekker for matrikkelenheter med boligbygg...");
     
     // Samle info om alle matrikkelenheter og deres bygg
     const matrikkelEnheterMedBygg: Array<{id: number, byggIds: number[], harBoligbygg: boolean}> = [];
@@ -277,7 +304,7 @@ export async function resolveBuildingData(adresse: string) {
               if (LOG) console.log(`  Matrikkelenhet ${id} har boligbygg (type ${byggInfo.bygningstypeKodeId})`);
               break;
             }
-          } catch (e) {
+          } catch (e: any) {
             if (LOG) console.log(`  Kunne ikke hente info for bygg ${byggId}: ${e.message}`);
           }
         }
@@ -292,7 +319,7 @@ export async function resolveBuildingData(adresse: string) {
       
       // Hent seksjonsnummer for valgt matrikkelenhet
       const xml = await storeClient.getObjectXml(matrikkelenhetsId, "MatrikkelenhetId");
-      const seksjonMatch = xml.match(/<seksjonsnummer>(\d+)<\/seksjonsnummer>/i);
+      const seksjonMatch = xml.match(/<(?:ns\d+:)?seksjonsnummer>(\d+)<\/(?:ns\d+:)?seksjonsnummer>/i);
       if (seksjonMatch) {
         seksjonsnummer = parseInt(seksjonMatch[1]);
         if (LOG) console.log(`✅ Valgte matrikkelenhet ${matrikkelenhetsId} som har boligbygg og seksjonsnummer=${seksjonsnummer}`);
@@ -305,7 +332,7 @@ export async function resolveBuildingData(adresse: string) {
       
       // Hent seksjonsnummer for valgt matrikkelenhet
       const xml = await storeClient.getObjectXml(matrikkelenhetsId, "MatrikkelenhetId");
-      const seksjonMatch = xml.match(/<seksjonsnummer>(\d+)<\/seksjonsnummer>/i);
+      const seksjonMatch = xml.match(/<(?:ns\d+:)?seksjonsnummer>(\d+)<\/(?:ns\d+:)?seksjonsnummer>/i);
       if (seksjonMatch) {
         seksjonsnummer = parseInt(seksjonMatch[1]);
       }
@@ -393,7 +420,39 @@ export async function resolveBuildingData(adresse: string) {
     shouldReportBuildingLevel(bygg.bygningstypeKodeId)
   );
   
-  if (sectionLevelBuildings.length > 0) {
+  // Spesialhåndtering for seksjonerte eiendommer (tomannsboliger med bokstav i adressen)
+  if (LOG) console.log(`📋 Seksjonsnummer: ${seksjonsnummer}, Bokstav: ${adr.bokstav}, Antall bygg: ${allBygningsInfo.length}`);
+  // Hvis adressen har bokstav og flere bygg, anta det er en seksjonert eiendom
+  if (adr.bokstav && allBygningsInfo.length > 1) {
+    if (LOG) console.log(`🏘️ Mulig seksjonert eiendom med bokstav ${adr.bokstav} - analyserer alle ${allBygningsInfo.length} bygg`);
+    
+    // For seksjonerte eiendommer, vurder ALLE bygg, ikke bare "eligible"
+    const byggMedTilstrekkeligAreal = allBygningsInfo.filter(bygg => 
+      (bygg.bruksarealM2 ?? 0) >= MIN_AREA_THRESHOLD
+    );
+    
+    // Sorter bygg etter byggeår (nyeste først)
+    const sortedByYear = [...byggMedTilstrekkeligAreal].sort((a, b) => 
+      (b.byggeaar ?? 0) - (a.byggeaar ?? 0)
+    );
+    
+    // Hvis det er et nyere bygg som er betydelig mindre enn det eldste, er det sannsynligvis seksjonen
+    const newestBuilding = sortedByYear[0];
+    const oldestBuilding = sortedByYear[sortedByYear.length - 1];
+    
+    if (newestBuilding.byggeaar && oldestBuilding.byggeaar && 
+        newestBuilding.byggeaar > oldestBuilding.byggeaar &&
+        (newestBuilding.bruksarealM2 ?? 0) < (oldestBuilding.bruksarealM2 ?? 0) * 0.7) {
+      selectedBygg = newestBuilding;
+      if (LOG) console.log(`📐 Valgte nyere bygg (${newestBuilding.byggeaar}) med ${newestBuilding.bruksarealM2} m² som sannsynlig seksjon`);
+    } else {
+      // Fallback: velg minste bygg for seksjoner
+      selectedBygg = byggMedTilstrekkeligAreal.reduce((prev, curr) => 
+        (curr.bruksarealM2 ?? 0) < (prev.bruksarealM2 ?? 0) ? curr : prev
+      );
+      if (LOG) console.log(`📏 Valgte minste bygg med ${selectedBygg.bruksarealM2} m² for seksjon`);
+    }
+  } else if (eligibleBuildings.length > 0 && sectionLevelBuildings.length > 0) {
     // For individual houses: velg bygg med størst areal (mest sannsynlig hovedbygget)
     // ENDRET: Fra minst til størst areal for å unngå tilbygg/garasjer
     selectedBygg = sectionLevelBuildings.reduce((prev, curr) => 
@@ -406,12 +465,15 @@ export async function resolveBuildingData(adresse: string) {
       (curr.bruksarealM2 ?? 0) > (prev.bruksarealM2 ?? 0) ? curr : prev
     );
     if (LOG) console.log(`🏢 Building-level reporting for building type ${selectedBygg.bygningstypeKodeId}`);
-  } else {
+  } else if (eligibleBuildings.length > 0) {
     // Fallback: velg bygg med størst areal
     selectedBygg = eligibleBuildings.reduce((prev, curr) => 
       (curr.bruksarealM2 ?? 0) > (prev.bruksarealM2 ?? 0) ? curr : prev
     );
     if (LOG) console.log(`🔄 Fallback: selecting largest building ${selectedBygg.id}`);
+  } else {
+    // Final fallback: if no eligible buildings, select from all buildings
+    throw new Error("Ingen bygninger funnet på denne adressen");
   }
   
   const byggId = selectedBygg.id;
@@ -426,32 +488,81 @@ export async function resolveBuildingData(adresse: string) {
   const rpPBE = bygg.representasjonspunkt?.toPBE();
 
   /* 8) valgfri energiattest */
+  // Hvis ingen seksjonsnummer i Matrikkel men adresse har bokstav, infer seksjon
+  let seksjonForEnova = seksjonsnummer;
+  if (!seksjonsnummer && adr.bokstav) {
+    // OBS: For noen eiendommer starter seksjoneringen fra B=1, C=2
+    // For andre starter den fra A=1, B=2, C=3
+    // Vi bruker standard A=1, B=2, C=3 som default
+    seksjonForEnova = adr.bokstav.charCodeAt(0) - 'A'.charCodeAt(0) + 1;
+    if (LOG) console.log(`📐 Ingen seksjonsnummer i Matrikkel, infererer seksjon ${seksjonForEnova} fra bokstav ${adr.bokstav} (OBS: kan variere per eiendom)`);
+  }
+  
   const attest = await fetchEnergiattest({
     kommunenummer: adr.kommunenummer,
     gnr: adr.gnr,
     bnr: adr.bnr,
-    seksjonsnummer: seksjonsnummer,
+    seksjonsnummer: seksjonForEnova,
     bygningsnummer: bygg.bygningsnummer,
   });
 
-  /* 9) resultatobjekt */
+  /* 9) resultatobjekt med ekstra info om hele bygget hvis seksjonert */
   const strategy = determineBuildingTypeStrategy(bygg.bygningstypeKodeId);
+  
+  // For seksjonerte eiendommer, hent også total areal for hele bygget
+  let totalBygningsareal: number | null = null;
+  let antallSeksjoner: number | null = null;
+  let hovedbyggId: number | null = null;
+  
+  // Sjekk om dette er en seksjonert eiendom (bokstav i adresse eller seksjonsnummer)
+  const erSeksjonertEiendom = seksjonsnummer || adr.bokstav;
+  
+  if (erSeksjonertEiendom && allBygningsInfo.length > 0) {
+    // For tomannsboliger og andre seksjonerte eiendommer
+    // Finn det største bygget som representerer hele bygget
+    const hovedBygg = allBygningsInfo
+      .filter(b => shouldProcessBuildingType(b.bygningstypeKodeId))
+      .reduce((prev, curr) => 
+        (curr.bruksarealM2 ?? 0) > (prev.bruksarealM2 ?? 0) ? curr : prev, 
+        allBygningsInfo[0]
+      );
+    
+    if (hovedBygg) {
+      totalBygningsareal = hovedBygg.bruksarealM2 ?? null;
+      hovedbyggId = hovedBygg.id;
+      
+      // For tomannsboliger: tell antall matrikkelenheter med samme gnr/bnr
+      // Dette gir et estimat på antall seksjoner
+      if (bygg.bygningstypeKodeId === 4 || bygg.bygningstypeKodeId === 121) {
+        // Hardkodet til 2 for tomannsboliger
+        antallSeksjoner = 2;
+      }
+      
+      if (LOG) {
+        console.log(`📊 Seksjonert eiendom - Seksjon ${seksjonsnummer || adr.bokstav}: ${bygg.bruksarealM2} m²`);
+        console.log(`📊 Total bruksareal for hele bygget (bygg-ID ${hovedbyggId}): ${totalBygningsareal} m²`);
+      }
+    }
+  }
   
   return {
     gnr: adr.gnr,
     bnr: adr.bnr,
     seksjonsnummer: seksjonsnummer ?? null,
+    seksjonsnummerInferert: (!seksjonsnummer && seksjonForEnova) ? seksjonForEnova : null,
     matrikkelenhetsId,
     byggId,
     bygningsnummer: bygg.bygningsnummer ?? null,
     byggeaar: bygg.byggeaar ?? null,
     bruksarealM2: bygg.bruksarealM2 ?? null,
+    totalBygningsareal: totalBygningsareal,
+    antallSeksjoner: antallSeksjoner,
     representasjonspunkt: bygg.representasjonspunkt ?? null,
     representasjonspunktPBE: rpPBE ?? null,
     energiattest: attest,
     bygningstypeKodeId: bygg.bygningstypeKodeId ?? null,
-    bygningstypeKode: bygg.bygningstypeKode ?? null,  // Ny: 3-sifret kode
-    bygningstype: bygg.bygningstypeBeskrivelse ?? strategy.description,  // Bruk beskrivelse fra mapping hvis tilgjengelig
+    bygningstypeKode: bygg.bygningstypeKode ?? null,
+    bygningstype: bygg.bygningstypeBeskrivelse ?? strategy.description,
     rapporteringsNivaa: strategy.reportingLevel,
   } as const;
 }

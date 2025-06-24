@@ -1,0 +1,341 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:getObjectResponse xmlns="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain" xmlns:ns2="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store" xmlns:ns3="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/exception" xmlns:ns4="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/geometri" xmlns:ns5="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet" xmlns:ns6="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/adresse" xmlns:ns7="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/util" xmlns:ns8="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/forretning" xmlns:ns9="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kommunetillegg" xmlns:ns10="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning" xmlns:ns11="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/sefrak" xmlns:ns12="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kulturminne" xmlns:ns13="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/grunnforurensing" xmlns:ns14="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bruker" xmlns:ns15="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kommune" xmlns:ns16="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/konsesjon" xmlns:ns17="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/metadata" xmlns:ns18="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/person" xmlns:ns19="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kommunetillegg/koder" xmlns:ns20="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kodeliste" xmlns:ns21="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/aktivitetsliste" xmlns:ns22="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/elektronisktinglysing" xmlns:ns23="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/adresse/koder" xmlns:ns24="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning/koder" xmlns:ns25="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/endringslogg" xmlns:ns26="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/jobb" xmlns:ns27="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/geometri/koder" xmlns:ns28="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bruker/koder" xmlns:ns29="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet/koder" xmlns:ns30="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/sefrak/koder" xmlns:ns31="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/rapport/koder" xmlns:ns32="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/person/koder">
+<ns2:return xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns5:Seksjon">
+<id xsi:type="ns5:SeksjonId">
+  <value>510390946</value>
+</id>
+<metadata>
+  <item>fristMatrikkelforingsKrav</item>
+  <item>anleggsprojeksjonsFlaterForMatrikkelenhet</item>
+  <item>versjon</item>
+  <item>teigerForMatrikkelenhet</item>
+  <item>nymatrikulert</item>
+  <item>formalSeksjonKodeId</item>
+  <item>harAvtaleGrensePunktfeste</item>
+  <item>oppdateringsdato</item>
+  <item>harAvtaleStedbundenRettighet</item>
+  <item>oppmalingIkkeFullfort</item>
+  <item>tilleggsareal</item>
+  <item>mangelMatrikkelforingsKrav</item>
+  <item>uuid</item>
+  <item>underSammenslaingBestar</item>
+  <item>avsluttetAv</item>
+  <item>harAnmerketKlage</item>
+  <item>inngarISamlaFastEiendom</item>
+  <item>stedsnummer</item>
+  <item>harAktiveFestegrunner</item>
+  <item>tinglyst</item>
+  <item>fristOppmaling</item>
+  <item>sluttdato</item>
+  <item>harRegistrertGrunnerverv</item>
+  <item>bruksnavn</item>
+  <item>oppdatertAv</item>
+  <item>utgatt</item>
+  <item>etterML9BTilH</item>
+  <item>harGrunnforurensing</item>
+  <item>sameieBrok</item>
+  <item>kommunalTilleggsdel</item>
+  <item>id</item>
+  <item>harKulturminne</item>
+  <item>fristGrensepunktmerking</item>
+  <item>underSammenslaingUtgar</item>
+  <item>grensepunktmerkingMangler</item>
+  <item>seksjonertMatrikkelenhetIds</item>
+  <item>matrikkelnummer</item>
+  <item>skyld</item>
+  <item>erSeksjonert</item>
+  <item>historiskOppgittAreal</item>
+  <item>versjonId</item>
+  <item>etableringsDato</item>
+  <item>harRegistrertJordskifteKrevd</item>
+  <item>eierforhold</item>
+  <item>historiskArealkildeId</item>
+  <item>etterML9BTilH</item>
+</metadata>
+<oppdateringsdato>
+  <timestamp>2020-06-15T22:30:17.621000000+02:00</timestamp>
+</oppdateringsdato>
+  <versjonId>4</versjonId>
+  <oppdatertAv>smatmynd</oppdatertAv>
+  <versjon>1592253017621</versjon>
+<ns5:matrikkelnummer>
+<metadata>
+  <item>seksjonsnummer</item>
+  <item>kommuneId</item>
+  <item>bruksnummer</item>
+  <item>festenummer</item>
+  <item>gardsnummer</item>
+</metadata>
+<ns5:kommuneId>
+  <value>301</value>
+</ns5:kommuneId>
+  <ns5:gardsnummer>73</ns5:gardsnummer>
+  <ns5:bruksnummer>704</ns5:bruksnummer>
+  <ns5:festenummer>0</ns5:festenummer>
+  <ns5:seksjonsnummer>1</ns5:seksjonsnummer>
+</ns5:matrikkelnummer>
+<ns5:etableringsdato>
+  <date>2015-02-12</date>
+</ns5:etableringsdato>
+<ns5:historiskArealkildeId>
+  <value>0</value>
+</ns5:historiskArealkildeId>
+  <ns5:tinglyst>true</ns5:tinglyst>
+  <ns5:skyld>0.0</ns5:skyld>
+<ns5:teigerForMatrikkelenhet/>
+<ns5:eierforhold>
+<ns5:item xsi:type="ns5:PersonIkkeTinglystEierforhold">
+<metadata>
+  <item>id</item>
+  <item>eierforholdKodeId</item>
+  <item>datotil</item>
+  <item>datofra</item>
+  <item>versjonId</item>
+  <item>kommuneId</item>
+  <item>sluttdato</item>
+  <item>andel</item>
+  <item>oppdatertAv</item>
+  <item>uuid</item>
+  <item>eierId</item>
+  <item>avsluttetAv</item>
+  <item>oppdateringsdato</item>
+</metadata>
+<oppdateringsdato>
+  <timestamp>2020-06-17T23:23:04.765000000+02:00</timestamp>
+</oppdateringsdato>
+  <versjonId>3</versjonId>
+  <oppdatertAv>smatmynd</oppdatertAv>
+  <ns5:id>510392015</ns5:id>
+<ns5:kommuneId>
+  <value>301</value>
+</ns5:kommuneId>
+<ns5:eierforholdKodeId>
+  <value>11</value>
+</ns5:eierforholdKodeId>
+<ns5:uuid>
+  <navnerom>https://data.geonorge.no/matrikkel</navnerom>
+  <uuid>58a416ce-7525-5b88-97dc-62bb35f195a3</uuid>
+</ns5:uuid>
+<ns5:andel>
+  <ns7:teller>1</ns7:teller>
+  <ns7:nevner>2</ns7:nevner>
+</ns5:andel>
+<ns5:datoTil>
+  <date>2015-02-17</date>
+</ns5:datoTil>
+<ns5:eierId>
+  <value>4901583</value>
+</ns5:eierId>
+</ns5:item>
+<ns5:item xsi:type="ns5:PersonIkkeTinglystEierforhold">
+<metadata>
+  <item>id</item>
+  <item>eierforholdKodeId</item>
+  <item>datotil</item>
+  <item>datofra</item>
+  <item>versjonId</item>
+  <item>kommuneId</item>
+  <item>sluttdato</item>
+  <item>andel</item>
+  <item>oppdatertAv</item>
+  <item>uuid</item>
+  <item>eierId</item>
+  <item>avsluttetAv</item>
+  <item>oppdateringsdato</item>
+</metadata>
+<oppdateringsdato>
+  <timestamp>2020-06-17T23:23:04.765000000+02:00</timestamp>
+</oppdateringsdato>
+  <versjonId>3</versjonId>
+  <oppdatertAv>smatmynd</oppdatertAv>
+  <ns5:id>510392014</ns5:id>
+<ns5:kommuneId>
+  <value>301</value>
+</ns5:kommuneId>
+<ns5:eierforholdKodeId>
+  <value>11</value>
+</ns5:eierforholdKodeId>
+<ns5:uuid>
+  <navnerom>https://data.geonorge.no/matrikkel</navnerom>
+  <uuid>b4f08d23-0513-5fc6-8f7e-d7e5c69bfe71</uuid>
+</ns5:uuid>
+<ns5:andel>
+  <ns7:teller>1</ns7:teller>
+  <ns7:nevner>4</ns7:nevner>
+</ns5:andel>
+<ns5:datoTil>
+  <date>2015-02-17</date>
+</ns5:datoTil>
+<ns5:eierId>
+  <value>7516864</value>
+</ns5:eierId>
+</ns5:item>
+<ns5:item xsi:type="ns5:PersonTinglystEierforhold">
+<metadata>
+  <item>oppdateringsdato</item>
+  <item>id</item>
+  <item>andel</item>
+  <item>versjonId</item>
+  <item>kommuneId</item>
+  <item>andelsnr</item>
+  <item>oppdatertAv</item>
+  <item>avsluttetAv</item>
+  <item>datofra</item>
+  <item>sluttdato</item>
+  <item>eierId</item>
+  <item>eierforholdKodeId</item>
+  <item>uuid</item>
+</metadata>
+<oppdateringsdato>
+  <timestamp>2020-06-17T23:21:23.580000000+02:00</timestamp>
+</oppdateringsdato>
+  <versjonId>2</versjonId>
+  <oppdatertAv>smatmynd</oppdatertAv>
+  <ns5:id>511215710</ns5:id>
+<ns5:kommuneId>
+  <value>301</value>
+</ns5:kommuneId>
+<ns5:eierforholdKodeId>
+  <value>0</value>
+</ns5:eierforholdKodeId>
+<ns5:uuid>
+  <navnerom>https://data.geonorge.no/matrikkel</navnerom>
+  <uuid>365f9949-aa49-5df2-9574-89d515a061b4</uuid>
+</ns5:uuid>
+<ns5:andel>
+  <ns7:teller>1</ns7:teller>
+  <ns7:nevner>1</ns7:nevner>
+</ns5:andel>
+<ns5:datoFra>
+  <date>2015-02-12</date>
+</ns5:datoFra>
+<ns5:eierId>
+  <value>4901583</value>
+</ns5:eierId>
+  <ns5:andelsnummer>4</ns5:andelsnummer>
+</ns5:item>
+<ns5:item xsi:type="ns5:PersonIkkeTinglystEierforhold">
+<metadata>
+  <item>id</item>
+  <item>eierforholdKodeId</item>
+  <item>datotil</item>
+  <item>datofra</item>
+  <item>versjonId</item>
+  <item>kommuneId</item>
+  <item>sluttdato</item>
+  <item>andel</item>
+  <item>oppdatertAv</item>
+  <item>uuid</item>
+  <item>eierId</item>
+  <item>avsluttetAv</item>
+  <item>oppdateringsdato</item>
+</metadata>
+<oppdateringsdato>
+  <timestamp>2020-06-17T23:23:04.765000000+02:00</timestamp>
+</oppdateringsdato>
+  <versjonId>3</versjonId>
+  <oppdatertAv>smatmynd</oppdatertAv>
+  <ns5:id>510392016</ns5:id>
+<ns5:kommuneId>
+  <value>301</value>
+</ns5:kommuneId>
+<ns5:eierforholdKodeId>
+  <value>11</value>
+</ns5:eierforholdKodeId>
+<ns5:uuid>
+  <navnerom>https://data.geonorge.no/matrikkel</navnerom>
+  <uuid>68d4cc80-d889-5f9b-afd3-35562dec308c</uuid>
+</ns5:uuid>
+<ns5:andel>
+  <ns7:teller>1</ns7:teller>
+  <ns7:nevner>4</ns7:nevner>
+</ns5:andel>
+<ns5:datoTil>
+  <date>2015-02-17</date>
+</ns5:datoTil>
+<ns5:eierId>
+  <value>1049077</value>
+</ns5:eierId>
+</ns5:item>
+</ns5:eierforhold>
+  <ns5:erSeksjonert>false</ns5:erSeksjonert>
+  <ns5:harAktiveFestegrunner>false</ns5:harAktiveFestegrunner>
+  <ns5:harAnmerketKlage>false</ns5:harAnmerketKlage>
+  <ns5:harRegistrertGrunnerverv>false</ns5:harRegistrertGrunnerverv>
+  <ns5:harRegistrertJordskifteKrevd>false</ns5:harRegistrertJordskifteKrevd>
+  <ns5:inngarISamlaFastEiendom>false</ns5:inngarISamlaFastEiendom>
+  <ns5:harGrunnforurensing>false</ns5:harGrunnforurensing>
+  <ns5:harKulturminne>false</ns5:harKulturminne>
+  <ns5:harAvtaleGrensePunktfeste>false</ns5:harAvtaleGrensePunktfeste>
+  <ns5:harAvtaleStedbundenRettighet>false</ns5:harAvtaleStedbundenRettighet>
+  <ns5:utgatt>false</ns5:utgatt>
+  <ns5:underSammenslaingBestar>false</ns5:underSammenslaingBestar>
+  <ns5:underSammenslaingUtgar>false</ns5:underSammenslaingUtgar>
+  <ns5:oppmalingIkkeFullfort>false</ns5:oppmalingIkkeFullfort>
+  <ns5:grensepunktmerkingMangler>false</ns5:grensepunktmerkingMangler>
+  <ns5:mangelMatrikkelforingskrav>false</ns5:mangelMatrikkelforingskrav>
+  <ns5:nymatrikulert>false</ns5:nymatrikulert>
+  <ns5:etterML9BTilH>false</ns5:etterML9BTilH>
+<ns5:kommunalTilleggsdel>
+<metadata>
+  <item>kommentarer</item>
+  <item>kartblader</item>
+  <item>undereiendommerIds</item>
+  <item>brukAvGrunnKodeId</item>
+  <item>matrikkelenhetReferanser</item>
+</metadata>
+<ns9:kartblader/>
+<ns9:brukAvGrunnKodeId>
+  <value>0</value>
+</ns9:brukAvGrunnKodeId>
+<ns9:kommentarer/>
+<ns9:matrikkelenhetReferanser>
+<ns9:item>
+<metadata>
+  <item>oppdateringsdato</item>
+  <item>id</item>
+  <item>referanse</item>
+  <item>oppdatertAv</item>
+  <item>uuid</item>
+  <item>matrikkelenhetReferanseKodeId</item>
+  <item>versjonId</item>
+  <item>sluttdato</item>
+  <item>avsluttetAv</item>
+</metadata>
+<oppdateringsdato>
+  <timestamp>2015-02-09T10:09:09.342000000+01:00</timestamp>
+</oppdateringsdato>
+  <versjonId>1</versjonId>
+  <oppdatertAv>0301ane</oppdatertAv>
+  <ns9:id>510392013</ns9:id>
+<ns9:matrikkelenhetReferanseKodeId>
+  <value>7</value>
+</ns9:matrikkelenhetReferanseKodeId>
+  <ns9:referanse>201416852</ns9:referanse>
+</ns9:item>
+</ns9:matrikkelenhetReferanser>
+<ns9:undereiendommerIds/>
+</ns5:kommunalTilleggsdel>
+<ns5:uuid>
+  <navnerom>https://data.geonorge.no/matrikkel</navnerom>
+  <uuid>6079a44c-88c7-5c4c-9640-22b7316b423e</uuid>
+</ns5:uuid>
+<ns5:sameiebrok>
+  <ns7:teller>1</ns7:teller>
+  <ns7:nevner>2</ns7:nevner>
+</ns5:sameiebrok>
+<ns5:formalSeksjonKodeId>
+  <value>1</value>
+</ns5:formalSeksjonKodeId>
+<ns5:seksjonertMatrikkelenhetIds>
+<ns5:item>
+  <value>284466634</value>
+</ns5:item>
+</ns5:seksjonertMatrikkelenhetIds>
+  <ns5:tilleggsareal>false</ns5:tilleggsareal>
+<ns5:anleggsprojeksjonsflaterForMatrikkelenhet/>
+</ns2:return>
+</ns2:getObjectResponse>
+</soap:Body>
+</soap:Envelope>

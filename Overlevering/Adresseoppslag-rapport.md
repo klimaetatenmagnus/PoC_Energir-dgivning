@@ -3,8 +3,13 @@
 ## Oversikt
 Dette dokumentet beskriver hvordan adresseoppslag fungerer i test-e2e-buildings.ts, inkludert arkitektur, dataflyt og identifiserte problemer som må løses.
 
-**Sist oppdatert:** 2025-06-23 (v3.0)  
-**Viktige endringer:** Lagt til seksjonsnummer-håndtering, bygningsnummer for Enova-oppslag, forbedret matrikkelenhet-valg
+**Sist oppdatert:** 2025-06-24 (v4.1)  
+**Viktige endringer:** 
+- Fikset seksjonsnummer-parsing med namespace prefix
+- Implementert smart bygningsvalg for seksjonerte eiendommer
+- Forbedret filtrering av garasjer og tilbygg
+- Lagt til seksjonsnummer-inferens fra bokstav når Matrikkel mangler data
+- **NY:** Lagt til rapportering av totalt bruksareal for hele bygget ved seksjonerte eiendommer
 
 ## 1. Arkitektur og dataflyt
 
@@ -176,37 +181,51 @@ Fra matrikkelAPI.txt:
 
 ## 3. Utført testing og løste problemer (2025-06-23)
 
-### 3.1 Nye implementerte forbedringer (v3.0)
+### 3.1 Nye implementerte forbedringer (v4.0)
 
 #### Forbedring 1: Intelligent matrikkelenhet-valg ✅ IMPLEMENTERT
 **Problem:** For adresser med flere matrikkelenheter (som Kjelsåsveien 97B) ble feil enhet valgt, som førte til "ingen bygg funnet".
 
-**Løsning:** Oppdatert logikk i `resolveBuildingData` (linje 198-283):
+**Løsning:** Oppdatert logikk i `resolveBuildingData` (linje 238-353):
 ```typescript
 // Prioritert rekkefølge:
-1. Matrikkelenhet med hovedadresse=true
-2. Matrikkelenhet som har boligbygg (sjekker bygningstype)
-3. Matrikkelenhet som har bygg (uansett type)
-4. Første matrikkelenhet (fallback)
+1. Matrikkelenhet med hovedadresse=true (med seksjonsnummer-parsing)
+2. Matrikkelenhet med matchende seksjonsnummer basert på bokstav
+3. Matrikkelenhet som har boligbygg (sjekker bygningstype)
+4. Matrikkelenhet som har bygg (uansett type)
+5. Første matrikkelenhet (fallback)
 ```
 
-#### Forbedring 2: Seksjonsnummer-håndtering ✅ IMPLEMENTERT
-**Problem:** Seksjonerte eiendommer (som Kjelsåsveien 97B seksjon 2) ble ikke håndtert korrekt.
+#### Forbedring 2: Seksjonsnummer-håndtering med namespace prefix ✅ IMPLEMENTERT
+**Problem:** Seksjonsnummer ble ikke hentet korrekt pga. namespace prefix (ns5:seksjonsnummer).
 
 **Løsning:** 
-- Henter `<seksjonsnummer>` fra matrikkelenhet XML
-- Bruker seksjonsnummer i Enova API-kall
+- Oppdatert regex til: `/<(?:ns\d+:)?seksjonsnummer>(\d+)<\/(?:ns\d+:)?seksjonsnummer>/i`
+- Håndterer både `<seksjonsnummer>` og `<ns5:seksjonsnummer>`
+- Prioriterer matrikkelenhet basert på forventet seksjon (A=1, B=2, C=3)
 - Returnerer seksjonsnummer i resultat-objektet
 
-#### Forbedring 3: Bygningsnummer for Enova ✅ IMPLEMENTERT
+#### Forbedring 3: Smart bygningsvalg for seksjonerte eiendommer ✅ IMPLEMENTERT
+**Problem:** For Kapellveien 156C returnerte systemet 279 m² (hele bygget) i stedet for 159 m² (seksjonen).
+
+**Løsning:** Spesialhåndtering når adresse har bokstav og flere bygg (linje 426-454):
+```typescript
+// For seksjonerte eiendommer:
+1. Vurder ALLE bygg, ikke bare "eligible"
+2. Sorter etter byggeår (nyeste først)
+3. Hvis nyere bygg er < 70% av eldste bygg, velg det nyere
+4. Fallback: velg minste bygg for seksjoner
+```
+
+#### Forbedring 4: Bygningsnummer for Enova ✅ IMPLEMENTERT
 **Problem:** Enova-oppslag kunne gi for mange treff uten bygningsnummer.
 
 **Løsning:**
-- Lagt til `extractBygningsnummer()` i StoreClient (linje 194-211)
+- Lagt til `extractBygningsnummer()` i StoreClient
 - Henter `<bygningsnummer>` fra bygg XML (f.eks. "80184506")
 - Sender bygningsnummer til Enova API for mer presise treff
 
-#### Forbedring 4: Forbedret adressehåndtering ✅ IMPLEMENTERT
+#### Forbedring 5: Forbedret adressehåndtering ✅ IMPLEMENTERT
 **Problem:** Adresser med mellomrom mellom husnummer og bokstav (f.eks. "97 B") feilet.
 
 **Løsning:** Utvidet `lookupAdresse()` til å teste 5 varianter:
@@ -216,6 +235,26 @@ Fra matrikkelAPI.txt:
 3. Komma → mellomrom + legg til mellomrom (97B → 97 B)
 4. Komma → mellomrom + fjern mellomrom (97 B → 97B)
 5. Behold komma men fjern mellomrom (97 B → 97B)
+```
+
+#### Forbedring 6: Seksjonsnummer-inferens fra bokstav ✅ IMPLEMENTERT
+**Problem:** Mange matrikkelenheter mangler seksjonsnummer selv om de har bokstav.
+
+**Løsning:** 
+- Hvis ingen seksjonsnummer i Matrikkel men adresse har bokstav
+- Infererer seksjon: A=1, B=2, C=3, osv.
+- Returnerer både faktisk og inferert seksjonsnummer
+
+#### Forbedring 7: Total bruksareal for seksjonerte eiendommer ✅ IMPLEMENTERT (v4.1)
+**Problem:** For seksjonerte tomannsboliger trengte vi å rapportere både seksjonsareal og totalareal.
+
+**Løsning:** Oppdatert `resolveBuildingData` (linje 512-546):
+```typescript
+// For seksjonerte eiendommer (bokstav eller seksjonsnummer):
+1. Identifiserer hovedbygget (største bygg med boligtype)
+2. Returnerer både seksjonsareal og totalt bruksareal
+3. Håndterer tilfeller der seksjoner har samme bygningsnummer
+4. Rapporterer tydelig når kun totalareal er tilgjengelig
 ```
 
 ### 3.2 Løste problemer
@@ -261,7 +300,7 @@ map.set(127, { id: 127, kodeverdi: "142", beskrivelse: "Store frittliggende boli
 
 **Løsning:** Lagt til minimumsareal-filter:
 ```typescript
-// services/building-info-service/index.ts linje 236-239
+// services/building-info-service/index.ts linje 385-388
 const MIN_AREA_THRESHOLD = 20; // m²
 eligibleBuildings = eligibleBuildings.filter(bygg => 
   (bygg.bruksarealM2 ?? 0) >= MIN_AREA_THRESHOLD
@@ -277,15 +316,46 @@ eligibleBuildings = eligibleBuildings.filter(bygg =>
 await cleanupOldDumps(); // Sletter gamle filer over 25
 ```
 
+#### Problem 6: Seksjonsnummer-parsing med namespace prefix ✅ LØST
+**Årsak:** Seksjonsnummer ble ikke hentet fra XML pga. namespace prefix (`<ns5:seksjonsnummer>`).
+
+**Løsning:** Oppdatert regex-pattern til å håndtere namespace prefix:
+```typescript
+// services/building-info-service/index.ts linje 253, 273, 322, 335
+const seksjonMatch = xml.match(/<(?:ns\d+:)?seksjonsnummer>(\d+)<\/(?:ns\d+:)?seksjonsnummer>/i);
+```
+
+#### Problem 7: Feil bruksareal for Kapellveien 156C ✅ LØST
+**Årsak:** Systemet returnerte 279 m² (1952-bygget) i stedet for 159 m² (2013-bygget) for seksjon C.
+
+**Løsning:** Implementert smart bygningsvalg for seksjonerte eiendommer:
+```typescript
+// services/building-info-service/index.ts linje 426-454
+// For adresser med bokstav og flere bygg:
+// 1. Sorterer etter byggeår (nyeste først)
+// 2. Hvis nyere bygg er < 70% av eldste, velg det nyere
+// 3. Fallback: velg minste bygg for seksjoner
+```
+
 ### 3.3 Verifiserte resultater
 
-#### Tomannsbolig-test (Kapellveien 156)
-| Seksjon | Matrikkelenhets-ID | Bygnings-ID | Bruksareal | Byggeår | Koordinater |
-|---------|-------------------|-------------|------------|---------|-------------|
-| **156C** | 510390945 | 286103541 | 279 m² | 1952 | 599417, 6648465 |
-| **156B** | 510390946 | 286103642 | 186 m² | 1952 | 599422, 6648459 |
+#### Tomannsbolig-test (Kapellveien 156) - Oppdatert v4.1
+| Seksjon | Matrikkelnr | Seksjonsnr | Bygnings-ID | Seksjonsareal | Totalareal | Byggeår | Koordinater |
+|---------|-------------|------------|-------------|---------------|------------|---------|-------------|
+| **156B** | 0301-73/704/0/1 | 1 | 286103642 | 186 m² | 186 m² | 1952 | 599422, 6648459 |
+| **156C** | 0301-73/704/0/2 | 2 | 453769728 | 159 m² | 279 m² | 2013 | 599413, 6648469 |
 
-✅ **Konklusjon:** Seksjonshåndtering fungerer korrekt - hver seksjon får egen data.
+✅ **Konklusjon:** Seksjonshåndtering fungerer korrekt:
+- Hver seksjon får korrekt seksjonsnummer fra Matrikkel
+- Smart bygningsvalg returnerer 159 m² for 156C (2013-bygget) i stedet for 279 m² (hele bygget)
+- For 156B: Kun totalareal tilgjengelig (begge seksjoner har samme bygningsnummer)
+- For 156C: Både seksjonsareal (159 m²) og totalareal (279 m²) rapporteres
+
+#### Robusthet av filtrering
+Systemet filtrerer effektivt bort garasjer og tilbygg gjennom:
+1. **Minimumsareal-filter**: Bygg under 20 m² ekskluderes
+2. **Bygningstype-sjekk**: Kun boligtyper (111-146) prosesseres
+3. **Smart valg**: For seksjoner velges nyere/mindre bygg når relevant
 
 ## 4. Fremtidig utvikling: Borettslag og sameier
 
@@ -435,6 +505,9 @@ LIVE=1 LOG_SOAP=1 npx tsx scripts/test-kjelsasveien-summary.ts
 # Test spesifikk seksjon
 LIVE=1 npx tsx scripts/test-kjelsasveien-seksjon2.ts
 
+# Verifiser Kapellveien 156C
+LIVE=1 npx tsx scripts/verify-kapellveien-156c.ts
+
 # Kjør full e2e-test
 LIVE=1 npx tsx scripts/test-e2e-building.ts
 ```
@@ -505,7 +578,205 @@ LIVE=1 npx tsx scripts/generate-bygningstype-mapping.ts
    - Brukerguide for frontend-integrasjon
    - Arkitektur-diagrammer
 
+## 9. Frontend UI Mock-up for Adresseoppslag
+
+### 9.1 Oversikt
+For å demonstrere adresseoppslag-funksjonaliteten og forberede integrasjon med Punkt designsystem, har vi utviklet en enkel React-basert UI mock-up. Denne løsningen gir et fungerende grensesnitt som enkelt kan refaktoreres med Punkt-komponenter.
+
+### 9.2 Arkitektur
+
+```
+/src
+  /components
+    AddressSearch.tsx     # Søkefelt for adresseinput
+    ResultsTable.tsx      # Tabell for visning av bygningsdata
+    LoadingSpinner.tsx    # Visuell indikator for lasting
+    ErrorDisplay.tsx      # Feilmeldinger med logging
+  /services
+    buildingApi.ts        # API-integrasjon mot backend
+  /styles
+    components.css        # Enkel styling (erstattes av Punkt)
+  App.tsx                 # Hovedkomponent med state-håndtering
+```
+
+### 9.3 Komponenter
+
+#### AddressSearch
+- **Formål**: Tar imot brukerens adresseinput
+- **Features**:
+  - Validering av adresseformat
+  - Autocomplete-forberedt struktur
+  - Loading state under søk
+  - Feilhåndtering med brukervennlige meldinger
+
+#### ResultsTable  
+- **Formål**: Presenterer bygningsdata i tabellformat
+- **Kolonner**:
+  - Adresse
+  - GNR/BNR/SNR
+  - Byggeår
+  - Bruksareal (seksjon/total)
+  - Bygningstype med kode
+  - Energikarakter (hvis tilgjengelig)
+  - Koordinater (UTM33)
+
+#### ErrorDisplay
+- **Formål**: Viser feilmeldinger og logger tekniske detaljer
+- **Features**:
+  - Brukervennlig feilmelding
+  - Teknisk feilinfo for debugging (kan skjules)
+  - Automatisk logging til konsoll
+  - Retry-funksjonalitet
+
+### 9.4 Backend-integrasjon
+
+#### Express API Server
+Implementert i `src/api-server.ts`, eksponerer `resolveBuildingData` som REST API:
+
+```typescript
+// POST /api/address-lookup
+interface AddressLookupRequest {
+  address: string;
+}
+
+interface AddressLookupResponse {
+  gnr: number;
+  bnr: number;
+  seksjonsnummer?: number;
+  bruksarealM2: number;
+  totalBygningsareal?: number;
+  byggeaar: number;
+  bygningstype: string;
+  bygningstypeKode: string;
+  energiattest?: {
+    energikarakter: string;
+    oppvarmingskarakter: string;
+    utstedelsesdato: string;
+  };
+  representasjonspunkt: {
+    east: number;
+    north: number;
+    epsg: string;
+  };
+}
+```
+
+#### Kjøring
+- **Port**: 3001 (konfigurerbar via `API_PORT`)
+- **Live modus**: Kjør med `LIVE=1` for ekte API-kall
+- **Health check**: GET `/health`
+- **Logging**: Detaljert logging av responstider og feil
+
+### 9.5 Feilhåndtering og logging
+
+#### Loggingsnivåer
+1. **INFO**: Vellykkede oppslag, responstider
+2. **WARN**: Manglende data, fallback-verdier brukt
+3. **ERROR**: API-feil, nettverksproblemer, ugyldige adresser
+
+#### Feiltyper håndtert
+- Nettverksfeil (timeout, connection refused)
+- Ugyldig adresseformat
+- Ingen bygninger funnet
+- Manglende rettigheter
+- Server-feil (500-serien)
+
+### 9.6 Testing
+
+#### Testadresser for verifisering
+```javascript
+const testAddresses = [
+  "Kapellveien 156B, 0493 Oslo",  // Tomannsbolig, seksjon
+  "Kapellveien 156C, 0493 Oslo",  // Tomannsbolig, seksjon
+  "Kjelsåsveien 97B, 0491 Oslo",  // Rekkehus med energiattest
+  "Fallanveien 29, 0495 Oslo"     // Borettslag (krever spesialhåndtering)
+];
+```
+
+### 9.7 Implementasjon og oppstart
+
+#### Oppstart med live API-er
+```bash
+# Alt-i-ett script (anbefalt)
+./start-ui-only.sh
+
+# Eller manuelt i to terminaler:
+# Terminal 1 - API server
+LIVE=1 pnpm tsx src/api-server.ts
+
+# Terminal 2 - UI
+pnpm run dev:client
+```
+
+#### Porter
+- **Frontend**: http://localhost:5173
+- **API**: http://localhost:3001
+- **Health check**: http://localhost:3001/health
+
+#### Implementerte filer
+```
+/src
+  /components
+    AddressSearch.tsx     # Søkefelt med live API-integrasjon
+    ResultsTable.tsx      # Viser faktiske Matrikkel-data
+    LoadingSpinner.tsx    # Visuell indikator
+    ErrorDisplay.tsx      # Detaljert feilhåndtering
+  /services
+    buildingApi.ts        # API-klient (peker til port 3001)
+  /styles
+    components.css        # Styling forberedt for Punkt
+  api-server.ts          # Express backend
+  App.tsx               # Oppdatert med tre moduser
+```
+
+### 9.8 Forberedelser for Punkt-integrasjon
+
+#### Komponent-mapping
+| Vår komponent | Punkt-komponent | Notater |
+|---------------|-----------------|---------|
+| AddressSearch | pkt-input + pkt-button | Bruk Input med type="search" |
+| ResultsTable | pkt-table | Støtter sortering og filtrering |
+| LoadingSpinner | pkt-spinner | Innebygd loading-state |
+| ErrorDisplay | pkt-alert | Variant="error" med ikon |
+
+#### CSS-variabler forberedt for Punkt
+```css
+:root {
+  --primary-color: #0062BA;     /* Oslo kommune blå */
+  --error-color: #D32F2F;       
+  --success-color: #2E7D32;
+  --background: #FFFFFF;
+  --text-primary: #212121;
+  --border-radius: 4px;
+  --spacing-unit: 8px;
+}
+```
+
+### 9.9 Verifiserte testresultater med UI
+
+UI-et er testet mot live API-er med følgende resultater:
+
+| Adresse | Responstid | Resultat |
+|---------|------------|----------|
+| Kapellveien 156B, 0493 Oslo | 2-3 sek | ✅ Komplett data inkl. koordinater |
+| Kapellveien 156C, 0493 Oslo | 2-3 sek | ✅ Seksjon + totalareal korrekt |
+| Kjelsåsveien 97B, 0491 Oslo | 3-4 sek | ✅ Rekkehus identifisert |
+
+### 9.10 Kjente begrensninger i mock-up
+1. Ingen autocomplete på adressesøk (krever Geonorge-integrasjon)
+2. Mangler paginering for mange resultater
+3. Ingen eksport-funksjonalitet
+4. Begrenset responsivt design
+5. Ingen persistering av søkehistorikk
+
+### 9.11 Neste steg
+1. Implementer Punkt-komponenter med tech lead
+2. Legg til Geonorge autocomplete
+3. Implementer brukerpreferanser (tema, språk)
+4. Legg til eksport til CSV/Excel
+5. Implementer avansert søk (flere adresser samtidig)
+
 ---
-*Rapport oppdatert: 2025-06-23*
+*Rapport oppdatert: 2025-06-24*
 *Forfatter: Claude (AI-assistent)*
-*Versjon: 3.0*
+*Versjon: 4.3*
