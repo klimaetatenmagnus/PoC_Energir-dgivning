@@ -1,0 +1,718 @@
+🔍 loadEnv.ts – before config:
+  PROD: undefined
+  TEST: undefined
+🔍 loadEnv.ts – after  config:
+  PROD: https://www.matrikkel.no/matrikkelapi/wsapi/v1
+  TEST: https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1
+<<<<< BygningClient.ts lastet – robust id-parsing (v6) >>>>>
+🌐 Kjører mot PRODUKSJON
+
+=== KOMPLETT TEST AV KJELSÅSVEIEN 97 B ===
+
+📋 Forventede verdier fra Finn-annonsen:
+  Adresse: Kjelsåsveien 97 B, 0491 Oslo
+  Matrikkel: 75/284/2
+  Total BRA: 99 m²
+  Intern BRA: 95 m² (3 m² i 1. etg + 92 m² i 2. etg)
+  Energikarakter: G
+
+
+=== STEG 1: Standard dataflyt via resolveBuildingData ===
+✓ building-info-service på http://localhost:4000
+
+===== SOAP Request » findMatrikkelenheter (5a331142-a5ac-4631-ad72-1e19db2e8ffd) =====
+URL: https://www.matrikkel.no/matrikkelapi/wsapi/v1/MatrikkelenhetServiceWS
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+        <soapenv:Header/><soapenv:Body>
+      <mat:findMatrikkelenheter
+           xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
+           xmlns:mid="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet">
+        <mat:matrikkelenhetsokModel>
+          <mid:kommunenummer>0301</mid:kommunenummer>
+          <mid:gardsnummer>75</mid:gardsnummer>
+          <mid:bruksnummer>284</mid:bruksnummer>
+          <mid:adressekode>13747</mid:adressekode>
+          <mid:husnummer>97</mid:husnummer>
+          <mid:bokstav>B</mid:bokstav>
+        </mat:matrikkelenhetsokModel>
+        <mat:matrikkelContext xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
+                            xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>building-info-service</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </mat:matrikkelContext>
+      </mat:findMatrikkelenheter></soapenv:Body>
+      </soapenv:Envelope>
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+
+===== SOAP Response (5a331142-a5ac-4631-ad72-1e19db2e8ffd) HTTP 200 =====
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><ns2:findMatrikkelenheterResponse xmlns="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain" xmlns:ns2="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet" xmlns:ns3="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet" xmlns:ns4="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/exception" xmlns:ns5="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/geometri" xmlns:ns6="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/adresse" xmlns:ns7="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/util" xmlns:ns8="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/forretning" xmlns:ns9="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kommunetillegg" xmlns:ns10="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning  …
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+
+===== SOAP Request » getObject (8bb4c0f5-72ca-496d-9a6d-38f4734f6e2f) =====
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
+               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+               xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Body>
+    <sto:getObject>
+      <sto:id xsi:type="mat:MatrikkelenhetId">
+        <dom:value>284473366</dom:value>
+      </sto:id>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:getObject>
+  </soap:Body>
+</soap:Envelope>
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200) (8bb4c0f5-72ca-496d-9a6d-38f4734f6e2f) =====
+
+
+===== SOAP Request » getObject (d4fd4172-ca79-4bd8-bd7c-d3e85af1a210) =====
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
+               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+               xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Body>
+    <sto:getObject>
+      <sto:id xsi:type="mat:MatrikkelenhetId">
+        <dom:value>6273981345</dom:value>
+      </sto:id>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:getObject>
+  </soap:Body>
+</soap:Envelope>
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200) (d4fd4172-ca79-4bd8-bd7c-d3e85af1a210) =====
+
+
+===== SOAP Request » getObject (b55bfe77-2633-4564-a8f1-3b64efd5ed2a) =====
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
+               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+               xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Body>
+    <sto:getObject>
+      <sto:id xsi:type="mat:MatrikkelenhetId">
+        <dom:value>6273981346</dom:value>
+      </sto:id>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:getObject>
+  </soap:Body>
+</soap:Envelope>
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200) (b55bfe77-2633-4564-a8f1-3b64efd5ed2a) =====
+
+⚠️  Ingen hovedadresse funnet, sjekker for matrikkelenheter med boligbygg...
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+
+===== SOAP Request (findByggForMatrikkelenhet, corrId=5cc09b54-7cbe-420c-9edc-1628d7ae487a) =====
+
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning"
+                  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+  <soapenv:Body>
+    <sto:findByggForMatrikkelenhet>
+      <sto:matrikkelenhetId>
+        <dom:value>284473366</dom:value>
+      </sto:matrikkelenhetId>
+
+      <sto:matrikkelContext>
+      <dom:locale>no_NO_B</dom:locale>
+      <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>   
+      <dom:koordinatsystemKodeId>
+        <dom:value>25833</dom:value>                                     
+      </dom:koordinatsystemKodeId>
+      <dom:systemVersion>trunk</dom:systemVersion>
+      <dom:klientIdentifikasjon>building-info-service</dom:klientIdentifikasjon>
+      <dom:snapshotVersion>
+        <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
+      </dom:snapshotVersion>
+    </sto:matrikkelContext>
+    </sto:findByggForMatrikkelenhet>
+  </soapenv:Body>
+</soapenv:Envelope> 
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200), corrId=5cc09b54-7cbe-420c-9edc-1628d7ae487a) =====
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><ns2:findByggForMatrikkelenhetResponse xmlns="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning" xmlns:ns2="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning" xmlns:ns3="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain" xmlns:ns4="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/exception" xmlns:ns5="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/geometri" xmlns:ns6="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet" xmlns:ns7="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/adresse" xmlns:ns8="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/util" xmlns:ns9="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/forretning" xmlns:ns10="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kommunetillegg" xmlns:ns11="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/sefrak" xmlns:ns12="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kulturminne" xmlns:ns13="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/grunnforurensing" xmlns:ns14="http://matrikkel.statkart.no/matrikkela … 
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+
+===== SOAP Request (findByggForMatrikkelenhet, corrId=74571cb2-e19b-411b-9065-b1b285c1ee8b) =====
+
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning"
+                  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+  <soapenv:Body>
+    <sto:findByggForMatrikkelenhet>
+      <sto:matrikkelenhetId>
+        <dom:value>6273981345</dom:value>
+      </sto:matrikkelenhetId>
+
+      <sto:matrikkelContext>
+      <dom:locale>no_NO_B</dom:locale>
+      <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>   
+      <dom:koordinatsystemKodeId>
+        <dom:value>25833</dom:value>                                     
+      </dom:koordinatsystemKodeId>
+      <dom:systemVersion>trunk</dom:systemVersion>
+      <dom:klientIdentifikasjon>building-info-service</dom:klientIdentifikasjon>
+      <dom:snapshotVersion>
+        <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
+      </dom:snapshotVersion>
+    </sto:matrikkelContext>
+    </sto:findByggForMatrikkelenhet>
+  </soapenv:Body>
+</soapenv:Envelope> 
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200), corrId=74571cb2-e19b-411b-9065-b1b285c1ee8b) =====
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><ns2:findByggForMatrikkelenhetResponse xmlns="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning" xmlns:ns2="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning" xmlns:ns3="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain" xmlns:ns4="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/exception" xmlns:ns5="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/geometri" xmlns:ns6="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet" xmlns:ns7="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/adresse" xmlns:ns8="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/util" xmlns:ns9="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/forretning" xmlns:ns10="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kommunetillegg" xmlns:ns11="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/sefrak" xmlns:ns12="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kulturminne" xmlns:ns13="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/grunnforurensing" xmlns:ns14="http://matrikkel.statkart.no/matrikkela … 
+
+
+===== SOAP Request » getObject (ab348d00-88b7-4eea-958f-c77d6446bc1f) =====
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
+               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+               xmlns:byg="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Body>
+    <sto:getObject>
+      <sto:id xsi:type="byg:ByggId">
+        <dom:value>286108494</dom:value>
+      </sto:id>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:getObject>
+  </soap:Body>
+</soap:Envelope>
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200) (ab348d00-88b7-4eea-958f-c77d6446bc1f) =====
+
+✅ Fant bruksareal i etasjedata: 260 m²
+Bygningstype-cache er utdatert, henter nye koder...
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+
+===== SOAP Request (findAlleBygningstypeKoder, corrId=4ef1ec05-c525-4c96-87de-2d2f2d94d4dc) =====
+
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning"
+                  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+  <soapenv:Body>
+    <sto:findAlleBygningstypeKoder>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>   
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>bygningstype-mapper</dom:klientIdentifikasjon>
+        <dom:snapshotVersion>
+          <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
+        </dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:findAlleBygningstypeKoder>
+  </soapenv:Body>
+</soapenv:Envelope> 
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Fault, corrId=4ef1ec05-c525-4c96-87de-2d2f2d94d4dc) =====
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><soap:Fault><faultcode>soap:Client</faultcode><faultstring>Unmarshalling Error: cvc-complex-type.2.4.a: Invalid content was found starting with element '{"http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain":systemVersion}'. One of '{"http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain":koordinatsystemKodeId}' is expected. </faultstring></soap:Fault></soap:Body></soap:Envelope>  
+
+Feil ved henting av bygningstype-koder: Error: SOAP 500 fra BygningServiceWS (corrId=4ef1ec05-c525-4c96-87de-2d2f2d94d4dc)
+    at BygningClient.findAlleBygningstypeKoder (/home/vscode/Codex-2-1/src/clients/BygningClient.ts:232:13)
+    at async fetchBygningstypeKoder (/home/vscode/Codex-2-1/src/utils/bygningstypeMapping.ts:38:19)
+    at async mapBygningstypeId (/home/vscode/Codex-2-1/src/utils/bygningstypeMapping.ts:93:25)
+    at async StoreClient.getObject (/home/vscode/Codex-2-1/src/clients/StoreClient.ts:372:28)
+    at async resolveBuildingData (/home/vscode/Codex-2-1/services/building-info-service/index.ts:278:30)
+    at async testKjelsasveien97B (/home/vscode/Codex-2-1/scripts/test-kjelsasveien-97b-complete.ts:71:20)
+
+===== SOAP Request » getObject (b7e928e7-840c-4370-b1c7-4240cc8575fb) =====
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
+               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+               xmlns:byg="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Body>
+    <sto:getObject>
+      <sto:id xsi:type="byg:ByggId">
+        <dom:value>286108496</dom:value>
+      </sto:id>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:getObject>
+  </soap:Body>
+</soap:Envelope>
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200) (b7e928e7-840c-4370-b1c7-4240cc8575fb) =====
+
+⚠️  Bygning har ufullstendigAreal=true
+✅ Bruker alternativtArealBygning: 30 m²
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+
+===== SOAP Request (findByggForMatrikkelenhet, corrId=fa329bc4-481d-4de3-8a93-8a6f308c15ac) =====
+
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning"
+                  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+  <soapenv:Body>
+    <sto:findByggForMatrikkelenhet>
+      <sto:matrikkelenhetId>
+        <dom:value>6273981346</dom:value>
+      </sto:matrikkelenhetId>
+
+      <sto:matrikkelContext>
+      <dom:locale>no_NO_B</dom:locale>
+      <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>   
+      <dom:koordinatsystemKodeId>
+        <dom:value>25833</dom:value>                                     
+      </dom:koordinatsystemKodeId>
+      <dom:systemVersion>trunk</dom:systemVersion>
+      <dom:klientIdentifikasjon>building-info-service</dom:klientIdentifikasjon>
+      <dom:snapshotVersion>
+        <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
+      </dom:snapshotVersion>
+    </sto:matrikkelContext>
+    </sto:findByggForMatrikkelenhet>
+  </soapenv:Body>
+</soapenv:Envelope> 
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200), corrId=fa329bc4-481d-4de3-8a93-8a6f308c15ac) =====
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><ns2:findByggForMatrikkelenhetResponse xmlns="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning" xmlns:ns2="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning" xmlns:ns3="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain" xmlns:ns4="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/exception" xmlns:ns5="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/geometri" xmlns:ns6="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet" xmlns:ns7="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/adresse" xmlns:ns8="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/util" xmlns:ns9="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/forretning" xmlns:ns10="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kommunetillegg" xmlns:ns11="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/sefrak" xmlns:ns12="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kulturminne" xmlns:ns13="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/grunnforurensing" xmlns:ns14="http://matrikkel.statkart.no/matrikkela … 
+
+
+===== SOAP Request » getObject (b3d3613e-366f-401f-9eb9-e84a4a354ec1) =====
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
+               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+               xmlns:byg="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Body>
+    <sto:getObject>
+      <sto:id xsi:type="byg:ByggId">
+        <dom:value>286108494</dom:value>
+      </sto:id>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:getObject>
+  </soap:Body>
+</soap:Envelope>
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200) (b3d3613e-366f-401f-9eb9-e84a4a354ec1) =====
+
+✅ Fant bruksareal i etasjedata: 260 m²
+
+===== SOAP Request » getObject (d4b7cc8d-e7aa-4596-a3b7-fdc6ef6eeda1) =====
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
+               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+               xmlns:byg="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Body>
+    <sto:getObject>
+      <sto:id xsi:type="byg:ByggId">
+        <dom:value>286108496</dom:value>
+      </sto:id>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:getObject>
+  </soap:Body>
+</soap:Envelope>
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200) (d4b7cc8d-e7aa-4596-a3b7-fdc6ef6eeda1) =====
+
+⚠️  Bygning har ufullstendigAreal=true
+✅ Bruker alternativtArealBygning: 30 m²
+
+===== SOAP Request » getObject (b0979a94-80ea-42bc-a437-62ab1c105353) =====
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
+               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+               xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Body>
+    <sto:getObject>
+      <sto:id xsi:type="mat:MatrikkelenhetId">
+        <dom:value>6273981345</dom:value>
+      </sto:id>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:getObject>
+  </soap:Body>
+</soap:Envelope>
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200) (b0979a94-80ea-42bc-a437-62ab1c105353) =====
+
+⚠️  Ingen boligbygg funnet, velger matrikkelenhet 6273981345 med 2 bygg
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+
+===== SOAP Request (findByggForMatrikkelenhet, corrId=c6f5c7d2-8bef-43b2-8d21-2d7b0812288e) =====
+
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning"
+                  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+  <soapenv:Body>
+    <sto:findByggForMatrikkelenhet>
+      <sto:matrikkelenhetId>
+        <dom:value>6273981345</dom:value>
+      </sto:matrikkelenhetId>
+
+      <sto:matrikkelContext>
+      <dom:locale>no_NO_B</dom:locale>
+      <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>   
+      <dom:koordinatsystemKodeId>
+        <dom:value>25833</dom:value>                                     
+      </dom:koordinatsystemKodeId>
+      <dom:systemVersion>trunk</dom:systemVersion>
+      <dom:klientIdentifikasjon>building-info-service</dom:klientIdentifikasjon>
+      <dom:snapshotVersion>
+        <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
+      </dom:snapshotVersion>
+    </sto:matrikkelContext>
+    </sto:findByggForMatrikkelenhet>
+  </soapenv:Body>
+</soapenv:Envelope> 
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200), corrId=c6f5c7d2-8bef-43b2-8d21-2d7b0812288e) =====
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><ns2:findByggForMatrikkelenhetResponse xmlns="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning" xmlns:ns2="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning" xmlns:ns3="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain" xmlns:ns4="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/exception" xmlns:ns5="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/geometri" xmlns:ns6="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet" xmlns:ns7="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/adresse" xmlns:ns8="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/util" xmlns:ns9="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/forretning" xmlns:ns10="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kommunetillegg" xmlns:ns11="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/sefrak" xmlns:ns12="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kulturminne" xmlns:ns13="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/grunnforurensing" xmlns:ns14="http://matrikkel.statkart.no/matrikkela … 
+
+
+===== SOAP Request » getObject (81cdd350-c3af-45f5-812d-d9c48651522b) =====
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
+               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+               xmlns:byg="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Body>
+    <sto:getObject>
+      <sto:id xsi:type="byg:ByggId">
+        <dom:value>286108494</dom:value>
+      </sto:id>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:getObject>
+  </soap:Body>
+</soap:Envelope>
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200) (81cdd350-c3af-45f5-812d-d9c48651522b) =====
+
+✅ Fant bruksareal i etasjedata: 260 m²
+
+===== SOAP Request » getObject (b4df4c45-9d9b-4366-8b22-0862ea8050d8) =====
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
+               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+               xmlns:byg="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Body>
+    <sto:getObject>
+      <sto:id xsi:type="byg:ByggId">
+        <dom:value>286108496</dom:value>
+      </sto:id>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:getObject>
+  </soap:Body>
+</soap:Envelope>
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200) (b4df4c45-9d9b-4366-8b22-0862ea8050d8) =====
+
+⚠️  Bygning har ufullstendigAreal=true
+✅ Bruker alternativtArealBygning: 30 m²
+🔍 Found 2 buildings:
+  Building 286108494: type=5, area=260m²
+  Building 286108496: type=26, area=30m²
+⚠️  Ingen bygg klassifisert som bolig med tilstrekkelig areal, aksepterer alle bygg som fallback
+🏠 Eligible buildings after filtering: 2
+  Building 286108494: Non-residential building (exclude)
+  Building 286108496: Garasje/uthus til bolig (exclude)
+🔄 Fallback: selecting largest building 286108494
+📋 Building type strategy: Non-residential building (exclude)
+📋 Søker etter energiattest med: { gnr: 75, bnr: 284, seksjon: '-', bygning: '80184506' }
+
+📊 Resultat fra resolveBuildingData:
+  GNR/BNR: 75/284
+  Seksjonsnummer: -
+  Matrikkelenhet ID: 6273981345
+  Bygg ID: 286108494
+  Bygningsnummer: 80184506
+  Byggeår: 1917
+  Bruksareal: 260 m²
+  Bygningstype: Non-residential building (kode: null)
+  Rapporteringsnivå: exclude
+
+⚠️  Feil seksjonsnummer: null vs forventet 2
+⚠️  Bruksareal avviker: 260 m² vs forventet 99 m²
+
+
+=== STEG 2: Undersøke alle bygg på matrikkelenheten ===
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+
+===== SOAP Request (findByggForMatrikkelenhet, corrId=f327f9d4-a24c-49eb-b2f1-c04704e415a1) =====
+
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning"
+                  xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
+  <soapenv:Body>
+    <sto:findByggForMatrikkelenhet>
+      <sto:matrikkelenhetId>
+        <dom:value>6273981345</dom:value>
+      </sto:matrikkelenhetId>
+
+      <sto:matrikkelContext>
+      <dom:locale>no_NO_B</dom:locale>
+      <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>   
+      <dom:koordinatsystemKodeId>
+        <dom:value>25833</dom:value>                                     
+      </dom:koordinatsystemKodeId>
+      <dom:systemVersion>trunk</dom:systemVersion>
+      <dom:klientIdentifikasjon>building-info-service</dom:klientIdentifikasjon>
+      <dom:snapshotVersion>
+        <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
+      </dom:snapshotVersion>
+    </sto:matrikkelContext>
+    </sto:findByggForMatrikkelenhet>
+  </soapenv:Body>
+</soapenv:Envelope> 
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200), corrId=f327f9d4-a24c-49eb-b2f1-c04704e415a1) =====
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><ns2:findByggForMatrikkelenhetResponse xmlns="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning" xmlns:ns2="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning" xmlns:ns3="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain" xmlns:ns4="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/exception" xmlns:ns5="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/geometri" xmlns:ns6="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet" xmlns:ns7="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/adresse" xmlns:ns8="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/util" xmlns:ns9="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/forretning" xmlns:ns10="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kommunetillegg" xmlns:ns11="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/sefrak" xmlns:ns12="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/kulturminne" xmlns:ns13="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/grunnforurensing" xmlns:ns14="http://matrikkel.statkart.no/matrikkela … 
+
+
+Funnet 2 bygg på matrikkelenheten:
+
+===== SOAP Request » getObject (1aebe4c3-0990-4126-8791-e5915d9ba282) =====
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
+               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+               xmlns:byg="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Body>
+    <sto:getObject>
+      <sto:id xsi:type="byg:ByggId">
+        <dom:value>286108494</dom:value>
+      </sto:id>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:getObject>
+  </soap:Body>
+</soap:Envelope>
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200) (1aebe4c3-0990-4126-8791-e5915d9ba282) =====
+
+✅ Fant bruksareal i etasjedata: 260 m²
+
+  Bygg 286108494:
+    Bruksareal: 260 m²
+    Byggeår: 1917
+    Type: - (5)
+    Bygningsnummer: 80184506
+
+===== SOAP Request » getObject (fedc0ab0-5fe0-433b-b72d-fa1e7f854f82) =====
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/store"
+               xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain"
+               xmlns:byg="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Body>
+    <sto:getObject>
+      <sto:id xsi:type="byg:ByggId">
+        <dom:value>286108496</dom:value>
+      </sto:id>
+      <sto:matrikkelContext>
+        <dom:locale>no_NO_B</dom:locale>
+        <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId><dom:value>25833</dom:value></dom:koordinatsystemKodeId>
+        <dom:systemVersion>trunk</dom:systemVersion>
+        <dom:klientIdentifikasjon>store-client</dom:klientIdentifikasjon>
+        <dom:snapshotVersion><dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp></dom:snapshotVersion>
+      </sto:matrikkelContext>
+    </sto:getObject>
+  </soap:Body>
+</soap:Envelope>
+
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+🧹 Slettet 1 gamle SOAP-dump filer (beholder 25 nyeste)
+===== SOAP Response (HTTP 200) (fedc0ab0-5fe0-433b-b72d-fa1e7f854f82) =====
+
+⚠️  Bygning har ufullstendigAreal=true
+✅ Bruker alternativtArealBygning: 30 m²
+
+  Bygg 286108496:
+    Bruksareal: 30 m²
+    Byggeår: 1966
+    Type: Garasje, uthus, anneks knyttet til bolig (26)
+    Bygningsnummer: 80184514
+
+📊 Total bruksareal for alle bygg: 290 m²
+
+
+=== STEG 3: Energiattest-oppslag ===
+
+📋 Søker etter energiattest med: {
+  kommunenummer: '0301',
+  gnr: 75,
+  bnr: 284,
+  seksjonsnummer: null,
+  bygningsnummer: '80184506'
+}
+
+Antall energiattester funnet: 0
+❌ Ingen energiattest funnet
+
+
+=== OPPSUMMERING OG ANBEFALINGER ===
+
+📊 Datasammenligning:
+┌─────────────────────────────────────────────────────────┐
+│ Parameter              │ Forventet │ Faktisk    │ Status │
+├─────────────────────────────────────────────────────────┤
+│ GNR/BNR               │ 75        │ 75         │ ✅     │
+│ Seksjonsnummer        │ 2         │ -          │ ⚠️      │
+│ Total BRA             │ 99        │ 260        │ ⚠️      │
+│ Bygningstype          │ Tomannsb. │ null       │ ⚠️      │
+└─────────────────────────────────────────────────────────┘
+
+🔍 Anbefalinger:
+
+1. Bruksareal-avvik:
+   - Matrikkel returnerer 260 m² for valgt bygg
+   - Finn-annonsen oppgir 99 m² total BRA
+   - Forskjellen kan skyldes:
+     • Matrikkel mangler oppdaterte arealtall
+     • Vi må summere areal fra flere bygg/seksjoner
+     • Intern vs ekstern bruksareal-beregning
+
+   💡 Forslag: Vurder å summere areal fra alle relevante bygg
+
+2. Manglende energiattest:
+   - Annonsen oppgir energikarakter G
+   - Mulige årsaker:
+     • Attesten er registrert på annen seksjon
+     • Attesten mangler bygningsnummer i Enova
+     • Attesten er nylig utstedt og ikke synkronisert
+
+✅ Test fullført!

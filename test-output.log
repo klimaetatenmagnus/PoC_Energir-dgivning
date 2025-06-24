@@ -1,0 +1,32 @@
+🔍 loadEnv.ts – before config:
+  PROD: undefined
+  TEST: undefined
+🔍 loadEnv.ts – after  config:
+  PROD: https://www.matrikkel.no/matrikkelapi/wsapi/v1
+  TEST: https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1
+<<<<< BygningClient.ts lastet – robust id-parsing (v6) >>>>>
+🌐 Kjører mot PRODUKSJON
+
+=== KOMPLETT TEST AV KJELSÅSVEIEN 97 B ===
+
+📋 Forventede verdier fra Finn-annonsen:
+  Adresse: Kjelsåsveien 97 B, 0491 Oslo
+  Matrikkel: 75/284/2
+  Total BRA: 99 m²
+  Intern BRA: 95 m² (3 m² i 1. etg + 92 m² i 2. etg)
+  Energikarakter: G
+
+
+=== STEG 1: Standard dataflyt via resolveBuildingData ===
+✓ building-info-service på http://localhost:4000
+
+❌ Feil under testing: Error: Adressen ikke funnet i Geonorge
+    at parse (/home/vscode/Codex-2-1/services/building-info-service/index.ts:93:36)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async resolveBuildingData (/home/vscode/Codex-2-1/services/building-info-service/index.ts:213:15)
+    at async testKjelsasveien97B (/home/vscode/Codex-2-1/scripts/test-kjelsasveien-97b-complete.ts:71:20)
+Fatal feil: Error: Adressen ikke funnet i Geonorge
+    at parse (/home/vscode/Codex-2-1/services/building-info-service/index.ts:93:36)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async resolveBuildingData (/home/vscode/Codex-2-1/services/building-info-service/index.ts:213:15)
+    at async testKjelsasveien97B (/home/vscode/Codex-2-1/scripts/test-kjelsasveien-97b-complete.ts:71:20)

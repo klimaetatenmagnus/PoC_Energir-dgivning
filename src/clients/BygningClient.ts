@@ -336,6 +336,9 @@ export class BygningClient {
       <sto:matrikkelContext>
         <dom:locale>${ctx.locale}</dom:locale>
         <dom:brukOriginaleKoordinater>${ctx.brukOriginaleKoordinater}</dom:brukOriginaleKoordinater>   
+        <dom:koordinatsystemKodeId>
+          <dom:value>${ctx.koordinatsystemKodeId || 25833}</dom:value>
+        </dom:koordinatsystemKodeId>
         <dom:systemVersion>${ctx.systemVersion}</dom:systemVersion>
         <dom:klientIdentifikasjon>${ctx.klientIdentifikasjon}</dom:klientIdentifikasjon>
         <dom:snapshotVersion>
