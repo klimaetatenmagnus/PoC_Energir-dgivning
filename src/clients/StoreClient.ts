@@ -9,6 +9,7 @@ import proj4 from "proj4";
 import { dumpSoap, type SoapPhase } from "../utils/soapDump.ts";
 import { randomUUID } from "crypto";
 import { mapBygningstypeId, getBygningstypeBeskrivelse } from "../utils/bygningstypeMapping.ts";
+import type { BruksenhetInfo } from "./BruksenhetClient.ts";
 import "../../loadEnv.ts"; 
 
 /* ─────────────────────────── Miljøflagg ─────────────────────────── */
@@ -38,7 +39,9 @@ export interface ByggInfo {
   bygningstypeKode?: string;  // Den faktiske 3-sifrede koden
   bygningsnummer?: string;  // Bygningsnummer for Enova-oppslag
   bygningstypeBeskrivelse?: string;  // F.eks. "Rekkehus"
+  bruksenhetIds?: number[];  // Liste over bruksenhet-IDer
 }
+
 
 /* ──────────────────── ID-typer for getObjectXml ─────────────────── */
 const ID_NS = {
@@ -49,6 +52,10 @@ const ID_NS = {
   MatrikkelenhetId: {
     prefix: "mat",
     ns: "http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/matrikkelenhet",
+  },
+  BruksenhetId: {
+    prefix: "bru",
+    ns: "http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain/bygning",
   },
 } as const;
 type IdType = keyof typeof ID_NS;
@@ -96,6 +103,16 @@ function extractNumber(tree: unknown, ...keys: string[]): number | undefined {
   for (const k of keys) {
     const n = numDeepStrict(find(tree, k));
     if (Number.isFinite(n)) return n;
+  }
+  return undefined;
+}
+
+/** Ekstraher tekst ved å prøve flere taggnavn i rekkefølge */
+function extractText(tree: unknown, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const val = find(tree, key);
+    if (val && typeof val === 'string') return val;
+    if (val && typeof val === 'object' && val.toString) return val.toString();
   }
   return undefined;
 }
@@ -210,6 +227,48 @@ function extractBygningsnummer(tree: unknown): string | undefined {
   return undefined;
 }
 
+/** Hent bruksenhet-IDs fra bygningsdata */
+function extractBruksenhetIds(tree: unknown): number[] {
+  const bruksenhetIds: number[] = [];
+  
+  // Søk etter bruksenhetIds element
+  const bruksenhetIdsElement = find(tree, "bruksenhetIds");
+  if (!bruksenhetIdsElement) {
+    if (LOG_SOAP) console.log("❌ Fant ikke bruksenhetIds element i XML");
+    return bruksenhetIds;
+  }
+  
+  if (LOG_SOAP) console.log("🔍 Fant bruksenhetIds element:", JSON.stringify(bruksenhetIdsElement, null, 2));
+  
+  // Kan være array eller objekt med item(s)
+  let items: any[] = [];
+  if (Array.isArray(bruksenhetIdsElement)) {
+    items = bruksenhetIdsElement;
+  } else if (typeof bruksenhetIdsElement === 'object' && bruksenhetIdsElement !== null) {
+    const element = bruksenhetIdsElement as any;
+    // Sjekk både item og ns10:item (namespace prefix)
+    const itemElement = element.item || element["ns10:item"] || element["ns2:item"];
+    items = itemElement ? (Array.isArray(itemElement) ? itemElement : [itemElement]) : [];
+  }
+  
+  const itemsArray = items;
+  
+  for (const item of itemsArray) {
+    const value = item?.value || item?.["dom:value"] || item;
+    const num = typeof value === "number" ? value : Number(value);
+    if (Number.isFinite(num) && num > 0) {
+      bruksenhetIds.push(num);
+      if (LOG_SOAP) console.log(`✅ Lagt til bruksenhet-ID: ${num}`);
+    }
+  }
+  
+  if (LOG_SOAP && bruksenhetIds.length > 0) {
+    console.log(`🏢 Totalt ${bruksenhetIds.length} bruksenhet-IDer funnet: ${bruksenhetIds.join(", ")}`);
+  }
+  
+  return bruksenhetIds;
+}
+
 /** Hent totalt bruksareal fra etasjedata */
 function extractBruksareal(tree: unknown): number | undefined {
   // Debug: sjekk om vi har ufullstendigAreal flagg
@@ -278,7 +337,12 @@ function extractBruksareal(tree: unknown): number | undefined {
 
 /* ─────────────────────────── StoreClient ────────────────────────── */
 export class StoreClient {
-  private readonly xml = new XMLParser({ ignoreAttributes: false });
+  private readonly xml = new XMLParser({ 
+    ignoreAttributes: false,
+    removeNSPrefix: false,  // Behold namespace prefix for konsistent parsing
+    parseTagValue: true,
+    trimValues: true
+  });
 
   constructor(
     private readonly baseUrl: string = "https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1/StoreServiceWS",
@@ -347,6 +411,9 @@ export class StoreClient {
     
     // Hent bygningsnummer (unikt ID for bygget)
     const bygningsnummer = extractBygningsnummer(tree);
+    
+    // Hent bruksenhet-IDs
+    const bruksenhetIds = extractBruksenhetIds(tree);
 
     const representasjonspunkt: RepPoint | undefined = repXY
       ? {
@@ -395,8 +462,48 @@ export class StoreClient {
       bygningstypeKodeId,
       bygningstypeKode,
       bygningstypeBeskrivelse,
-      bygningsnummer
+      bygningsnummer,
+      bruksenhetIds
     };
+  }
+
+  /** Hent bruksenhet-info for seksjonsspesifikk data */
+  async getBruksenhet(id: number): Promise<BruksenhetInfo | null> {
+    try {
+      const raw = await this.getObjectXml(id, "BruksenhetId");
+      const tree = this.xml.parse(raw);
+      
+      // Hent bruksareal for bruksenheten
+      const bruksarealM2 = extractBruksareal(tree);
+      
+      // Hent etasjenummer hvis tilgjengelig
+      const etasjenummer = extractText(tree, "etasjenummer");
+      
+      // Tell antall etasjer
+      const etasjerElement = find(tree, "etasjer");
+      let etasjer = "0";
+      if (etasjerElement && typeof etasjerElement === 'object') {
+        const items = (etasjerElement as any).item;
+        const antall = Array.isArray(items) ? items.length : 1;
+        etasjer = String(antall);
+      }
+      
+      // Hent leilighetnummer hvis tilgjengelig
+      const leilighetnummer = extractText(tree, "leilighetnummer");
+      
+      return {
+        id,
+        bruksarealM2,
+        etasjenummer,
+        etasjer,
+        leilighetnummer,
+        matrikkelenhetId: undefined, // Ikke tilgjengelig i denne konteksten
+        byggId: undefined // Ikke tilgjengelig i denne konteksten
+      };
+    } catch (error) {
+      console.warn(`Kunne ikke hente bruksenhet ${id}:`, error);
+      return null;
+    }
   }
 
   /* ────────────────────── SOAP-helper med logging ───────────────────── */

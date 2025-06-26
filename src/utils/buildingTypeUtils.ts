@@ -43,6 +43,7 @@ export function determineBuildingTypeStrategy(bygningstypeKodeId?: number): Buil
     const internalIdMapping: Record<number, number> = {
       1: 111,   // Enebolig
       4: 121,   // Tomannsbolig, vertikaldelt
+      5: 122,   // Tomannsbolig, horisontaldelt
       8: 131,   // Rekkehus
       10: 141,  // Store frittliggende boligbygg på 2 etasjer
       11: 142,  // Store frittliggende boligbygg på 3 og 4 etasjer

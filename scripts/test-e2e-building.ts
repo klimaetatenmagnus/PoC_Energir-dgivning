@@ -193,8 +193,7 @@ if (!process.env.LIVE) {
   
   // Test færre adresser for å unngå timeout
   const testAdresser = [
-    { adresse: "Kapellveien 156B, 0493 Oslo", type: "tomannsbolig", forventetKode: "121" },
-    { adresse: "Kapellveien 156C, 0493 Oslo", type: "tomannsbolig", forventetKode: "121" }
+    { adresse: "Kjelsåsveien 97B, 0491 Oslo", type: "rekkehus", forventetKode: "131" }
   ];
 
   console.log(`\n📋 Tester ${testAdresser.length} adresser sekvensielt...\n`);

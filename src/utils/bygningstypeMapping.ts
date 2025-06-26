@@ -59,6 +59,7 @@ function getHardcodedMapping(): Map<number, BygningstypeKode> {
   
   // Basert på observerte verdier i test-data
   map.set(4, { id: 4, kodeverdi: "121", beskrivelse: "Tomannsbolig, vertikaldelt" });
+  map.set(5, { id: 5, kodeverdi: "122", beskrivelse: "Tomannsbolig, horisontaldelt" });
   map.set(8, { id: 8, kodeverdi: "131", beskrivelse: "Rekkehus" });
   map.set(127, { id: 127, kodeverdi: "142", beskrivelse: "Store frittliggende boligbygg på 3 og 4 etasjer" }); // Fallanveien 29
   
