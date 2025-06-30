@@ -1,0 +1,15 @@
+name: placeholder-ci
+on:
+  push:
+    branches-ignore:
+      - sandbox          # <- ignorer lekegrenen når den finnes
+  pull_request:
+    branches-ignore:
+      - sandbox
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "✅ CI passed – placeholder"
