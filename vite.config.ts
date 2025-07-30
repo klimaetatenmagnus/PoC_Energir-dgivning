@@ -31,7 +31,7 @@ export default defineConfig({
       "/lookup": "http://localhost:4002",
       "/solinnstraling": "http://localhost:4003",
       "/subsidy": "http://localhost:4001",
-      "/api": "http://localhost:3000",
+      "/api": "http://localhost:3001",
     },
   },
 });

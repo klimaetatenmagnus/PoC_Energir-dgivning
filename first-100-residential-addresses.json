@@ -1,0 +1,506 @@
+{
+  "extractedDate": "2025-07-21T13:49:09.383Z",
+  "totalAddresses": 100,
+  "addresses": [
+    {
+      "address": "Fredriksborgveien 42",
+      "buildingNumber": "80010303",
+      "buildingType": "14 - Store boligbygg"
+    },
+    {
+      "address": "Dammanns vei 13",
+      "buildingNumber": "80010575",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Bygdøy terrasse 16",
+      "buildingNumber": "80010613",
+      "buildingType": "13 - Rekkehus, kjedehus, andre småhus"
+    },
+    {
+      "address": "Graahbakken 8",
+      "buildingNumber": "80010621",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Strømsborgveien 42",
+      "buildingNumber": "80010648",
+      "buildingType": "13 - Rekkehus, kjedehus, andre småhus"
+    },
+    {
+      "address": "Strømsborgveien 55B",
+      "buildingNumber": "80010664",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Strømsborgveien 30",
+      "buildingNumber": "80010699",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Strømsborgveien 25",
+      "buildingNumber": "80010737",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Dorthes vei 12",
+      "buildingNumber": "80010788",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Dorthes vei 14",
+      "buildingNumber": "80010796",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Christian Frederiks vei 6D",
+      "buildingNumber": "80010850",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Strømsborgveien 47",
+      "buildingNumber": "80010885",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Strømsborgveien 47B",
+      "buildingNumber": "80010923",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Huk aveny 5B",
+      "buildingNumber": "80010931",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Mellbyedalen 12",
+      "buildingNumber": "80010966",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Strømsborgveien 29",
+      "buildingNumber": "80010982",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Strømsborgveien 39",
+      "buildingNumber": "80011024",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Strømsborgveien 40B",
+      "buildingNumber": "80011040",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Huk aveny 7",
+      "buildingNumber": "80011067",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Fredriksborgveien 12",
+      "buildingNumber": "80011083",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Strømsborgveien 43A",
+      "buildingNumber": "80011113",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Fredriksborgveien 35C",
+      "buildingNumber": "80011156",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Strømsborgveien 35C",
+      "buildingNumber": "80011199",
+      "buildingType": "13 - Rekkehus, kjedehus, andre småhus"
+    },
+    {
+      "address": "Strømsborgveien 18",
+      "buildingNumber": "80011202",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Fredriksborgveien 8",
+      "buildingNumber": "80011237",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Christian Benneches vei 6",
+      "buildingNumber": "80011296",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Fredriksborgveien 10B",
+      "buildingNumber": "80011334",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Dammanns vei 4",
+      "buildingNumber": "80011350",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 4C",
+      "buildingNumber": "80011385",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 4C",
+      "buildingNumber": "80011393",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 4B",
+      "buildingNumber": "80011407",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 4K",
+      "buildingNumber": "80011423",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 4J",
+      "buildingNumber": "80011458",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 2F",
+      "buildingNumber": "80011466",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Mellbyedalen 8B",
+      "buildingNumber": "80011482",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Museumsveien 7B",
+      "buildingNumber": "80011504",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Museumsveien 7",
+      "buildingNumber": "80011512",
+      "buildingType": "16 - Fritidsbolig"
+    },
+    {
+      "address": "Huk aveny 5A",
+      "buildingNumber": "80011520",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Huk aveny 8",
+      "buildingNumber": "80011539",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 1",
+      "buildingNumber": "80011547",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Huk aveny 9B",
+      "buildingNumber": "80011571",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "P. T. Mallings vei 27A",
+      "buildingNumber": "80011636",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "P. T. Mallings vei 27B",
+      "buildingNumber": "80011644",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Konsul Schjelderups vei 10",
+      "buildingNumber": "80011660",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Langviksveien 21A",
+      "buildingNumber": "80011679",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Løchenveien 26",
+      "buildingNumber": "80011733",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Bygdøylund 2",
+      "buildingNumber": "80011784",
+      "buildingType": "13 - Rekkehus, kjedehus, andre småhus"
+    },
+    {
+      "address": "Bygdøylund 1",
+      "buildingNumber": "80011792",
+      "buildingType": "13 - Rekkehus, kjedehus, andre småhus"
+    },
+    {
+      "address": "Bygdøylund 6",
+      "buildingNumber": "80011806",
+      "buildingType": "13 - Rekkehus, kjedehus, andre småhus"
+    },
+    {
+      "address": "Bygdøylund 9",
+      "buildingNumber": "80011814",
+      "buildingType": "13 - Rekkehus, kjedehus, andre småhus"
+    },
+    {
+      "address": "Bygdøylund 51",
+      "buildingNumber": "80011822",
+      "buildingType": "13 - Rekkehus, kjedehus, andre småhus"
+    },
+    {
+      "address": "Bygdøylund 19",
+      "buildingNumber": "80011830",
+      "buildingType": "13 - Rekkehus, kjedehus, andre småhus"
+    },
+    {
+      "address": "Bygdøylund 35",
+      "buildingNumber": "80011849",
+      "buildingType": "13 - Rekkehus, kjedehus, andre småhus"
+    },
+    {
+      "address": "Bygdøynesveien 15",
+      "buildingNumber": "80011962",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Bygdøynesveien 15",
+      "buildingNumber": "80011970",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Harald Rømckes vei 11",
+      "buildingNumber": "80011997",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Løchenveien 12",
+      "buildingNumber": "80012020",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Løchenveien 42",
+      "buildingNumber": "80012055",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Løchenveien 40A",
+      "buildingNumber": "80012063",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Løchenveien 40B",
+      "buildingNumber": "80012071",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Bygdøynesveien 35",
+      "buildingNumber": "80012144",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Løchenveien 38",
+      "buildingNumber": "80012160",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Harald Rømckes vei 29",
+      "buildingNumber": "80012225",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Hengsengveien 1",
+      "buildingNumber": "80012241",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Hengsengveien 3B",
+      "buildingNumber": "80012292",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Huk terrasse 10",
+      "buildingNumber": "80012357",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Strømsborgveien 32A",
+      "buildingNumber": "80012373",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Strømsborgveien 34",
+      "buildingNumber": "80012403",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Fredriksborgveien 20",
+      "buildingNumber": "80012438",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Fredriksborgveien 20B",
+      "buildingNumber": "80012446",
+      "buildingType": "14 - Store boligbygg"
+    },
+    {
+      "address": "Schiøtts vei 4",
+      "buildingNumber": "80012470",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 9",
+      "buildingNumber": "80012519",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 7",
+      "buildingNumber": "80012527",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Strømsborgveien 36",
+      "buildingNumber": "80012543",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Schiøtts vei 2",
+      "buildingNumber": "80012691",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Schiøtts vei 6A",
+      "buildingNumber": "80012705",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Schiøtts vei 8",
+      "buildingNumber": "80012721",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 8",
+      "buildingNumber": "80012772",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Christian Benneches vei 5",
+      "buildingNumber": "80012802",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 14",
+      "buildingNumber": "80012845",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 11",
+      "buildingNumber": "80012861",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 13",
+      "buildingNumber": "80012896",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 15",
+      "buildingNumber": "80012918",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Huk aveny 18B",
+      "buildingNumber": "80012934",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Huk aveny 18A",
+      "buildingNumber": "80012942",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Huk aveny 20B",
+      "buildingNumber": "80012950",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Huk aveny 15",
+      "buildingNumber": "80012969",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 3A",
+      "buildingNumber": "80012993",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Huk aveny 6",
+      "buildingNumber": "80013019",
+      "buildingType": "13 - Rekkehus, kjedehus, andre småhus"
+    },
+    {
+      "address": "Christian Benneches vei 12",
+      "buildingNumber": "80013051",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Christian Benneches vei 16",
+      "buildingNumber": "80013108",
+      "buildingType": "12 - Tomannsbolig"
+    },
+    {
+      "address": "Fredriksborgveien 13A",
+      "buildingNumber": "80013124",
+      "buildingType": "13 - Rekkehus, kjedehus, andre småhus"
+    },
+    {
+      "address": "Huk aveny 12A",
+      "buildingNumber": "80013140",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Huk aveny 12B",
+      "buildingNumber": "80013159",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Huk terrasse 4",
+      "buildingNumber": "80013167",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Huk aveny 19",
+      "buildingNumber": "80013183",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Huk aveny 21",
+      "buildingNumber": "80013191",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Fredriksborgveien 7",
+      "buildingNumber": "80013213",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Strømsborgveien 31B",
+      "buildingNumber": "80013221",
+      "buildingType": "11 - Enebolig"
+    },
+    {
+      "address": "Strømsborgveien 27",
+      "buildingNumber": "80013272",
+      "buildingType": "11 - Enebolig"
+    }
+  ]
+}
