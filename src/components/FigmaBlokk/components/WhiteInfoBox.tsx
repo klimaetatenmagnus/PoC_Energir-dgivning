@@ -1,7 +1,7 @@
 import React from 'react';
 import { getTileUrl } from '../utils/calculations';
 import { LocationPin } from './LocationPin';
-import * as EnergySolutions from './EnergySolutions';
+import * as EnergySolutions from './Tiltak';
 
 interface WhiteInfoBoxProps {
   showHeader: boolean;
@@ -70,7 +70,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     const componentMap: { [key: string]: React.ComponentType<any> } = {
       'Varmepumpe': EnergySolutions.Varmepumpe,
       'Solenergi': EnergySolutions.Solenergi,
-      'Tetting': EnergySolutions.TettingWithDropdowns,
+      'Tetting': EnergySolutions.Tetting,
       'Temperaturstyring': EnergySolutions.Temperaturstyring,
       'Utskiftning av vindu': EnergySolutions.UtskiftningAvVindu,
       'Isolering av kjeller og loft': EnergySolutions.IsoleringAvKjellerOgLoft,
@@ -81,7 +81,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     const Component = componentMap[selectedSolution];
     if (!Component) return null;
     
-    // Pass onBack prop to TettingWithDropdowns
+    // Pass onBack prop to Tetting
     if (selectedSolution === 'Tetting') {
       return <Component onBack={() => onExpand && onExpand(false)} />;
     }
@@ -390,7 +390,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
         </g>
       </g>
       
-      {/* Energy solution content that appears when expanded */}
+      {/* Tiltak content that appears when expanded */}
       {selectedSolution !== 'Tetting' && (
         <g style={{ 
           opacity: isExpanded && selectedSolution ? 1 : 0, 
@@ -409,7 +409,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     </svg>
       </div>
       
-      {/* Render TettingWithDropdowns outside SVG */}
+      {/* Render Tetting outside SVG */}
       {selectedSolution === 'Tetting' && (
         <div style={{ 
           position: 'absolute',
