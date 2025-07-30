@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AddressLookupResponse } from '../services/buildingApi';
 import { useAnimation } from './FigmaBlokk/hooks/useAnimation';
@@ -224,7 +225,7 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
         </div>
       </div>
       
-      {/* Energy solution buttons */}
+      {/* Tiltak buttons */}
       <EnergySolutionButtons 
         showHeader={showHeader} 
         isExpanded={isExpanded}

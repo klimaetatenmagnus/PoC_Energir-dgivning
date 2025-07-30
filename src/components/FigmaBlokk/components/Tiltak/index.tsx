@@ -1,7 +1,6 @@
 export { Varmepumpe } from './Varmepumpe';
 export { Solenergi } from './Solenergi';
 export { Tetting } from './Tetting';
-export { TettingWithDropdowns } from './TettingWithDropdowns';
 export { Temperaturstyring } from './Temperaturstyring';
 export { UtskiftningAvVindu } from './UtskiftningAvVindu';
 export { IsoleringAvKjellerOgLoft } from './IsoleringAvKjellerOgLoft';

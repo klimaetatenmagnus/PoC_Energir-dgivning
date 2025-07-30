@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 
-interface TettingWithDropdownsProps {
+interface TettingProps {
   onBack?: () => void;
 }
 
-export const TettingWithDropdowns: React.FC<TettingWithDropdownsProps> = ({ onBack }) => {
+export const Tetting: React.FC<TettingProps> = ({ onBack }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
 
