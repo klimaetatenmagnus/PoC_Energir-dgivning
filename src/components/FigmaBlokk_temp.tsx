@@ -26,6 +26,7 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [selectedSolution, setSelectedSolution] = React.useState<string | null>(null);
   const [solarData, setSolarData] = React.useState<SolarEnergyData | null>(null);
+  const [showYellowBox, setShowYellowBox] = React.useState(true);
   
   // Fetch solar data when component mounts
   React.useEffect(() => {
@@ -230,6 +231,8 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
         onExpand={setIsExpanded}
         onSelectSolution={setSelectedSolution}
         buildingData={{...buildingData, filteredSolarEnergy: solarData?.filteredSolarEnergy}}
+        showYellowBox={showYellowBox}
+        onToggleYellowBox={setShowYellowBox}
       />
       
       {/* White info box */}
@@ -247,6 +250,7 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
         mapCoordinates={mapCoordinates}
         buildingData={buildingData}
         onExpand={setIsExpanded}
+        showYellowBox={showYellowBox}
       />
     </div>
     </>

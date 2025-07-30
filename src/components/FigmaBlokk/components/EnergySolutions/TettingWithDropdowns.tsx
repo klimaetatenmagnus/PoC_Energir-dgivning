@@ -17,8 +17,8 @@ export const TettingWithDropdowns: React.FC<TettingWithDropdownsProps> = ({ onBa
       {/* SVG Background and decorative elements */}
       <svg
         width="840"
-        height="790"
-        viewBox="0 -90 840 790"
+        height="1400"
+        viewBox="0 -90 840 1400"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         style={{ 
@@ -579,12 +579,12 @@ export const TettingWithDropdowns: React.FC<TettingWithDropdownsProps> = ({ onBa
           <rect x="1" y="1" width="40" height="40" stroke="#2A2859" strokeWidth="2"/>
           <path fillRule="evenodd" clipRule="evenodd" d="M18.1 23.0539L16.5 24.7472L11 18.8207L16.5 13L18.1 14.6933L15.3 17.6566H28.4H30.6V19.9849V21.3961V25.5938V27.005V29.3333H28.4H18.8397V27.005H28.4V25.5938V21.3961V19.9849H15.2L18.1 23.0539Z" fill="white"/>
         </g>
-      </svg>
-
-      {/* HTML Dropdown elements positioned over the SVG */}
-      <div style={{ position: 'absolute', bottom: '40px', left: '60px', right: '60px' }}>
-        {/* Permit Check Dropdown */}
-        <div>
+        
+        {/* HTML Dropdown elements inside SVG with foreignObject */}
+        <foreignObject x="60" y="625" width="720" height="1000">
+          <div xmlns="http://www.w3.org/1999/xhtml" style={{ width: '100%', height: '100%' }}>
+            {/* Permit Check Dropdown */}
+            <div>
           <button
             onClick={() => setIsPermitOpen(!isPermitOpen)}
             style={{
@@ -940,10 +940,12 @@ export const TettingWithDropdowns: React.FC<TettingWithDropdownsProps> = ({ onBa
                   </span>, nettopp for å sikre at de som gjør jobben har riktig kompetanse, og leverer løsninger som faktisk fungerer. Søknadsplikten hjelper deg altså i å lykkes med tiltaket ditt.
                 </p>
               </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </foreignObject>
+      </svg>
     </div>
   );
 };
