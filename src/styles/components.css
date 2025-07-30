@@ -89,6 +89,56 @@
   margin-top: var(--spacing-unit);
 }
 
+/* Autocomplete wrapper and suggestions */
+.address-search__autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.address-search__suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  z-index: 1000;
+}
+
+.address-search__suggestion {
+  padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+  cursor: pointer;
+  transition: background-color 0.1s;
+  border-bottom: 1px solid var(--background-secondary);
+}
+
+.address-search__suggestion:last-child {
+  border-bottom: none;
+}
+
+.address-search__suggestion:hover,
+.address-search__suggestion--selected {
+  background-color: var(--background-secondary);
+}
+
+.address-search__suggestion--loading {
+  color: var(--text-secondary);
+  font-style: italic;
+  cursor: default;
+}
+
+.address-search__suggestion--loading:hover {
+  background-color: transparent;
+}
+
 /* ResultsTable component */
 .results-table {
   overflow-x: auto;
@@ -268,6 +318,546 @@
   margin-bottom: calc(var(--spacing-unit) * 4);
 }
 
+/* Energy Rating Calculator */
+.energy-rating-calculator {
+  background-color: var(--pk-color-grayscale-off-white);
+  padding: 24px;
+  border-radius: 8px;
+  margin-top: 24px;
+}
+
+.energy-rating-calculator__title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--pk-color-grayscale-black);
+}
+
+.energy-rating-calculator__info {
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: var(--pk-color-grayscale-darkest-gray);
+}
+
+.energy-rating-calculator__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.energy-rating-calculator__alert {
+  margin-top: 16px;
+}
+
+.energy-rating-calculator__result {
+  margin-top: 24px;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid var(--pk-color-grayscale-light-gray);
+}
+
+.energy-rating-calculator__rating-display {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.energy-rating-calculator__rating-letter {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: bold;
+  color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.energy-rating-calculator__rating-info {
+  flex: 1;
+}
+
+.energy-rating-calculator__rating-description {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: var(--pk-color-grayscale-black);
+}
+
+.energy-rating-calculator__details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--pk-color-grayscale-darkest-gray);
+}
+
+.energy-rating-calculator__details p {
+  margin: 0;
+}
+
+.energy-rating-calculator__scale {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--pk-color-grayscale-light-gray);
+}
+
+.energy-rating-calculator__scale h5 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: var(--pk-color-grayscale-black);
+}
+
+.energy-rating-calculator__scale-items {
+  display: flex;
+  gap: 8px;
+}
+
+.energy-rating-calculator__scale-item {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  transition: transform 0.2s ease;
+}
+
+.energy-rating-calculator__scale-item--active {
+  transform: scale(1.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Energy Rating Estimator */
+.energy-rating-estimator {
+  background-color: var(--pk-color-grayscale-off-white);
+  padding: 32px;
+  border-radius: 8px;
+  margin-top: 32px;
+  border: 1px solid var(--pk-color-grayscale-light-gray);
+}
+
+.energy-rating-estimator__title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: var(--pk-color-grayscale-black);
+}
+
+.energy-rating-estimator__info {
+  margin-bottom: 24px;
+  display: flex;
+  gap: 24px;
+  font-size: 14px;
+  color: var(--pk-color-grayscale-darkest-gray);
+}
+
+.energy-rating-estimator__info p {
+  margin: 0;
+}
+
+.energy-rating-estimator__input-section {
+  margin-bottom: 32px;
+}
+
+.energy-rating-estimator__label {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--pk-color-grayscale-black);
+}
+
+.energy-rating-estimator__input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.energy-rating-estimator__input {
+  padding: 12px 16px;
+  border: 2px solid var(--pk-color-grayscale-medium-gray);
+  border-radius: 4px;
+  font-size: 16px;
+  width: 180px;
+  transition: border-color 0.2s;
+}
+
+.energy-rating-estimator__input:focus {
+  outline: none;
+  border-color: var(--pk-color-blue);
+}
+
+.energy-rating-estimator__unit {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--pk-color-grayscale-black);
+}
+
+.energy-rating-estimator__helper-text {
+  font-size: 14px;
+  color: var(--pk-color-grayscale-darkest-gray);
+}
+
+.energy-rating-estimator__result {
+  padding: 24px;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid var(--pk-color-grayscale-light-gray);
+}
+
+.energy-rating-estimator__rating-display {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.energy-rating-estimator__badge {
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72px;
+  font-weight: bold;
+  color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.energy-rating-estimator__badge--A { background-color: #00882d; }
+.energy-rating-estimator__badge--B { background-color: #50b848; }
+.energy-rating-estimator__badge--C { background-color: #a8d400; }
+.energy-rating-estimator__badge--D { background-color: #f9e814; color: #333; }
+.energy-rating-estimator__badge--E { background-color: #f7b500; }
+.energy-rating-estimator__badge--F { background-color: #e85c00; }
+.energy-rating-estimator__badge--G { background-color: #d00000; }
+
+.energy-rating-estimator__rating-details {
+  flex: 1;
+}
+
+.energy-rating-estimator__rating-text {
+  font-size: 24px;
+  font-weight: 500;
+  margin: 0 0 8px 0;
+  color: var(--pk-color-grayscale-black);
+}
+
+.energy-rating-estimator__intensity {
+  font-size: 20px;
+  margin: 0;
+  color: var(--pk-color-grayscale-darkest-gray);
+}
+
+/* Enova badge section */
+.energy-rating-estimator__enova-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+  padding: 24px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 2px solid #e9ecef;
+}
+
+.energy-rating-estimator__enova-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--pk-color-grayscale-dark-gray);
+  margin: 0;
+}
+
+.energy-rating-estimator__enova-date {
+  font-size: 14px;
+  color: var(--pk-color-grayscale-gray);
+  margin: 0;
+}
+
+/* Measures section */
+.energy-rating-estimator__measures {
+  margin-top: 32px;
+  padding: 24px;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid var(--pk-color-grayscale-light-gray);
+}
+
+.energy-rating-estimator__measures-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+  color: var(--pk-color-grayscale-black);
+}
+
+.energy-rating-estimator__measures-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.energy-rating-estimator__measure-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: var(--pk-color-grayscale-off-white);
+  border-radius: 4px;
+  border: 1px solid var(--pk-color-grayscale-light-gray);
+}
+
+.energy-rating-estimator__checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.energy-rating-estimator__measure-name {
+  font-size: 16px;
+  color: var(--pk-color-grayscale-black);
+  flex: 1;
+  cursor: pointer;
+}
+
+.energy-rating-estimator__info-button {
+  padding: 6px 16px;
+  background-color: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.energy-rating-estimator__info-button:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.energy-rating-estimator__info-button:active {
+  transform: translateY(1px);
+}
+
+/* New consumption display */
+.energy-rating-estimator__new-consumption {
+  margin-top: 24px;
+  padding: 20px;
+  background-color: #f0f8ff;
+  border-radius: 8px;
+  border: 1px solid #cce7ff;
+}
+
+.energy-rating-estimator__new-consumption-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: var(--text-primary);
+}
+
+.energy-rating-estimator__consumption-details p {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+  font-size: 16px;
+}
+
+.energy-rating-estimator__label {
+  color: var(--text-secondary);
+}
+
+.energy-rating-estimator__value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.energy-rating-estimator__value--savings {
+  color: var(--success-color);
+}
+
+.energy-rating-estimator__value--highlight {
+  font-size: 20px;
+  color: var(--primary-color);
+}
+
+.energy-rating-estimator__divider {
+  margin: 16px 0;
+  border: none;
+  border-top: 1px solid #cce7ff;
+}
+
+.energy-rating-estimator__new-total {
+  margin-top: 12px;
+  font-size: 18px;
+}
+
+/* New energy rating display */
+.energy-rating-estimator__new-rating {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #cce7ff;
+  text-align: center;
+}
+
+.energy-rating-estimator__new-rating-text {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: var(--text-primary);
+}
+
+.energy-rating-estimator__rating-comparison {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.energy-rating-estimator__rating-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.energy-rating-estimator__badge--small {
+  width: 60px;
+  height: 60px;
+  font-size: 36px;
+}
+
+.energy-rating-estimator__arrow {
+  font-size: 24px;
+  color: var(--text-secondary);
+}
+
+.energy-rating-estimator__rating-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.energy-rating-estimator__intensity-value {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* Modal styles */
+.energy-rating-estimator__modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.energy-rating-estimator__modal {
+  background-color: white;
+  border-radius: 8px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+}
+
+.energy-rating-estimator__modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 32px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.energy-rating-estimator__modal-close:hover {
+  color: var(--text-primary);
+}
+
+.energy-rating-estimator__modal-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 24px 0;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.energy-rating-estimator__modal-message {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.energy-rating-estimator__modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.energy-rating-estimator__savings-display {
+  display: flex;
+  gap: 32px;
+  justify-content: center;
+  margin: 24px 0;
+}
+
+.energy-rating-estimator__savings-percentage,
+.energy-rating-estimator__savings-kwh {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.energy-rating-estimator__savings-value {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--success-color);
+}
+
+.energy-rating-estimator__savings-label {
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.energy-rating-estimator__modal-note {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin: 0;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .address-search__form {
@@ -287,4 +877,345 @@
   .results-table__header-cell {
     padding: var(--spacing-unit);
   }
+  
+  .energy-rating-estimator__input {
+    width: 100%;
+  }
+  
+  .energy-rating-estimator__input-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .energy-rating-estimator__info {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .energy-rating-estimator__measure-item {
+    flex-wrap: wrap;
+  }
+  
+  .energy-rating-estimator__checkbox {
+    order: 1;
+  }
+  
+  .energy-rating-estimator__measure-name {
+    order: 2;
+    flex-basis: calc(100% - 32px);
+  }
+  
+  .energy-rating-estimator__info-button {
+    order: 3;
+    margin-left: 32px;
+  }
+  
+  .energy-rating-estimator__modal {
+    padding: 24px;
+  }
+  
+  .energy-rating-estimator__savings-display {
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .energy-rating-estimator__savings-value {
+    font-size: 36px;
+  }
+}
+
+/* Figma Design page styles */
+.figma-design-container {
+  background: #2A2859;
+  position: relative;
+}
+
+.back-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 8px 16px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background-color: #e0e0e0;
+}
+
+.figma-content {
+  margin-top: 60px;
+  /* Content area for Figma design */
+}
+
+/* Oslo skyline positioning */
+.oslo-skyline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  max-height: 40vh;
+}
+
+/* Figma search styles */
+.figma-search-container {
+  position: absolute;
+  bottom: 354px;
+  left: 256px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* Oslo logo container */
+.oslo-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+/* Oslo logo */
+.oslo-logo {
+  width: 57px;
+  height: 68px;
+}
+
+/* Oslo text */
+.oslo-text {
+  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1;
+  color: #F1FDFF;
+}
+
+/* Energiportalen title */
+.energiportalen-title {
+  margin: 0;
+  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 700;
+  font-size: 81px;
+  line-height: 114px;
+  letter-spacing: -0.325px;
+  color: #F1FDFF;
+}
+
+.figma-search-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 400px;
+}
+
+.figma-search-label {
+  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 28px;
+  letter-spacing: -0.2px;
+  color: #FFFFFF;
+}
+
+.figma-search-input-group {
+  display: flex;
+  gap: 8px;
+  height: 48px;
+}
+
+.figma-search-input {
+  flex: 1;
+  padding: 8px 16px;
+  background: #FFFFFF;
+  border: 4px solid #F9C66B;
+  border-radius: 0;
+  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 300;
+  font-size: 18px;
+  line-height: 28px;
+  letter-spacing: -0.2px;
+  color: #333333;
+  outline: none;
+}
+
+.figma-search-input::placeholder {
+  color: #666666;
+}
+
+.figma-search-button {
+  width: 48px;
+  height: 48px;
+  background: #F9C66B;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.figma-search-button:hover {
+  opacity: 0.9;
+}
+
+.figma-search-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Loading spinner for search button */
+.loading-spinner-small {
+  font-size: 18px;
+  animation: spin 1s linear infinite;
+}
+
+/* Error message styling */
+.figma-error-message {
+  color: #FF6B6B;
+  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 4px;
+}
+
+/* Results container for Figma design */
+.figma-results-container {
+  background: #FFFFFF;
+  border-radius: 8px;
+  padding: 40px;
+  margin: 40px auto;
+  max-width: 1200px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* Override some styles for results within Figma design */
+.figma-results-container .results-table,
+.figma-results-container .energy-rating-estimator {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+/* Figma autocomplete wrapper */
+.figma-search-autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* Figma search suggestions */
+.figma-search-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: calc(100% - 56px); /* Account for search button width and gap */
+  margin-top: 0;
+  background: #FFFFFF;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Individual suggestion */
+.figma-search-suggestion {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  color: #333333;
+  border-bottom: 1px solid #F0F0F0;
+  transition: background-color 0.2s;
+}
+
+.figma-search-suggestion:last-child {
+  border-bottom: none;
+}
+
+/* Hover state */
+.figma-search-suggestion:hover {
+  background-color: #F5F5F5;
+}
+
+/* Selected state (keyboard navigation) */
+.figma-search-suggestion--selected {
+  background-color: #E8F4F8;
+}
+
+/* Loading state */
+.figma-search-suggestion--loading {
+  color: #666666;
+  font-style: italic;
+  cursor: default;
+}
+
+.figma-search-suggestion--loading:hover {
+  background-color: transparent;
+}
+
+/* Dropdown Component */
+.dropdown {
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  background-color: #FFFFFF;
+}
+
+.dropdown__toggle {
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+}
+
+.dropdown__toggle:hover {
+  background-color: #F5F5F5;
+}
+
+.dropdown__title {
+  font-family: 'Oslo Sans', sans-serif;
+  font-weight: 500;
+  font-style: normal;
+  font-size: 14px;
+  line-height: 22px;
+  letter-spacing: -0.2px;
+  color: #2A2859;
+}
+
+.dropdown__arrow {
+  transition: transform 0.2s ease;
+}
+
+.dropdown__arrow--open {
+  transform: rotate(180deg);
+}
+
+.dropdown__content {
+  padding: 16px;
+  border-top: 1px solid #E0E0E0;
+  font-family: 'Oslo Sans', sans-serif;
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 22px;
+  color: #000000;
 }

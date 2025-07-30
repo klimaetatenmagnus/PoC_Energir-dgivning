@@ -1,0 +1,702 @@
+[
+  {
+    "address": "Fredriksborgveien 42",
+    "csv_building_number": "80010303",
+    "api_building_number": "80010303",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Dammanns vei 13",
+    "csv_building_number": "80010575",
+    "api_building_number": "80010583",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Bygdøy terrasse 16",
+    "csv_building_number": "80010613",
+    "api_building_number": "81143595",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Graahbakken 8",
+    "csv_building_number": "80010621",
+    "api_building_number": "80010621",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 42",
+    "csv_building_number": "80010648",
+    "api_building_number": "80919999",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 55B",
+    "csv_building_number": "80010664",
+    "api_building_number": "300598408",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 30",
+    "csv_building_number": "80010699",
+    "api_building_number": "80010699",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 25",
+    "csv_building_number": "80010737",
+    "api_building_number": "80834365",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Dorthes vei 12",
+    "csv_building_number": "80010788",
+    "api_building_number": "80010788",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Dorthes vei 14",
+    "csv_building_number": "80010796",
+    "api_building_number": "80010796",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Frederiks vei 6D",
+    "csv_building_number": "80010850",
+    "api_building_number": "81334587",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 47",
+    "csv_building_number": "80010885",
+    "api_building_number": "80016638",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 47B",
+    "csv_building_number": "80010923",
+    "api_building_number": "80016638",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Huk aveny 5B",
+    "csv_building_number": "80010931",
+    "api_building_number": "81803021",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Mellbyedalen 12",
+    "csv_building_number": "80010966",
+    "api_building_number": "80010966",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 29",
+    "csv_building_number": "80010982",
+    "api_building_number": "80018134",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 39",
+    "csv_building_number": "80011024",
+    "api_building_number": "80794487",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 40B",
+    "csv_building_number": "80011040",
+    "api_building_number": "80011040",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Huk aveny 7",
+    "csv_building_number": "80011067",
+    "api_building_number": "80011067",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Fredriksborgveien 12",
+    "csv_building_number": "80011083",
+    "api_building_number": "80011083",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 43A",
+    "csv_building_number": "80011113",
+    "api_building_number": "80011113",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Fredriksborgveien 35C",
+    "csv_building_number": "80011156",
+    "api_building_number": "80011156",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 35C",
+    "csv_building_number": "80011199",
+    "api_building_number": "80011199",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 18",
+    "csv_building_number": "80011202",
+    "api_building_number": "81111855",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Fredriksborgveien 8",
+    "csv_building_number": "80011237",
+    "api_building_number": "80011237",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 6",
+    "csv_building_number": "80011296",
+    "api_building_number": "80011296",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Fredriksborgveien 10B",
+    "csv_building_number": "80011334",
+    "api_building_number": "300522934",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Dammanns vei 4",
+    "csv_building_number": "80011350",
+    "api_building_number": "80011350",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 4C",
+    "csv_building_number": "80011385",
+    "api_building_number": "80011393",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 4C",
+    "csv_building_number": "80011393",
+    "api_building_number": "80011393",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 4B",
+    "csv_building_number": "80011407",
+    "api_building_number": "80011407",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 4K",
+    "csv_building_number": "80011423",
+    "api_building_number": "80011423",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 4J",
+    "csv_building_number": "80011458",
+    "api_building_number": "80011423",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 2F",
+    "csv_building_number": "80011466",
+    "api_building_number": "81672539",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Mellbyedalen 8B",
+    "csv_building_number": "80011482",
+    "api_building_number": "81217742",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Museumsveien 7B",
+    "csv_building_number": "80011504",
+    "api_building_number": "80011512",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Museumsveien 7",
+    "csv_building_number": "80011512",
+    "api_building_number": "80615752",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Huk aveny 5A",
+    "csv_building_number": "80011520",
+    "api_building_number": "80011520",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Huk aveny 8",
+    "csv_building_number": "80011539",
+    "api_building_number": "80011539",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 1",
+    "csv_building_number": "80011547",
+    "api_building_number": "80011547",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Huk aveny 9B",
+    "csv_building_number": "80011571",
+    "api_building_number": "80011571",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "P. T. Mallings vei 27A",
+    "csv_building_number": "80011636",
+    "api_building_number": "N/A",
+    "match": "NO",
+    "error": "Ingen adresse funnet i Geonorge etter å ha prøvd alle varianter"
+  },
+  {
+    "address": "P. T. Mallings vei 27B",
+    "csv_building_number": "80011644",
+    "api_building_number": "N/A",
+    "match": "NO",
+    "error": "Ingen adresse funnet i Geonorge etter å ha prøvd alle varianter"
+  },
+  {
+    "address": "Konsul Schjelderups vei 10",
+    "csv_building_number": "80011660",
+    "api_building_number": "300120988",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Langviksveien 21A",
+    "csv_building_number": "80011679",
+    "api_building_number": "80011679",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Løchenveien 26",
+    "csv_building_number": "80011733",
+    "api_building_number": "80011733",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Bygdøylund 2",
+    "csv_building_number": "80011784",
+    "api_building_number": "300411737",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Bygdøylund 1",
+    "csv_building_number": "80011792",
+    "api_building_number": "80011792",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Bygdøylund 6",
+    "csv_building_number": "80011806",
+    "api_building_number": "80011806",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Bygdøylund 9",
+    "csv_building_number": "80011814",
+    "api_building_number": "300411737",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Bygdøylund 51",
+    "csv_building_number": "80011822",
+    "api_building_number": "300411737",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Bygdøylund 19",
+    "csv_building_number": "80011830",
+    "api_building_number": "300411737",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Bygdøylund 35",
+    "csv_building_number": "80011849",
+    "api_building_number": "300411737",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Bygdøynesveien 15",
+    "csv_building_number": "80011962",
+    "api_building_number": "80011970",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Bygdøynesveien 15",
+    "csv_building_number": "80011970",
+    "api_building_number": "80011970",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Harald Rømckes vei 11",
+    "csv_building_number": "80011997",
+    "api_building_number": "80011997",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Løchenveien 12",
+    "csv_building_number": "80012020",
+    "api_building_number": "80012020",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Løchenveien 42",
+    "csv_building_number": "80012055",
+    "api_building_number": "80012055",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Løchenveien 40A",
+    "csv_building_number": "80012063",
+    "api_building_number": "80012071",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Løchenveien 40B",
+    "csv_building_number": "80012071",
+    "api_building_number": "80012071",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Bygdøynesveien 35",
+    "csv_building_number": "80012144",
+    "api_building_number": "80012144",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Løchenveien 38",
+    "csv_building_number": "80012160",
+    "api_building_number": "80012160",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Harald Rømckes vei 29",
+    "csv_building_number": "80012225",
+    "api_building_number": "80012225",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Hengsengveien 1",
+    "csv_building_number": "80012241",
+    "api_building_number": "81259232",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Hengsengveien 3B",
+    "csv_building_number": "80012292",
+    "api_building_number": "80868006",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Huk terrasse 10",
+    "csv_building_number": "80012357",
+    "api_building_number": "81197369",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 32A",
+    "csv_building_number": "80012373",
+    "api_building_number": "300862872",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 34",
+    "csv_building_number": "80012403",
+    "api_building_number": "80012403",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Fredriksborgveien 20",
+    "csv_building_number": "80012438",
+    "api_building_number": "80012446",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Fredriksborgveien 20B",
+    "csv_building_number": "80012446",
+    "api_building_number": "80012446",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Schiøtts vei 4",
+    "csv_building_number": "80012470",
+    "api_building_number": "80012470",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 9",
+    "csv_building_number": "80012519",
+    "api_building_number": "80012519",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 7",
+    "csv_building_number": "80012527",
+    "api_building_number": "80012527",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 36",
+    "csv_building_number": "80012543",
+    "api_building_number": "80012543",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Schiøtts vei 2",
+    "csv_building_number": "80012691",
+    "api_building_number": "N/A",
+    "match": "NO",
+    "error": "Ingen bygninger funnet på denne adressen"
+  },
+  {
+    "address": "Schiøtts vei 6A",
+    "csv_building_number": "80012705",
+    "api_building_number": "81282641",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Schiøtts vei 8",
+    "csv_building_number": "80012721",
+    "api_building_number": "80012721",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 8",
+    "csv_building_number": "80012772",
+    "api_building_number": "80012772",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 5",
+    "csv_building_number": "80012802",
+    "api_building_number": "80012802",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 14",
+    "csv_building_number": "80012845",
+    "api_building_number": "80012845",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 11",
+    "csv_building_number": "80012861",
+    "api_building_number": "80012861",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 13",
+    "csv_building_number": "80012896",
+    "api_building_number": "80012896",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 15",
+    "csv_building_number": "80012918",
+    "api_building_number": "80012918",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Huk aveny 18B",
+    "csv_building_number": "80012934",
+    "api_building_number": "80012934",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Huk aveny 18A",
+    "csv_building_number": "80012942",
+    "api_building_number": "81311900",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Huk aveny 20B",
+    "csv_building_number": "80012950",
+    "api_building_number": "80012950",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Huk aveny 15",
+    "csv_building_number": "80012969",
+    "api_building_number": "80012969",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 3A",
+    "csv_building_number": "80012993",
+    "api_building_number": "80012993",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Huk aveny 6",
+    "csv_building_number": "80013019",
+    "api_building_number": "80013019",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 12",
+    "csv_building_number": "80013051",
+    "api_building_number": "300655653",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Christian Benneches vei 16",
+    "csv_building_number": "80013108",
+    "api_building_number": "80743092",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Fredriksborgveien 13A",
+    "csv_building_number": "80013124",
+    "api_building_number": "80013124",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Huk aveny 12A",
+    "csv_building_number": "80013140",
+    "api_building_number": "80013159",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Huk aveny 12B",
+    "csv_building_number": "80013159",
+    "api_building_number": "80013159",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Huk terrasse 4",
+    "csv_building_number": "80013167",
+    "api_building_number": "81096023",
+    "match": "NO",
+    "error": ""
+  },
+  {
+    "address": "Huk aveny 19",
+    "csv_building_number": "80013183",
+    "api_building_number": "80013183",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Huk aveny 21",
+    "csv_building_number": "80013191",
+    "api_building_number": "80013191",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Fredriksborgveien 7",
+    "csv_building_number": "80013213",
+    "api_building_number": "80013213",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 31B",
+    "csv_building_number": "80013221",
+    "api_building_number": "80013221",
+    "match": "YES",
+    "error": ""
+  },
+  {
+    "address": "Strømsborgveien 27",
+    "csv_building_number": "80013272",
+    "api_building_number": "80786018",
+    "match": "NO",
+    "error": ""
+  }
+]

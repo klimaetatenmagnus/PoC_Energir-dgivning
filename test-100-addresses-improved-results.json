@@ -1,0 +1,86 @@
+{
+  "timestamp": "2025-07-22T07:39:50.304Z",
+  "summary": {
+    "total": 98,
+    "correct": 86,
+    "incorrect": 11,
+    "errors": 1,
+    "successRate": "87.8%"
+  },
+  "incorrectResults": [
+    {
+      "address": "Strømsborgveien 42",
+      "expected": "80010648",
+      "actual": "80797729",
+      "diff": 787081
+    },
+    {
+      "address": "Strømsborgveien 25",
+      "expected": "80010737",
+      "actual": "80834365",
+      "diff": 823628
+    },
+    {
+      "address": "Strømsborgveien 47",
+      "expected": "80010885",
+      "actual": "80010923",
+      "diff": 38
+    },
+    {
+      "address": "Strømsborgveien 29",
+      "expected": "80010982",
+      "actual": "80018134",
+      "diff": 7152
+    },
+    {
+      "address": "Strømsborgveien 39",
+      "expected": "80011024",
+      "actual": "80794487",
+      "diff": 783463
+    },
+    {
+      "address": "Strømsborgveien 18",
+      "expected": "80011202",
+      "actual": "81111855",
+      "diff": 1100653
+    },
+    {
+      "address": "Museumsveien 7",
+      "expected": "80011512",
+      "actual": "80615752",
+      "diff": 604240
+    },
+    {
+      "address": "Konsul Schjelderups vei 10",
+      "expected": "80011660",
+      "actual": "81209219",
+      "diff": 1197559
+    },
+    {
+      "address": "Christian Benneches vei 16",
+      "expected": "80013108",
+      "actual": "80743092",
+      "diff": 729984
+    },
+    {
+      "address": "Huk terrasse 4",
+      "expected": "80013167",
+      "actual": "81096023",
+      "diff": 1082856
+    },
+    {
+      "address": "Strømsborgveien 27",
+      "expected": "80013272",
+      "actual": "80786018",
+      "diff": 772746
+    }
+  ],
+  "errorResults": [
+    {
+      "address": "Schiøtts vei 2",
+      "expected": "80012691",
+      "actual": "ERROR",
+      "diff": "ERROR"
+    }
+  ]
+}

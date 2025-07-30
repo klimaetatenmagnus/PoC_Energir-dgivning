@@ -1,0 +1,30 @@
+{
+  "adresse": "Fallanveien 29, 0491 Oslo",
+
+  "gardsnummer": 0,
+  "bruksnummer": 0,
+
+  "byggår": 0,
+  "bra_m2": 0,
+
+  "forbruk_kwh": 25000,
+  "oppvarming": "el",
+
+  "tiltak": [
+    {
+      "navn": "Loftisolering",
+      "kwh_sparing": 1000,
+      "kost_kr": 50000
+    },
+    {
+      "navn": "Varmepumpe (luft‑til‑luft)",
+      "kwh_sparing": 4500,
+      "kost_kr": 30000
+    },
+    {
+      "navn": "Vindusbytte (U‑verdi 1.2)",
+      "kwh_sparing": 2000,
+      "kost_kr": 120000
+    }
+  ]
+}

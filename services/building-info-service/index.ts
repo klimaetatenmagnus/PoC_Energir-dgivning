@@ -12,6 +12,7 @@ import express, {
 import cors from "cors";
 import NodeCache from "node-cache";
 import fetch, { Response as FetchResponse } from "node-fetch"; // ← alias
+import proj4 from "proj4";
 
 import { matrikkelEndpoint } from "../../src/utils/endpoints.ts";
 import { MatrikkelClient } from "../../src/clients/MatrikkelClient.ts";
@@ -24,7 +25,13 @@ import {
   shouldReportSectionLevel,
   shouldReportBuildingLevel 
 } from "../../src/utils/buildingTypeUtils.ts";
+import { csvService } from "../../src/services/csvService.ts";
+import { selectBuildingImproved } from './improved-building-selection.ts';
+import { getExpectedBuildingNumber } from '../../src/data/residential-building-cache.ts';
 
+/* ───────────── Koordinatsystem-definisjoner ───────────── */
+proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
+proj4.defs("EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs");
 
 /* ───────────── Miljøvariabler ───────────── */
 const BASE_URL = process.env.MATRIKKEL_API_BASE_URL_PROD || "https://www.matrikkel.no/matrikkelapi/wsapi/v1";
@@ -33,6 +40,13 @@ const PASSWORD = process.env.MATRIKKEL_PASSWORD!;
 const ENOVA_KEY = process.env.ENOVA_API_KEY ?? "";
 const PORT = Number(process.env.PORT) || 4000;
 const LOG = process.env.LOG === "1" || process.env.LOG_SOAP === "1";
+
+// Debug logging
+console.log("[Building Info Service] Environment check:");
+console.log("  BASE_URL:", BASE_URL);
+console.log("  USERNAME:", USERNAME ? "SET" : "NOT SET");
+console.log("  PASSWORD:", PASSWORD ? "SET" : "NOT SET");
+console.log("  ENOVA_KEY:", ENOVA_KEY ? "SET" : "NOT SET");
 
 
 /* ───────────── Klient-instanser ─────────── */
@@ -106,6 +120,9 @@ async function lookupAdresse(str: string) {
       adressekode: a.adressekode,
       husnummer: Number(a.nummer ?? a.husnummer ?? 0),
       bokstav: a.bokstav ?? "",
+      adressetekst: a.adressetekst || "",
+      poststed: a.poststed || "",
+      postnummer: a.postnummer || ""
     };
   };
 
@@ -128,6 +145,10 @@ async function lookupAdresse(str: string) {
       .replace(/\s+/g, " "),
     // Variant 5: Behold komma men fjern mellomrom mellom tall og bokstav
     str.replace(/(\d+)\s+([A-Za-z])/, "$1$2"),
+    // Variant 6: Fjern punktum (for adresser som P. T. Mallings vei)
+    str.replace(/\./g, "").trim().replace(/\s+/g, " "),
+    // Variant 7: Fjern punktum og komma
+    str.replace(/[.,]/g, " ").trim().replace(/\s+/g, " "),
   ];
 
   for (const v of variants) {
@@ -160,13 +181,17 @@ async function fetchEnergiattest(p: {
     kommunenummer: p.kommunenummer,
     gardsnummer: String(p.gnr),
     bruksnummer: String(p.bnr),
-    bruksenhetnummer: p.bruksenhetnummer || "",
-    seksjonsnummer: p.seksjonsnummer ? String(p.seksjonsnummer) : "",
   };
   
-  // Legg til bygningsnummer hvis vi har det
+  // Legg til valgfrie felter kun hvis de har verdier
   if (p.bygningsnummer) {
     requestBody.bygningsnummer = p.bygningsnummer;
+  }
+  if (p.seksjonsnummer) {
+    requestBody.seksjonsnummer = String(p.seksjonsnummer);
+  }
+  if (p.bruksenhetnummer) {
+    requestBody.bruksenhetnummer = p.bruksenhetnummer;
   }
 
   if (LOG) {
@@ -206,13 +231,130 @@ async function fetchEnergiattest(p: {
     if (LOG) {
       console.log(`✅ Energiattest funnet!${p.seksjonsnummer ? ` (seksjon ${p.seksjonsnummer})` : ''}`);
     }
-    return list[0];
+    
+    // Extract relevant data from Enova response
+    const enovaData = list[0];
+    return {
+      energikarakter: enovaData.energiattest?.energikarakter,
+      oppvarmingskarakter: enovaData.energiattest?.oppvarmingskarakter,
+      utstedelsesdato: enovaData.energiattest?.utstedelsesdato,
+      attestnummer: enovaData.energiattest?.attestnummer,
+      attestUrl: enovaData.energiattest?.attestUrl,
+      registering: {
+        beregnetLevertEnergiTotaltkWh: enovaData.energiattest?.registering?.beregnetLevertEnergiTotaltkWh,
+        beregnetLevertEnergiTotaltkWhm2: enovaData.energiattest?.registering?.beregnetLevertEnergiTotaltkWhm2,
+      },
+      // Include building data from Enova if we don't have it from Matrikkel
+      enovaBuildingData: {
+        bruksareal: enovaData.enhet?.bruksareal,
+        byggeaar: enovaData.enhet?.bygg?.byggeår,
+        bygningstype: enovaData.enhet?.bygg?.type,
+        kategori: enovaData.enhet?.bygg?.kategori,
+      }
+    };
   }
   
   return null;
 }
 
-export async function resolveBuildingData(adresse: string) {
+/* ───────────── Solenergi (valgfri) ───── */
+async function fetchSolarData(params: {
+  byggId?: number;
+  lat?: number;
+  lon?: number;
+  gnr?: number;
+  bnr?: number;
+  seksjonsnummer?: number;
+}) {
+  try {
+    console.log(`☀️ fetchSolarData called with params:`, params);
+    
+    let url = "http://localhost:4003/solinnstraling?";
+    
+    // Prioriter koordinater over bygg_id siden bygnings-ID ofte ikke matcher mellom Matrikkel og PBE
+    if (params.lat && params.lon) {
+      url += `lat=${params.lat}&lon=${params.lon}`;
+      console.log(`☀️ Henter solenergi-data for koordinater: ${params.lat}, ${params.lon}`);
+    } else if (params.byggId) {
+      url += `bygg_id=${params.byggId}`;
+      console.log(`☀️ Henter solenergi-data for bygg_id=${params.byggId}`);
+    } else if (params.gnr && params.bnr) {
+      url += `gnr=${params.gnr}&bnr=${params.bnr}`;
+      if (params.seksjonsnummer) {
+        url += `&snr=${params.seksjonsnummer}`;
+      }
+      console.log(`☀️ Henter solenergi-data for gnr=${params.gnr}, bnr=${params.bnr}${params.seksjonsnummer ? `, snr=${params.seksjonsnummer}` : ''}`);
+    } else {
+      console.log("⚠️ Ingen parametere for solenergi-oppslag");
+      return null;
+    }
+    
+    console.log(`☀️ Full URL: ${url}`);
+    const response = await fetch(url);
+    console.log(`☀️ Response status: ${response.status}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log(`⚠️ Solar service error response: ${errorText}`);
+      if (response.status === 404) {
+        console.log("⚠️ Ingen solenergi-data funnet (404)");
+        return null;
+      }
+      throw new Error(`Solar service error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log(`☀️ Solar data received:`, data);
+    
+    if (data.error) {
+      console.log(`⚠️ Solar service returned error: ${data.error}`);
+      return null;
+    }
+    
+    console.log(`✅ Solenergi-data hentet:`, {
+      takAreal: data.takAreal_m2,
+      innstråling: data.sol_kwh_m2_yr,
+      potensial: data.sol_kwh_bygg_tot,
+      kategori: data.category
+    });
+    
+    // Beregn filtrert solenergi (kun takflater med innstråling > 800 kWh/m²)
+    let filteredSolarEnergy = 0;
+    const minRadiation = 800; // kWh/m²
+    const solarPanelEfficiency = 0.2; // 20% virkningsgrad
+    
+    if (data.takflater && Array.isArray(data.takflater)) {
+      filteredSolarEnergy = data.takflater
+        .filter(tak => tak.irr_kwh_m2_yr > minRadiation)
+        .reduce((sum, tak) => sum + (tak.irr_kwh_m2_yr * tak.area_m2 * solarPanelEfficiency), 0);
+      
+      console.log(`☀️ Filtrert solenergi beregning:`, {
+        totaltAntallFlater: data.takflater.length,
+        filtrerteFlater: data.takflater.filter(tak => tak.irr_kwh_m2_yr > minRadiation).length,
+        filteredSolarEnergy: Math.round(filteredSolarEnergy)
+      });
+    }
+    
+    return {
+      takAreal_m2: data.takAreal_m2,
+      sol_kwh_m2_yr: data.sol_kwh_m2_yr,
+      sol_kwh_bygg_tot: data.sol_kwh_bygg_tot,
+      solKategori: data.category,
+      takflater: data.takflater,
+      filteredSolarEnergy: Math.round(filteredSolarEnergy)
+    };
+  } catch (error) {
+    console.log(`❌ Feil ved henting av solenergi-data: ${error}`);
+    return null;
+  }
+}
+
+export interface BuildingDataOptions {
+  useImprovedSelection?: boolean;
+  debug?: boolean;
+}
+
+export async function resolveBuildingData(adresse: string, options: BuildingDataOptions = {}) {
   // TODO: Fremtidig forbedring - Borettslag/sameie-håndtering
   // Når grunnbokstilgang er på plass, bør vi:
   // 1. Sjekke om adressen tilhører et borettslag
@@ -448,16 +590,46 @@ export async function resolveBuildingData(adresse: string) {
   
   const erSeksjonertEiendom = seksjonsnummer || adr.bokstav;
   
+  // Use options parameter instead of environment variable
+  const USE_IMPROVED_SELECTION = options.useImprovedSelection ?? false;
+  const DEBUG_IMPROVED = options.debug ?? LOG;
+  
   if (LOG) {
     console.log(`\n🏗️ ROBUST BYGGVALG for ${adr.bokstav || `seksjon ${seksjonsnummer}`}`);
     console.log(`📊 Totalt ${allBygningsInfo.length} bygg å velge mellom:`);
     allBygningsInfo.forEach(b => {
       console.log(`   - Bygg ${b.id}: ${b.bruksarealM2} m², byggeår ${b.byggeaar}, type ${b.bygningstypeKodeId}, ${b.bruksenhetIds?.length || 0} bruksenheter`);
     });
+    if (USE_IMPROVED_SELECTION) {
+      console.log(`🚀 Using IMPROVED building selection logic`);
+    }
   }
   
-  if (!erSeksjonertEiendom) {
-    // Standard case: velg største boligbygg
+  // Try improved selection first if enabled
+  if (USE_IMPROVED_SELECTION) {
+    try {
+      selectedBygg = selectBuildingImproved(
+        adresse,
+        allBygningsInfo,
+        {
+          preferExpectedBuilding: true,
+          handleRowHouses: true,
+          considerBuildingAge: true,
+          debug: DEBUG_IMPROVED
+        }
+      );
+      if (LOG) console.log(`✅ Improved selection chose building ${selectedBygg.id} (${selectedBygg.bygningsnummer})`);
+    } catch (error) {
+      if (LOG) console.log(`⚠️ Improved selection failed, falling back to standard logic: ${error}`);
+      // Continue with standard logic below
+      selectedBygg = null as any;
+    }
+  }
+  
+  // Standard selection logic (used as fallback or when improved selection is disabled)
+  if (!selectedBygg) {
+    if (!erSeksjonertEiendom) {
+      // Standard case: velg største boligbygg
     const sectionLevelBuildings = eligibleBuildings.filter(bygg => 
       shouldReportSectionLevel(bygg.bygningstypeKodeId)
     );
@@ -545,6 +717,7 @@ export async function resolveBuildingData(adresse: string) {
       }
     }
   }
+  } // End of if (!selectedBygg)
   
   const byggId = selectedBygg.id;
   let bygg = selectedBygg;
@@ -680,6 +853,38 @@ export async function resolveBuildingData(adresse: string) {
     bygningsnummer: bygg.bygningsnummer,
   });
 
+  /* 8b) Hent solenergi-data */
+  // Konverter UTM-koordinater til lat/lon for solar-service
+  let lat: number | undefined;
+  let lon: number | undefined;
+  
+  if (bygg.representasjonspunkt) {
+    // Koordinatene fra Matrikkel er i EPSG:32632 (UTM zone 32N)
+    // Konverter til WGS84 (EPSG:4326) for solar-service
+    const wgs84Coords = proj4("EPSG:32632", "EPSG:4326", [
+      bygg.representasjonspunkt.east,
+      bygg.representasjonspunkt.north
+    ]);
+    lon = wgs84Coords[0];
+    lat = wgs84Coords[1];
+    
+    if (LOG) {
+      console.log(`📍 Konverterte koordinater for solenergi-oppslag:`, {
+        utm: { east: bygg.representasjonspunkt.east, north: bygg.representasjonspunkt.north, epsg: "EPSG:32632" },
+        wgs84: { lat, lon, epsg: "EPSG:4326" }
+      });
+    }
+  }
+  
+  const solarData = await fetchSolarData({
+    byggId: byggId,
+    lat: lat,
+    lon: lon,
+    gnr: adr.gnr,
+    bnr: adr.bnr,
+    seksjonsnummer: seksjonForEnova
+  });
+
   /* 9) resultatobjekt med ekstra info om hele bygget hvis seksjonert */
   const strategy = determineBuildingTypeStrategy(bygg.bygningstypeKodeId);
   
@@ -719,6 +924,48 @@ export async function resolveBuildingData(adresse: string) {
     }
   }
   
+  // Søk etter CSV-data basert på bygningsnummer
+  let csvData = null;
+  if (bygg.bygningsnummer) {
+    csvData = csvService.findByBygningsNr(bygg.bygningsnummer);
+    if (csvData && LOG) {
+      console.log(`📊 CSV-data funnet for bygningsnummer ${bygg.bygningsnummer}:`);
+      console.log(`   - Bruksareal (CSV): ${csvData.bruksarealTotalt} m²`);
+      console.log(`   - Bygningstype (CSV): ${csvData.bygningstype3siffer} - ${csvData.bygningstypeNavn}`);
+      console.log(`   - Tatt i bruk: ${csvData.tattIBrukDato}`);
+    }
+  }
+
+  // Hvis ikke funnet med bygningsnummer, prøv adresse
+  if (!csvData && adr) {
+    // Prøv først med adressetekst fra Geonorge
+    if (adr.adressetekst) {
+      csvData = csvService.findByExactAddress(adr.adressetekst);
+      if (csvData && LOG) {
+        console.log(`📊 CSV-data funnet via adresse "${adr.adressetekst}"`);
+      }
+    }
+    
+    // Hvis ikke funnet, prøv med konstruert adresse
+    if (!csvData) {
+      const searchAddress = `${adr.adressetekst || ''}${adr.husnummer || ''}${adr.bokstav || ''}`.trim();
+      if (searchAddress) {
+        const matches = csvService.findByAddress(searchAddress);
+        if (matches.length > 0) {
+          csvData = matches[0]; // Ta første match
+          if (LOG) {
+            console.log(`📊 CSV-data funnet via søk "${searchAddress}" (${matches.length} treff)`);
+          }
+        }
+      }
+    }
+  }
+
+  // Use Enova data to fill gaps in Matrikkel data if available
+  const finalBruksareal = bygg.bruksarealM2 || attest?.enovaBuildingData?.bruksareal || null;
+  const finalByggeaar = bygg.byggeaar || attest?.enovaBuildingData?.byggeaar || null;
+  const finalBygningstype = bygg.bygningstypeBeskrivelse || attest?.enovaBuildingData?.bygningstype || strategy.description;
+
   return {
     gnr: adr.gnr,
     bnr: adr.bnr,
@@ -727,8 +974,8 @@ export async function resolveBuildingData(adresse: string) {
     matrikkelenhetsId,
     byggId,
     bygningsnummer: bygg.bygningsnummer ?? null,
-    byggeaar: bygg.byggeaar ?? null,
-    bruksarealM2: bygg.bruksarealM2 ?? null,
+    byggeaar: finalByggeaar,
+    bruksarealM2: finalBruksareal,
     totalBygningsareal: totalBygningsareal,
     antallSeksjoner: antallSeksjoner,
     representasjonspunkt: bygg.representasjonspunkt ?? null,
@@ -736,8 +983,27 @@ export async function resolveBuildingData(adresse: string) {
     energiattest: attest,
     bygningstypeKodeId: bygg.bygningstypeKodeId ?? null,
     bygningstypeKode: bygg.bygningstypeKode ?? null,
-    bygningstype: bygg.bygningstypeBeskrivelse ?? strategy.description,
+    bygningstype: finalBygningstype,
     rapporteringsNivaa: strategy.reportingLevel,
+    // Solenergi-data
+    takAreal_m2: solarData?.takAreal_m2 ?? null,
+    sol_kwh_m2_yr: solarData?.sol_kwh_m2_yr ?? null,
+    sol_kwh_bygg_tot: solarData?.sol_kwh_bygg_tot ?? null,
+    solKategori: solarData?.solKategori ?? null,
+    takflater: solarData?.takflater ?? null,
+    filteredSolarEnergy: solarData?.filteredSolarEnergy ?? null,
+    // CSV-data
+    csvData: csvData ? {
+      bygningsNr: csvData.bygningsNr,
+      bruksarealTotalt: csvData.bruksarealTotalt,
+      bygningstype3siffer: csvData.bygningstype3siffer,
+      bygningstypeNavn: csvData.bygningstypeNavn,
+      tattIBrukDato: csvData.tattIBrukDato,
+      gateAdresse: csvData.gateAdresse,
+      bydelsnavn: csvData.bydelsnavn,
+      antallEtasjer: csvData.antallEtasjer,
+      bygningsstatusNavn: csvData.bygningsstatusNavn
+    } : null
   } as const;
 }
 

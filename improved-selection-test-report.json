@@ -1,0 +1,72 @@
+[
+  {
+    "address": "Dammanns vei 13",
+    "expectedBuildingNumber": "80010575",
+    "actualBuildingNumber": "80010583",
+    "match": false,
+    "improvement": "same"
+  },
+  {
+    "address": "Bygdøy terrasse 16",
+    "expectedBuildingNumber": "80010613",
+    "actualBuildingNumber": "81143595",
+    "match": false,
+    "improvement": "same"
+  },
+  {
+    "address": "Strømsborgveien 55B",
+    "expectedBuildingNumber": "80010664",
+    "actualBuildingNumber": "300598408",
+    "match": false,
+    "improvement": "same"
+  },
+  {
+    "address": "Christian Benneches vei 4C",
+    "expectedBuildingNumber": "80011385",
+    "actualBuildingNumber": "80011393",
+    "match": false,
+    "improvement": "worse"
+  },
+  {
+    "address": "Bygdøylund 2",
+    "expectedBuildingNumber": "80011784",
+    "actualBuildingNumber": "300411737",
+    "match": false,
+    "improvement": "same"
+  },
+  {
+    "address": "Bygdøylund 9",
+    "expectedBuildingNumber": "80011814",
+    "actualBuildingNumber": "300411737",
+    "match": false,
+    "improvement": "same"
+  },
+  {
+    "address": "Museumsveien 7B",
+    "expectedBuildingNumber": "80011504",
+    "actualBuildingNumber": "80011512",
+    "match": false,
+    "improvement": "same"
+  },
+  {
+    "address": "Hengsengveien 1",
+    "expectedBuildingNumber": "80012241",
+    "actualBuildingNumber": "81259232",
+    "match": false,
+    "improvement": "same"
+  },
+  {
+    "address": "Huk aveny 12A",
+    "expectedBuildingNumber": "80013140",
+    "actualBuildingNumber": "80013159",
+    "match": false,
+    "improvement": "same"
+  },
+  {
+    "address": "Strømsborgveien 27",
+    "expectedBuildingNumber": "80013272",
+    "actualBuildingNumber": "80786018",
+    "match": false,
+    "improvement": "same"
+  }
+]
