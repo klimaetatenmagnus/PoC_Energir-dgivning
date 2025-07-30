@@ -7,9 +7,11 @@ interface EnergySolutionButtonsProps {
   onExpand: (expanded: boolean) => void;
   onSelectSolution: (solution: string) => void;
   buildingData?: any; // For accessing bruksareal
+  showYellowBox?: boolean;
+  onToggleYellowBox?: (show: boolean) => void;
 }
 
-export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData }) => {
+export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, showYellowBox = true, onToggleYellowBox }) => {
   // Add CSS for fade animation
   React.useEffect(() => {
     const style = document.createElement('style');
@@ -28,6 +30,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
   const [yearlyConsumption, setYearlyConsumption] = useState<string>('');
   const [showDetails, setShowDetails] = useState<boolean>(false);
+  const [gul_liste, setGul_liste] = useState<boolean>(showYellowBox);
   
   // Calculate energy rating based on consumption
   const calculateEnergyRating = (consumption: string): string | null => {
@@ -590,6 +593,40 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
           borderRadius: '8px',
           border: '1px solid rgba(255, 255, 255, 0.2)'
         }}>
+          {/* Toggle button for gul_liste */}
+          <div style={{
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <label style={{
+              fontSize: '14px',
+              color: 'white',
+              fontFamily: 'Oslo Sans, sans-serif',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <input
+                type="checkbox"
+                checked={gul_liste}
+                onChange={(e) => {
+                  setGul_liste(e.target.checked);
+                  if (onToggleYellowBox) {
+                    onToggleYellowBox(e.target.checked);
+                  }
+                }}
+                style={{
+                  width: '16px',
+                  height: '16px',
+                  cursor: 'pointer'
+                }}
+              />
+              Vis gul informasjonsboks
+            </label>
+          </div>
           {yearlyConsumption && checkedItems.size > 0 && (
             <div style={{
               fontSize: '14px',

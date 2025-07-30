@@ -17,6 +17,7 @@ interface WhiteInfoBoxProps {
   mapCoordinates: { lat: number; lng: number } | null;
   buildingData: any;
   onExpand?: (expanded: boolean) => void;
+  showYellowBox?: boolean;
 }
 
 export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
@@ -32,7 +33,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   blocksStartX,
   mapCoordinates,
   buildingData,
-  onExpand
+  onExpand,
+  showYellowBox = true
 }) => {
   // Calculate expanded width to reach where the energy solutions list ends
   const expandedWidth = isExpanded ? 840 : 336; // Expanded to 840px
@@ -231,48 +233,54 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           <tspan fontWeight="300">Eiertype: </tspan>
           <tspan fontWeight="500">Borettslag</tspan>
         </text>
-        <text 
-          x="30" 
-          y="288" 
-          fontFamily="Oslo Sans, sans-serif" 
-          fontSize="18" 
-          lineHeight="28"
-          letterSpacing="-0.2"
-          fill="#2A2859"
-        >
-          <tspan fontWeight="300">Vernestatus: </tspan>
-          <tspan fontWeight="500">Gul Liste</tspan>
-        </text>
+        {showYellowBox && (
+          <text 
+            x="30" 
+            y="288" 
+            fontFamily="Oslo Sans, sans-serif" 
+            fontSize="18" 
+            lineHeight="28"
+            letterSpacing="-0.2"
+            fill="#2A2859"
+          >
+            <tspan fontWeight="300">Vernestatus: </tspan>
+            <tspan fontWeight="500">Gul Liste</tspan>
+          </text>
+        )}
         
-        {/* Yellow box above dark box */}
-        <rect 
-          x="30" 
-          y="336" 
-          width="235" 
-          height="46" 
-          fill="#FFE7BC"
-        />
-        
-        {/* Text inside yellow box */}
-        <text 
-          x="46" 
-          y="359" 
-          fontFamily="Oslo Sans, sans-serif" 
-          fontWeight="500"
-          fontStyle="normal"
-          fontSize="18" 
-          lineHeight="28"
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          Hva betyr gul liste?
-        </text>
-        
-        {/* Arrow icon inside yellow box */}
-        <svg x="225" y="345" width="24" height="28" viewBox="0 0 24 28" fill="none">
-          <path fillRule="evenodd" clipRule="evenodd" d="M14.56 14L7.5 21.2534L8.47002 22.25L16.5 14L8.47002 5.75L7.5 6.7466L14.56 14Z" fill="#2A2859"/>
-        </svg>
+        {/* Yellow box above dark box - conditional rendering */}
+        {showYellowBox && (
+          <>
+            <rect 
+              x="30" 
+              y="336" 
+              width="235" 
+              height="46" 
+              fill="#FFE7BC"
+            />
+            
+            {/* Text inside yellow box */}
+            <text 
+              x="46" 
+              y="359" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontWeight="500"
+              fontStyle="normal"
+              fontSize="18" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+              dominantBaseline="middle"
+            >
+              Hva betyr gul liste?
+            </text>
+            
+            {/* Arrow icon inside yellow box */}
+            <svg x="225" y="345" width="24" height="28" viewBox="0 0 24 28" fill="none">
+              <path fillRule="evenodd" clipRule="evenodd" d="M14.56 14L7.5 21.2534L8.47002 22.25L16.5 14L8.47002 5.75L7.5 6.7466L14.56 14Z" fill="#2A2859"/>
+            </svg>
+          </>
+        )}
         
         {/* Dark box above map */}
         <rect 
