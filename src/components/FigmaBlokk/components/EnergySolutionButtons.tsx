@@ -9,9 +9,10 @@ interface EnergySolutionButtonsProps {
   buildingData?: any; // For accessing bruksareal
   showYellowBox?: boolean;
   onToggleYellowBox?: (show: boolean) => void;
+  yearlyConsumption?: string;
 }
 
-export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, showYellowBox = true, onToggleYellowBox }) => {
+export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, showYellowBox = true, onToggleYellowBox, yearlyConsumption = '' }) => {
   // Add CSS for fade animation
   React.useEffect(() => {
     const style = document.createElement('style');
@@ -28,7 +29,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   }, []);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
-  const [yearlyConsumption, setYearlyConsumption] = useState<string>('');
   const [showDetails, setShowDetails] = useState<boolean>(false);
   const [gul_liste, setGul_liste] = useState<boolean>(showYellowBox);
   
@@ -397,7 +397,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         zIndex: 1000
       }}
     >
-      {/* Input field for yearly consumption */}
+      {/* Energy rating label */}
       <div style={{
         marginBottom: '20px',
         display: 'flex',
@@ -414,56 +414,12 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
           color: 'white',
           flexShrink: 0
         }}>
-          {estimatedRating ? `Estimert energikarakter: ${estimatedRating}` : 'Estimering av energikarakter'}
+          {estimatedRating ? `Estimert energikarakter: ${estimatedRating}` : 'Beregner energikarakter...'}
         </label>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          marginLeft: 'auto'
-        }}>
-          <input
-            type="text"
-            value={yearlyConsumption}
-            onChange={(e) => setYearlyConsumption(e.target.value)}
-            placeholder="Oppgi årlig forbruk"
-            style={{
-              padding: '8px 12px',
-              borderRadius: '4px',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              color: 'white',
-              fontFamily: 'Oslo Sans, sans-serif',
-              fontSize: '16px',
-              width: '170px',
-              outline: 'none',
-              transition: 'all 0.2s ease'
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-              e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-              e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-            }}
-          />
-          <span style={{
-            fontFamily: 'Oslo Sans, sans-serif',
-            fontWeight: 400,
-            fontSize: '16px',
-            lineHeight: '24px',
-            letterSpacing: '-0.2px',
-            color: 'white'
-          }}>
-            kWh
-          </span>
-        </div>
       </div>
       
-      {/* Energy rating boxes - only show when consumption is entered */}
-      {yearlyConsumption && !isNaN(parseFloat(yearlyConsumption)) && parseFloat(yearlyConsumption) > 0 && (
-        <div style={{
+      {/* Energy rating boxes */}
+      <div style={{
           display: 'flex',
           gap: '8px',
           marginBottom: '12px',
@@ -524,11 +480,9 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
           );
         })}
         </div>
-      )}
       
-      {/* "Hvordan estimerer vi energikarakteren?" text - only show when rating boxes are visible */}
-      {yearlyConsumption && !isNaN(parseFloat(yearlyConsumption)) && parseFloat(yearlyConsumption) > 0 && (
-        <div style={{ 
+      {/* "Hvordan estimerer vi energikarakteren?" text */}
+      <div style={{ 
           marginBottom: '32px',
           textAlign: 'left'
         }}>
@@ -549,7 +503,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
             Hvordan estimerer vi energikarakteren?
           </text>
         </div>
-      )}
       
       {/* Title text with toggle button */}
       <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
