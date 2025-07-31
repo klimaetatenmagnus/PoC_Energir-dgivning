@@ -32,6 +32,14 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   const [showDetails, setShowDetails] = useState<boolean>(false);
   const [gul_liste, setGul_liste] = useState<boolean>(showYellowBox);
   
+  // Helper function to compare energy ratings (A is better than G)
+  const isRatingBetter = (rating1: string, rating2: string): boolean => {
+    const order = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+    const index1 = order.indexOf(rating1.toUpperCase());
+    const index2 = order.indexOf(rating2.toUpperCase());
+    return index1 < index2;
+  };
+
   // Calculate energy rating based on consumption
   const calculateEnergyRating = (consumption: string): string | null => {
     const consumptionNum = parseFloat(consumption);
@@ -80,7 +88,10 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     return rating;
   };
   
-  const estimatedRating = calculateEnergyRating(yearlyConsumption);
+  // Check if we have Enova certificate rating, otherwise use estimated
+  const enovaRating = buildingData?.energiattest?.energikarakter?.toUpperCase();
+  const calculatedRating = calculateEnergyRating(yearlyConsumption);
+  const estimatedRating = enovaRating || calculatedRating;
   
   
   // Energy savings data structure - same as in EnergyRatingEstimator
@@ -365,6 +376,11 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       else if (newIntensity <= 225 + 6000/bra) rating = 'F';
     }
     
+    // Ensure new rating is never worse than current rating
+    if (estimatedRating && !isRatingBetter(rating, estimatedRating)) {
+      rating = estimatedRating;
+    }
+    
     return rating;
   };
   
@@ -414,7 +430,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
           color: 'white',
           flexShrink: 0
         }}>
-          {estimatedRating ? `Estimert energikarakter: ${estimatedRating}` : 'Beregner energikarakter...'}
+          {estimatedRating ? `${enovaRating ? 'Energikarakter fra Enova' : 'Estimert energikarakter'}: ${estimatedRating}` : 'Beregner energikarakter...'}
         </label>
       </div>
       

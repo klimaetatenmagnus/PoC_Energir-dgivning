@@ -44,6 +44,33 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   // State for delayed height expansion
   const [expandHeight, setExpandHeight] = React.useState(false);
   
+  // State for address text scaling
+  const [addressScale, setAddressScale] = React.useState(1);
+  const textRef = React.useRef<SVGTextElement>(null);
+  
+  // Calculate dynamic box widths based on text length
+  const calculateTextWidth = (text: string, fontSize: number = 14): number => {
+    // More accurate character widths for different characters
+    let width = 0;
+    for (const char of text) {
+      if (char === ' ') width += fontSize * 0.25;
+      else if (char === '.' || char === 'i' || char === 'l') width += fontSize * 0.3;
+      else if (char.toUpperCase() === char && char !== ' ') width += fontSize * 0.7; // Uppercase
+      else width += fontSize * 0.5; // Lowercase
+    }
+    return width;
+  };
+  
+  const dynamicDistrictWidth = Math.max(
+    100, // Minimum width
+    Math.ceil(calculateTextWidth(districtName) + 52) // text width + icon (36px) + padding (16px)
+  );
+  
+  const dynamicBuildingTypeWidth = Math.max(
+    100, // Minimum width  
+    Math.ceil(calculateTextWidth(buildingTypeName) + 45) // text width + icon (29px) + padding (16px)
+  );
+  
   // State for edit mode
   const [isEditMode, setIsEditMode] = React.useState(false);
   const [savedByggeaar, setSavedByggeaar] = React.useState(
@@ -77,6 +104,23 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
       onUpdateBuildingData(savedByggeaar, savedAreal, savedArealLeilighet, savedEnergiforbruk);
     }
   }, []); // Empty dependency array means this runs once on mount
+  
+  // Calculate address text scaling
+  React.useEffect(() => {
+    if (textRef.current && addressOnly) {
+      // Temporarily set to default size to measure
+      textRef.current.setAttribute('font-size', '36');
+      const bbox = textRef.current.getBBox();
+      const naturalWidth = bbox.width;
+      
+      // Calculate scale to fit within box with 30px margins
+      const availableWidth = 336 - 60; // 30px margin on each side
+      const scale = Math.min(1, availableWidth / naturalWidth);
+      
+      setAddressScale(scale);
+    }
+  }, [addressOnly]);
+  
   
   // Handle sequential animation - expand height after width
   React.useEffect(() => {
@@ -164,23 +208,23 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
       <rect width={expandedWidth} height={expandedHeight} y={expandHeight ? -topExpansion : 0} fill="white"/>
       <g clipPath="url(#clip0_325_12689)">
         <g style={{ opacity: isExpanded ? 0 : 1, transition: isExpanded ? 'opacity 0.3s ease-in-out' : 'opacity 0.5s ease-in-out 0.5s' }}>
+        {/* Address text with proportional scaling */}
         <text 
+          ref={textRef}
           x="30" 
           y="72" 
           fontFamily="Oslo Sans, sans-serif" 
           fontWeight="500"
           fontStyle="normal"
-          fontSize={fontSize} 
-          lineHeight={fontSize * 1.5}
+          fontSize={36 * addressScale} 
+          lineHeight={54 * addressScale}
           letterSpacing="-0.2"
           fill="#2A2859"
           textAnchor="start"
         >
-          <tspan x="30" textLength={336 - 60} lengthAdjust="spacingAndGlyphs">
-            {addressOnly}
-          </tspan>
+          {addressOnly}
         </text>
-        <rect width={districtNameWidth} height="30" transform="translate(30 94)" fill="#C7F6C9"/>
+        <rect width={dynamicDistrictWidth} height="30" transform="translate(30 94)" fill="#C7F6C9"/>
         <path d="M44.7913 104.75C44.7913 105.302 45.2393 105.75 45.7913 105.75C46.3433 105.75 46.7913 105.302 46.7913 104.75C46.7913 104.198 46.3433 103.75 45.7913 103.75C45.2393 103.75 44.7913 104.198 44.7913 104.75Z" fill="#2A2859"/>
         <path fillRule="evenodd" clipRule="evenodd" d="M42.32 104.804C42.32 102.886 43.874 101.332 45.7915 101.332C47.7086 101.332 49.263 102.887 49.263 104.804C49.263 105.421 49.1009 106.016 48.7931 106.547L53.7838 110.112L51.0298 113.416L47.8308 113.873L45.3703 116.825L38.1543 111.671L40.9083 108.366L43.7566 107.959L42.8624 106.668C42.51 106.116 42.32 105.473 42.32 104.804ZM46.997 109.218L48.239 107.38L52.3253 110.299L50.9016 112.007L46.997 109.218ZM45.8276 110.948L46.4369 110.047L49.9548 112.559L47.4959 112.911L42.2737 109.181L44.3935 108.878L45.8276 110.948ZM48.263 104.804C48.263 103.439 47.1563 102.332 45.7915 102.332C44.4263 102.332 43.32 103.439 43.32 104.804C43.32 105.281 43.4549 105.737 43.6949 106.114L45.8173 109.177L47.8769 106.13C48.1027 105.776 48.2348 105.371 48.2589 104.946L48.263 104.804ZM46.7501 113.607L41.1662 109.618L39.6123 111.483L45.1958 115.471L46.7501 113.607Z" fill="#2A2859"/>
         <text 
@@ -197,14 +241,14 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           {districtName}
         </text>
         
-        <rect width={buildingTypeWidth} height="30" transform={`translate(${30 + districtNameWidth + 8} 94)`} fill="#D1F9FF"/>
+        <rect width={dynamicBuildingTypeWidth} height="30" transform={`translate(${30 + dynamicDistrictWidth + 8} 94)`} fill="#D1F9FF"/>
         {/* Building type icon */}
-        <g transform={`translate(${30 + districtNameWidth + 8 + 14} 101)`}>
+        <g transform={`translate(${30 + dynamicDistrictWidth + 8 + 14} 101)`}>
           <path fillRule="evenodd" clipRule="evenodd" d="M13.5 14.43V0.429993H5.5V2.92999H1V14.43H0V15.43H15V14.43H13.5ZM5.5 14.43H4V11.43H5.5V14.43ZM7.5 14.43H6.5V10.43H3V14.43H2V3.92999H7.5V14.43ZM12.5 14.43H8.5V13.43H11.5V12.43H8.5V11.43H11.5V10.43H8.5V9.42999H11.5V8.42999H8.5V7.42999H11.5V6.42999H8.5V5.42999H11.5V4.42999H8.5V3.42999H11.5V2.42999H7.5V2.92999H6.5V1.42999H12.5V14.43Z" fill="#2A2859"/>
           <path d="M3 7.86499H4V8.93499H3V7.86499ZM5.5 7.86499H6.5V8.93499H5.5V7.86499ZM3 5.35999H4V6.42999H3V5.35999ZM5.5 5.35999H6.5V6.42999H5.5V5.35999Z" fill="#2A2859"/>
         </g>
         <text 
-          x={30 + districtNameWidth + 8 + 36} 
+          x={30 + dynamicDistrictWidth + 8 + 36} 
           y="114" 
           fontFamily="Oslo Sans, sans-serif" 
           fontWeight="400"
@@ -350,7 +394,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               fill="#2A2859"
             >
               <tspan fontWeight="300">Energiforbruk: </tspan>
-              <tspan fontWeight="500">{(savedEnergiforbruk || '300000').replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} kWh/år</tspan>
+              <tspan fontWeight="500">{Math.round(Number(savedEnergiforbruk || '300000')).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} kWh/år</tspan>
             </text>
           </>
         ) : (
