@@ -18,6 +18,7 @@ interface WhiteInfoBoxProps {
   buildingData: any;
   onExpand?: (expanded: boolean) => void;
   showYellowBox?: boolean;
+  onUpdateBuildingData?: (byggeaar: string, areal: string, arealLeilighet: string, energiforbruk: string) => void;
 }
 
 export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
@@ -34,13 +35,48 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   mapCoordinates,
   buildingData,
   onExpand,
-  showYellowBox = true
+  showYellowBox = true,
+  onUpdateBuildingData
 }) => {
   // Calculate expanded width to reach where the energy solutions list ends
   const expandedWidth = isExpanded ? 840 : 336; // Expanded to 840px
   
   // State for delayed height expansion
   const [expandHeight, setExpandHeight] = React.useState(false);
+  
+  // State for edit mode
+  const [isEditMode, setIsEditMode] = React.useState(false);
+  const [savedByggeaar, setSavedByggeaar] = React.useState(
+    String(buildingData?.csvData?.byggeaar || buildingData?.byggeaar || '')
+  );
+  const [savedAreal, setSavedAreal] = React.useState(
+    String(buildingData?.bruksarealM2 || buildingData?.csvData?.bruksareal_totalt || '')
+  );
+  const [savedArealLeilighet, setSavedArealLeilighet] = React.useState(
+    String(buildingData?.arealLeilighet || '')
+  );
+  const [savedEnergiforbruk, setSavedEnergiforbruk] = React.useState(
+    String(buildingData?.energiattest?.registering?.beregnetLevertEnergiTotaltkWh || '300000')
+  );
+  const [editedByggeaar, setEditedByggeaar] = React.useState(savedByggeaar);
+  const [editedAreal, setEditedAreal] = React.useState(savedAreal);
+  const [editedArealLeilighet, setEditedArealLeilighet] = React.useState(savedArealLeilighet);
+  const [editedEnergiforbruk, setEditedEnergiforbruk] = React.useState(savedEnergiforbruk);
+  
+  // Calculate input width based on content
+  const calculateInputWidth = (value: string) => {
+    const minWidth = 60; // Increased min width for better appearance
+    const charWidth = 10; // Increased for 18px font to prevent scrolling
+    const padding = 20; // Extra padding for cursor and breathing room
+    return Math.max(minWidth, value.length * charWidth + padding);
+  };
+  
+  // Call the callback with initial values when component mounts
+  React.useEffect(() => {
+    if (onUpdateBuildingData) {
+      onUpdateBuildingData(savedByggeaar, savedAreal, savedArealLeilighet, savedEnergiforbruk);
+    }
+  }, []); // Empty dependency array means this runs once on mount
   
   // Handle sequential animation - expand height after width
   React.useEffect(() => {
@@ -196,47 +232,329 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           Nøkkelinformasjon
         </text>
         
+        {/* Edit text and icon next to title */}
+        <g 
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            if (isEditMode) {
+              // Save changes
+              setSavedByggeaar(editedByggeaar);
+              setSavedAreal(editedAreal);
+              setSavedArealLeilighet(editedArealLeilighet);
+              setSavedEnergiforbruk(editedEnergiforbruk);
+              setIsEditMode(false);
+              // Call the callback to update parent component
+              if (onUpdateBuildingData) {
+                onUpdateBuildingData(editedByggeaar, editedAreal, editedArealLeilighet, editedEnergiforbruk);
+              }
+            } else {
+              // Enter edit mode
+              setEditedByggeaar(savedByggeaar);
+              setEditedAreal(savedAreal);
+              setEditedArealLeilighet(savedArealLeilighet);
+              setEditedEnergiforbruk(savedEnergiforbruk);
+              setIsEditMode(true);
+            }
+          }}
+        >
+          <text 
+            x="230" 
+            y="160" 
+            fontFamily="Oslo Sans, sans-serif" 
+            fontWeight="400"
+            fontStyle="normal"
+            fontSize="16" 
+            lineHeight="32"
+            letterSpacing="-0.2"
+            fill="#2A2859"
+          >
+            ({isEditMode ? 'Lagre' : 'Rediger'}
+          </text>
+          <svg x="300" y="148" width="16" height="20" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fillRule="evenodd" clipRule="evenodd" d="M19.5517 5.91012L16.0242 2.38184L5.73471 12.6705L4.51004 17.4114L9.25105 16.1875L9.97883 15.4598L16.982 8.47811L16.9828 8.47895L17.5252 7.93657L17.8668 7.59598L17.8663 7.59546L19.5517 5.91012ZM16.0237 4.14888L17.7837 5.9095L16.9825 6.71075L15.2225 4.95075L16.0237 4.14888ZM7.90938 12.2626L9.65959 14.0124L16.0975 7.5945L14.3381 5.8345L7.90938 12.2626ZM7.02558 13.1464L8.77476 14.8953L8.60808 15.062L6.24995 15.6708L6.85933 13.3126L7.02558 13.1464Z" fill="#2A2859"/>
+            <path d="M8.43789 4.51525V3.26525H0.00976562V20.7503H19.9969L19.9935 13.1931L18.7435 13.1937L18.7462 19.5001H1.25933V4.51513L8.43789 4.51525Z" fill="#2A2859"/>
+          </svg>
+          <text 
+            x="318" 
+            y="160" 
+            fontFamily="Oslo Sans, sans-serif" 
+            fontWeight="400"
+            fontStyle="normal"
+            fontSize="16" 
+            lineHeight="32"
+            letterSpacing="-0.2"
+            fill="#2A2859"
+          >
+            )
+          </text>
+        </g>
+        
         {/* Building info under Nøkkelinformasjon */}
-        <text 
-          x="30" 
-          y="204" 
-          fontFamily="Oslo Sans, sans-serif" 
-          fontSize="18" 
-          lineHeight="28"
-          letterSpacing="-0.2"
-          fill="#2A2859"
-        >
-          <tspan fontWeight="300">Byggeår: </tspan>
-          <tspan fontWeight="500">{buildingData.csvData?.byggeaar || buildingData.byggeaar || 'Ukjent'}</tspan>
-        </text>
-        <text 
-          x="30" 
-          y="232" 
-          fontFamily="Oslo Sans, sans-serif" 
-          fontSize="18" 
-          lineHeight="28"
-          letterSpacing="-0.2"
-          fill="#2A2859"
-        >
-          <tspan fontWeight="300">Areal: </tspan>
-          <tspan fontWeight="500">{buildingData.bruksarealM2 || buildingData.csvData?.bruksareal_totalt || 'Ukjent'} m²</tspan>
-        </text>
-        <text 
-          x="30" 
-          y="260" 
-          fontFamily="Oslo Sans, sans-serif" 
-          fontSize="18" 
-          lineHeight="28"
-          letterSpacing="-0.2"
-          fill="#2A2859"
-        >
-          <tspan fontWeight="300">Eiertype: </tspan>
-          <tspan fontWeight="500">Borettslag</tspan>
-        </text>
+        {!isEditMode ? (
+          <>
+            <text 
+              x="30" 
+              y="204" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="18" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+            >
+              <tspan fontWeight="300">Byggeår: </tspan>
+              <tspan fontWeight="500">{savedByggeaar || 'Ukjent'}</tspan>
+            </text>
+            <text 
+              x="30" 
+              y="232" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="18" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+            >
+              <tspan fontWeight="300">Areal: </tspan>
+              <tspan fontWeight="500">{savedAreal || 'Ukjent'} m²</tspan>
+            </text>
+            <text 
+              x="30" 
+              y="260" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="18" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+            >
+              <tspan fontWeight="300">Eiertype: </tspan>
+              <tspan fontWeight="500">Borettslag</tspan>
+            </text>
+            <text 
+              x="30" 
+              y="288" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="18" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+            >
+              <tspan fontWeight="300">Areal Leilighet: </tspan>
+              <tspan fontWeight="500">{savedArealLeilighet || 'Ukjent'} m²</tspan>
+            </text>
+            <text 
+              x="30" 
+              y="316" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="18" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+            >
+              <tspan fontWeight="300">Energiforbruk: </tspan>
+              <tspan fontWeight="500">{(savedEnergiforbruk || '300000').replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} kWh/år</tspan>
+            </text>
+          </>
+        ) : (
+          <>
+            {/* Edit mode - show input fields */}
+            <text 
+              x="30" 
+              y="204" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="18" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+            >
+              <tspan fontWeight="300">Byggeår: </tspan>
+            </text>
+            <foreignObject x="106" y="186" width={calculateInputWidth(editedByggeaar)} height="24">
+              <input
+                xmlns="http://www.w3.org/1999/xhtml"
+                type="text"
+                value={editedByggeaar}
+                onChange={(e) => setEditedByggeaar(e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  borderBottom: '1px solid #2A2859',
+                  padding: '0',
+                  fontFamily: 'Oslo Sans, sans-serif',
+                  fontSize: '18px',
+                  lineHeight: '28px',
+                  letterSpacing: '-0.2px',
+                  fontWeight: '500',
+                  color: '#2A2859',
+                  background: 'transparent',
+                  outline: 'none'
+                }}
+              />
+            </foreignObject>
+            
+            <text 
+              x="30" 
+              y="232" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="18" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+            >
+              <tspan fontWeight="300">Areal: </tspan>
+            </text>
+            <foreignObject x="83" y="214" width={calculateInputWidth(editedAreal)} height="24">
+              <input
+                xmlns="http://www.w3.org/1999/xhtml"
+                type="text"
+                value={editedAreal}
+                onChange={(e) => setEditedAreal(e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  borderBottom: '1px solid #2A2859',
+                  padding: '0',
+                  fontFamily: 'Oslo Sans, sans-serif',
+                  fontSize: '18px',
+                  lineHeight: '28px',
+                  letterSpacing: '-0.2px',
+                  fontWeight: '500',
+                  color: '#2A2859',
+                  background: 'transparent',
+                  outline: 'none'
+                }}
+              />
+            </foreignObject>
+            <text 
+              x={83 + calculateInputWidth(editedAreal) + 3}
+              y="232" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="18" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+              fontWeight="500"
+            >
+              m²
+            </text>
+            
+            <text 
+              x="30" 
+              y="260" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="18" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+            >
+              <tspan fontWeight="300">Eiertype: </tspan>
+              <tspan fontWeight="500">Borettslag</tspan>
+            </text>
+            
+            <text 
+              x="30" 
+              y="288" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="18" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+            >
+              <tspan fontWeight="300">Areal Leilighet: </tspan>
+            </text>
+            <foreignObject x="153" y="270" width={calculateInputWidth(editedArealLeilighet)} height="24">
+              <input
+                xmlns="http://www.w3.org/1999/xhtml"
+                type="text"
+                value={editedArealLeilighet}
+                onChange={(e) => setEditedArealLeilighet(e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  borderBottom: '1px solid #2A2859',
+                  padding: '0',
+                  fontFamily: 'Oslo Sans, sans-serif',
+                  fontSize: '18px',
+                  lineHeight: '28px',
+                  letterSpacing: '-0.2px',
+                  fontWeight: '500',
+                  color: '#2A2859',
+                  background: 'transparent',
+                  outline: 'none'
+                }}
+              />
+            </foreignObject>
+            <text 
+              x={153 + calculateInputWidth(editedArealLeilighet) + 3}
+              y="288" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="18" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+              fontWeight="500"
+            >
+              m²
+            </text>
+            
+            <text 
+              x="30" 
+              y="316" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="18" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+            >
+              <tspan fontWeight="300">Energiforbruk: </tspan>
+            </text>
+            <foreignObject x="155" y="298" width={calculateInputWidth(editedEnergiforbruk)} height="24">
+              <input
+                xmlns="http://www.w3.org/1999/xhtml"
+                type="text"
+                value={editedEnergiforbruk}
+                onChange={(e) => {
+                  // Only allow numbers
+                  const value = e.target.value.replace(/[^0-9]/g, '');
+                  setEditedEnergiforbruk(value);
+                }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  borderBottom: '1px solid #2A2859',
+                  padding: '0 2px',
+                  fontFamily: 'Oslo Sans, sans-serif',
+                  fontSize: '18px',
+                  lineHeight: '28px',
+                  letterSpacing: '-0.2px',
+                  fontWeight: '500',
+                  color: '#2A2859',
+                  background: 'transparent',
+                  outline: 'none',
+                  textAlign: 'left'
+                }}
+              />
+            </foreignObject>
+            <text 
+              x={155 + calculateInputWidth(editedEnergiforbruk) + 3}
+              y="316" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="18" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+              fontWeight="500"
+            >
+              kWh/år
+            </text>
+          </>
+        )}
         {showYellowBox && (
           <text 
             x="30" 
-            y="288" 
+            y="344" 
             fontFamily="Oslo Sans, sans-serif" 
             fontSize="18" 
             lineHeight="28"
@@ -253,7 +571,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           <>
             <rect 
               x="30" 
-              y="336" 
+              y="372" 
               width="235" 
               height="46" 
               fill="#FFE7BC"
@@ -262,7 +580,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             {/* Text inside yellow box */}
             <text 
               x="46" 
-              y="359" 
+              y="395" 
               fontFamily="Oslo Sans, sans-serif" 
               fontWeight="500"
               fontStyle="normal"
@@ -276,41 +594,12 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             </text>
             
             {/* Arrow icon inside yellow box */}
-            <svg x="225" y="345" width="24" height="28" viewBox="0 0 24 28" fill="none">
+            <svg x="225" y="381" width="24" height="28" viewBox="0 0 24 28" fill="none">
               <path fillRule="evenodd" clipRule="evenodd" d="M14.56 14L7.5 21.2534L8.47002 22.25L16.5 14L8.47002 5.75L7.5 6.7466L14.56 14Z" fill="#2A2859"/>
             </svg>
           </>
         )}
         
-        {/* Dark box above map */}
-        <rect 
-          x="30" 
-          y="400" 
-          width="216" 
-          height="46" 
-          fill="#2A2859"
-        />
-        
-        {/* Text inside dark box */}
-        <text 
-          x="46" 
-          y="423" 
-          fontFamily="Oslo Sans, sans-serif" 
-          fontWeight="500"
-          fontStyle="normal"
-          fontSize="18" 
-          lineHeight="28"
-          letterSpacing="-0.2"
-          fill="white"
-          dominantBaseline="middle"
-        >
-          Prosessen videre
-        </text>
-        
-        {/* Arrow icon inside dark box */}
-        <svg x="206" y="409" width="24" height="28" viewBox="0 0 24 28" fill="none">
-          <path fillRule="evenodd" clipRule="evenodd" d="M14.56 14L7.5 21.2534L8.47002 22.25L16.5 14L8.47002 5.75L7.5 6.7466L14.56 14Z" fill="white"/>
-        </svg>
         
         {/* Map placeholder rectangle */}
         <rect x="0" y="496" width="336" height="204" fill="#E5E5E5" stroke="#D0D0D0" strokeWidth="1"/>

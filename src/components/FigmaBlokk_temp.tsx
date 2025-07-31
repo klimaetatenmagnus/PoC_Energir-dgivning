@@ -29,6 +29,27 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
   const [solarData, setSolarData] = React.useState<SolarEnergyData | null>(null);
   const [showYellowBox, setShowYellowBox] = React.useState(true);
   
+  // State for updated building data
+  const [updatedBuildingData, setUpdatedBuildingData] = React.useState(buildingData);
+  const [energiforbruk, setEnergiforbruk] = React.useState<string>(
+    String(buildingData?.energiattest?.registering?.beregnetLevertEnergiTotaltkWh || '300000')
+  );
+  
+  // Handle building data updates from WhiteInfoBox
+  const handleUpdateBuildingData = (byggeaar: string, areal: string, arealLeilighet: string, energiforbruk: string) => {
+    setUpdatedBuildingData({
+      ...updatedBuildingData,
+      byggeaar: byggeaar,
+      bruksarealM2: areal,
+      csvData: {
+        ...updatedBuildingData.csvData,
+        byggeaar: byggeaar,
+        bruksareal_totalt: areal
+      }
+    });
+    setEnergiforbruk(energiforbruk);
+  };
+  
   // Fetch solar data when component mounts
   React.useEffect(() => {
     const loadSolarData = async () => {
@@ -231,9 +252,10 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
         isExpanded={isExpanded}
         onExpand={setIsExpanded}
         onSelectSolution={setSelectedSolution}
-        buildingData={{...buildingData, filteredSolarEnergy: solarData?.filteredSolarEnergy}}
+        buildingData={{...updatedBuildingData, filteredSolarEnergy: solarData?.filteredSolarEnergy}}
         showYellowBox={showYellowBox}
         onToggleYellowBox={setShowYellowBox}
+        yearlyConsumption={energiforbruk}
       />
       
       {/* White info box */}
@@ -249,9 +271,10 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
         buildingTypeWidth={buildingTypeWidth}
         blocksStartX={blocksStartX}
         mapCoordinates={mapCoordinates}
-        buildingData={buildingData}
+        buildingData={updatedBuildingData}
         onExpand={setIsExpanded}
         showYellowBox={showYellowBox}
+        onUpdateBuildingData={handleUpdateBuildingData}
       />
     </div>
     </>
