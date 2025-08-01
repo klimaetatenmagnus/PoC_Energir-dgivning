@@ -6,9 +6,10 @@ interface OsloSkylineProps {
   showHeader: boolean;
   isExpanded?: boolean;
   selectedSolution?: string | null;
+  hideBlockAnimation?: boolean;
 }
 
-export const OsloSkyline: React.FC<OsloSkylineProps> = ({ fadeOpacity, blockTransform, showHeader, isExpanded, selectedSolution }) => {
+export const OsloSkyline: React.FC<OsloSkylineProps> = ({ fadeOpacity, blockTransform, showHeader, isExpanded, selectedSolution, hideBlockAnimation = false }) => {
   // Check if we should zoom on window for "Tetting"
   const shouldZoomWindow = isExpanded && selectedSolution === 'Tetting';
   
@@ -187,9 +188,10 @@ export const OsloSkyline: React.FC<OsloSkylineProps> = ({ fadeOpacity, blockTran
       {/* Block building that stays visible and animates */}
       <g 
         id="block-building"
-        transform={combinedTransform}
+        transform={hideBlockAnimation ? '' : combinedTransform}
         style={{ 
-          transition: 'transform 2s ease-in-out',
+          opacity: hideBlockAnimation ? fadeOpacity : 1,
+          transition: hideBlockAnimation ? 'opacity 1s ease-in-out' : 'transform 2s ease-in-out, opacity 1s ease-in-out',
           transformOrigin: '1100px 352px' // Base of the block building
         }}
       >
