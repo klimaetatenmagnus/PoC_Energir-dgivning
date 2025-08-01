@@ -419,12 +419,13 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         display: 'flex',
         alignItems: 'center',
         gap: '20px',
-        width: '471px'
+        width: '471px',
+        position: 'relative'
       }}>
         <label style={{
           fontFamily: 'Oslo Sans, sans-serif',
           fontWeight: 400,
-          fontSize: '16px',
+          fontSize: '24px',
           lineHeight: '24px',
           letterSpacing: '-0.2px',
           color: 'white',
@@ -432,14 +433,32 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         }}>
           {estimatedRating ? `${enovaRating ? 'Energikarakter fra Enova' : 'Estimert energikarakter'}: ${estimatedRating}` : 'Beregner energikarakter...'}
         </label>
+        {/* Info icon aligned with right edge of G rating box */}
+        <svg 
+          width="32" 
+          height="32" 
+          viewBox="0 0 32 32" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+          style={{
+            position: 'absolute',
+            left: '439px', // 471px - 32px (icon width) = 439px to align with right edge
+            cursor: 'pointer'
+          }}
+        >
+          <path d="M15.93 7.6C17.1356 7.5897 18.3022 8.02698 19.204 8.82721C20.1058 9.62744 20.6787 10.7337 20.8118 11.932C20.945 13.1303 20.6289 14.3354 19.9247 15.314C19.2206 16.2927 18.1785 16.9754 17 17.23H16.94V18.91H14.94V15.35H15.94C16.479 15.3516 17.0077 15.2019 17.4658 14.9179C17.924 14.634 18.2932 14.2271 18.5316 13.7437C18.77 13.2602 18.8679 12.7196 18.8142 12.1832C18.7606 11.6469 18.5574 11.1364 18.228 10.7098C17.8986 10.2831 17.456 9.95754 16.9507 9.76998C16.4453 9.58243 15.8975 9.54045 15.3695 9.64883C14.8415 9.75721 14.3545 10.0116 13.9639 10.383C13.5733 10.7545 13.2948 11.2281 13.16 11.75V11.92L11.16 11.53C11.3793 10.425 11.9741 9.42996 12.8436 8.71364C13.713 7.99731 14.8035 7.60384 15.93 7.6ZM16 3C13.4288 3 10.9154 3.76244 8.77759 5.1909C6.63975 6.61935 4.97351 8.64968 3.98957 11.0251C3.00563 13.4006 2.74818 16.0144 3.24979 18.5362C3.7514 21.0579 4.98953 23.3743 6.80761 25.1924C8.62569 27.0105 10.9421 28.2486 13.4638 28.7502C15.9856 29.2518 18.5994 28.9944 20.9749 28.0104C23.3503 27.0265 25.3806 25.3603 26.8091 23.2224C28.2376 21.0846 29 18.5712 29 16C29 12.5522 27.6304 9.24558 25.1924 6.80761C22.7544 4.36964 19.4478 3 16 3ZM16 1C18.9667 1 21.8668 1.87973 24.3336 3.52796C26.8003 5.17618 28.7229 7.51886 29.8582 10.2597C30.9935 13.0006 31.2906 16.0166 30.7118 18.9264C30.133 21.8361 28.7044 24.5088 26.6066 26.6066C24.5088 28.7044 21.8361 30.133 18.9264 30.7118C16.0166 31.2906 13.0006 30.9935 10.2597 29.8582C7.51886 28.7229 5.17618 26.8003 3.52796 24.3336C1.87973 21.8668 1 18.9667 1 16C1 12.0218 2.58035 8.20644 5.3934 5.3934C8.20644 2.58035 12.0218 1 16 1Z" fill="white"/>
+          <path fillRule="evenodd" clipRule="evenodd" d="M17.65 22.38C17.648 22.7197 17.5455 23.0513 17.3553 23.3328C17.1651 23.6144 16.8958 23.8333 16.5813 23.9619C16.2669 24.0906 15.9213 24.1232 15.5884 24.0557C15.2554 23.9882 14.9498 23.8236 14.7103 23.5827C14.4707 23.3418 14.3079 23.0353 14.2424 22.7019C14.1768 22.3685 14.2114 22.0232 14.3419 21.7095C14.4724 21.3958 14.6928 21.1277 14.9755 20.9392C15.2581 20.7506 15.5902 20.65 15.93 20.65C16.1567 20.65 16.3812 20.6948 16.5905 20.7819C16.7999 20.8689 16.9899 20.9965 17.1498 21.1573C17.3096 21.3181 17.4361 21.5089 17.522 21.7187C17.6078 21.9285 17.6513 22.1533 17.65 22.38Z" fill="white"/>
+        </svg>
       </div>
       
       {/* Energy rating boxes */}
       <div style={{
           display: 'flex',
-          gap: '8px',
+          gap: '0', // We'll use margin on each box instead for dynamic spacing
           marginBottom: '12px',
-          alignItems: 'center'
+          alignItems: 'flex-end',
+          width: '471px', // Fixed total width to match tiltak list
+          justifyContent: 'flex-start'
         }}>
         {[
           { letter: 'A', color: '#097E3E' },
@@ -449,11 +468,21 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
           { letter: 'E', color: '#F7AD24' },
           { letter: 'F', color: '#EA6927' },
           { letter: 'G', color: '#E31829' }
-        ].map((rating) => {
+        ].map((rating, index, array) => {
           const isEstimated = estimatedRating === rating.letter;
           const isNew = newRating === rating.letter;
-          const size = (isEstimated || isNew) ? '60px' : '40px';
-          const fontSize = (isEstimated || isNew) ? '24px' : '18px';
+          const size = (isEstimated || isNew) ? '73px' : '53.5px';
+          const fontSize = (isEstimated || isNew) ? '45px' : '33px';
+          
+          // Calculate total width of all boxes
+          const totalBoxWidth = array.reduce((acc, r) => {
+            const isLarge = (estimatedRating === r.letter || newRating === r.letter);
+            return acc + (isLarge ? 73 : 53.5);
+          }, 0);
+          
+          // Calculate gap to distribute evenly
+          const remainingSpace = 471 - totalBoxWidth;
+          const gapSize = remainingSpace / (array.length - 1);
           
           return (
             <div
@@ -467,12 +496,14 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                 justifyContent: 'center',
                 transition: 'all 0.3s ease',
                 position: 'relative',
-                border: isNew ? '3px solid white' : 'none'
+                border: isNew ? '3px solid white' : 'none',
+                marginRight: index < array.length - 1 ? `${gapSize}px` : '0'
               }}
             >
               <span style={{
                 fontFamily: 'Oslo Sans, sans-serif',
                 fontWeight: 500,
+                fontStyle: 'normal',
                 fontSize: fontSize,
                 lineHeight: '22px',
                 letterSpacing: '-0.2px',
@@ -495,29 +526,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
             </div>
           );
         })}
-        </div>
-      
-      {/* "Hvordan estimerer vi energikarakteren?" text */}
-      <div style={{ 
-          marginBottom: '32px',
-          textAlign: 'left'
-        }}>
-          <text
-            style={{
-              fontFamily: 'Oslo Sans, sans-serif',
-              fontWeight: 300,
-              fontStyle: 'normal',
-              fontSize: '14px',
-              lineHeight: '28px',
-              letterSpacing: '-0.2px',
-              color: 'white',
-              textDecoration: 'underline',
-              textDecorationStyle: 'solid',
-              cursor: 'pointer'
-            }}
-          >
-            Hvordan estimerer vi energikarakteren?
-          </text>
         </div>
       
       {/* Title text with toggle button */}

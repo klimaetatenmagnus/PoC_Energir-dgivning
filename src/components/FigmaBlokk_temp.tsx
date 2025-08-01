@@ -27,7 +27,9 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [selectedSolution, setSelectedSolution] = React.useState<string | null>(null);
   const [solarData, setSolarData] = React.useState<SolarEnergyData | null>(null);
-  const [showYellowBox, setShowYellowBox] = React.useState(true);
+  // TEST CODE - REMOVE LATER: Set yellow box to false for specific address
+  const initialYellowBox = searchAddress === "Thereses gate 44A, 0168 OSLO" ? false : true;
+  const [showYellowBox, setShowYellowBox] = React.useState(initialYellowBox);
   
   // State for updated building data
   const [updatedBuildingData, setUpdatedBuildingData] = React.useState(buildingData);
