@@ -19,6 +19,22 @@ interface FigmaBlokkProps {
 }
 
 export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingData, onBack }) => {
+  // Check if building is an Enebolig
+  const isEnebolig = React.useMemo(() => {
+    const buildingTypeCode = buildingData.bygningstypeKode;
+    const buildingTypeId = buildingData.bygningstypeKodeId;
+    
+    if (buildingTypeCode) {
+      const code = parseInt(buildingTypeCode);
+      // Enebolig (11x codes) or Tomannsbolig/rekkehus (12x-13x codes)
+      return code >= 110 && code < 140;
+    } else if (buildingTypeId) {
+      // Handle internal IDs for enebolig types
+      return buildingTypeId === 1 || buildingTypeId === 4 || buildingTypeId === 5 || buildingTypeId === 8;
+    }
+    return false;
+  }, [buildingData]);
+
   // Use custom hooks for animations and coordinates
   const { fadeOpacity, blockTransform, showHeader } = useAnimation();
   const mapCoordinates = useAddressCoordinates(searchAddress);
@@ -36,7 +52,103 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
   const [energiforbruk, setEnergiforbruk] = React.useState<string>(
     String(buildingData?.energiattest?.registering?.beregnetLevertEnergiTotaltkWh || '300000')
   );
+
+  // State for enebolig animation
+  const [animateHouse, setAnimateHouse] = React.useState(false);
+  const [enebolig1Opacity, setEnebolig1Opacity] = React.useState(1);
+  const enebolig1Ref = React.useRef<SVGSVGElement>(null);
+  const enebolig2ContainerRef = React.useRef<HTMLDivElement>(null);
   
+  // Enebolig animation function
+  const performHouseAnimation = () => {
+    if (!enebolig1Ref.current || !enebolig2ContainerRef.current) return;
+
+    // Get the paths from the first SVG
+    const paths = enebolig1Ref.current.querySelectorAll('path');
+    if (paths.length === 0) return;
+
+    // Calculate house position in skyline SVG
+    const svgRect = enebolig1Ref.current.getBoundingClientRect();
+    const screenWidth = window.innerWidth;
+    const svgViewBoxWidth = 1728;
+    const svgScale = screenWidth / svgViewBoxWidth;
+    
+    // House position in SVG coordinates - more precise coordinates
+    const houseX = 289.247; // leftmost x from the viewBox
+    const houseY = 271.883; // topmost y from the viewBox
+    const houseWidth = 92.307; // width from viewBox
+    const houseHeight = 80.117; // height from viewBox
+
+    // Calculate actual position on screen
+    const actualLeft = svgRect.left + (houseX * svgScale);
+    const actualTop = svgRect.top + (houseY * svgScale);
+    const actualWidth = houseWidth * svgScale;
+    const actualHeight = houseHeight * svgScale;
+
+    // Create clone
+    const clone = document.createElement('div');
+    clone.style.cssText = `
+      position: fixed;
+      left: ${actualLeft}px;
+      top: ${actualTop}px;
+      width: ${actualWidth}px;
+      height: ${actualHeight}px;
+      z-index: 9999;
+      pointer-events: none;
+    `;
+
+    // Create SVG for clone
+    const svgClone = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgClone.setAttribute('viewBox', '289.247 271.883 92.307 80.117');
+    svgClone.style.width = '100%';
+    svgClone.style.height = '100%';
+    
+    // Clone the house paths
+    paths.forEach(path => {
+      svgClone.appendChild(path.cloneNode(true));
+    });
+    
+    clone.appendChild(svgClone);
+    document.body.appendChild(clone);
+
+    // Get target position
+    const targetEl = enebolig2ContainerRef.current.querySelector('svg');
+    if (!targetEl) return;
+    
+    // Calculate the final position of Enebolig2
+    // The target is positioned with transform: translateX(calc(235.5px + 74px)) scale(5)
+    const scale = 5;
+    const targetWidth = 93 * scale; // SVG width * scale
+    const targetHeight = 81 * scale; // SVG height * scale
+    
+    // Calculate the actual final position considering the transform
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const translateX = 235.5 + 74; // 309.5px
+    const finalLeft = (viewportWidth / 2) + translateX;
+    // The target is positioned with bottom: 55px, so we calculate from bottom
+    const finalTop = viewportHeight - 55 - targetHeight;
+
+    // Force reflow
+    clone.offsetWidth;
+
+    // Add transition after initial positioning
+    setTimeout(() => {
+      clone.style.transition = 'all 2s ease-in-out';
+      
+      // Animate to target position
+      clone.style.left = finalLeft + 'px';
+      clone.style.top = finalTop + 'px';
+      clone.style.width = targetWidth + 'px';
+      clone.style.height = targetHeight + 'px';
+    }, 10);
+
+    // Show Enebolig2 slightly before animation ends
+    setTimeout(() => {
+      setAnimateHouse(true);
+    }, 1800);
+  };
+
   // Handle building data updates from WhiteInfoBox
   const handleUpdateBuildingData = (byggeaar: string, areal: string, arealLeilighet: string, energiforbruk: string) => {
     setUpdatedBuildingData({
@@ -75,6 +187,26 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
     
     loadSolarData();
   }, [buildingData]);
+
+  // Handle enebolig animation if building is enebolig
+  React.useEffect(() => {
+    if (isEnebolig) {
+      // Perform house animation after 2 seconds
+      const animTimer = setTimeout(() => {
+        performHouseAnimation();
+      }, 2000);
+
+      // Fade out Enebolig1 right after animation starts
+      const fadeEnebolig1Timer = setTimeout(() => {
+        setEnebolig1Opacity(0);
+      }, 2001); // 1ms after animation starts
+
+      return () => {
+        clearTimeout(animTimer);
+        clearTimeout(fadeEnebolig1Timer);
+      };
+    }
+  }, [isEnebolig]);
   
   // Calculate scale factor for responsive design
   const [scaleFactor, setScaleFactor] = React.useState(() => {
@@ -117,7 +249,8 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
   const districtNameWidth = calculateBoxWidth(districtName, BOX_MIN_WIDTHS.district);
   
   // Get building type name and calculate width for blue box
-  const buildingTypeName = buildingData.csvData?.bygningstypenavn || buildingData.bygningstypeNavn || 'Blokk';
+  const defaultBuildingType = isEnebolig ? 'Enebolig' : 'Blokk';
+  const buildingTypeName = buildingData.csvData?.bygningstypenavn || buildingData.bygningstypeNavn || defaultBuildingType;
   const buildingTypeWidth = calculateBoxWidth(buildingTypeName, BOX_MIN_WIDTHS.buildingType);
   const blocksStartX = (336 - districtNameWidth - 8 - buildingTypeWidth) / 2; // Center the blocks
 
@@ -158,7 +291,37 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
           showHeader={showHeader}
           isExpanded={isExpanded}
           selectedSolution={selectedSolution}
+          hideBlockAnimation={isEnebolig}
         />
+        
+        {/* Enebolig1 - only show if building is enebolig */}
+        {isEnebolig && (
+          <svg 
+            ref={enebolig1Ref}
+            className="oslo-skyline"
+            viewBox="0 -20 1728 372" 
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
+            preserveAspectRatio="xMidYMax slice"
+            style={{ 
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              width: '100%',
+              height: 'auto',
+              maxHeight: 'none',
+              pointerEvents: 'none',
+              opacity: enebolig1Opacity,
+              transition: 'opacity 0.001s linear'
+            }}
+          >
+            <path d="M320.018 271.883L350.789 302.697V352H320.018H289.247V302.697L320.018 271.883Z" fill="#D0BFAE"/>
+            <path d="M350.783 302.697H381.554V352H350.783V302.697Z" fill="#F8F0DD"/>
+            <path d="M350.783 302.697H381.554L350.783 271.883H320.013L350.783 302.697Z" fill="#2A2859"/>
+            <path d="M313.861 339.674H326.17V351.999H313.861V339.674Z" fill="#2A2859"/>
+          </svg>
+        )}
       </div>
       
       <div className="figma-design-container" style={{ 
@@ -214,7 +377,12 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
           
           <button
             className="back-button"
-            onClick={onBack}
+            onClick={() => {
+              // Remove any animated clones before going back
+              const clones = document.querySelectorAll('div[style*="z-index: 9999"]');
+              clones.forEach(clone => clone.remove());
+              onBack();
+            }}
             style={{
               position: 'relative',
               background: 'transparent',
@@ -260,6 +428,36 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
         yearlyConsumption={energiforbruk}
       />
       
+      {/* Enebolig2 - positioned with WhiteInfoBox at bottom 55px */}
+      {isEnebolig && (
+        <div 
+          ref={enebolig2ContainerRef}
+          style={{
+            position: 'absolute',
+            bottom: '55px',
+            left: '50%',
+            transform: 'translateX(calc(235.5px + 74px)) scale(5)',
+            transformOrigin: 'bottom left',
+            opacity: animateHouse ? 1 : 0,
+            transition: 'opacity 0.5s ease-in-out',
+            zIndex: 2
+          }}
+        >
+          <svg 
+            width="93" 
+            height="81" 
+            viewBox="0 0 93 81" 
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M61.783 31.6973H92.5537V81.0001H61.783V31.6973Z" fill="#F8F0DD"/>
+            <path d="M31.0182 0.884766L61.7891 31.699V81.0019H31.0182H0.247322V31.699L31.0182 0.884766Z" fill="#D0BFAE"/>
+            <path d="M61.783 31.6991H92.5537L61.783 0.884766H31.0122L61.783 31.6991Z" fill="#2A2859"/>
+            <path d="M24.8615 68.6738H37.1699V80.9995H24.8615V68.6738Z" fill="#2A2859"/>
+          </svg>
+        </div>
+      )}
+
       {/* White info box */}
       <WhiteInfoBox
         showHeader={showHeader}

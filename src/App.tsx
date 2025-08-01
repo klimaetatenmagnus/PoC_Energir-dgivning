@@ -10,7 +10,6 @@ import { ErrorDisplay } from "./components/ErrorDisplay";
 import { buildingApi } from "./services/buildingApi";
 import { PktButton } from "@oslokommune/punkt-react";
 import { EnergyRatingEstimator } from "./components/EnergyRatingEstimator";
-import { FigmaEnebolig } from "./components/FigmaEnebolig";
 import { FigmaBlokk } from "./components/FigmaBlokk_temp";
 
 /* ------------------------------------------------------------------ */
@@ -100,38 +99,8 @@ export default function App() {
       setFigmaResult(result);
       console.log('[Figma] Lookup successful:', result);
       
-      // Determine building type and navigate accordingly
-      const buildingTypeCode = result.bygningstypeKode;
-      const buildingTypeId = result.bygningstypeKodeId;
-      
-      if (buildingTypeCode) {
-        const code = parseInt(buildingTypeCode);
-        // Enebolig (11x codes)
-        if (code >= 110 && code < 120) {
-          setMode('figma-enebolig');
-        }
-        // Blokk (14x codes)
-        else if (code >= 140 && code < 150) {
-          setMode('figma-blokk');
-        }
-        // Default to appropriate type based on other codes
-        else if (code >= 120 && code < 140) {
-          // Tomannsbolig and rekkehus - show as enebolig
-          setMode('figma-enebolig');
-        } else {
-          // Default to blokk for other residential types
-          setMode('figma-blokk');
-        }
-      } else if (buildingTypeId) {
-        // Handle internal IDs
-        if (buildingTypeId === 1 || buildingTypeId === 4 || buildingTypeId === 5 || buildingTypeId === 8) {
-          // Enebolig, tomannsbolig, rekkehus
-          setMode('figma-enebolig');
-        } else {
-          // Blokk types (including ID 127 and other block types)
-          setMode('figma-blokk');
-        }
-      }
+      // Always use FigmaBlokk component - it will handle the animation internally
+      setMode('figma-blokk');
     } catch (error) {
       console.error('[Figma] Lookup failed:', error);
       setFigmaError(error instanceof Error ? error : new Error('Ukjent feil'));
@@ -231,23 +200,7 @@ export default function App() {
   /* --- RENDER ---------------------------------------------------- */
   if (error && mode !== "lookup") return <p className="text-red-600 p-4">Feil: {error}</p>;
 
-  // Special rendering for Figma enebolig mode
-  if (mode === "figma-enebolig" && figmaResult) {
-    return (
-      <FigmaEnebolig
-        searchAddress={figmaSearchValue}
-        buildingData={figmaResult}
-        onBack={() => {
-          setMode("figma");
-          setFigmaResult(null);
-          setFigmaSearchValue("");
-          setFigmaError(null);
-        }}
-      />
-    );
-  }
-
-  // Special rendering for Figma blokk mode
+  // Special rendering for Figma blokk mode (handles both enebolig and blokk)
   if (mode === "figma-blokk" && figmaResult) {
     return (
       <div style={{ 
