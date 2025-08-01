@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { AddressLookupResponse } from '../services/buildingApi';
+import { WhiteInfoBox } from './FigmaBlokk/components/WhiteInfoBox';
+import { useAddressCoordinates } from './FigmaBlokk/hooks/useAddressCoordinates';
+import { calculateFontSize } from './FigmaBlokk/utils/calculations';
 
 interface FigmaEneboligProps {
   searchAddress: string;
@@ -9,6 +12,58 @@ interface FigmaEneboligProps {
 
 export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, buildingData, onBack }) => {
   const [fadeOpacity, setFadeOpacity] = useState(1);
+  const [houseTransform, setHouseTransform] = useState('');
+  const [showTiltaksList, setShowTiltaksList] = useState(false);
+  const [showWhiteBox, setShowWhiteBox] = useState(false);
+  
+  // Beregn husets posisjon og skalering med justering for container
+  const [houseLeftPosition, setHouseLeftPosition] = useState('0px');
+  const [houseScale, setHouseScale] = useState(1);
+  
+  useEffect(() => {
+    const calculateHousePositionAndScale = () => {
+      const screenWidth = window.innerWidth;
+      const containerMaxWidth = 1728;
+      const svgHousePosition = 320.018;
+      const svgViewBoxWidth = 1728;
+      const svgViewBoxHeight = 352;
+      
+      // Beregn skalering
+      // Skyline SVG skalerer med skjermen, så vi må matche det
+      const containerWidth = Math.min(screenWidth, containerMaxWidth);
+      const scaleRatio = containerWidth / svgViewBoxWidth;
+      setHouseScale(scaleRatio);
+      
+      if (screenWidth <= containerMaxWidth) {
+        // På små skjermer, bruk prosent direkte
+        const percent = (svgHousePosition / containerMaxWidth) * 100;
+        setHouseLeftPosition(`${percent}%`);
+      } else {
+        // På store skjermer, beregn piksel-posisjon
+        // Container er sentrert, så margin på hver side er (screenWidth - 1728) / 2
+        const containerMargin = (screenWidth - containerMaxWidth) / 2;
+        // Husets posisjon i piksler innenfor container
+        const housePixelsInContainer = svgHousePosition * scaleRatio; // Juster for skalering
+        // Men siden containeren har margin, må vi trekke fra marginen
+        const adjustedPosition = housePixelsInContainer - containerMargin;
+        setHouseLeftPosition(`${adjustedPosition}px`);
+      }
+    };
+    
+    calculateHousePositionAndScale();
+    window.addEventListener('resize', calculateHousePositionAndScale);
+    
+    return () => window.removeEventListener('resize', calculateHousePositionAndScale);
+  }, []);
+  
+  // Calculate values needed for WhiteInfoBox
+  const addressOnly = searchAddress.split(',')[0].trim();
+  const fontSize = calculateFontSize(addressOnly);
+  const mapCoordinates = useAddressCoordinates(searchAddress);
+  
+  // Get district and building type names
+  const districtName = buildingData?.bydel || buildingData?.district || 'Ukjent bydel';
+  const buildingTypeName = buildingData?.bygningstype || buildingData?.bygningstypenavn || 'Ukjent type';
 
   useEffect(() => {
     // Start fade animation after component mounts
@@ -16,7 +71,42 @@ export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, bui
       setFadeOpacity(0);
     }, 500); // Increased delay to ensure skyline is fully rendered before fade
 
-    return () => clearTimeout(fadeTimer);
+    // Calculate center of container and move house 309.5px from center
+    const moveTimer = setTimeout(() => {
+      // Since we're now in a centered container with max-width 1728px
+      const containerWidth = Math.min(window.innerWidth, 1728);
+      const containerCenterX = containerWidth / 2;
+      const targetX = containerCenterX + 309.5; // This is where the LEFT edge of house should be
+      // House is already positioned at x=289.248 in skyline, with left edge at 289.248 + 0.247322
+      const currentX = 289.248 + 0.247322; // Current position including translation
+      // Calculate how much to move from current position
+      const translateX = targetX - currentX;
+      
+      // Calculate Y translation to align with bottom of tiltaks list
+      // Tiltaks list: bottom at 55px, 8 buttons * 50px + 7 gaps * 10px = 470px total height
+      // So the bottom of the house should align with bottom of screen (55px from bottom)
+      // Since SVG is already positioned at bottom, we need minimal adjustment
+      const translateY = -55; // Move up by 55px to align with tiltaks list bottom
+      
+      setHouseTransform(`translate(${translateX}, 0)`);
+    }, 1500); // Start moving after fade begins
+
+    // Show tiltaks list after house movement
+    const tiltaksTimer = setTimeout(() => {
+      setShowTiltaksList(true);
+    }, 3500); // Show after animation completes (1500ms + 2000ms)
+
+    // Show white box after animation
+    const whiteBoxTimer = setTimeout(() => {
+      setShowWhiteBox(true);
+    }, 3500); // Show at same time as tiltaks list
+
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(moveTimer);
+      clearTimeout(tiltaksTimer);
+      clearTimeout(whiteBoxTimer);
+    };
   }, []);
 
   return (
@@ -28,7 +118,10 @@ export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, bui
       left: 0, 
       right: 0, 
       bottom: 0,
-      overflow: 'hidden'
+      overflow: 'hidden',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'flex-end'
     }}>
       {/* Back button */}
       <button
@@ -44,8 +137,17 @@ export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, bui
         ← Tilbake til søk
       </button>
 
-      {/* Search UI that fades out */}
-      <div className="figma-content" style={{ opacity: fadeOpacity, transition: 'opacity 1s ease-in-out' }}>
+      {/* Centered container for all components */}
+      <div style={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: '1728px',
+        height: '100vh',
+        margin: '0 auto'
+      }}>
+
+        {/* Search UI that fades out */}
+        <div className="figma-content" style={{ opacity: fadeOpacity, transition: 'opacity 1s ease-in-out', position: 'absolute', top: 0, left: 0, right: 0 }}>
         {/* Søkefunksjon container med logo og tekst */}
         <div className="figma-search-container">
           {/* Oslo logo med tekst */}
@@ -106,15 +208,23 @@ export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, bui
       </div>
 
 
-      {/* Oslo skyline SVG that fades out */}
-      <svg 
-        className="oslo-skyline"
-        viewBox="0 0 1728 352" 
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg"
-        preserveAspectRatio="xMidYMax slice"
-        style={{ opacity: fadeOpacity, transition: 'opacity 1s ease-in-out' }}
-      >
+        {/* Oslo skyline SVG that fades out */}
+        <svg 
+          className="oslo-skyline"
+          viewBox="0 0 1728 352" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="xMidYMax slice"
+          style={{ 
+            opacity: fadeOpacity, 
+            transition: 'opacity 1s ease-in-out',
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            width: '100vw'
+          }}
+        >
           <path d="M1620.3 191.642H1548.51H1512.6V119.506V0.593262H1620.3V191.642Z" fill="#F8F0DD"/>
           <path d="M1300.28 351.876H1244.9H1217.2V219.221V0.593262H1300.28V351.876Z" fill="#D0BFAE"/>
           <path d="M1407.98 351.876H1336.19H1300.28V219.221V0.593262H1407.98V351.876Z" fill="#F8F0DD"/>
@@ -190,14 +300,19 @@ export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, bui
           <path d="M443.099 321.186H473.87V352H443.099V321.186Z" fill="#F8F0DD"/>
           <path d="M412.33 290.372L443.101 321.186V352H412.33H381.559V321.186L412.33 290.372Z" fill="#D0BFAE"/>
           <path d="M350.783 302.697H381.554V352H350.783V302.697Z" fill="#F8F0DD"/>
-          <path d="M320.018 271.883L350.789 302.697V352H320.018H289.248V302.697L320.018 271.883Z" fill="#D0BFAE"/>
           <path d="M535.411 290.372H566.182L535.411 259.558H504.64L535.411 290.372Z" fill="#2A2859"/>
           <path d="M596.953 321.186H566.182V290.372L596.953 321.186Z" fill="#2A2859"/>
           <path d="M495.408 339.674H507.716V351.999H495.408V339.674Z" fill="#2A2859"/>
           <path d="M443.099 321.186H473.87L443.099 290.372H412.328L443.099 321.186Z" fill="#2A2859"/>
           <path d="M406.174 339.674H418.482V351.999H406.174V339.674Z" fill="#2A2859"/>
           <path d="M350.783 302.697H381.554L350.783 271.883H320.013L350.783 302.697Z" fill="#2A2859"/>
-          <path d="M313.862 339.674H326.17V351.999H313.862V339.674Z" fill="#2A2859"/>
+          {/* Replace original house at M320.018 271.883 with new house */}
+          <g transform="translate(289.248, 271)">
+            <path d="M61.783 31.6973H92.5537V81.0001H61.783V31.6973Z" fill="#F8F0DD"/>
+            <path d="M31.0182 0.884766L61.7891 31.699V81.0019H31.0182H0.247322V31.699L31.0182 0.884766Z" fill="#D0BFAE"/>
+            <path d="M61.783 31.6991H92.5537L61.783 0.884766H31.0122L61.783 31.6991Z" fill="#2A2859"/>
+            <path d="M24.8615 68.6738H37.1699V80.9995H24.8615V68.6738Z" fill="#2A2859"/>
+          </g>
           <path d="M61.5357 247.23H116.923L86.1525 216.416H30.7648L61.5357 247.23Z" fill="#2A2859"/>
           <path d="M61.5358 247.229H116.923V351.998H61.5358V247.229Z" fill="#F8F0DD"/>
           <path d="M30.7689 216.416L61.5399 247.23V351.999H30.7689H-0.00210571V247.23L30.7689 216.416Z" fill="#D0BFAE"/>
@@ -275,23 +390,95 @@ export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, bui
           <path d="M1119.01 259.555H1131.32V271.881H1119.01V259.555Z" fill="#2A2859"/>
           <path d="M1094.4 259.555H1106.71V271.881H1094.4V259.555Z" fill="#2A2859"/>
           <path d="M1069.78 259.555H1082.09V271.881H1069.78V259.555Z" fill="#2A2859"/>
-      </svg>
-      
-      {/* Enebolig building that stays visible */}
-      <svg 
-        className="oslo-skyline"
-        viewBox="0 0 1728 352" 
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg"
-        preserveAspectRatio="xMidYMax slice"
-      >
-        {/* The enebolig positioned at the correct location in the skyline */}
-        <path d="M504.642 259.558L535.413 290.372V352.001H473.872V290.372L504.642 259.558Z" fill="#D0BFAE"/>
-        <path d="M566.182 290.372V321.186H596.953V352H566.182H554.797H535.411V332.957V321.186V290.372H566.182Z" fill="#F8F0DD"/>
-        <path d="M535.411 290.372H566.182L535.411 259.558H504.64L535.411 290.372Z" fill="#2A2859"/>
-        <path d="M596.953 321.186H566.182V290.372L596.953 321.186Z" fill="#2A2859"/>
-        <path d="M495.408 339.674H507.716V351.999H495.408V339.674Z" fill="#2A2859"/>
-      </svg>
+        </svg>
+        
+        {/* Enebolig building that stays visible */}
+        <svg 
+          className="oslo-skyline"
+          viewBox="0 0 1728 352" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="xMidYMax slice"
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: '100%'
+          }}
+        >
+        </svg>
+
+        {/* Tiltaks list rectangle - similar to EnergySolutionButtons */}
+        <div 
+          style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: '55px',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            opacity: showTiltaksList ? 1 : 0,
+            transition: 'opacity 0.5s ease-in-out',
+            zIndex: 1000
+          }}
+        >
+        {/* 8 rectangular buttons matching the energy solutions list */}
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div
+            key={index}
+            style={{
+              width: '471px',
+              height: '50px',
+              border: '2px solid #F9F9F9',
+              backgroundColor: 'transparent',
+              transition: 'all 0.3s ease-in-out'
+            }}
+          />
+        ))}
+        </div>
+
+        {/* White info box from FigmaBlokk */}
+        <WhiteInfoBox
+          showHeader={showWhiteBox}
+          isExpanded={false}
+          selectedSolution={null}
+          addressOnly={addressOnly}
+          fontSize={fontSize}
+          districtName={districtName}
+          districtNameWidth={100}
+          buildingTypeName={buildingTypeName}
+          buildingTypeWidth={100}
+          blocksStartX={0}
+          mapCoordinates={mapCoordinates}
+          buildingData={buildingData}
+          showYellowBox={false}
+        />
+        
+        {/* House inside container - visible simultaneously with skyline */}
+        <div style={{
+          position: 'absolute',
+          bottom: '0px',
+          left: houseLeftPosition,
+          transform: `scale(${houseScale})`,
+          transformOrigin: 'bottom left', // Skaler fra nederste venstre hjørne
+          opacity: fadeOpacity === 0 ? 1 : 0, // Vis når skyline fader ut
+          transition: 'opacity 1s ease-in-out'
+        }}>
+          <svg 
+            width="93" 
+            height="81" 
+            viewBox="0 0 93 81" 
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M61.783 31.6973H92.5537V81.0001H61.783V31.6973Z" fill="#F8F0DD"/>
+            <path d="M31.0182 0.884766L61.7891 31.699V81.0019H31.0182H0.247322V31.699L31.0182 0.884766Z" fill="#D0BFAE"/>
+            <path d="M61.783 31.6991H92.5537L61.783 0.884766H31.0122L61.783 31.6991Z" fill="#2A2859"/>
+            <path d="M24.8615 68.6738H37.1699V80.9995H24.8615V68.6738Z" fill="#2A2859"/>
+          </svg>
+        </div>
+      </div>
     </div>
   );
 };

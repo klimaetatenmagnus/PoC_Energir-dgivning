@@ -42,7 +42,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           fill="#2A2859"
           dominantBaseline="hanging"
         >
-          Tetting
+          Tetting Gul
         </text>
         
         {/* Main text content */}
@@ -58,18 +58,18 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
             textAlign: 'left'
           }}>
             <p style={{ marginBottom: '16px' }}>
-              Trekker det rundt vinduer, dører eller gulv? Da kan tetting være et av de enkleste grepene du gjør for å få bedre komfort og lavere strømforbruk. Små tiltak som tettelister og isolering bak listverk kan ofte gi stor forskjell – og det meste kan du gjøre selv.
+              Tetting er et enkelt og effektivt tiltak som kan gi stor forskjell i både komfort og strømforbruk. Ofte holder det å tette rundt vinduer, dører og lister for å stoppe trekken og få lunere rom. Tiltaket krever lite inngrep, koster lite – og passer godt til eldre bygg.
             </p>
             <p style={{ marginBottom: '16px' }}>
-              Tetting passer i alle typer bygg og krever sjelden store inngrep.
+              For å få et varig og trygt resultat, bør du bruke materialer og metoder som er tilpasset bygningens alder og konstruksjon.
             </p>
-            {buildingType && buildingType.toLowerCase() !== 'enebolig' ? (
+            {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
               <p>
-                I leiligheter er det vanlig at trekk kommer fra gamle vinduer eller overganger mot fellesarealer som trapperom og kjeller. Tetting rundt egne vinduer og dører kan du som regel gjøre selv. Hvis lekkasjene gjelder deler av bygget som flere beboere deler, bør tiltaket tas opp med styret. Tetting er også lurt å gjøre sammen med annet vedlikehold for å få mer igjen for innsatsen.
+                Trekken i eldre eneboliger kommer ofte fra vinduer, dører og overganger mellom etasjer. I murhus er det ofte gulv, hjørner og overgangen mot kjeller og loft som lekker. I trehus kan det være rundt dører og vinduer, der materialene har beveget seg over tid. Tetting med tettelister, dyttestrimmel eller isolering bak listverk er enkle tiltak som raskt gir effekt.
               </p>
             ) : (
               <p>
-                I rekkehus og tomannsboliger oppstår trekken ofte der boenhetene møter hverandre, som gjennom bjelkelag, fellesloft eller ventiler. Samarbeid med naboen gjør det enklere å finne ut hvor det trekker – og gir bedre resultat når tiltakene gjøres samtidig. Dette kan bidra til jevnere varme og lavere strømbruk for alle.
+                I blokker er det vanlig at trekken kommer rundt eldre vinduer eller i overgangen mot fellesarealer som trapperom, kjeller eller loft. Tetting rundt egne vinduer og inne i leiligheten kan du ofte gjøre selv, så lenge det ikke berører fasade eller felleskonstruksjoner. Hvis lekkasjen gjelder deler av bygget som deles av flere, bør tiltakene vurderes i fellesskap med styret. Tetting er også lurt å gjøre sammen med annet vedlikehold for å få mer igjen for innsatsen.
               </p>
             )}
           </div>
@@ -306,7 +306,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* Top border */}
         <rect
           x="298"
-          y="450"
+          y="470"
           width="482"
           height="2"
           fill="#CCCCCC"
@@ -315,7 +315,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* First row - gray background */}
         <rect
           x="298"
-          y="452"
+          y="472"
           width="482"
           height="36"
           fill="#F9F9F9"
@@ -324,7 +324,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* Second row - white background */}
         <rect
           x="298"
-          y="488"
+          y="508"
           width="482"
           height="36"
           fill="#FFFFFF"
@@ -333,7 +333,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* Third row - gray background */}
         <rect
           x="298"
-          y="524"
+          y="544"
           width="482"
           height="36"
           fill="#F9F9F9"
@@ -342,7 +342,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* Text in first row */}
         <text
           x="308"
-          y="470"
+          y="490"
           fontFamily="Oslo Sans"
           fontWeight="300"
           fontStyle="normal"
@@ -358,7 +358,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* Text in second row */}
         <text
           x="308"
-          y="506"
+          y="526"
           fontFamily="Oslo Sans"
           fontWeight="300"
           fontStyle="normal"
@@ -374,7 +374,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* Text in third row */}
         <text
           x="308"
-          y="542"
+          y="562"
           fontFamily="Oslo Sans"
           fontWeight="300"
           fontStyle="normal"
@@ -390,7 +390,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* Oslo Kommune box in first row */}
         <rect
           x="612"
-          y="458.5"
+          y="478.5"
           width="82"
           height="23"
           fill="#D1F9FF"
@@ -399,7 +399,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* Oslo Kommune text in box */}
         <text
           x="653"
-          y="470"
+          y="490"
           fontFamily="Oslo Sans"
           fontWeight="300"
           fontStyle="normal"
@@ -416,7 +416,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* "Lenke" text in first row */}
         <text
           x="738"
-          y="470"
+          y="490"
           fontFamily="Oslo Sans"
           fontWeight="300"
           fontStyle="normal"
@@ -433,7 +433,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* Enova box in second row */}
         <rect
           x="651"
-          y="494.5"
+          y="514.5"
           width="43"
           height="23"
           fill="#C7F6C9"
@@ -442,7 +442,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* Enova text in box */}
         <text
           x="672.5"
-          y="506"
+          y="526"
           fontFamily="Oslo Sans"
           fontWeight="300"
           fontStyle="normal"
@@ -459,7 +459,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* "Lenke" text in second row */}
         <text
           x="738"
-          y="506"
+          y="526"
           fontFamily="Oslo Sans"
           fontWeight="300"
           fontStyle="normal"
@@ -476,7 +476,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* Riksantikvaren box in third row */}
         <rect
           x="612"
-          y="530.5"
+          y="550.5"
           width="82"
           height="23"
           fill="#FFB4AC"
@@ -485,7 +485,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* Riksantikvaren text in box */}
         <text
           x="653"
-          y="542"
+          y="562"
           fontFamily="Oslo Sans"
           fontWeight="300"
           fontStyle="normal"
@@ -502,7 +502,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* "Lenke" text in third row */}
         <text
           x="738"
-          y="542"
+          y="562"
           fontFamily="Oslo Sans"
           fontWeight="300"
           fontStyle="normal"
@@ -519,7 +519,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* "Relevante støtteordninger" text */}
         <text
           x="308"
-          y="443"
+          y="463"
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontStyle="normal"
@@ -534,7 +534,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* "Søk til" text */}
         <text
           x="640"
-          y="443"
+          y="463"
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontStyle="normal"
@@ -549,7 +549,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         {/* "Les mer" text */}
         <text
           x="710"
-          y="443"
+          y="463"
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontStyle="normal"

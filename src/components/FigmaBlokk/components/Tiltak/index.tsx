@@ -1,8 +1,11 @@
 export { Varmepumpe } from './Varmepumpe';
 export { Solenergi } from './Solenergi';
+export { Solenergi as SolenergiGul } from './GulListeTiltak/SolenergiGul';
 export { Tetting } from './Tetting';
+export { Tetting as TettingGul } from './GulListeTiltak/TettingGul';
 export { Temperaturstyring } from './Temperaturstyring';
 export { UtskiftningAvVindu } from './UtskiftningAvVindu';
+export { UtskiftningAvVindu as UtskiftningAvVinduGul } from './GulListeTiltak/UtskiftningAvVinduGul';
 export { IsoleringAvKjellerOgLoft } from './IsoleringAvKjellerOgLoft';
 export { EtterisoleringAvYttervegg } from './EtterisoleringAvYttervegg';
 export { Ventilasjon } from './Ventilasjon';

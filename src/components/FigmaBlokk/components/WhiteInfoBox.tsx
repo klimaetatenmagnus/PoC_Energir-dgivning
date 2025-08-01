@@ -149,10 +149,10 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     
     const componentMap: { [key: string]: React.ComponentType<any> } = {
       'Varmepumpe': EnergySolutions.Varmepumpe,
-      'Solenergi': EnergySolutions.Solenergi,
-      'Tetting': EnergySolutions.Tetting,
+      'Solenergi': showYellowBox ? EnergySolutions.SolenergiGul : EnergySolutions.Solenergi,
+      'Tetting': showYellowBox ? EnergySolutions.TettingGul : EnergySolutions.Tetting,
       'Temperaturstyring': EnergySolutions.Temperaturstyring,
-      'Utskiftning av vindu': EnergySolutions.UtskiftningAvVindu,
+      'Utskiftning av vindu': showYellowBox ? EnergySolutions.UtskiftningAvVinduGul : EnergySolutions.UtskiftningAvVindu,
       'Isolering av kjeller og loft': EnergySolutions.IsoleringAvKjellerOgLoft,
       'Etterisolering av yttervegg': EnergySolutions.EtterisoleringAvYttervegg,
       'Ventilasjon': EnergySolutions.Ventilasjon
@@ -161,9 +161,9 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     const Component = componentMap[selectedSolution];
     if (!Component) return null;
     
-    // Pass onBack prop to Tetting
-    if (selectedSolution === 'Tetting') {
-      return <Component onBack={() => onExpand && onExpand(false)} />;
+    // Pass onBack prop to Tetting, Solenergi, and Utskiftning av vindu
+    if (selectedSolution === 'Tetting' || selectedSolution === 'Solenergi' || selectedSolution === 'Utskiftning av vindu') {
+      return <Component onBack={() => onExpand && onExpand(false)} buildingType={buildingTypeName} />;
     }
     
     return <Component />;
@@ -372,9 +372,35 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               <tspan fontWeight="300">Eiertype: </tspan>
               <tspan fontWeight="500">Borettslag</tspan>
             </text>
+            {showYellowBox && (
+              <text 
+                x="30" 
+                y="288" 
+                fontFamily="Oslo Sans, sans-serif" 
+                fontSize="18" 
+                lineHeight="28"
+                letterSpacing="-0.2"
+                fill="#2A2859"
+              >
+                <tspan fontWeight="300">Vernestatus: </tspan>
+                <tspan fontWeight="500">Gul Liste</tspan>
+              </text>
+            )}
             <text 
               x="30" 
-              y="288" 
+              y="332" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="16" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+              fontWeight="400"
+            >
+              Estimerte verdier:
+            </text>
+            <text 
+              x="30" 
+              y="360" 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
               lineHeight="28"
@@ -386,7 +412,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             </text>
             <text 
               x="30" 
-              y="316" 
+              y="388" 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
               lineHeight="28"
@@ -495,9 +521,37 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               <tspan fontWeight="500">Borettslag</tspan>
             </text>
             
+            {showYellowBox && (
+              <text 
+                x="30" 
+                y="288" 
+                fontFamily="Oslo Sans, sans-serif" 
+                fontSize="18" 
+                lineHeight="28"
+                letterSpacing="-0.2"
+                fill="#2A2859"
+              >
+                <tspan fontWeight="300">Vernestatus: </tspan>
+                <tspan fontWeight="500">Gul Liste</tspan>
+              </text>
+            )}
+            
             <text 
               x="30" 
-              y="288" 
+              y="332" 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontSize="16" 
+              lineHeight="28"
+              letterSpacing="-0.2"
+              fill="#2A2859"
+              fontWeight="400"
+            >
+              Estimerte verdier
+            </text>
+            
+            <text 
+              x="30" 
+              y="360" 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
               lineHeight="28"
@@ -506,7 +560,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             >
               <tspan fontWeight="300">Areal Leilighet: </tspan>
             </text>
-            <foreignObject x="153" y="270" width={calculateInputWidth(editedArealLeilighet)} height="24">
+            <foreignObject x="153" y="342" width={calculateInputWidth(editedArealLeilighet)} height="24">
               <input
                 xmlns="http://www.w3.org/1999/xhtml"
                 type="text"
@@ -531,7 +585,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             </foreignObject>
             <text 
               x={153 + calculateInputWidth(editedArealLeilighet) + 3}
-              y="288" 
+              y="360" 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
               lineHeight="28"
@@ -544,7 +598,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             
             <text 
               x="30" 
-              y="316" 
+              y="388" 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
               lineHeight="28"
@@ -553,7 +607,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             >
               <tspan fontWeight="300">Energiforbruk: </tspan>
             </text>
-            <foreignObject x="155" y="298" width={calculateInputWidth(editedEnergiforbruk)} height="24">
+            <foreignObject x="155" y="370" width={calculateInputWidth(editedEnergiforbruk)} height="24">
               <input
                 xmlns="http://www.w3.org/1999/xhtml"
                 type="text"
@@ -583,7 +637,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             </foreignObject>
             <text 
               x={155 + calculateInputWidth(editedEnergiforbruk) + 3}
-              y="316" 
+              y="388" 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
               lineHeight="28"
@@ -595,27 +649,13 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             </text>
           </>
         )}
-        {showYellowBox && (
-          <text 
-            x="30" 
-            y="344" 
-            fontFamily="Oslo Sans, sans-serif" 
-            fontSize="18" 
-            lineHeight="28"
-            letterSpacing="-0.2"
-            fill="#2A2859"
-          >
-            <tspan fontWeight="300">Vernestatus: </tspan>
-            <tspan fontWeight="500">Gul Liste</tspan>
-          </text>
-        )}
         
         {/* Yellow box above dark box - conditional rendering */}
         {showYellowBox && (
           <>
             <rect 
               x="30" 
-              y="372" 
+              y="416" 
               width="235" 
               height="46" 
               fill="#FFE7BC"
@@ -624,7 +664,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             {/* Text inside yellow box */}
             <text 
               x="46" 
-              y="395" 
+              y="439" 
               fontFamily="Oslo Sans, sans-serif" 
               fontWeight="500"
               fontStyle="normal"
@@ -638,7 +678,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             </text>
             
             {/* Arrow icon inside yellow box */}
-            <svg x="225" y="381" width="24" height="28" viewBox="0 0 24 28" fill="none">
+            <svg x="225" y="425" width="24" height="28" viewBox="0 0 24 28" fill="none">
               <path fillRule="evenodd" clipRule="evenodd" d="M14.56 14L7.5 21.2534L8.47002 22.25L16.5 14L8.47002 5.75L7.5 6.7466L14.56 14Z" fill="#2A2859"/>
             </svg>
           </>
@@ -724,7 +764,16 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
       </g>
       
       {/* Tiltak content that appears when expanded */}
-      {selectedSolution !== 'Tetting' && (
+      {selectedSolution !== 'Tetting' && selectedSolution !== 'Solenergi' && (
+        <g style={{ 
+          opacity: isExpanded && selectedSolution ? 1 : 0, 
+          transition: isExpanded ? 'opacity 0.5s ease-in-out 1s' : 'opacity 0.2s ease-out',
+          pointerEvents: isExpanded ? 'auto' : 'none'
+        }}>
+          {getSolutionComponent()}
+        </g>
+      )}
+      {selectedSolution === 'Solenergi' && !showYellowBox && (
         <g style={{ 
           opacity: isExpanded && selectedSolution ? 1 : 0, 
           transition: isExpanded ? 'opacity 0.5s ease-in-out 1s' : 'opacity 0.2s ease-out',
@@ -742,8 +791,10 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     </svg>
       </div>
       
-      {/* Render Tetting outside SVG */}
-      {selectedSolution === 'Tetting' && (
+      {/* Render Tetting and SolenergiGul outside SVG */}
+      {(selectedSolution === 'Tetting' || 
+        (selectedSolution === 'Solenergi' && showYellowBox) || 
+        (selectedSolution === 'Utskiftning av vindu' && showYellowBox)) && (
         <div style={{ 
           position: 'absolute',
           top: 0,
