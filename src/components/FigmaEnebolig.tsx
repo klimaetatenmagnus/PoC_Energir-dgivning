@@ -12,49 +12,13 @@ interface FigmaEneboligProps {
 
 export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, buildingData, onBack }) => {
   const [fadeOpacity, setFadeOpacity] = useState(1);
-  const [houseTransform, setHouseTransform] = useState('');
   const [showTiltaksList, setShowTiltaksList] = useState(false);
   const [showWhiteBox, setShowWhiteBox] = useState(false);
+  const [animateHouse, setAnimateHouse] = useState(false);
+  const enebolig1Ref = React.useRef<SVGSVGElement>(null);
+  const enebolig2ContainerRef = React.useRef<HTMLDivElement>(null);
   
-  // Beregn husets posisjon og skalering med justering for container
-  const [houseLeftPosition, setHouseLeftPosition] = useState('0px');
-  const [houseScale, setHouseScale] = useState(1);
   
-  useEffect(() => {
-    const calculateHousePositionAndScale = () => {
-      const screenWidth = window.innerWidth;
-      const containerMaxWidth = 1728;
-      const svgHousePosition = 320.018;
-      const svgViewBoxWidth = 1728;
-      const svgViewBoxHeight = 352;
-      
-      // Beregn skalering
-      // Skyline SVG skalerer med skjermen, så vi må matche det
-      const containerWidth = Math.min(screenWidth, containerMaxWidth);
-      const scaleRatio = containerWidth / svgViewBoxWidth;
-      setHouseScale(scaleRatio);
-      
-      if (screenWidth <= containerMaxWidth) {
-        // På små skjermer, bruk prosent direkte
-        const percent = (svgHousePosition / containerMaxWidth) * 100;
-        setHouseLeftPosition(`${percent}%`);
-      } else {
-        // På store skjermer, beregn piksel-posisjon
-        // Container er sentrert, så margin på hver side er (screenWidth - 1728) / 2
-        const containerMargin = (screenWidth - containerMaxWidth) / 2;
-        // Husets posisjon i piksler innenfor container
-        const housePixelsInContainer = svgHousePosition * scaleRatio; // Juster for skalering
-        // Men siden containeren har margin, må vi trekke fra marginen
-        const adjustedPosition = housePixelsInContainer - containerMargin;
-        setHouseLeftPosition(`${adjustedPosition}px`);
-      }
-    };
-    
-    calculateHousePositionAndScale();
-    window.addEventListener('resize', calculateHousePositionAndScale);
-    
-    return () => window.removeEventListener('resize', calculateHousePositionAndScale);
-  }, []);
   
   // Calculate values needed for WhiteInfoBox
   const addressOnly = searchAddress.split(',')[0].trim();
@@ -65,47 +29,115 @@ export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, bui
   const districtName = buildingData?.bydel || buildingData?.district || 'Ukjent bydel';
   const buildingTypeName = buildingData?.bygningstype || buildingData?.bygningstypenavn || 'Ukjent type';
 
+  const performHouseAnimation = () => {
+    if (!enebolig1Ref.current || !enebolig2ContainerRef.current) return;
+
+    // Get the paths from the first SVG
+    const paths = enebolig1Ref.current.querySelectorAll('path');
+    if (paths.length === 0) return;
+
+    // Calculate house position in skyline SVG
+    const svgRect = enebolig1Ref.current.getBoundingClientRect();
+    const screenWidth = window.innerWidth;
+    const svgViewBoxWidth = 1728;
+    const svgScale = screenWidth / svgViewBoxWidth;
+    
+    // House position in SVG coordinates
+    const houseX = 320.018;
+    const houseY = 271.883;
+    const houseWidth = 92.5537 - 0.247322; // rightmost x - leftmost x
+    const houseHeight = 81; // 352 - 271
+
+    // Calculate actual position on screen
+    const actualLeft = svgRect.left + (houseX * svgScale);
+    const actualTop = svgRect.top + (houseY * svgScale);
+    const actualWidth = houseWidth * svgScale;
+    const actualHeight = houseHeight * svgScale;
+
+    // Create clone
+    const clone = document.createElement('div');
+    clone.style.cssText = `
+      position: fixed;
+      left: ${actualLeft}px;
+      top: ${actualTop}px;
+      width: ${actualWidth}px;
+      height: ${actualHeight}px;
+      z-index: 9999;
+      pointer-events: none;
+    `;
+
+    // Create SVG for clone
+    const svgClone = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgClone.setAttribute('viewBox', '289.247 271.883 92.307 80.117');
+    svgClone.style.width = '100%';
+    svgClone.style.height = '100%';
+    
+    // Clone the house paths
+    paths.forEach(path => {
+      svgClone.appendChild(path.cloneNode(true));
+    });
+    
+    clone.appendChild(svgClone);
+    document.body.appendChild(clone);
+
+    // Get target position
+    const targetEl = enebolig2ContainerRef.current.querySelector('svg');
+    if (!targetEl) return;
+    const targetRect = targetEl.getBoundingClientRect();
+
+    // Keep original visible - don't hide it
+    // setTimeout(() => {
+    //   paths.forEach(path => {
+    //     (path as SVGPathElement).style.visibility = 'hidden';
+    //   });
+    // }, 50);
+
+    // Force reflow
+    clone.offsetWidth;
+
+    // Add transition after initial positioning
+    setTimeout(() => {
+      clone.style.transition = 'all 2s ease-in-out';
+      
+      // Animate to target
+      clone.style.left = targetRect.left + 'px';
+      clone.style.top = targetRect.top + 'px';
+      clone.style.width = targetRect.width + 'px';
+      clone.style.height = targetRect.height + 'px';
+    }, 10);
+
+    // Show Enebolig2 slightly before animation ends
+    setTimeout(() => {
+      setAnimateHouse(true);
+    }, 1800);
+
+    // Keep the clone visible - don't remove it
+    // setTimeout(() => {
+    //   clone.remove();
+    // }, 2100);
+  };
+
   useEffect(() => {
     // Start fade animation after component mounts
     const fadeTimer = setTimeout(() => {
       setFadeOpacity(0);
-    }, 500); // Increased delay to ensure skyline is fully rendered before fade
+    }, 500);
 
-    // Calculate center of container and move house 309.5px from center
-    const moveTimer = setTimeout(() => {
-      // Since we're now in a centered container with max-width 1728px
-      const containerWidth = Math.min(window.innerWidth, 1728);
-      const containerCenterX = containerWidth / 2;
-      const targetX = containerCenterX + 309.5; // This is where the LEFT edge of house should be
-      // House is already positioned at x=289.248 in skyline, with left edge at 289.248 + 0.247322
-      const currentX = 289.248 + 0.247322; // Current position including translation
-      // Calculate how much to move from current position
-      const translateX = targetX - currentX;
-      
-      // Calculate Y translation to align with bottom of tiltaks list
-      // Tiltaks list: bottom at 55px, 8 buttons * 50px + 7 gaps * 10px = 470px total height
-      // So the bottom of the house should align with bottom of screen (55px from bottom)
-      // Since SVG is already positioned at bottom, we need minimal adjustment
-      const translateY = -55; // Move up by 55px to align with tiltaks list bottom
-      
-      setHouseTransform(`translate(${translateX}, 0)`);
-    }, 1500); // Start moving after fade begins
+    // Perform house animation
+    const animTimer = setTimeout(() => {
+      performHouseAnimation();
+    }, 2000);
 
-    // Show tiltaks list after house movement
-    const tiltaksTimer = setTimeout(() => {
+    // Show UI elements after animation
+    const uiTimer = setTimeout(() => {
       setShowTiltaksList(true);
-    }, 3500); // Show after animation completes (1500ms + 2000ms)
-
-    // Show white box after animation
-    const whiteBoxTimer = setTimeout(() => {
       setShowWhiteBox(true);
-    }, 3500); // Show at same time as tiltaks list
+    }, 2500);
 
     return () => {
       clearTimeout(fadeTimer);
-      clearTimeout(moveTimer);
-      clearTimeout(tiltaksTimer);
-      clearTimeout(whiteBoxTimer);
+      clearTimeout(animTimer);
+      clearTimeout(uiTimer);
     };
   }, []);
 
@@ -126,7 +158,12 @@ export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, bui
       {/* Back button */}
       <button
         className="back-button"
-        onClick={onBack}
+        onClick={() => {
+          // Remove any animated clones before going back
+          const clones = document.querySelectorAll('div[style*="z-index: 9999"]');
+          clones.forEach(clone => clone.remove());
+          onBack();
+        }}
         style={{
           position: 'absolute',
           top: '20px',
@@ -211,7 +248,7 @@ export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, bui
         {/* Oslo skyline SVG that fades out */}
         <svg 
           className="oslo-skyline"
-          viewBox="0 0 1728 352" 
+          viewBox="0 -20 1728 372" 
           fill="none" 
           xmlns="http://www.w3.org/2000/svg"
           preserveAspectRatio="xMidYMax slice"
@@ -222,7 +259,9 @@ export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, bui
             bottom: 0,
             left: 0,
             right: 0,
-            width: '100vw'
+            width: '100vw',
+            height: 'auto',
+            maxHeight: 'none'
           }}
         >
           <path d="M1620.3 191.642H1548.51H1512.6V119.506V0.593262H1620.3V191.642Z" fill="#F8F0DD"/>
@@ -306,13 +345,10 @@ export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, bui
           <path d="M443.099 321.186H473.87L443.099 290.372H412.328L443.099 321.186Z" fill="#2A2859"/>
           <path d="M406.174 339.674H418.482V351.999H406.174V339.674Z" fill="#2A2859"/>
           <path d="M350.783 302.697H381.554L350.783 271.883H320.013L350.783 302.697Z" fill="#2A2859"/>
-          {/* Replace original house at M320.018 271.883 with new house */}
-          <g transform="translate(289.248, 271)">
-            <path d="M61.783 31.6973H92.5537V81.0001H61.783V31.6973Z" fill="#F8F0DD"/>
-            <path d="M31.0182 0.884766L61.7891 31.699V81.0019H31.0182H0.247322V31.699L31.0182 0.884766Z" fill="#D0BFAE"/>
-            <path d="M61.783 31.6991H92.5537L61.783 0.884766H31.0122L61.783 31.6991Z" fill="#2A2859"/>
-            <path d="M24.8615 68.6738H37.1699V80.9995H24.8615V68.6738Z" fill="#2A2859"/>
-          </g>
+          <path d="M320.018 271.883L350.789 302.697V352H320.018H289.247V302.697L320.018 271.883Z" fill="#D0BFAE"/>
+          <path d="M350.783 302.697H381.554V352H350.783V302.697Z" fill="#F8F0DD"/>
+          <path d="M350.783 302.697H381.554L350.783 271.883H320.013L350.783 302.697Z" fill="#2A2859"/>
+          <path d="M313.861 339.674H326.17V351.999H313.861V339.674Z" fill="#2A2859"/>
           <path d="M61.5357 247.23H116.923L86.1525 216.416H30.7648L61.5357 247.23Z" fill="#2A2859"/>
           <path d="M61.5358 247.229H116.923V351.998H61.5358V247.229Z" fill="#F8F0DD"/>
           <path d="M30.7689 216.416L61.5399 247.23V351.999H30.7689H-0.00210571V247.23L30.7689 216.416Z" fill="#D0BFAE"/>
@@ -392,20 +428,29 @@ export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, bui
           <path d="M1069.78 259.555H1082.09V271.881H1069.78V259.555Z" fill="#2A2859"/>
         </svg>
         
-        {/* Enebolig building that stays visible */}
+        {/* Enebolig1 - stays visible when skyline fades */}
         <svg 
+          ref={enebolig1Ref}
           className="oslo-skyline"
-          viewBox="0 0 1728 352" 
+          viewBox="0 -20 1728 372" 
           fill="none" 
           xmlns="http://www.w3.org/2000/svg"
           preserveAspectRatio="xMidYMax slice"
-          style={{
-            position: 'absolute',
+          style={{ 
+            position: 'fixed',
             bottom: 0,
             left: 0,
-            width: '100%'
+            right: 0,
+            width: '100vw',
+            height: 'auto',
+            maxHeight: 'none',
+            pointerEvents: 'none'
           }}
         >
+          <path d="M320.018 271.883L350.789 302.697V352H320.018H289.247V302.697L320.018 271.883Z" fill="#D0BFAE"/>
+          <path d="M350.783 302.697H381.554V352H350.783V302.697Z" fill="#F8F0DD"/>
+          <path d="M350.783 302.697H381.554L350.783 271.883H320.013L350.783 302.697Z" fill="#2A2859"/>
+          <path d="M313.861 339.674H326.17V351.999H313.861V339.674Z" fill="#2A2859"/>
         </svg>
 
         {/* Tiltaks list rectangle - similar to EnergySolutionButtons */}
@@ -455,16 +500,19 @@ export const FigmaEnebolig: React.FC<FigmaEneboligProps> = ({ searchAddress, bui
           showYellowBox={false}
         />
         
-        {/* House inside container - visible simultaneously with skyline */}
-        <div style={{
-          position: 'absolute',
-          bottom: '0px',
-          left: houseLeftPosition,
-          transform: `scale(${houseScale})`,
-          transformOrigin: 'bottom left', // Skaler fra nederste venstre hjørne
-          opacity: fadeOpacity === 0 ? 1 : 0, // Vis når skyline fader ut
-          transition: 'opacity 1s ease-in-out'
-        }}>
+        {/* Enebolig2 - positioned with WhiteInfoBox at bottom 55px */}
+        <div 
+          ref={enebolig2ContainerRef}
+          style={{
+            position: 'absolute',
+            bottom: '55px',
+            left: '50%',
+            transform: 'translateX(calc(235.5px + 74px)) scale(5)',
+            transformOrigin: 'bottom left',
+            opacity: animateHouse ? 1 : 0,
+            transition: 'opacity 0.5s ease-in-out'
+          }}
+        >
           <svg 
             width="93" 
             height="81" 
