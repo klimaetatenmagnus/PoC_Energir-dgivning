@@ -10,6 +10,7 @@ import { OsloSkyline } from './FigmaBlokk/components/OsloSkyline';
 import { EnergySolutionButtons } from './FigmaBlokk/components/EnergySolutionButtons';
 import { WhiteInfoBox } from './FigmaBlokk/components/WhiteInfoBox';
 import { OsloLogo } from './FigmaBlokk/components/OsloLogo';
+import { ProsessenVidere } from './FigmaBlokk/components/ProsessenVidere';
 import { fetchSolarData, SolarEnergyData } from '../services/solarEnergyService';
 
 interface FigmaBlokkProps {
@@ -58,6 +59,9 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
   const [enebolig1Opacity, setEnebolig1Opacity] = React.useState(1);
   const enebolig1Ref = React.useRef<SVGSVGElement>(null);
   const enebolig2ContainerRef = React.useRef<HTMLDivElement>(null);
+  
+  // State for process slide animation
+  const [showProcess, setShowProcess] = React.useState(false);
   
   // Enebolig animation function
   const performHouseAnimation = () => {
@@ -283,7 +287,9 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
         height: '100vh', // Full viewport height to ensure nothing is cut off
         zIndex: 1,
         pointerEvents: 'none',
-        overflow: (isExpanded && selectedSolution === 'Tetting') ? 'hidden' : 'visible'
+        overflow: (isExpanded && selectedSolution === 'Tetting') ? 'hidden' : 'visible',
+        transform: showProcess ? 'translateY(-100vh)' : 'translateY(0)',
+        transition: 'transform 0.8s ease-in-out'
       }}>
         <OsloSkyline 
           fadeOpacity={fadeOpacity}
@@ -330,12 +336,15 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
         position: 'absolute',
         top: '50%',
         left: '50%',
-        transform: `translate(-50%, -50%) scale(${scaleFactor})`,
+        transform: showProcess 
+          ? `translate(-50%, calc(-50% - 100vh)) scale(${scaleFactor})` 
+          : `translate(-50%, -50%) scale(${scaleFactor})`,
         transformOrigin: 'center',
         width: '1728px',
         height: '900px',
         zIndex: 2,
-        background: 'transparent'
+        background: 'transparent',
+        transition: 'transform 0.8s ease-in-out'
       }}>
         {/* Klimaoslo header with logo and back button */}
         <div 
@@ -347,7 +356,8 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
             left: 0,
             opacity: showHeader && !isExpanded ? 1 : 0,
             transition: 'opacity 0.5s ease-in-out' + (showHeader && !isExpanded ? ' 0.5s' : isExpanded ? '' : ' 0.8s'),
-            zIndex: 1000
+            zIndex: 10001,
+            pointerEvents: showHeader && !isExpanded ? 'auto' : 'none'
           }}
         >
         <div style={{
@@ -376,11 +386,14 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
           </div>
           
           <button
-            className="back-button"
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Tilbake button clicked!');
               // Remove any animated clones before going back
               const clones = document.querySelectorAll('div[style*="z-index: 9999"]');
               clones.forEach(clone => clone.remove());
+              console.log('Calling onBack function...');
               onBack();
             }}
             style={{
@@ -398,10 +411,11 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
               borderRadius: '4px',
               display: 'flex',
               alignItems: 'center',
-              gap: '0'
+              gap: '0',
+              zIndex: 100
             }}
           >
-            <span style={{ marginRight: 'auto' }}>Klimaoslo</span>
+            <span style={{ marginRight: 'auto' }}>Tilbake</span>
             <svg 
               width="24" 
               height="29" 
@@ -426,6 +440,7 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
         showYellowBox={showYellowBox}
         onToggleYellowBox={setShowYellowBox}
         yearlyConsumption={energiforbruk}
+        onProcessClick={() => setShowProcess(true)}
       />
       
       {/* Enebolig2 - positioned with WhiteInfoBox at bottom 55px */}
@@ -477,6 +492,13 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
         onUpdateBuildingData={handleUpdateBuildingData}
       />
     </div>
+    
+    {/* Prosessen videre component */}
+    <ProsessenVidere 
+      showProcess={showProcess}
+      scaleFactor={scaleFactor}
+      onBack={() => setShowProcess(false)}
+    />
     </>
   );
 };

@@ -18,7 +18,8 @@
       "Bash(rm:*)",
       "Bash(del \"C:\\Users\\olema\\PoC_Energir-dgivning\\src\\components\\FigmaBlokk_restored.tsx\")",
       "Bash(python3:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:od2.pbe.oslo.kommune.no)"
     ],
     "deny": []
   }

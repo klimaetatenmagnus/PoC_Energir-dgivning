@@ -10,9 +10,10 @@ interface EnergySolutionButtonsProps {
   showYellowBox?: boolean;
   onToggleYellowBox?: (show: boolean) => void;
   yearlyConsumption?: string;
+  onProcessClick?: () => void;
 }
 
-export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, showYellowBox = true, onToggleYellowBox, yearlyConsumption = '' }) => {
+export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, showYellowBox = true, onToggleYellowBox, yearlyConsumption = '', onProcessClick }) => {
   // Add CSS for fade animation
   React.useEffect(() => {
     const style = document.createElement('style');
@@ -770,6 +771,46 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
           )}
         </svg>
       ))}
+      
+      {/* New bottom box with #2A2859 background */}
+      <svg 
+        width="471" 
+        height="50" 
+        viewBox="0 0 471 50" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ 
+          transition: 'all 0.3s ease-in-out',
+          cursor: 'pointer'
+        }}
+        onClick={onProcessClick}
+      >
+        <rect 
+          x="0" 
+          y="0" 
+          width="471" 
+          height="50" 
+          fill="#2A2859"
+        />
+        <text 
+          x="17" 
+          y="29" 
+          fontFamily="Oslo Sans, sans-serif" 
+          fontWeight="500" 
+          fontStyle="normal"
+          fontSize="18" 
+          lineHeight="28"
+          letterSpacing="-0.2"
+          fill="#F9F9F9" 
+          textAnchor="start"
+        >
+          Prosessen videre
+        </text>
+        {/* Dropdown arrow icon - 16px from right edge, 8px from top */}
+        <svg x="431" y="8" width="24" height="28" viewBox="0 0 24 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path fillRule="evenodd" clipRule="evenodd" d="M12 16.56L4.7466 9.5L3.75 10.47L12 18.5L20.25 10.47L19.2534 9.5L12 16.56Z" fill="white"/>
+        </svg>
+      </svg>
     </div>
   );
 };

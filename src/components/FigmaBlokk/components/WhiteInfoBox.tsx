@@ -44,6 +44,12 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   // State for delayed height expansion
   const [expandHeight, setExpandHeight] = React.useState(false);
   
+  // State for yellow box expansion
+  const [isYellowBoxExpanded, setIsYellowBoxExpanded] = React.useState(false);
+  
+  // State for dropdown expansion
+  const [isDropdownExpanded, setIsDropdownExpanded] = React.useState(false);
+  
   // State for address text scaling
   const [addressScale, setAddressScale] = React.useState(1);
   const textRef = React.useRef<SVGTextElement>(null);
@@ -653,34 +659,62 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
         {/* Yellow box above dark box - conditional rendering */}
         {showYellowBox && (
           <>
-            <rect 
-              x="30" 
-              y="416" 
-              width="235" 
-              height="46" 
-              fill="#FFE7BC"
-            />
-            
-            {/* Text inside yellow box */}
-            <text 
-              x="46" 
-              y="439" 
-              fontFamily="Oslo Sans, sans-serif" 
-              fontWeight="500"
-              fontStyle="normal"
-              fontSize="18" 
-              lineHeight="28"
-              letterSpacing="-0.2"
-              fill="#2A2859"
-              dominantBaseline="middle"
+            {/* Yellow box button */}
+            <g 
+              style={{ cursor: 'pointer' }}
+              onClick={() => setIsYellowBoxExpanded(true)}
             >
-              Hva betyr gul liste?
-            </text>
+              <rect 
+                x="30" 
+                y="416" 
+                width="235" 
+                height="46" 
+                fill="#FFE7BC"
+                style={{ 
+                  transition: 'all 0.3s ease-in-out',
+                  opacity: isYellowBoxExpanded ? 0 : 1,
+                  pointerEvents: isYellowBoxExpanded ? 'none' : 'auto'
+                }}
+              />
+              
+              {/* Text inside yellow box */}
+              <text 
+                x="46" 
+                y="439" 
+                fontFamily="Oslo Sans, sans-serif" 
+                fontWeight="500"
+                fontStyle="normal"
+                fontSize="18" 
+                lineHeight="28"
+                letterSpacing="-0.2"
+                fill="#2A2859"
+                dominantBaseline="middle"
+                style={{ 
+                  transition: 'opacity 0.3s ease-in-out',
+                  opacity: isYellowBoxExpanded ? 0 : 1
+                }}
+              >
+                Hva betyr gul liste?
+              </text>
+              
+              {/* Arrow icon inside yellow box */}
+              <svg 
+                x="225" 
+                y="425" 
+                width="24" 
+                height="28" 
+                viewBox="0 0 24 28" 
+                fill="none"
+                style={{ 
+                  transition: 'opacity 0.3s ease-in-out',
+                  opacity: isYellowBoxExpanded ? 0 : 1
+                }}
+              >
+                <path fillRule="evenodd" clipRule="evenodd" d="M14.56 14L7.5 21.2534L8.47002 22.25L16.5 14L8.47002 5.75L7.5 6.7466L14.56 14Z" fill="#2A2859"/>
+              </svg>
+            </g>
             
-            {/* Arrow icon inside yellow box */}
-            <svg x="225" y="425" width="24" height="28" viewBox="0 0 24 28" fill="none">
-              <path fillRule="evenodd" clipRule="evenodd" d="M14.56 14L7.5 21.2534L8.47002 22.25L16.5 14L8.47002 5.75L7.5 6.7466L14.56 14Z" fill="#2A2859"/>
-            </svg>
+            {/* Removed expanded overlay from here - moved to end for proper layering */}
           </>
         )}
         
@@ -761,6 +795,191 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           </text>
         )}
         </g>
+        
+        {/* Yellow box expanded overlay - moved to end for proper layering */}
+        {showYellowBox && isYellowBoxExpanded && (
+          <g
+            style={{
+              opacity: 1,
+              transition: 'all 0.4s ease-in-out',
+              pointerEvents: 'auto'
+            }}
+          >
+            {/* Expanded background */}
+            <rect 
+              x="0" 
+              y="0" 
+              width="336" 
+              height="760" 
+              fill="#FFE7BC"
+            />
+            
+            {/* Close button */}
+            <g 
+              style={{ cursor: 'pointer' }}
+              onClick={() => setIsYellowBoxExpanded(false)}
+            >
+              {/* Button background square */}
+              <rect 
+                x="274" 
+                y="16" 
+                width="32" 
+                height="32" 
+                fill="transparent"
+              />
+              {/* Close icon */}
+              <svg x="274" y="16" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" clipRule="evenodd" d="M14.5333 16L5 6.46667L6.46667 5L16 14.5333L25.5333 5L27 6.46667L17.4667 16L27 25.5333L25.5333 27L16 17.4667L6.46667 27L5 25.5333L14.5333 16Z" fill="#2A2859"/>
+              </svg>
+            </g>
+            
+            {/* Overskrift */}
+            <text 
+              x="30" 
+              y={isDropdownExpanded ? 40 : 80} 
+              fontFamily="Oslo Sans, sans-serif" 
+              fontWeight="500"
+              fontStyle="normal"
+              fontSize="26" 
+              lineHeight="40"
+              letterSpacing="-0.2"
+              fill="#000000"
+              dominantBaseline="middle"
+            >
+              Hva er gul liste?
+            </text>
+            
+            {/* Beskrivelsestekst */}
+            <foreignObject x="30" y={isDropdownExpanded ? 72 : 112} width="276" height="200">
+              <div xmlns="http://www.w3.org/1999/xhtml" style={{
+                fontFamily: 'Oslo Sans, sans-serif',
+                fontWeight: 300,
+                fontSize: '14px',
+                lineHeight: '22px',
+                letterSpacing: '0px',
+                color: '#000000'
+              }}>
+                Byantikvarens oversikt over registrerte kulturminner i Oslo. Listen inneholder alt fra bygninger, hage- og parkanlegg, broer, veier og arkeologiske kulturminner til større by- og bygningsmiljøer. Den er et viktig verktøy i Byantikvarens arbeid med å verne et utvalg av byens historie. Byantikvaren har ikke foretatt en fullstendig registrering av alle kulturminner i Oslo, så Gul liste gir ikke den fulle og hele oversikt. Den oppdateres kontinuerlig.
+              </div>
+            </foreignObject>
+            
+            {/* Mørk blå boks med hvit tekst */}
+            <rect 
+              x="30" 
+              y={isDropdownExpanded ? 185 : 325} 
+              width="276" 
+              height="98" 
+              fill="#2A2859"
+              style={{ transition: 'transform 0.3s ease' }}
+            />
+            
+            {/* Hvit tekst inni boksen */}
+            <foreignObject x="46" y={isDropdownExpanded ? 201 : 341} width="244" height="66">
+              <div xmlns="http://www.w3.org/1999/xhtml" style={{
+                fontFamily: 'Oslo Sans, sans-serif',
+                fontWeight: 400,
+                fontSize: '14px',
+                lineHeight: '22px',
+                letterSpacing: '-0.2px',
+                color: 'white'
+              }}>
+                Du kan absolutt gjøre tiltak for å energieffektivisere det verneverdige bygget ditt!
+              </div>
+            </foreignObject>
+            
+            {/* Ny boks med dropdown-meny */}
+            <g
+              onClick={() => setIsDropdownExpanded(!isDropdownExpanded)}
+              style={{ cursor: 'pointer' }}
+            >
+              <rect 
+                x="30" 
+                y={isDropdownExpanded ? 307 : 447} 
+                width="276" 
+                height={isDropdownExpanded ? 320 : 56} 
+                fill="#2A2859"
+                style={{ transition: 'all 0.3s ease' }}
+              />
+            
+              {/* Tekst i ny boks */}
+              <text 
+                x="46" 
+                y={isDropdownExpanded ? 335 : 475} 
+                fontFamily="Oslo Sans, sans-serif" 
+                fontWeight="400"
+                fontSize="14" 
+                lineHeight="22"
+                letterSpacing="-0.2"
+                fill="white"
+                dominantBaseline="middle"
+                style={{ pointerEvents: 'none' }}
+              >
+                Hvorfor ta vare på kulturminner
+              </text>
+            
+              {/* Dropdown ikon */}
+              <svg x="266" y={isDropdownExpanded ? 323 : 463} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none', transform: isDropdownExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transformOrigin: '278px 335px', transition: 'all 0.3s ease' }}>
+                <path fillRule="evenodd" clipRule="evenodd" d="M12 14.56L4.7466 7.5L3.75 8.47002L12 16.5L20.25 8.47002L19.2534 7.5L12 14.56Z" fill="white"/>
+              </svg>
+            </g>
+            
+            {/* Ekspandert innhold for dropdown */}
+            {isDropdownExpanded && (
+              <foreignObject x="46" y="379" width="244" height="240">
+                <div xmlns="http://www.w3.org/1999/xhtml" style={{
+                  fontFamily: 'Oslo Sans, sans-serif',
+                  fontWeight: 300,
+                  fontSize: '14px',
+                  lineHeight: '22px',
+                  letterSpacing: '0px',
+                  color: 'white'
+                }}>
+                  Kulturminner gir oss kunnskap om historien vår og hvordan tidligere generasjoner levde. De forteller om samfunnsutvikling, byggetradisjoner og arkitektoniske løsninger, og er en viktig del av vår identitet og felles hukommelse. Ved å bevare kulturminner tar vi vare på en ressurs som ikke kan erstattes – og som kan være både miljøvennlig og bærekraftig i bruk.
+                  <br/><br/>
+                  Gamle bygninger er ofte oppført i materialer og håndverk av høy kvalitet, og med riktige tiltak kan de tilpasses moderne behov uten å miste sitt særpreg. Bevaring gir ikke bare verdi til enkeltbygg, men styrker også byens mangfold og karakter.
+                  <br/><br/>
+                  Kulturminner er ikke bare fortiden – de er også en del av fremtidens løsninger.
+                  <br/><br/>
+                  <a href="#" style={{ color: 'white', textDecoration: 'underline' }}>Les mer fra Kulturminnefondet her.</a>
+                </div>
+              </foreignObject>
+            )}
+            
+            {/* Linker under dropdown-boksen */}
+            <foreignObject x="30" y={isDropdownExpanded ? 651 : 592} width="276" height="60">
+              <div xmlns="http://www.w3.org/1999/xhtml" style={{
+                fontFamily: 'Oslo Sans, sans-serif',
+                fontSize: '14px',
+                lineHeight: '22px'
+              }}>
+                <a 
+                  href="https://www.oslo.kommune.no/getfile.php/1315758-1611237956/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Gul%20liste%20-%20Byantikvarens%20informasjonsark.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: '#000000',
+                    textDecoration: 'underline',
+                    display: 'block',
+                    marginBottom: '8px'
+                  }}
+                >
+                  Les mer om gul liste
+                </a>
+                <a 
+                  href="#"
+                  style={{
+                    color: '#000000',
+                    textDecoration: 'underline',
+                    display: 'block'
+                  }}
+                >
+                  Generelle tips for å ta vare på eldre hus
+                </a>
+              </div>
+            </foreignObject>
+            
+          </g>
+        )}
       </g>
       
       {/* Tiltak content that appears when expanded */}
@@ -785,7 +1004,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
         
       <defs>
         <clipPath id="clip0_325_12689">
-          <rect width="336" height="700" fill="white"/>
+          <rect width="336" height="760" fill="white"/>
         </clipPath>
       </defs>
     </svg>
