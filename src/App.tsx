@@ -235,11 +235,38 @@ export default function App() {
 
     return (
       <div className="figma-design-container" style={{ background: '#034B45', minHeight: '100vh', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+        {/* Back button only shown in figma mode, not in figma-blokk mode */}
         <button
-          className="back-button"
           onClick={() => setMode("lookup")}
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            background: '#f0f0f0',
+            border: '1px solid #ddd',
+            color: '#212121',
+            padding: '8px 16px',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif',
+            fontWeight: 500,
+            fontSize: '14px',
+            lineHeight: '1.5',
+            cursor: 'pointer',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            zIndex: 1000,
+            transition: 'background-color 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#e0e0e0';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#f0f0f0';
+          }}
         >
-          ← Tilbake
+          <span>←</span>
+          <span>Tilbake</span>
         </button>
         <div className="figma-content">
           {/* Søkefunksjon container med logo og tekst */}
