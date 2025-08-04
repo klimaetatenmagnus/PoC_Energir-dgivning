@@ -12,6 +12,10 @@ import { WhiteInfoBox } from './FigmaBlokk/components/WhiteInfoBox';
 import { OsloLogo } from './FigmaBlokk/components/OsloLogo';
 import { ProsessenVidere } from './FigmaBlokk/components/ProsessenVidere';
 import { fetchSolarData, SolarEnergyData } from '../services/solarEnergyService';
+import { sjekkGulListeMedGnrBnr } from '../services/gul-liste-service';
+import { LYSEVEIEN_3_DATA } from '../testData/lyseveien3';
+import { THERESES_11A_DATA } from '../testData/theresegate11a';
+import { THERESES_44A_DATA } from '../testData/theresegate44a';
 
 interface FigmaBlokkProps {
   searchAddress: string;
@@ -44,9 +48,8 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [selectedSolution, setSelectedSolution] = React.useState<string | null>(null);
   const [solarData, setSolarData] = React.useState<SolarEnergyData | null>(null);
-  // TEST CODE - REMOVE LATER: Set yellow box to false for specific address
-  const initialYellowBox = searchAddress === "Thereses gate 44A, 0168 OSLO" ? false : true;
-  const [showYellowBox, setShowYellowBox] = React.useState(initialYellowBox);
+  const [showYellowBox, setShowYellowBox] = React.useState(false);
+  const [gulListeLoading, setGulListeLoading] = React.useState(true);
   
   // State for updated building data
   const [updatedBuildingData, setUpdatedBuildingData] = React.useState(buildingData);
@@ -136,6 +139,9 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
     // Force reflow
     clone.offsetWidth;
 
+    // Hide the original enebolig1 during animation
+    setEnebolig1Opacity(0);
+
     // Add transition after initial positioning
     setTimeout(() => {
       clone.style.transition = 'all 2s ease-in-out';
@@ -151,6 +157,20 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
     setTimeout(() => {
       setAnimateHouse(true);
     }, 1800);
+
+    // Remove the clone after animation completes (keep enebolig1 hidden)
+    setTimeout(() => {
+      if (clone && clone.parentNode) {
+        clone.remove();
+      }
+      // Keep enebolig1 hidden - don't restore visibility
+      // setEnebolig1Opacity(1);
+    }, 2010); // After the 2s animation + 10ms delay
+
+    // Keep Enebolig2 visible - don't hide it
+    // setTimeout(() => {
+    //   setAnimateHouse(false);
+    // }, 4800); // Commented out - keep enebolig2 visible
   };
 
   // Handle building data updates from WhiteInfoBox
@@ -173,6 +193,21 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
     const loadSolarData = async () => {
       if (!buildingData) return;
       
+      // TEST MODE: Check if this is test data
+      if (searchAddress === "Lyseveien 3, 0362 OSLO" && buildingData.gnr === 33 && buildingData.bnr === 1139) {
+        console.log('🧪 [TEST MODE] Using cached solar data for Lyseveien 3');
+        setSolarData(LYSEVEIEN_3_DATA.solarData);
+        return;
+      } else if (searchAddress === "Thereses gate 11A, 0358 OSLO" && buildingData.gnr === 215 && buildingData.bnr === 156) {
+        console.log('🧪 [TEST MODE] Using cached solar data for Thereses gate 11A');
+        setSolarData(THERESES_11A_DATA.solarData);
+        return;
+      } else if (searchAddress === "Thereses gate 44A, 0168 OSLO" && buildingData.gnr === 215 && buildingData.bnr === 278) {
+        console.log('🧪 [TEST MODE] Using cached solar data for Thereses gate 44A');
+        setSolarData(THERESES_44A_DATA.solarData);
+        return;
+      }
+      
       const params: any = {
         gnr: buildingData.gnr,
         bnr: buildingData.bnr,
@@ -190,6 +225,37 @@ export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingD
     };
     
     loadSolarData();
+  }, [buildingData]);
+
+  // Check gul liste status when component mounts
+  React.useEffect(() => {
+    const checkGulListe = async () => {
+      if (!buildingData || !buildingData.gnr || !buildingData.bnr) {
+        console.log('🏛️ Missing GNR/BNR, skipping gul liste check');
+        setGulListeLoading(false);
+        return;
+      }
+      
+      try {
+        console.log(`🏛️ Checking gul liste for GNR ${buildingData.gnr}, BNR ${buildingData.bnr}`);
+        const result = await sjekkGulListeMedGnrBnr(buildingData.gnr, buildingData.bnr);
+        
+        if (result.erPaaGulListe) {
+          console.log('🏛️ Building is on gul liste!', result);
+          setShowYellowBox(true);
+        } else {
+          console.log('🏛️ Building is NOT on gul liste');
+          setShowYellowBox(false);
+        }
+      } catch (error) {
+        console.error('🏛️ Error checking gul liste:', error);
+        setShowYellowBox(false); // Default to false on error
+      } finally {
+        setGulListeLoading(false);
+      }
+    };
+    
+    checkGulListe();
   }, [buildingData]);
 
   // Handle enebolig animation if building is enebolig

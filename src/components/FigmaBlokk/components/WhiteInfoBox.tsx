@@ -836,7 +836,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             {/* Overskrift */}
             <text 
               x="30" 
-              y={isDropdownExpanded ? 40 : 80} 
+              y={isDropdownExpanded ? -60 : 80} 
               fontFamily="Oslo Sans, sans-serif" 
               fontWeight="500"
               fontStyle="normal"
@@ -850,7 +850,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             </text>
             
             {/* Beskrivelsestekst */}
-            <foreignObject x="30" y={isDropdownExpanded ? 72 : 112} width="276" height="200">
+            <foreignObject x="30" y={isDropdownExpanded ? -28 : 112} width="276" height="200">
               <div xmlns="http://www.w3.org/1999/xhtml" style={{
                 fontFamily: 'Oslo Sans, sans-serif',
                 fontWeight: 300,
@@ -925,7 +925,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             
             {/* Ekspandert innhold for dropdown */}
             {isDropdownExpanded && (
-              <foreignObject x="46" y="379" width="244" height="240">
+              <foreignObject x="46" y="379" width="244" height="200">
                 <div xmlns="http://www.w3.org/1999/xhtml" style={{
                   fontFamily: 'Oslo Sans, sans-serif',
                   fontWeight: 300,
@@ -946,7 +946,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             )}
             
             {/* Linker under dropdown-boksen */}
-            <foreignObject x="30" y={isDropdownExpanded ? 651 : 592} width="276" height="60">
+            <foreignObject x="30" y="640" width="276" height="60">
               <div xmlns="http://www.w3.org/1999/xhtml" style={{
                 fontFamily: 'Oslo Sans, sans-serif',
                 fontSize: '14px',

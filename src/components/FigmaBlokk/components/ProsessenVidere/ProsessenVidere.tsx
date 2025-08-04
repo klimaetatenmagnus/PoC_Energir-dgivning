@@ -90,25 +90,22 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
       </div>
       
       
-      {/* All circles positioned vertically, centered horizontally - 15px from bottom */}
+      {/* All circles container with absolute positioning */}
       <div style={{
         position: 'absolute',
         bottom: '15px',
         left: '50%',
         transform: 'translateX(-50%)',
-        display: 'flex',
-        flexDirection: 'column-reverse',
-        gap: '214px',
-        alignItems: 'center',
+        width: '1000px',
+        height: '674px',
         pointerEvents: 'auto'
       }}>
-        {/* First row of circles (bottom row) */}
+        {/* Circle 4 - bottom left */}
         <div style={{
-          display: 'flex',
-          gap: '250px',
-          alignItems: 'center'
+          position: 'absolute',
+          bottom: '0px',
+          left: '-100px'
         }}>
-          {/* Left circle with PersonPresentingQuestion icon */}
           <CircleWithHover
             number={4}
             text="Sjekk om tiltaket er søknadspliktig"
@@ -121,36 +118,43 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
             }}
             growFullCircle={true}
             onHoverChange={setIsCircle4Hovered}
+            expandUpwards={true}
           />
-          
-          {/* Center circle with Document icon */}
+        </div>
+        
+        {/* Circle 5 - bottom center */}
+        <div style={{
+          position: 'absolute',
+          bottom: '0px',
+          left: '385px'
+        }}>
+          {/* Document icon - positioned relative to circle */}
           <div style={{
-            width: isCircle5Hovered ? '400px' : '230px',
-            height: isCircle5Hovered ? '400px' : '230px',
-            position: 'relative',
-            transition: 'all 0.3s ease'
+            position: 'absolute',
+            bottom: '124px',
+            left: '115px',
+            transform: 'translateX(-50%)',
+            zIndex: 1,
+            pointerEvents: 'none'
           }}>
-            {/* Document icon - positioned relative to circle */}
-            <div style={{
-              position: 'absolute',
-              bottom: '124px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 1,
-              pointerEvents: 'none'
-            }}>
-              <Document />
-            </div>
-            <CircleWithHover
-              number={5}
-              text="Undersøk støtteordninger"
-              hoverText="Det finnes støtteordninger for flere energitiltak - fra Oslo kommune og Enova. Aktuelle støtteordninger er nevnt under informasjonen for hvert tiltak. Sjekk mulighetene tidlig i planleggingen, så du vet hva som kan være aktuelt for din bolig."
-              growFullCircle={true}
-              onHoverChange={setIsCircle5Hovered}
-            />
+            <Document />
           </div>
-          
-          {/* Right circle with Shovel icon */}
+          <CircleWithHover
+            number={5}
+            text="Undersøk støtteordninger"
+            hoverText="Det finnes støtteordninger for flere energitiltak - fra Oslo kommune og Enova. Aktuelle støtteordninger er nevnt under informasjonen for hvert tiltak. Sjekk mulighetene tidlig i planleggingen, så du vet hva som kan være aktuelt for din bolig."
+            growFullCircle={true}
+            onHoverChange={setIsCircle5Hovered}
+            expandUpwards={true}
+          />
+        </div>
+        
+        {/* Circle 6 - bottom right */}
+        <div style={{
+          position: 'absolute',
+          bottom: '0px',
+          left: '870px'
+        }}>
           <CircleWithHover
             number={6}
             text="Gjennomfør arbeidene"
@@ -162,16 +166,16 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
             }}
             growFullCircle={true}
             onHoverChange={setIsCircle6Hovered}
+            expandUpwards={true}
           />
         </div>
         
-        {/* Second row of circles (top row) - 214px above the first */}
+        {/* Circle 1 - top left */}
         <div style={{
-          display: 'flex',
-          gap: '250px',
-          alignItems: 'center'
+          position: 'absolute',
+          bottom: '444px',
+          left: '-100px'
         }}>
-          {/* Left circle with Trees icon */}
           <CircleWithHover
             number={1}
             text="Bruk det du har, oppgrader når det trengs"
@@ -184,9 +188,16 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
             }}
             growFullCircle={true}
             onHoverChange={setIsCircle1Hovered}
+            expandUpwards={true}
           />
-          
-          {/* Center circle with Blokk icon */}
+        </div>
+        
+        {/* Circle 2 - top center */}
+        <div style={{
+          position: 'absolute',
+          bottom: '444px',
+          left: '385px'
+        }}>
           <CircleWithHover
             number={2}
             text="Skaff deg oversikt over boligen"
@@ -216,9 +227,16 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
             growFullCircle={true}
             onHoverChange={setIsCircle2Hovered}
             extraLarge={true}
+            expandUpwards={true}
           />
-          
-          {/* Right circle with PersonPresentingGraph icon */}
+        </div>
+        
+        {/* Circle 3 - top right */}
+        <div style={{
+          position: 'absolute',
+          bottom: '444px',
+          left: '870px'
+        }}>
           <CircleWithHover
             number={3}
             text="Planlegg helhetlig"
@@ -231,6 +249,7 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
             }}
             growFullCircle={true}
             onHoverChange={setIsCircle3Hovered}
+            expandUpwards={true}
           />
         </div>
       </div>
