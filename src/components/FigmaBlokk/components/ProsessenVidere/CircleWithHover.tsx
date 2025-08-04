@@ -10,6 +10,7 @@ interface CircleWithHoverProps {
   growFullCircle?: boolean; // New prop to control growth behavior
   onHoverChange?: (isHovered: boolean) => void; // Callback for hover state changes
   extraLarge?: boolean; // For circles with extra long text
+  expandUpwards?: boolean; // Expand upwards for bottom circles
 }
 
 export const CircleWithHover: React.FC<CircleWithHoverProps> = ({ 
@@ -20,7 +21,8 @@ export const CircleWithHover: React.FC<CircleWithHoverProps> = ({
   iconStyle,
   growFullCircle = false,
   onHoverChange,
-  extraLarge = false
+  extraLarge = false,
+  expandUpwards = false
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
   
@@ -37,10 +39,12 @@ export const CircleWithHover: React.FC<CircleWithHoverProps> = ({
   
   return (
     <div style={{
-      width: growFullCircle && isHovered ? expandedSize : '230px',
-      height: growFullCircle && isHovered ? expandedSize : '230px',
+      width: '230px',
+      height: '230px',
       position: 'relative',
-      transition: 'all 0.3s ease'
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center'
     }}>
       {/* Icon behind circle if provided */}
       {icon && (
@@ -61,8 +65,10 @@ export const CircleWithHover: React.FC<CircleWithHoverProps> = ({
           borderRadius: growFullCircle ? '50%' : (isHovered ? '115px' : '50%'),
           backgroundColor: '#C7F6C9',
           position: 'absolute',
-          top: 0,
-          left: 0,
+          top: expandUpwards ? 'auto' : '50%',
+          bottom: expandUpwards ? '0' : 'auto',
+          left: '50%',
+          transform: expandUpwards ? 'translateX(-50%)' : 'translate(-50%, -50%)',
           zIndex: 2,
           transition: 'all 0.3s ease',
           cursor: 'pointer'

@@ -11,6 +11,9 @@ import { buildingApi } from "./services/buildingApi";
 import { PktButton } from "@oslokommune/punkt-react";
 import { EnergyRatingEstimator } from "./components/EnergyRatingEstimator";
 import { FigmaBlokk } from "./components/FigmaBlokk_temp";
+import { LYSEVEIEN_3_DATA, LYSEVEIEN_3_MOCK_RESPONSES } from "./testData/lyseveien3";
+import { THERESES_11A_DATA, THERESES_11A_MOCK_RESPONSES } from "./testData/theresegate11a";
+import { THERESES_44A_DATA, THERESES_44A_MOCK_RESPONSES } from "./testData/theresegate44a";
 
 /* ------------------------------------------------------------------ */
 /*  Konstanter                                                        */
@@ -141,6 +144,27 @@ export default function App() {
     setFigmaSearchValue(value);
     if (figmaError) setFigmaError(null);
     setFigmaSelectedIndex(-1);
+
+    // TEST MODE: Handle test triggers
+    if (value === "1") {
+      console.log('[TEST MODE] Loading Lyseveien 3 data (Enebolig)');
+      setFigmaSearchValue("Lyseveien 3, 0362 OSLO");
+      setFigmaResult(LYSEVEIEN_3_DATA.buildingData);
+      setMode('figma-blokk');
+      return;
+    } else if (value === "2") {
+      console.log('[TEST MODE] Loading Thereses gate 11A data (Blokkleilighet)');
+      setFigmaSearchValue("Thereses gate 11A, 0358 OSLO");
+      setFigmaResult(THERESES_11A_DATA.buildingData);
+      setMode('figma-blokk');
+      return;
+    } else if (value === "3") {
+      console.log('[TEST MODE] Loading Thereses gate 44A data (Bygård)');
+      setFigmaSearchValue("Thereses gate 44A, 0168 OSLO");
+      setFigmaResult(THERESES_44A_DATA.buildingData);
+      setMode('figma-blokk');
+      return;
+    }
 
     // Clear existing timer
     if (figmaDebounceTimerRef.current) {
