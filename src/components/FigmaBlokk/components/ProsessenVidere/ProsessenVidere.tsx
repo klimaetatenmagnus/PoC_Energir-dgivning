@@ -1,5 +1,6 @@
 import React from 'react';
 import { Document, Blokk, PersonPresentingGraph, PersonPresentingQuestion, Shovel, Trees, Pil } from './Ikoner';
+import { CircleWithHover } from './CircleWithHover';
 
 interface ProsessenVidereProps {
   showProcess: boolean;
@@ -12,19 +13,26 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
   scaleFactor, 
   onBack 
 }) => {
+  const [isCircle1Hovered, setIsCircle1Hovered] = React.useState(false);
+  const [isCircle2Hovered, setIsCircle2Hovered] = React.useState(false);
+  const [isCircle3Hovered, setIsCircle3Hovered] = React.useState(false);
+  const [isCircle4Hovered, setIsCircle4Hovered] = React.useState(false);
+  const [isCircle5Hovered, setIsCircle5Hovered] = React.useState(false);
+  const [isCircle6Hovered, setIsCircle6Hovered] = React.useState(false);
+  
   return (
     <div style={{
       position: 'absolute',
       top: '50%',
       left: '50%',
-      transform: `translate(-50%, -50%) scale(${scaleFactor})`,
+      transform: showProcess 
+        ? `translate(-50%, -50%) scale(${scaleFactor})`
+        : `translate(-50%, calc(-50% + 100vh)) scale(${scaleFactor})`,
       transformOrigin: 'center',
       width: '1728px',
       height: '900px',
       zIndex: 10000,
-      pointerEvents: 'none',
-      opacity: showProcess ? 1 : 0,
-      transition: 'opacity 0.5s ease-in-out 0.5s'
+      transition: 'transform 0.8s ease-in-out'
     }}>
       <div 
         style={{
@@ -81,27 +89,6 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
         </div>
       </div>
       
-      {/* Blokk icon - adjusted to maintain spacing from 15px bottom */}
-      <div style={{
-        position: 'absolute',
-        bottom: '631px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        pointerEvents: 'none'
-      }}>
-        <Blokk />
-      </div>
-      
-      {/* Document icon - adjusted to maintain spacing from 15px bottom */}
-      <div style={{
-        position: 'absolute',
-        bottom: '139px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        pointerEvents: 'none'
-      }}>
-        <Document />
-      </div>
       
       {/* All circles positioned vertically, centered horizontally - 15px from bottom */}
       <div style={{
@@ -113,7 +100,7 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
         flexDirection: 'column-reverse',
         gap: '214px',
         alignItems: 'center',
-        pointerEvents: 'none'
+        pointerEvents: 'auto'
       }}>
         {/* First row of circles (bottom row) */}
         <div style={{
@@ -122,180 +109,60 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
           alignItems: 'center'
         }}>
           {/* Left circle with PersonPresentingQuestion icon */}
-          <div style={{
-            width: '230px',
-            height: '230px',
-            position: 'relative'
-          }}>
-            {/* PersonPresentingQuestion icon - 141px above bottom of circle */}
-            <div style={{
-              position: 'absolute',
+          <CircleWithHover
+            number={4}
+            text="Sjekk om tiltaket er søknadspliktig"
+            hoverText="For noen arbeider må du søke om byggetillatelse fra Plan- og bygningsetaten som skal sikre kvalitet og riktig gjennomføring. Du finner informasjon om søknadsplikt, og om du trenger en fagperson til å søke for deg, når du trykker på tiltaket du vurderer."
+            icon={<PersonPresentingQuestion />}
+            iconStyle={{
               bottom: '141px',
               left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 1
-            }}>
-              <PersonPresentingQuestion />
-            </div>
-            {/* Circle */}
-            <div style={{
-              width: '230px',
-              height: '230px',
-              borderRadius: '50%',
-              backgroundColor: '#C7F6C9',
-              position: 'relative',
-              zIndex: 2
-            }}>
-              {/* Text box */}
-              <div style={{
-                position: 'absolute',
-                top: '48px',
-                left: '35px',
-                right: '35px',
-                width: '160px',
-                height: '116px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <div style={{
-                  fontFamily: 'Oslo Sans, sans-serif',
-                  fontWeight: 500,
-                  fontStyle: 'normal',
-                  fontSize: '18px',
-                  lineHeight: '28px',
-                  letterSpacing: '-0.2px',
-                  textAlign: 'center',
-                  color: '#2A2859'
-                }}>
-                  <div>4.</div>
-                  <div>Sjekk om tiltaket er søknadspliktig</div>
-                </div>
-              </div>
-              {/* Pil icon - 12px above bottom */}
-              <div style={{
-                position: 'absolute',
-                bottom: '12px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 3
-              }}>
-                <Pil />
-              </div>
-            </div>
-          </div>
+              transform: 'translateX(-50%)'
+            }}
+            growFullCircle={true}
+            onHoverChange={setIsCircle4Hovered}
+          />
           
-          {/* Center circle (original first circle) */}
+          {/* Center circle with Document icon */}
           <div style={{
-            width: '230px',
-            height: '230px',
-            borderRadius: '50%',
-            backgroundColor: '#C7F6C9',
-            position: 'relative'
+            width: isCircle5Hovered ? '400px' : '230px',
+            height: isCircle5Hovered ? '400px' : '230px',
+            position: 'relative',
+            transition: 'all 0.3s ease'
           }}>
-            {/* Text box */}
+            {/* Document icon - positioned relative to circle */}
             <div style={{
               position: 'absolute',
-              top: '48px',
-              left: '35px',
-              right: '35px',
-              width: '160px',
-              height: '116px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <div style={{
-                fontFamily: 'Oslo Sans, sans-serif',
-                fontWeight: 500,
-                fontStyle: 'normal',
-                fontSize: '18px',
-                lineHeight: '28px',
-                letterSpacing: '-0.2px',
-                textAlign: 'center',
-                color: '#2A2859'
-              }}>
-                <div>5.</div>
-                <div>Undersøk støtteordninger</div>
-              </div>
-            </div>
-            {/* Pil icon - 12px above bottom */}
-            <div style={{
-              position: 'absolute',
-              bottom: '12px',
+              bottom: '124px',
               left: '50%',
               transform: 'translateX(-50%)',
-              zIndex: 3
+              zIndex: 1,
+              pointerEvents: 'none'
             }}>
-              <Pil />
+              <Document />
             </div>
+            <CircleWithHover
+              number={5}
+              text="Undersøk støtteordninger"
+              hoverText="Det finnes støtteordninger for flere energitiltak - fra Oslo kommune og Enova. Aktuelle støtteordninger er nevnt under informasjonen for hvert tiltak. Sjekk mulighetene tidlig i planleggingen, så du vet hva som kan være aktuelt for din bolig."
+              growFullCircle={true}
+              onHoverChange={setIsCircle5Hovered}
+            />
           </div>
           
           {/* Right circle with Shovel icon */}
-          <div style={{
-            width: '230px',
-            height: '230px',
-            position: 'relative'
-          }}>
-            {/* Shovel icon - 174.5px from bottom, 53px from left */}
-            <div style={{
-              position: 'absolute',
+          <CircleWithHover
+            number={6}
+            text="Gjennomfør arbeidene"
+            hoverText="Når du først setter i gang, bør det gjøres skikkelig. Velg løsninger som varer og gir lavere energibehov. Husk å følge opp i etterkant – godt vedlikehold sikrer at forbedringene holder seg over tid. Da kan du nyte bedre inneklima og lavere strømregninger."
+            icon={<Shovel />}
+            iconStyle={{
               bottom: '174.5px',
-              left: '53px',
-              zIndex: 1
-            }}>
-              <Shovel />
-            </div>
-            {/* Circle */}
-            <div style={{
-              width: '230px',
-              height: '230px',
-              borderRadius: '50%',
-              backgroundColor: '#C7F6C9',
-              position: 'relative',
-              zIndex: 2
-            }}>
-              {/* Text box */}
-              <div style={{
-                position: 'absolute',
-                top: '48px',
-                left: '35px',
-                right: '35px',
-                width: '160px',
-                height: '116px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <div style={{
-                  fontFamily: 'Oslo Sans, sans-serif',
-                  fontWeight: 500,
-                  fontStyle: 'normal',
-                  fontSize: '18px',
-                  lineHeight: '28px',
-                  letterSpacing: '-0.2px',
-                  textAlign: 'center',
-                  color: '#2A2859'
-                }}>
-                  <div>6.</div>
-                  <div>Gjennomfør arbeidene</div>
-                </div>
-              </div>
-              {/* Pil icon - 12px above bottom */}
-              <div style={{
-                position: 'absolute',
-                bottom: '12px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 3
-              }}>
-                <Pil />
-              </div>
-            </div>
-          </div>
+              left: '53px'
+            }}
+            growFullCircle={true}
+            onHoverChange={setIsCircle6Hovered}
+          />
         </div>
         
         {/* Second row of circles (top row) - 214px above the first */}
@@ -305,181 +172,66 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
           alignItems: 'center'
         }}>
           {/* Left circle with Trees icon */}
-          <div style={{
-            width: '230px',
-            height: '230px',
-            position: 'relative'
-          }}>
-            {/* Trees icon - 197px above bottom of circle */}
-            <div style={{
-              position: 'absolute',
+          <CircleWithHover
+            number={1}
+            text="Bruk det du har, oppgrader når det trengs"
+            hoverText="Det mest miljøvennlige er å bruke det du allerede har, så lenge det fungerer. Nye materialer, som vinduer og isolasjon, gir også klimagassutslipp når de produseres og fraktes. Men om du først skal oppgradere er det viktig å utføre arbeidene på riktig måte - med løsninger som varer, sparer energi og tar hensyn til byggets kulturhistoriske verdier."
+            icon={<Trees />}
+            iconStyle={{
               bottom: '192.5px',
               left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 1
-            }}>
-              <Trees />
-            </div>
-            {/* Circle */}
-            <div style={{
-              width: '230px',
-              height: '230px',
-              borderRadius: '50%',
-              backgroundColor: '#C7F6C9',
-              position: 'relative',
-              zIndex: 2
-            }}>
-              {/* Text box */}
-              <div style={{
-                position: 'absolute',
-                top: '48px',
-                left: '35px',
-                right: '35px',
-                width: '160px',
-                height: '116px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <div style={{
-                  fontFamily: 'Oslo Sans, sans-serif',
-                  fontWeight: 500,
-                  fontStyle: 'normal',
-                  fontSize: '18px',
-                  lineHeight: '28px',
-                  letterSpacing: '-0.2px',
-                  textAlign: 'center',
-                  color: '#2A2859'
-                }}>
-                  <div>1.</div>
-                  <div>Bruk det du har, oppgrader når det trengs</div>
-                </div>
-              </div>
-              {/* Pil icon - 12px above bottom */}
-              <div style={{
-                position: 'absolute',
-                bottom: '12px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 3
-              }}>
-                <Pil />
-              </div>
-            </div>
-          </div>
+              transform: 'translateX(-50%)'
+            }}
+            growFullCircle={true}
+            onHoverChange={setIsCircle1Hovered}
+          />
           
-          {/* Center circle (original second circle) */}
-          <div style={{
-            width: '230px',
-            height: '230px',
-            borderRadius: '50%',
-            backgroundColor: '#C7F6C9',
-            position: 'relative'
-          }}>
-            {/* Text box */}
-            <div style={{
-              position: 'absolute',
-              top: '48px',
-              left: '35px',
-              right: '35px',
-              width: '160px',
-              height: '116px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <div style={{
-                fontFamily: 'Oslo Sans, sans-serif',
-                fontWeight: 500,
-                fontStyle: 'normal',
-                fontSize: '18px',
-                lineHeight: '28px',
-                letterSpacing: '-0.2px',
-                textAlign: 'center',
-                color: '#2A2859'
-              }}>
-                <div>2.</div>
-                <div>Skaff deg oversikt over boligen</div>
-              </div>
-            </div>
-            {/* Pil icon - 12px above bottom */}
-            <div style={{
-              position: 'absolute',
-              bottom: '12px',
+          {/* Center circle with Blokk icon */}
+          <CircleWithHover
+            number={2}
+            text="Skaff deg oversikt over boligen"
+            hoverText={
+              <>
+                Sjekk hva som er gjort i boligen din fra før. Er det etterisolert tidligere? Hvor gamle er vinduene? Finn frem tilstandsrapport, energimerke eller{' '}
+                <a 
+                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/#toc-3" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{
+                    color: '#0066CC',
+                    textDecoration: 'underline'
+                  }}
+                >
+                  gamle tegninger fra Plan- og bygningsetaten
+                </a>
+                . Er du usikker, eller vurderer større endringer, kan det være lurt å kontakte en fagperson, som en energirådgiver, byggmester eller arkitekt. De hjelper deg med vurderinger, byggesøknad og gjennomføring.
+              </>
+            }
+            icon={<Blokk />}
+            iconStyle={{
+              bottom: '180px',
               left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 3
-            }}>
-              <Pil />
-            </div>
-          </div>
+              transform: 'translateX(-50%)'
+            }}
+            growFullCircle={true}
+            onHoverChange={setIsCircle2Hovered}
+            extraLarge={true}
+          />
           
           {/* Right circle with PersonPresentingGraph icon */}
-          <div style={{
-            width: '230px',
-            height: '230px',
-            position: 'relative'
-          }}>
-            {/* PersonPresentingGraph icon - 82px above bottom of circle */}
-            <div style={{
-              position: 'absolute',
+          <CircleWithHover
+            number={3}
+            text="Planlegg helhetlig"
+            hoverText="Flere tiltak virker sammen. Hvis du tetter, bør du også tenke på ventilasjon. Vinduer isolerer dårlig hvis veggene lekker varme. Se boligen som en helhet før du velger hva du eventuelt gjør."
+            icon={<PersonPresentingGraph />}
+            iconStyle={{
               bottom: '82px',
               left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 1
-            }}>
-              <PersonPresentingGraph />
-            </div>
-            {/* Circle in front of icon */}
-            <div style={{
-              width: '230px',
-              height: '230px',
-              borderRadius: '50%',
-              backgroundColor: '#C7F6C9',
-              position: 'relative',
-              zIndex: 2
-            }}>
-              {/* Text box */}
-              <div style={{
-                position: 'absolute',
-                top: '48px',
-                left: '35px',
-                right: '35px',
-                width: '160px',
-                height: '116px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <div style={{
-                  fontFamily: 'Oslo Sans, sans-serif',
-                  fontWeight: 500,
-                  fontStyle: 'normal',
-                  fontSize: '18px',
-                  lineHeight: '28px',
-                  letterSpacing: '-0.2px',
-                  textAlign: 'center',
-                  color: '#2A2859'
-                }}>
-                  <div>3.</div>
-                  <div>Planlegg helhetlig</div>
-                </div>
-              </div>
-              {/* Pil icon - 12px above bottom */}
-              <div style={{
-                position: 'absolute',
-                bottom: '12px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 3
-              }}>
-                <Pil />
-              </div>
-            </div>
-          </div>
+              transform: 'translateX(-50%)'
+            }}
+            growFullCircle={true}
+            onHoverChange={setIsCircle3Hovered}
+          />
         </div>
       </div>
       
