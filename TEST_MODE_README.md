@@ -39,7 +39,7 @@ Når du deler med kolleger som ikke har API-tilgang:
   - `/src/testData/theresegate11a.ts` (Blokkleilighet)
   - `/src/testData/theresegate44a.ts` (Bygård)
 - Trigges i: `App.tsx` (handleFigmaInputChange)
-- Solar-data håndteres i: `FigmaBlokk_temp.tsx`
+- Solar-data håndteres i: `FigmaMainScript.tsx`
 
 ### Test-adresser og deres egenskaper
 
