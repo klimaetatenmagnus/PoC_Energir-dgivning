@@ -23,7 +23,7 @@ interface FigmaBlokkProps {
   onBack: () => void;
 }
 
-export const FigmaBlokk: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingData, onBack }) => {
+export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingData, onBack }) => {
   // Check if building is an Enebolig
   const isEnebolig = React.useMemo(() => {
     const buildingTypeCode = buildingData.bygningstypeKode;

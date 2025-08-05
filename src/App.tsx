@@ -10,7 +10,7 @@ import { ErrorDisplay } from "./components/ErrorDisplay";
 import { buildingApi } from "./services/buildingApi";
 import { PktButton } from "@oslokommune/punkt-react";
 import { EnergyRatingEstimator } from "./components/EnergyRatingEstimator";
-import { FigmaBlokk } from "./components/FigmaBlokk_temp";
+import { FigmaMainScript } from "./components/FigmaMainScript";
 import { LYSEVEIEN_3_DATA, LYSEVEIEN_3_MOCK_RESPONSES } from "./testData/lyseveien3";
 import { THERESES_11A_DATA, THERESES_11A_MOCK_RESPONSES } from "./testData/theresegate11a";
 import { THERESES_44A_DATA, THERESES_44A_MOCK_RESPONSES } from "./testData/theresegate44a";
@@ -102,7 +102,7 @@ export default function App() {
       setFigmaResult(result);
       console.log('[Figma] Lookup successful:', result);
       
-      // Always use FigmaBlokk component - it will handle the animation internally
+      // Always use FigmaMainScript component - it will handle the animation internally
       setMode('figma-blokk');
     } catch (error) {
       console.error('[Figma] Lookup failed:', error);
@@ -239,7 +239,7 @@ export default function App() {
         justifyContent: 'center',
         alignItems: 'center'
       }}>
-        <FigmaBlokk
+        <FigmaMainScript
           searchAddress={figmaSearchValue}
           buildingData={figmaResult}
           onBack={() => {
