@@ -15,6 +15,13 @@ sleep 1
 # Load environment variables
 export $(grep -v '^#' .env | xargs)
 
+# Check if Python is available
+if ! command -v python &> /dev/null; then
+    echo "❌ Python is not installed or not in PATH!"
+    echo "   Støtteordninger API will not work properly."
+    echo ""
+fi
+
 # Start building-info-service
 echo "🏢 Starting building-info-service on port 4000..."
 LOG_SOAP=1 npx tsx services/building-info-service/index.ts &
@@ -46,6 +53,7 @@ echo "🌐 UI: http://localhost:5173"
 echo "🔌 API: http://localhost:3001"
 echo "🏢 Building Service: http://localhost:4000"
 echo "☀️  Solar Service: http://localhost:4003"
+echo "📊 Støtteordninger: http://localhost:3001/api/stotteordninger"
 echo ""
 echo "📋 Test addresses:"
 echo "  - Rosenholmveien 25, Oslo"

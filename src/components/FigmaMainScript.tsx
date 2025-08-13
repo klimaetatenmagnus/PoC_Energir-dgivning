@@ -20,10 +20,11 @@ import { THERESES_44A_DATA } from '../testData/theresegate44a';
 interface FigmaBlokkProps {
   searchAddress: string;
   buildingData: AddressLookupResponse;
+  stotteordninger?: any;
   onBack: () => void;
 }
 
-export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingData, onBack }) => {
+export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingData, stotteordninger, onBack }) => {
   // Check if building is an Enebolig
   const isEnebolig = React.useMemo(() => {
     const buildingTypeCode = buildingData.bygningstypeKode;
@@ -50,6 +51,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const [solarData, setSolarData] = React.useState<SolarEnergyData | null>(null);
   const [showYellowBox, setShowYellowBox] = React.useState(false);
   const [gulListeLoading, setGulListeLoading] = React.useState(true);
+  const [isYellowBoxExpanded, setIsYellowBoxExpanded] = React.useState(false);
   
   // State for updated building data
   const [updatedBuildingData, setUpdatedBuildingData] = React.useState(buildingData);
@@ -447,7 +449,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               letterSpacing: '-0.2px',
               color: 'white'
             }}>
-              Energiportalen
+              Energinøkkelen
             </span>
           </div>
           
@@ -500,13 +502,22 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       <EnergySolutionButtons 
         showHeader={showHeader} 
         isExpanded={isExpanded}
-        onExpand={setIsExpanded}
+        onExpand={(expanded: boolean) => {
+          setIsExpanded(expanded);
+          // Close yellow box when any "les mer" button is clicked
+          if (expanded && isYellowBoxExpanded) {
+            setIsYellowBoxExpanded(false);
+          }
+        }}
         onSelectSolution={setSelectedSolution}
         buildingData={{...updatedBuildingData, filteredSolarEnergy: solarData?.filteredSolarEnergy}}
         showYellowBox={showYellowBox}
         onToggleYellowBox={setShowYellowBox}
         yearlyConsumption={energiforbruk}
         onProcessClick={() => setShowProcess(true)}
+        onCloseYellowBox={() => {
+          setIsYellowBoxExpanded(false);
+        }}
       />
       
       {/* Enebolig2 - positioned with WhiteInfoBox at bottom 55px */}
@@ -556,6 +567,11 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         onExpand={setIsExpanded}
         showYellowBox={showYellowBox}
         onUpdateBuildingData={handleUpdateBuildingData}
+        isYellowBoxExpanded={isYellowBoxExpanded}
+        onYellowBoxExpandedChange={setIsYellowBoxExpanded}
+        onCloseYellowBox={() => {
+          setIsYellowBoxExpanded(false);
+        }}
       />
     </div>
     

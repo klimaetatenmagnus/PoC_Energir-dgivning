@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface TettingProps {
   onBack?: () => void;
@@ -8,6 +8,68 @@ interface TettingProps {
 export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
+  const [stotteordninger, setStotteordninger] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Hent støtteordninger fra Excel via API
+  useEffect(() => {
+    const fetchStotteordninger = async () => {
+      try {
+        const bygningstyperMap: { [key: string]: string } = {
+          'enebolig': 'enebolig',
+          'rekkehus': 'rekkehus',
+          'tomannsbolig': 'rekkehus',
+          'leilighet': 'blokk',
+          'blokk': 'blokk'
+        };
+
+        const mappedType = bygningstyperMap[buildingType?.toLowerCase() || 'enebolig'] || 'enebolig';
+        
+        // Kall API endpoint som leser direkte fra Excel
+        const url = `http://localhost:3001/api/stotteordninger-live?gulliste=false&tiltak=tetting&bygningstype=${mappedType}`;
+        console.log('Fetching støtteordninger from:', url);
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API response error:', response.status, errorText);
+          throw new Error(`Failed to fetch støtteordninger: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        setStotteordninger(data);
+      } catch (error) {
+        console.error('Error fetching støtteordninger:', error);
+        // Vis feilmelding i stedet for fallback
+        const errorData = [{
+          ordning: 'Kunne ikke hente støtteordninger',
+          lenke: null,
+          belop: 'Sjekk at API-serveren kjører',
+          overskrift: 'Feil'
+        }];
+        setStotteordninger(errorData);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStotteordninger();
+  }, [buildingType]);
+
+
+  // Støtteordninger hentes nå via useEffect
+  const needsScroll = stotteordninger.length > 4;
+
+  // Farger for overskrifter
+  const overskriftFarger: { [key: string]: string } = {
+    'Enova': '#C7F6C9',
+    'Klima- og energifondet': '#D1F9FF',
+    'Oslo kommune': '#D1F9FF',
+    'Klimaetaten': '#D1F9FF',
+    'Byantikvaren': '#FFE4B5',
+    'Riksantikvaren': '#FFB4AC',
+    'Kulturminnefondet': '#DDA0DD'
+  };
 
   return (
     <div style={{ 
@@ -32,7 +94,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
       >
         <text
           x="60"
-          y="10"
+          y="-30"
           fontFamily="Oslo Sans, sans-serif"
           fontWeight="700"
           fontStyle="normal"
@@ -45,8 +107,8 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           Tetting
         </text>
         
-        {/* Main text content */}
-        <foreignObject x="60" y="60" width="465" height="400">
+        {/* Main text content with scroll if needed */}
+        <foreignObject x="60" y="20" width="465" height="338">
           <div xmlns="http://www.w3.org/1999/xhtml" style={{
             fontFamily: 'Oslo Sans',
             fontWeight: 300,
@@ -55,21 +117,42 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
             lineHeight: '22px',
             letterSpacing: '0px',
             color: '#000000',
-            textAlign: 'left'
+            textAlign: 'left',
+            height: '100%',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            paddingRight: '10px',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#CCCCCC #F5F5F5'
           }}>
+            <style>{`
+              div::-webkit-scrollbar {
+                width: 6px;
+              }
+              div::-webkit-scrollbar-track {
+                background: #F5F5F5;
+              }
+              div::-webkit-scrollbar-thumb {
+                background: #CCCCCC;
+                border-radius: 3px;
+              }
+              div::-webkit-scrollbar-thumb:hover {
+                background: #AAAAAA;
+              }
+            `}</style>
             <p style={{ marginBottom: '16px' }}>
               Trekker det rundt vinduer, dører eller gulv? Da kan tetting være et av de enkleste grepene du gjør for å få bedre komfort og lavere strømforbruk. Små tiltak som tettelister og isolering bak listverk kan ofte gi stor forskjell – og det meste kan du gjøre selv.
             </p>
             <p style={{ marginBottom: '16px' }}>
               Tetting passer i alle typer bygg og krever sjelden store inngrep.
             </p>
-            {buildingType && buildingType.toLowerCase() !== 'enebolig' ? (
-              <p>
-                I leiligheter er det vanlig at trekk kommer fra gamle vinduer eller overganger mot fellesarealer som trapperom og kjeller. Tetting rundt egne vinduer og dører kan du som regel gjøre selv. Hvis lekkasjene gjelder deler av bygget som flere beboere deler, bør tiltaket tas opp med styret. Tetting er også lurt å gjøre sammen med annet vedlikehold for å få mer igjen for innsatsen.
+            {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
+              <p style={{ marginBottom: '20px' }}>
+                I eneboliger oppstår trekken ofte rundt vinduer, dører, ved overganger mellom etasjer eller der tak og vegger møtes. Du kan enkelt finne lekkasjer ved å kjenne etter trekk med hånden eller bruke et stearinlys. Mange av tiltakene kan du gjøre selv, og resultatet merkes både på komfort og strømregning.
               </p>
             ) : (
-              <p>
-                I rekkehus og tomannsboliger oppstår trekken ofte der boenhetene møter hverandre, som gjennom bjelkelag, fellesloft eller ventiler. Samarbeid med naboen gjør det enklere å finne ut hvor det trekker – og gir bedre resultat når tiltakene gjøres samtidig. Dette kan bidra til jevnere varme og lavere strømbruk for alle.
+              <p style={{ marginBottom: '20px' }}>
+                I leiligheter er det vanlig at trekk kommer fra gamle vinduer eller overganger mot fellesarealer som trapperom og kjeller. Tetting rundt egne vinduer og dører kan du som regel gjøre selv. Hvis lekkasjene gjelder deler av bygget som flere beboere deler, bør tiltaket tas opp med styret. Tetting er også lurt å gjøre sammen med annet vedlikehold for å få mer igjen for innsatsen.
               </p>
             )}
           </div>
@@ -258,10 +341,10 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           Tips om tetting
         </text>
         
-        {/* Three lines of text below "Tips om tetting" */}
+        {/* Link below "Tips om tetting" */}
         <text
           x="170"
-          y="496"
+          y="502"
           fontFamily="Oslo Sans"
           fontWeight="300"
           fontStyle="normal"
@@ -270,39 +353,13 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           fill="#FFFFFF"
           textAnchor="middle"
           textDecoration="underline"
-        >
-          Riksantikvaren
-        </text>
-        <text
-          x="170"
-          y="518"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-        >
-          Fortidsminneforvaltningen
-        </text>
-        <text
-          x="170"
-          y="540"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
+          style={{ cursor: 'pointer' }}
+          onClick={() => window.open('https://byggogbevar.no/enoek/artikler/tiltak/tetting-rundt-vinduer-og-doerer/', '_blank')}
         >
           Bygg og bevar
         </text>
         
-        {/* Table with 3 rows */}
+        {/* Dynamic table with scrollbar */}
         {/* Top border */}
         <rect
           x="298"
@@ -312,209 +369,114 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           fill="#CCCCCC"
         />
         
-        {/* First row - gray background */}
-        <rect
-          x="298"
-          y="452"
-          width="482"
-          height="36"
-          fill="#F9F9F9"
-        />
-        
-        {/* Second row - white background */}
-        <rect
-          x="298"
-          y="488"
-          width="482"
-          height="36"
-          fill="#FFFFFF"
-        />
-        
-        {/* Third row - gray background */}
-        <rect
-          x="298"
-          y="524"
-          width="482"
-          height="36"
-          fill="#F9F9F9"
-        />
-        
-        {/* Text in first row */}
-        <text
-          x="308"
-          y="470"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="12"
-          lineHeight="20"
-          letterSpacing="-0.2"
-          fill="#000000"
-          dominantBaseline="middle"
-        >
-          Støtte til solenergi i borettslag og sameier
-        </text>
-        
-        {/* Text in second row */}
-        <text
-          x="308"
-          y="506"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="12"
-          lineHeight="20"
-          letterSpacing="-0.2"
-          fill="#000000"
-          dominantBaseline="middle"
-        >
-          Støtte til solcelleanlegg
-        </text>
-        
-        {/* Text in third row */}
-        <text
-          x="308"
-          y="542"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="12"
-          lineHeight="20"
-          letterSpacing="-0.2"
-          fill="#000000"
-          dominantBaseline="middle"
-        >
-          Støtte til solenergi i borettslag og sameier
-        </text>
-        
-        {/* Oslo Kommune box in first row */}
-        <rect
-          x="612"
-          y="458.5"
-          width="82"
-          height="23"
-          fill="#D1F9FF"
-        />
-        
-        {/* Oslo Kommune text in box */}
-        <text
-          x="653"
-          y="470"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="10"
-          lineHeight="22"
-          letterSpacing="-0.2"
-          fill="#000000"
-          textAnchor="middle"
-          dominantBaseline="middle"
-        >
-          Oslo kommune
-        </text>
-        
-        {/* "Lenke" text in first row */}
-        <text
-          x="738"
-          y="470"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="12"
-          lineHeight="18.67"
-          letterSpacing="-0.13"
-          fill="#000000"
-          textDecoration="underline"
-          dominantBaseline="middle"
-        >
-          Lenke
-        </text>
-        
-        {/* Enova box in second row */}
-        <rect
-          x="651"
-          y="494.5"
-          width="43"
-          height="23"
-          fill="#C7F6C9"
-        />
-        
-        {/* Enova text in box */}
-        <text
-          x="672.5"
-          y="506"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="10"
-          lineHeight="22"
-          letterSpacing="-0.2"
-          fill="#000000"
-          textAnchor="middle"
-          dominantBaseline="middle"
-        >
-          Enova
-        </text>
-        
-        {/* "Lenke" text in second row */}
-        <text
-          x="738"
-          y="506"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="12"
-          lineHeight="18.67"
-          letterSpacing="-0.13"
-          fill="#000000"
-          textDecoration="underline"
-          dominantBaseline="middle"
-        >
-          Lenke
-        </text>
-        
-        {/* Riksantikvaren box in third row */}
-        <rect
-          x="612"
-          y="530.5"
-          width="82"
-          height="23"
-          fill="#FFB4AC"
-        />
-        
-        {/* Riksantikvaren text in box */}
-        <text
-          x="653"
-          y="542"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="10"
-          lineHeight="22"
-          letterSpacing="-0.2"
-          fill="#000000"
-          textAnchor="middle"
-          dominantBaseline="middle"
-        >
-          Riksantikvaren
-        </text>
-        
-        {/* "Lenke" text in third row */}
-        <text
-          x="738"
-          y="542"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="12"
-          lineHeight="18.67"
-          letterSpacing="-0.13"
-          fill="#000000"
-          textDecoration="underline"
-          dominantBaseline="middle"
-        >
-          Lenke
-        </text>
+        {/* Table container with scrolling via foreignObject */}
+        <foreignObject x="298" y="452" width="482" height={needsScroll ? "144" : `${stotteordninger.length * 36}`}>
+          <div xmlns="http://www.w3.org/1999/xhtml" style={{
+            width: '100%',
+            height: '100%',
+            overflowY: needsScroll ? 'auto' : 'hidden',
+            overflowX: 'hidden',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#CCCCCC #F5F5F5'
+          }}>
+            <style>{`
+              div::-webkit-scrollbar {
+                width: 8px;
+              }
+              div::-webkit-scrollbar-track {
+                background: #F5F5F5;
+              }
+              div::-webkit-scrollbar-thumb {
+                background: #CCCCCC;
+                border-radius: 4px;
+              }
+              div::-webkit-scrollbar-thumb:hover {
+                background: #AAAAAA;
+              }
+            `}</style>
+            <svg width="474" height={stotteordninger.length * 36} viewBox={`0 0 474 ${stotteordninger.length * 36}`}>
+              {stotteordninger.map((ordning, index) => {
+                const yPosition = index * 36;
+                const textYPosition = yPosition + 18;
+                const boxYPosition = yPosition + 6.5;
+                
+                return (
+                  <g key={index}>
+                    {/* Row background */}
+                    <rect
+                      x="0"
+                      y={yPosition}
+                      width="474"
+                      height="36"
+                      fill={index % 2 === 0 ? '#F9F9F9' : '#FFFFFF'}
+                    />
+                    
+                    {/* Ordning text */}
+                    <text
+                      x="10"
+                      y={textYPosition}
+                      fontFamily="Oslo Sans"
+                      fontWeight="300"
+                      fontStyle="normal"
+                      fontSize="12"
+                      lineHeight="20"
+                      letterSpacing="-0.2"
+                      fill="#000000"
+                      dominantBaseline="middle"
+                    >
+                      <tspan>{ordning.ordning.length > 45 ? ordning.ordning.substring(0, 42) + '...' : ordning.ordning}</tspan>
+                    </text>
+                    
+                    {/* Overskrift box */}
+                    <rect
+                      x={ordning.overskrift === 'Enova' ? "353" : "314"}
+                      y={boxYPosition}
+                      width={ordning.overskrift === 'Enova' ? "43" : "82"}
+                      height="23"
+                      fill={overskriftFarger[ordning.overskrift] || '#E0E0E0'}
+                    />
+                    
+                    {/* Overskrift text */}
+                    <text
+                      x={ordning.overskrift === 'Enova' ? "374.5" : "355"}
+                      y={textYPosition}
+                      fontFamily="Oslo Sans"
+                      fontWeight="300"
+                      fontStyle="normal"
+                      fontSize="10"
+                      lineHeight="22"
+                      letterSpacing="-0.2"
+                      fill="#000000"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                    >
+                      {ordning.overskrift}
+                    </text>
+                    
+                    {/* Lenke text with click handler - moved left to avoid scrollbar */}
+                    <text
+                      x="425"
+                      y={textYPosition}
+                      fontFamily="Oslo Sans"
+                      fontWeight="300"
+                      fontStyle="normal"
+                      fontSize="12"
+                      lineHeight="18.67"
+                      letterSpacing="-0.13"
+                      fill="#000000"
+                      textDecoration="underline"
+                      dominantBaseline="middle"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => window.open(ordning.lenke, '_blank')}
+                    >
+                      Lenke
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+        </foreignObject>
         
         {/* "Relevante støtteordninger" text */}
         <text
@@ -657,7 +619,9 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
               {/* Links section */}
               <div style={{ marginTop: '16px' }}>
                 <a 
-                  href="#"
+                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/skal-du-bygge-rive-eller-endre/ma-du-sende-byggesoknad/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -671,7 +635,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
                     marginBottom: '12px'
                   }}
                 >
-                  Sjekk nærmere om tiltaket ditt er søknadsplikt her
+                  Sjekk nærmere om tiltaket ditt er søknadspliktig
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
                     <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
                     <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
@@ -679,7 +643,9 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
                 </a>
                 
                 <a 
-                  href="#"
+                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/#toc-2"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -693,7 +659,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
                     marginBottom: '12px'
                   }}
                 >
-                  Gratis veiledningstime hos Plan- og bygningsetaten for generell informasjon om søknadsplikt her
+                  Gratis veiledningstime hos Plan- og bygningsetaten for generell informasjon om søknadsplikt
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
                     <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
                     <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
@@ -701,7 +667,9 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
                 </a>
                 
                 <a 
-                  href="#"
+                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -714,7 +682,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
                     textDecoration: 'underline'
                   }}
                 >
-                  Kontakt Plan- og bygningsetaten for en konkret vurdering av søknadsplikt for ditt tiltak, mot gebyr, her
+                  Kontakt Plan- og bygningsetaten for en konkret vurdering av søknadsplikt for ditt tiltak, mot gebyr
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
                     <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
                     <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>

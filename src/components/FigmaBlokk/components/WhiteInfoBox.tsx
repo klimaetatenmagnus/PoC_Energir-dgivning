@@ -19,6 +19,9 @@ interface WhiteInfoBoxProps {
   onExpand?: (expanded: boolean) => void;
   showYellowBox?: boolean;
   onUpdateBuildingData?: (byggeaar: string, areal: string, arealLeilighet: string, energiforbruk: string) => void;
+  onCloseYellowBox?: () => void;
+  isYellowBoxExpanded?: boolean;
+  onYellowBoxExpandedChange?: (expanded: boolean) => void;
 }
 
 export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
@@ -36,7 +39,10 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   buildingData,
   onExpand,
   showYellowBox = true,
-  onUpdateBuildingData
+  onUpdateBuildingData,
+  onCloseYellowBox,
+  isYellowBoxExpanded: externalIsYellowBoxExpanded,
+  onYellowBoxExpandedChange
 }) => {
   // Calculate expanded width to reach where the energy solutions list ends
   const expandedWidth = isExpanded ? 840 : 336; // Expanded to 840px
@@ -44,11 +50,16 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   // State for delayed height expansion
   const [expandHeight, setExpandHeight] = React.useState(false);
   
-  // State for yellow box expansion
-  const [isYellowBoxExpanded, setIsYellowBoxExpanded] = React.useState(false);
+  // State for yellow box expansion - use external state if provided
+  const [localIsYellowBoxExpanded, setLocalIsYellowBoxExpanded] = React.useState(false);
+  const isYellowBoxExpanded = externalIsYellowBoxExpanded !== undefined ? externalIsYellowBoxExpanded : localIsYellowBoxExpanded;
+  const setIsYellowBoxExpanded = onYellowBoxExpandedChange || setLocalIsYellowBoxExpanded;
   
   // State for dropdown expansion
   const [isDropdownExpanded, setIsDropdownExpanded] = React.useState(false);
+  
+  // State for tooltip visibility
+  const [showByantikvarTooltip, setShowByantikvarTooltip] = React.useState(false);
   
   // State for address text scaling
   const [addressScale, setAddressScale] = React.useState(1);
@@ -158,7 +169,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
       'Solenergi': showYellowBox ? EnergySolutions.SolenergiGul : EnergySolutions.Solenergi,
       'Tetting': showYellowBox ? EnergySolutions.TettingGul : EnergySolutions.Tetting,
       'Temperaturstyring': EnergySolutions.Temperaturstyring,
-      'Utskiftning av vindu': showYellowBox ? EnergySolutions.UtskiftningAvVinduGul : EnergySolutions.UtskiftningAvVindu,
+      'Oppgradering av vindu': showYellowBox ? EnergySolutions.UtskiftningAvVinduGul : EnergySolutions.UtskiftningAvVindu,
       'Isolering av kjeller og loft': EnergySolutions.IsoleringAvKjellerOgLoft,
       'Etterisolering av yttervegg': EnergySolutions.EtterisoleringAvYttervegg,
       'Ventilasjon': EnergySolutions.Ventilasjon
@@ -167,8 +178,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     const Component = componentMap[selectedSolution];
     if (!Component) return null;
     
-    // Pass onBack prop to Tetting, Solenergi, and Utskiftning av vindu
-    if (selectedSolution === 'Tetting' || selectedSolution === 'Solenergi' || selectedSolution === 'Utskiftning av vindu') {
+    // Pass onBack prop to Tetting, Solenergi, and Oppgradering av vindu
+    if (selectedSolution === 'Tetting' || selectedSolution === 'Solenergi' || selectedSolution === 'Oppgradering av vindu') {
       return <Component onBack={() => onExpand && onExpand(false)} buildingType={buildingTypeName} />;
     }
     
@@ -366,18 +377,20 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               <tspan fontWeight="300">Areal: </tspan>
               <tspan fontWeight="500">{savedAreal || 'Ukjent'} m²</tspan>
             </text>
-            <text 
-              x="30" 
-              y="260" 
-              fontFamily="Oslo Sans, sans-serif" 
-              fontSize="18" 
-              lineHeight="28"
-              letterSpacing="-0.2"
-              fill="#2A2859"
-            >
-              <tspan fontWeight="300">Eiertype: </tspan>
-              <tspan fontWeight="500">Borettslag</tspan>
-            </text>
+            {buildingTypeName.toLowerCase() === 'blokk' && (
+              <text 
+                x="30" 
+                y="260" 
+                fontFamily="Oslo Sans, sans-serif" 
+                fontSize="18" 
+                lineHeight="28"
+                letterSpacing="-0.2"
+                fill="#2A2859"
+              >
+                <tspan fontWeight="300">Eiertype: </tspan>
+                <tspan fontWeight="500">Borettslag</tspan>
+              </text>
+            )}
             {showYellowBox && (
               <text 
                 x="30" 
@@ -394,7 +407,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             )}
             <text 
               x="30" 
-              y="332" 
+              y={showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "304" : "332"} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="16" 
               lineHeight="28"
@@ -404,21 +417,23 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             >
               Estimerte verdier:
             </text>
+            {buildingTypeName.toLowerCase() === 'blokk' && (
+              <text 
+                x="30" 
+                y="360" 
+                fontFamily="Oslo Sans, sans-serif" 
+                fontSize="18" 
+                lineHeight="28"
+                letterSpacing="-0.2"
+                fill="#2A2859"
+              >
+                <tspan fontWeight="300">Areal Leilighet: </tspan>
+                <tspan fontWeight="500">{savedArealLeilighet || 'Ukjent'} m²</tspan>
+              </text>
+            )}
             <text 
               x="30" 
-              y="360" 
-              fontFamily="Oslo Sans, sans-serif" 
-              fontSize="18" 
-              lineHeight="28"
-              letterSpacing="-0.2"
-              fill="#2A2859"
-            >
-              <tspan fontWeight="300">Areal Leilighet: </tspan>
-              <tspan fontWeight="500">{savedArealLeilighet || 'Ukjent'} m²</tspan>
-            </text>
-            <text 
-              x="30" 
-              y="388" 
+              y={buildingTypeName.toLowerCase() === 'blokk' ? "388" : (showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "332" : "360")} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
               lineHeight="28"
@@ -514,18 +529,20 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               m²
             </text>
             
-            <text 
-              x="30" 
-              y="260" 
-              fontFamily="Oslo Sans, sans-serif" 
-              fontSize="18" 
-              lineHeight="28"
-              letterSpacing="-0.2"
-              fill="#2A2859"
-            >
-              <tspan fontWeight="300">Eiertype: </tspan>
-              <tspan fontWeight="500">Borettslag</tspan>
-            </text>
+            {buildingTypeName.toLowerCase() === 'blokk' && (
+              <text 
+                x="30" 
+                y="260" 
+                fontFamily="Oslo Sans, sans-serif" 
+                fontSize="18" 
+                lineHeight="28"
+                letterSpacing="-0.2"
+                fill="#2A2859"
+              >
+                <tspan fontWeight="300">Eiertype: </tspan>
+                <tspan fontWeight="500">Borettslag</tspan>
+              </text>
+            )}
             
             {showYellowBox && (
               <text 
@@ -544,7 +561,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             
             <text 
               x="30" 
-              y="332" 
+              y={showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "304" : "332"} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="16" 
               lineHeight="28"
@@ -555,56 +572,60 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               Estimerte verdier
             </text>
             
-            <text 
-              x="30" 
-              y="360" 
-              fontFamily="Oslo Sans, sans-serif" 
-              fontSize="18" 
-              lineHeight="28"
-              letterSpacing="-0.2"
-              fill="#2A2859"
-            >
-              <tspan fontWeight="300">Areal Leilighet: </tspan>
-            </text>
-            <foreignObject x="153" y="342" width={calculateInputWidth(editedArealLeilighet)} height="24">
-              <input
-                xmlns="http://www.w3.org/1999/xhtml"
-                type="text"
-                value={editedArealLeilighet}
-                onChange={(e) => setEditedArealLeilighet(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  border: 'none',
-                  borderBottom: '1px solid #2A2859',
-                  padding: '0',
-                  fontFamily: 'Oslo Sans, sans-serif',
-                  fontSize: '18px',
-                  lineHeight: '28px',
-                  letterSpacing: '-0.2px',
-                  fontWeight: '500',
-                  color: '#2A2859',
-                  background: 'transparent',
-                  outline: 'none'
-                }}
-              />
-            </foreignObject>
-            <text 
-              x={153 + calculateInputWidth(editedArealLeilighet) + 3}
-              y="360" 
-              fontFamily="Oslo Sans, sans-serif" 
-              fontSize="18" 
-              lineHeight="28"
-              letterSpacing="-0.2"
-              fill="#2A2859"
-              fontWeight="500"
-            >
-              m²
-            </text>
+            {buildingTypeName.toLowerCase() === 'blokk' && (
+              <>
+                <text 
+                  x="30" 
+                  y="360" 
+                  fontFamily="Oslo Sans, sans-serif" 
+                  fontSize="18" 
+                  lineHeight="28"
+                  letterSpacing="-0.2"
+                  fill="#2A2859"
+                >
+                  <tspan fontWeight="300">Areal Leilighet: </tspan>
+                </text>
+                <foreignObject x="153" y="342" width={calculateInputWidth(editedArealLeilighet)} height="24">
+                  <input
+                    xmlns="http://www.w3.org/1999/xhtml"
+                    type="text"
+                    value={editedArealLeilighet}
+                    onChange={(e) => setEditedArealLeilighet(e.target.value)}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      border: 'none',
+                      borderBottom: '1px solid #2A2859',
+                      padding: '0',
+                      fontFamily: 'Oslo Sans, sans-serif',
+                      fontSize: '18px',
+                      lineHeight: '28px',
+                      letterSpacing: '-0.2px',
+                      fontWeight: '500',
+                      color: '#2A2859',
+                      background: 'transparent',
+                      outline: 'none'
+                    }}
+                  />
+                </foreignObject>
+                <text 
+                  x={153 + calculateInputWidth(editedArealLeilighet) + 3}
+                  y="360" 
+                  fontFamily="Oslo Sans, sans-serif" 
+                  fontSize="18" 
+                  lineHeight="28"
+                  letterSpacing="-0.2"
+                  fill="#2A2859"
+                  fontWeight="500"
+                >
+                  m²
+                </text>
+              </>
+            )}
             
             <text 
               x="30" 
-              y="388" 
+              y={buildingTypeName.toLowerCase() === 'blokk' ? "388" : (showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "332" : "360")} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
               lineHeight="28"
@@ -613,7 +634,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             >
               <tspan fontWeight="300">Energiforbruk: </tspan>
             </text>
-            <foreignObject x="155" y="370" width={calculateInputWidth(editedEnergiforbruk)} height="24">
+            <foreignObject x="155" y={buildingTypeName.toLowerCase() === 'blokk' ? "370" : "342"} width={calculateInputWidth(editedEnergiforbruk)} height="24">
               <input
                 xmlns="http://www.w3.org/1999/xhtml"
                 type="text"
@@ -643,7 +664,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             </foreignObject>
             <text 
               x={155 + calculateInputWidth(editedEnergiforbruk) + 3}
-              y="388" 
+              y={buildingTypeName.toLowerCase() === 'blokk' ? "388" : "360"} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
               lineHeight="28"
@@ -850,7 +871,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             </text>
             
             {/* Beskrivelsestekst */}
-            <foreignObject x="30" y={isDropdownExpanded ? -28 : 112} width="276" height="200">
+            <foreignObject x="30" y={isDropdownExpanded ? -28 : 112} width="276" height="300" style={{ overflow: 'visible' }}>
               <div xmlns="http://www.w3.org/1999/xhtml" style={{
                 fontFamily: 'Oslo Sans, sans-serif',
                 fontWeight: 300,
@@ -859,14 +880,102 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 letterSpacing: '0px',
                 color: '#000000'
               }}>
-                Byantikvarens oversikt over registrerte kulturminner i Oslo. Listen inneholder alt fra bygninger, hage- og parkanlegg, broer, veier og arkeologiske kulturminner til større by- og bygningsmiljøer. Den er et viktig verktøy i Byantikvarens arbeid med å verne et utvalg av byens historie. Byantikvaren har ikke foretatt en fullstendig registrering av alle kulturminner i Oslo, så Gul liste gir ikke den fulle og hele oversikt. Den oppdateres kontinuerlig.
+                Gul liste er <span 
+                  style={{ 
+                    textDecoration: 'underline', 
+                    textDecorationStyle: 'dotted', 
+                    textUnderlineOffset: '4px',
+                    cursor: 'pointer',
+                    position: 'relative'
+                  }}
+                  onMouseEnter={() => setShowByantikvarTooltip(true)}
+                  onMouseLeave={() => setShowByantikvarTooltip(false)}
+                >
+                  Byantikvarens
+                  <div 
+                    className="tooltip-byantikvar"
+                    onMouseEnter={() => setShowByantikvarTooltip(true)}
+                    onMouseLeave={() => setShowByantikvarTooltip(false)}
+                    style={{
+                      display: showByantikvarTooltip ? 'block' : 'none',
+                      position: 'absolute',
+                      top: '100%',
+                      left: '-79px',
+                      marginTop: '0px',
+                      padding: '16px',
+                      paddingTop: '24px',
+                      backgroundColor: '#D1F9FF',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      borderRadius: '4px',
+                      width: '280px',
+                      zIndex: 1000
+                    }}
+                  >
+                    <h4 style={{
+                      fontFamily: 'Oslo Sans',
+                      fontWeight: 500,
+                      fontSize: '16px',
+                      lineHeight: '24px',
+                      letterSpacing: '-0.2px',
+                      color: '#000000',
+                      margin: '0 0 8px 0'
+                    }}>
+                      Ordforklaring
+                    </h4>
+                    <p style={{
+                      fontFamily: 'Oslo Sans',
+                      fontWeight: 300,
+                      fontSize: '14px',
+                      lineHeight: '22px',
+                      letterSpacing: '0px',
+                      color: '#000000',
+                      margin: 0
+                    }}>
+                      Byantikvaren (BYA) Byantikvaren (BYA) er Oslo kommunes faglige rådgiver i alle spørsmål som gjelder bevaring av arkitektoniske og kulturhistoriske verdifulle bygninger, anlegg og miljøer og arkeologiske kulturminner.
+                      <br/><br/>
+                      <a 
+                        href="https://www.oslo.kommune.no/etater-foretak-og-ombud/byantikvaren/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ 
+                          color: '#000000', 
+                          textDecoration: 'underline',
+                          fontFamily: 'Oslo Sans',
+                          fontWeight: 300,
+                          fontSize: '14px'
+                        }}
+                      >
+                        Les mer om Byantikvaren
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', display: 'inline-block', verticalAlign: 'middle' }}>
+                          <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#000000"/>
+                          <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#000000"/>
+                        </svg>
+                      </a>
+                    </p>
+                  </div>
+                </span> oversikt over verneverdige bygninger og kulturmiljøer i Oslo. Den inneholder blant annet bolighus, hager, parker, broer og veier med kulturhistorisk verdi. Listen brukes som et verktøy i arbeidet med å ta vare på viktige deler av byens historie. Gul liste oppdateres jevnlig, men er ikke en fullstendig oversikt over alle kulturminner i Oslo. Kulturminnene på Gul liste er delt inn i tre grupper: De kan være kommunalt listeført, vernet etter plan- og bygningsloven eller fredet.
+                <br/><br/>
+                <a 
+                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/kulturminner-og-vern/gul-liste/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ 
+                    color: '#000000', 
+                    textDecoration: 'underline',
+                    fontFamily: 'Oslo Sans',
+                    fontWeight: 300,
+                    fontSize: '14px'
+                  }}
+                >
+                  Les mer om gul liste her.
+                </a>
               </div>
             </foreignObject>
             
             {/* Mørk blå boks med hvit tekst */}
             <rect 
               x="30" 
-              y={isDropdownExpanded ? 185 : 325} 
+              y={isDropdownExpanded ? 285 : 425} 
               width="276" 
               height="98" 
               fill="#2A2859"
@@ -874,7 +983,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             />
             
             {/* Hvit tekst inni boksen */}
-            <foreignObject x="46" y={isDropdownExpanded ? 201 : 341} width="244" height="66">
+            <foreignObject x="46" y={isDropdownExpanded ? 301 : 441} width="244" height="66">
               <div xmlns="http://www.w3.org/1999/xhtml" style={{
                 fontFamily: 'Oslo Sans, sans-serif',
                 fontWeight: 400,
@@ -894,7 +1003,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             >
               <rect 
                 x="30" 
-                y={isDropdownExpanded ? 307 : 447} 
+                y={isDropdownExpanded ? 407 : 547} 
                 width="276" 
                 height={isDropdownExpanded ? 320 : 56} 
                 fill="#2A2859"
@@ -904,7 +1013,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               {/* Tekst i ny boks */}
               <text 
                 x="46" 
-                y={isDropdownExpanded ? 335 : 475} 
+                y={isDropdownExpanded ? 435 : 575} 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontWeight="400"
                 fontSize="14" 
@@ -918,14 +1027,14 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               </text>
             
               {/* Dropdown ikon */}
-              <svg x="266" y={isDropdownExpanded ? 323 : 463} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none', transform: isDropdownExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transformOrigin: '278px 335px', transition: 'all 0.3s ease' }}>
+              <svg x="266" y={isDropdownExpanded ? 423 : 563} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none', transform: isDropdownExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transformOrigin: '278px 435px', transition: 'all 0.3s ease' }}>
                 <path fillRule="evenodd" clipRule="evenodd" d="M12 14.56L4.7466 7.5L3.75 8.47002L12 16.5L20.25 8.47002L19.2534 7.5L12 14.56Z" fill="white"/>
               </svg>
             </g>
             
             {/* Ekspandert innhold for dropdown */}
             {isDropdownExpanded && (
-              <foreignObject x="46" y="379" width="244" height="200">
+              <foreignObject x="46" y="479" width="244" height="200">
                 <div xmlns="http://www.w3.org/1999/xhtml" style={{
                   fontFamily: 'Oslo Sans, sans-serif',
                   fontWeight: 300,
@@ -1013,7 +1122,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
       {/* Render Tetting and SolenergiGul outside SVG */}
       {(selectedSolution === 'Tetting' || 
         (selectedSolution === 'Solenergi' && showYellowBox) || 
-        (selectedSolution === 'Utskiftning av vindu' && showYellowBox)) && (
+        (selectedSolution === 'Oppgradering av vindu' && showYellowBox)) && (
         <div style={{ 
           position: 'absolute',
           top: 0,
