@@ -42,7 +42,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
           fill="#2A2859"
           dominantBaseline="hanging"
         >
-          Solenergi Gul
+          Solenergi
         </text>
         
         {/* Main text content */}

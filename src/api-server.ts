@@ -6,6 +6,10 @@ import fetch from 'node-fetch';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
 import { energyRatingService } from './services/energyRatingService.js';
 import { csvService } from './services/csvService.js';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 const app = express();
 const PORT = process.env.API_PORT || 3001;
@@ -216,6 +220,137 @@ app.post('/api/energy-rating', async (req, res) => {
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Unknown error',
       address,
+      _meta: {
+        duration,
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
+});
+
+// Støtteordninger endpoint - kjører Python script direkte
+app.get('/api/stotteordninger', async (req, res) => {
+  const { gulliste, tiltak, bygningstype } = req.query;
+  
+  if (!tiltak || !bygningstype) {
+    return res.status(400).json({ 
+      error: 'Missing required parameters: tiltak and bygningstype' 
+    });
+  }
+
+  const gullisteParam = gulliste === 'true' ? 'true' : 'false';
+  
+  console.log(`[API Server] Fetching støtteordninger: gulliste=${gullisteParam}, tiltak=${tiltak}, bygningstype=${bygningstype}`);
+  const startTime = Date.now();
+
+  try {
+    // Kjør Python script med UTF-8 encoding
+    const { stdout, stderr } = await execAsync(
+      `python hent_stotteordninger_api.py ${gullisteParam} ${tiltak} ${bygningstype}`,
+      { encoding: 'utf8' }
+    );
+    
+    if (stderr) {
+      console.error('[API Server] Python stderr:', stderr);
+    }
+    
+    // Parse JSON output
+    const data = JSON.parse(stdout);
+    const duration = Date.now() - startTime;
+    
+    console.log(`[API Server] Found ${Array.isArray(data) ? data.length : 0} støtteordninger in ${duration}ms`);
+    res.json(data);
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`[API Server] Støtteordninger fetch failed after ${duration}ms:`, error);
+    
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      _meta: {
+        duration,
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
+});
+
+// Get støtteordninger directly from Excel
+app.get('/api/stotteordninger-live', async (req, res) => {
+  const { gulliste, tiltak, bygningstype } = req.query;
+  
+  if (!tiltak || !bygningstype) {
+    return res.status(400).json({ 
+      error: 'Mangler påkrevde parametre: tiltak og bygningstype' 
+    });
+  }
+  
+  console.log(`[API Server] Henter støtteordninger direkte fra Excel: gulliste=${gulliste}, tiltak=${tiltak}, bygningstype=${bygningstype}`);
+  const startTime = Date.now();
+  
+  try {
+    const { stdout, stderr } = await execAsync(
+      `python hent_stotteordninger_direkte.py ${gulliste || 'false'} "${tiltak}" "${bygningstype}"`,
+      { encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' } }
+    );
+    
+    if (stderr) {
+      console.error('[API Server] Python stderr:', stderr);
+    }
+    
+    const data = JSON.parse(stdout);
+    const duration = Date.now() - startTime;
+    
+    console.log(`[API Server] Hentet støtteordninger direkte i ${duration}ms`);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.json(data);
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`[API Server] Direkte henting feilet etter ${duration}ms:`, error);
+    
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      _meta: {
+        duration,
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
+});
+
+// Update støtteordninger cache endpoint
+app.post('/api/update-stotteordninger', async (req, res) => {
+  console.log('[API Server] Updating støtteordninger cache...');
+  const startTime = Date.now();
+  
+  try {
+    // Run the Python script to update cache
+    const { stdout, stderr } = await execAsync(
+      'python stotteordning_cache.py',
+      { encoding: 'utf8' }
+    );
+    
+    if (stderr) {
+      console.error('[API Server] Python stderr:', stderr);
+    }
+    
+    const duration = Date.now() - startTime;
+    console.log(`[API Server] Støtteordninger cache updated in ${duration}ms`);
+    
+    res.json({
+      success: true,
+      message: 'Støtteordninger cache updated successfully',
+      output: stdout,
+      _meta: {
+        duration,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`[API Server] Cache update failed after ${duration}ms:`, error);
+    
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Unknown error',
       _meta: {
         duration,
         timestamp: new Date().toISOString()

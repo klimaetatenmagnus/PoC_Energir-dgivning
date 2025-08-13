@@ -72,6 +72,9 @@ export default function App() {
   const [isLoadingFigmaSuggestions, setIsLoadingFigmaSuggestions] = useState(false);
   const figmaDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const figmaWrapperRef = useRef<HTMLDivElement>(null);
+  
+  /* 5. Støtteordninger state */
+  const [stotteordninger, setStotteordninger] = useState<any>(null);
 
   const handleAddressLookup = async (address: string) => {
     setLookupLoading(true);
@@ -91,6 +94,21 @@ export default function App() {
     }
   };
 
+  // Helper function to load mock støtteordninger for test mode
+  const loadMockStotteordninger = async (bygningstype: string) => {
+    try {
+      const response = await fetch(`http://localhost:3002/api/alle-stotteordninger?bygningstype=${bygningstype}`);
+      if (response.ok) {
+        const stotteData = await response.json();
+        setStotteordninger(stotteData);
+        console.log('[TEST MODE] Mock støtteordninger loaded:', stotteData);
+      }
+    } catch (error) {
+      console.error('[TEST MODE] Error loading mock støtteordninger:', error);
+      setStotteordninger(null);
+    }
+  };
+
   const handleFigmaSearch = async () => {
     if (!figmaSearchValue.trim()) return;
     
@@ -101,6 +119,23 @@ export default function App() {
       const result = await buildingApi.lookupAddress(figmaSearchValue);
       setFigmaResult(result);
       console.log('[Figma] Lookup successful:', result);
+      
+      // Hent støtteordninger basert på bygningstype
+      const bygningstype = result?.bygningstype?.toLowerCase() || 'enebolig';
+      try {
+        const response = await fetch(`http://localhost:3002/api/alle-stotteordninger?bygningstype=${bygningstype}`);
+        if (response.ok) {
+          const stotteData = await response.json();
+          setStotteordninger(stotteData);
+          console.log('[Figma] Støtteordninger loaded:', stotteData);
+        } else {
+          console.error('[Figma] Failed to load støtteordninger');
+          setStotteordninger(null);
+        }
+      } catch (error) {
+        console.error('[Figma] Error loading støtteordninger:', error);
+        setStotteordninger(null);
+      }
       
       // Always use FigmaMainScript component - it will handle the animation internally
       setMode('figma-blokk');
@@ -150,18 +185,24 @@ export default function App() {
       console.log('[TEST MODE] Loading Lyseveien 3 data (Enebolig)');
       setFigmaSearchValue("Lyseveien 3, 0362 OSLO");
       setFigmaResult(LYSEVEIEN_3_DATA.buildingData);
+      // Load mock støtteordninger for enebolig
+      loadMockStotteordninger('enebolig');
       setMode('figma-blokk');
       return;
     } else if (value === "2") {
       console.log('[TEST MODE] Loading Thereses gate 11A data (Blokkleilighet)');
       setFigmaSearchValue("Thereses gate 11A, 0358 OSLO");
       setFigmaResult(THERESES_11A_DATA.buildingData);
+      // Load mock støtteordninger for blokk
+      loadMockStotteordninger('blokk');
       setMode('figma-blokk');
       return;
     } else if (value === "3") {
       console.log('[TEST MODE] Loading Thereses gate 44A data (Bygård)');
       setFigmaSearchValue("Thereses gate 44A, 0168 OSLO");
       setFigmaResult(THERESES_44A_DATA.buildingData);
+      // Load mock støtteordninger for blokk
+      loadMockStotteordninger('blokk');
       setMode('figma-blokk');
       return;
     }
@@ -242,11 +283,13 @@ export default function App() {
         <FigmaMainScript
           searchAddress={figmaSearchValue}
           buildingData={figmaResult}
+          stotteordninger={stotteordninger}
           onBack={() => {
             setMode("figma");
             setFigmaResult(null);
             setFigmaSearchValue("");
             setFigmaError(null);
+            setStotteordninger(null);
           }}
         />
       </div>
@@ -313,7 +356,7 @@ export default function App() {
             </div>
             
             {/* Energiportalen tekst */}
-            <h1 className="energiportalen-title">Energiportalen</h1>
+            <h1 className="energiportalen-title">Energinøkkelen</h1>
             
             {/* Søkefelt wrapper */}
             <div className="figma-search-wrapper" ref={figmaWrapperRef}>

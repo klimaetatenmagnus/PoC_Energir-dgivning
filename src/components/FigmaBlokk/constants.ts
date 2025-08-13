@@ -5,7 +5,7 @@ export const ENERGY_SOLUTIONS = [
   "Solenergi",
   "Tetting",
   "Temperaturstyring",
-  "Utskiftning av vindu",
+  "Oppgradering av vindu",
   "Isolering av kjeller og loft",
   "Etterisolering av yttervegg",
   "Ventilasjon"

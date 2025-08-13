@@ -13,6 +13,14 @@ timeout /t 1 /nobreak >nul
 REM Load environment variables from .env file
 for /f "delims=" %%x in (.env) do (set "%%x")
 
+REM Check if Python is available
+where python >nul 2>nul
+if errorlevel 1 (
+    echo WARNING: Python is not installed or not in PATH!
+    echo          Stotteordninger API will not work properly.
+    echo.
+)
+
 REM Start building-info-service
 echo Starting building-info-service on port 4000...
 start "building-info-service" cmd /c "set LOG_SOAP=1 && npx tsx services/building-info-service/index.ts"
@@ -39,6 +47,7 @@ echo   UI: http://localhost:5173
 echo   API: http://localhost:3001
 echo   Building Service: http://localhost:4000
 echo   Solar Service: http://localhost:4003
+echo   Stotteordninger: http://localhost:3001/api/stotteordninger
 echo.
 echo Test addresses:
 echo   - Rosenholmveien 25, Oslo

@@ -11,9 +11,10 @@ interface EnergySolutionButtonsProps {
   onToggleYellowBox?: (show: boolean) => void;
   yearlyConsumption?: string;
   onProcessClick?: () => void;
+  onCloseYellowBox?: () => void;
 }
 
-export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, showYellowBox = true, onToggleYellowBox, yearlyConsumption = '', onProcessClick }) => {
+export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, showYellowBox = true, onToggleYellowBox, yearlyConsumption = '', onProcessClick, onCloseYellowBox }) => {
   // Add CSS for fade animation
   React.useEffect(() => {
     const style = document.createElement('style');
@@ -212,7 +213,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     
     let savingsPerBRA = 0;
     
-    if (measure === 'Utskiftning av vindu') {
+    if (measure === 'Oppgradering av vindu') {
       savingsPerBRA = savingsData[buildingCategory][0.75] || 0;
     } else if (measure === 'Etterisolering av yttervegg') {
       savingsPerBRA = savingsData[buildingCategory]['etteriso_yttervegg'] || 0;
@@ -280,7 +281,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     
     let savingsPerBRA = 0; // kWh/m² saved
     
-    if (measure === 'Utskiftning av vindu') {
+    if (measure === 'Oppgradering av vindu') {
       // For windows, we'll use U-value 0.75 as default
       savingsPerBRA = savingsData[buildingCategory][0.75] || 0;
     } else if (measure === 'Etterisolering av yttervegg') {
@@ -761,14 +762,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
               </g>
             </g>
           )}
-          
-          {/* "Godtgjørelse" label - only visible when not hovering */}
-          {!(hoveredIndex === index || checkedItems.has(index)) && (
-            <g>
-            <rect width="92" height="30" transform="translate(363 10)" fill="#C7F6C9"/>
-            <path d="M376.726 30.14C373.8 30.14 371.672 28.082 371.672 24.778C371.672 21.558 373.926 19.5 376.572 19.5C378.35 19.5 379.722 20.298 380.464 21.838L379.036 22.636C378.574 21.642 377.664 21.068 376.572 21.068C374.92 21.068 373.38 22.23 373.38 24.764C373.38 27.298 374.822 28.642 376.852 28.642C377.748 28.642 378.434 28.46 379.05 28.124V25.66H375.62V24.204H380.492V28.964C379.47 29.748 378.14 30.14 376.726 30.14ZM385.568 30.14C383.636 30.14 382.054 28.628 382.054 26.248C382.054 23.924 383.622 22.412 385.568 22.412C387.514 22.412 389.082 23.924 389.082 26.248C389.082 28.628 387.5 30.14 385.568 30.14ZM385.568 28.81C386.618 28.81 387.472 27.998 387.472 26.248C387.472 24.484 386.604 23.742 385.568 23.742C384.532 23.742 383.664 24.484 383.664 26.248C383.664 27.998 384.532 28.81 385.568 28.81ZM395.625 19.64H397.193V30H395.625V28.656C395.051 29.692 394.155 30.112 393.301 30.112C391.509 30.112 390.221 28.572 390.221 26.318C390.221 23.98 391.523 22.426 393.483 22.426C394.323 22.426 395.163 22.804 395.625 23.714V19.64ZM393.721 28.74C394.855 28.74 395.625 27.97 395.625 26.234C395.625 24.512 394.869 23.686 393.721 23.686C392.643 23.686 391.845 24.554 391.845 26.234C391.845 27.9 392.643 28.74 393.721 28.74ZM401.306 27.704C401.306 28.53 401.81 28.782 402.328 28.782C402.734 28.782 403.056 28.614 403.378 28.292L404.05 29.3C403.49 29.86 402.874 30.126 402.076 30.126C400.788 30.126 399.738 29.342 399.738 27.802V23.798H398.436V22.58H399.738V20.928L401.306 20.214V22.58H403.924V23.798H401.306V27.704ZM413.841 27.662L414.905 28.278C414.485 29.202 413.505 30.126 411.811 30.126C409.613 30.126 408.283 28.502 408.283 26.22C408.283 23.966 409.725 22.412 411.699 22.412C413.449 22.412 414.891 23.588 414.891 25.688L414.863 26.612H409.823C409.907 28.18 410.677 28.852 411.909 28.852C412.819 28.852 413.449 28.362 413.841 27.662ZM411.699 23.644C410.747 23.644 409.949 24.148 409.823 25.492H413.365C413.379 24.176 412.567 23.644 411.699 23.644ZM423.683 23.798H422.129V23.966C422.381 24.316 422.507 24.722 422.507 25.142C422.507 26.486 421.471 27.83 419.315 27.83H418.951C418.195 27.83 417.705 28.082 417.705 28.53C417.705 28.838 417.943 29.062 418.419 29.062H421.513C422.787 29.062 423.515 29.72 423.515 30.728C423.515 32.254 421.961 33.136 419.483 33.136C417.313 33.136 415.857 32.59 415.479 31.148L417.005 30.854C417.355 31.75 418.167 31.988 419.525 31.988C420.981 31.988 422.017 31.596 422.017 30.91C422.017 30.588 421.835 30.35 421.331 30.35H417.957C416.795 30.35 416.193 29.72 416.193 28.936C416.193 28.18 416.865 27.578 417.789 27.396C416.767 26.948 416.263 25.996 416.263 25.1C416.263 23.77 417.341 22.412 419.399 22.412C420.309 22.412 421.023 22.734 421.443 23.196V22.58H423.683V23.798ZM419.399 26.696C420.477 26.696 420.981 25.94 420.981 25.128C420.981 24.316 420.477 23.574 419.399 23.574C418.335 23.574 417.817 24.316 417.817 25.128C417.817 25.94 418.335 26.696 419.399 26.696ZM428.599 22.412C430.111 22.412 431.007 23.392 431.007 25.002V30H429.439V25.254C429.439 24.232 428.949 23.77 428.095 23.77C426.989 23.77 426.429 24.54 426.429 25.982V30H424.861V22.58H426.429V23.644C426.933 22.86 427.675 22.412 428.599 22.412ZM438.179 27.662L439.243 28.278C438.823 29.202 437.843 30.126 436.149 30.126C433.951 30.126 432.621 28.502 432.621 26.22C432.621 23.966 434.063 22.412 436.037 22.412C437.787 22.412 439.229 23.588 439.229 25.688L439.201 26.612H434.161C434.245 28.18 435.015 28.852 436.247 28.852C437.157 28.852 437.787 28.362 438.179 27.662ZM436.037 23.644C435.085 23.644 434.287 24.148 434.161 25.492H437.703C437.717 24.176 436.905 23.644 436.037 23.644ZM442.926 27.704C442.926 28.53 443.43 28.782 443.948 28.782C444.354 28.782 444.676 28.614 444.998 28.292L445.67 29.3C445.11 29.86 444.494 30.126 443.696 30.126C442.408 30.126 441.358 29.342 441.358 27.802V23.798H440.056V22.58H441.358V20.928L442.926 20.214V22.58H445.544V23.798H442.926V27.704Z" fill="#2A2859"/>
-            </g>
-          )}
         </svg>
       ))}
       
@@ -804,7 +797,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
           fill="#F9F9F9" 
           textAnchor="start"
         >
-          Prosessen videre
+          Hvordan gjennomføre tiltakene
         </text>
         {/* Dropdown arrow icon - 16px from right edge, 8px from top */}
         <svg x="431" y="8" width="24" height="28" viewBox="0 0 24 28" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -44,7 +44,7 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
           fill="#2A2859"
           dominantBaseline="hanging"
         >
-          Utskiftning av vindu Gul
+          Utskiftning av vindu
         </text>
         
         
