@@ -168,7 +168,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
       'Varmepumpe': EnergySolutions.Varmepumpe,
       'Solenergi': showYellowBox ? EnergySolutions.SolenergiGul : EnergySolutions.Solenergi,
       'Tetting': showYellowBox ? EnergySolutions.TettingGul : EnergySolutions.Tetting,
-      'Temperaturstyring': EnergySolutions.Temperaturstyring,
+      'Temperaturstyring': showYellowBox ? EnergySolutions.TemperaturstyringGul : EnergySolutions.Temperaturstyring,
       'Oppgradering av vindu': showYellowBox ? EnergySolutions.UtskiftningAvVinduGul : EnergySolutions.UtskiftningAvVindu,
       'Isolering av kjeller og loft': EnergySolutions.IsoleringAvKjellerOgLoft,
       'Etterisolering av yttervegg': EnergySolutions.EtterisoleringAvYttervegg,
@@ -178,8 +178,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     const Component = componentMap[selectedSolution];
     if (!Component) return null;
     
-    // Pass onBack prop to Tetting, Solenergi, and Oppgradering av vindu
-    if (selectedSolution === 'Tetting' || selectedSolution === 'Solenergi' || selectedSolution === 'Oppgradering av vindu') {
+    // Pass onBack prop to Tetting, Temperaturstyring, Solenergi, and Oppgradering av vindu
+    if (selectedSolution === 'Tetting' || selectedSolution === 'Temperaturstyring' || selectedSolution === 'Solenergi' || selectedSolution === 'Oppgradering av vindu') {
       return <Component onBack={() => onExpand && onExpand(false)} buildingType={buildingTypeName} />;
     }
     
@@ -1119,8 +1119,9 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     </svg>
       </div>
       
-      {/* Render Tetting and SolenergiGul outside SVG */}
+      {/* Render Tetting, Temperaturstyring and SolenergiGul outside SVG */}
       {(selectedSolution === 'Tetting' || 
+        selectedSolution === 'Temperaturstyring' ||
         (selectedSolution === 'Solenergi' && showYellowBox) || 
         (selectedSolution === 'Oppgradering av vindu' && showYellowBox)) && (
         <div style={{ 

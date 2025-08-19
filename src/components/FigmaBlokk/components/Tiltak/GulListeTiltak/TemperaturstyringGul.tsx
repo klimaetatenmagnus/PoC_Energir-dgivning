@@ -6,7 +6,7 @@ interface TettingProps {
   stotteordninger?: any[];
 }
 
-export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType, stotteordninger: propStotteordninger }) => {
+export const Temperaturstyring: React.FC<TettingProps> = ({ onBack, buildingType, stotteordninger: propStotteordninger }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
   const [stotteordninger, setStotteordninger] = useState<any[]>([]);
@@ -27,7 +27,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType, stotteor
         const mappedType = bygningstyperMap[buildingType?.toLowerCase() || 'enebolig'] || 'enebolig';
         
         // Kall API endpoint som leser direkte fra Excel
-        const url = `http://localhost:3001/api/stotteordninger-live?gulliste=true&tiltak=tetting&bygningstype=${mappedType}`;
+        const url = `http://localhost:3001/api/stotteordninger-live?gulliste=true&tiltak=smart_energistyring&bygningstype=${mappedType}`;
         console.log('Fetching støtteordninger from:', url);
         const response = await fetch(url);
         
@@ -104,7 +104,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType, stotteor
           fill="#2A2859"
           dominantBaseline="hanging"
         >
-          Tetting
+          Temperaturstyring
         </text>
         
         {/* Main text content with scroll if needed */}
@@ -141,18 +141,19 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType, stotteor
               }
             `}</style>
             <p style={{ marginBottom: '16px' }}>
-              Tetting er et enkelt og effektivt tiltak som kan gi stor forskjell i både komfort og strømforbruk. Ofte holder det å tette rundt vinduer, dører og lister for å stoppe trekken og få lunere rom. Tiltaket krever lite inngrep, koster lite – og passer godt til eldre bygg.
-            </p>
-            <p style={{ marginBottom: '16px' }}>
-              For å få et varig og trygt resultat, bør du bruke materialer og metoder som er tilpasset bygningens alder og konstruksjon.
+              Temperaturstyring handler om å bruke varmen smartere – til riktig tid og på riktig sted. Dette gjør boligen mer behagelig og reduserer unødvendig strømbruk. Med enkle tiltak kan du varme opp der du trenger det, og senke temperaturen i rom du ikke bruker. Det finnes alt fra manuelle brytere til automatiske systemer som styrer varme etter tid på døgnet eller bruksmønster, enten i hvert enkelt rom, eller hele boligen. Dette er et godt tiltak som ikke krever store investeringer.
             </p>
             {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
               <p style={{ marginBottom: '20px' }}>
-                Trekken i eldre eneboliger kommer ofte fra vinduer, dører og overganger mellom etasjer. I murhus er det ofte gulv, hjørner og overgangen mot kjeller og loft som lekker. I trehus kan det være rundt dører og vinduer, der materialene har beveget seg over tid. Tetting med tettelister, dyttestrimmel eller isolering bak listverk er enkle tiltak som raskt gir effekt.
+                I eldre eneboliger kan det lekke varme fra et rom til et annet, men du har ofte god kontroll på oppvarmingen i hvert rom. Temperaturstyring kan derfor jevne ut varmen bedre. Har du elbillader, varmtvannsbereder eller solceller, kan du også se på løsninger som styrer strømforbruket når belastningen er høy eller prisene er høye.
+              </p>
+            ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
+              <p style={{ marginBottom: '20px' }}>
+                I flermannsboliger og rekkehus er det vanlig at enkelte rom blir kaldere enn andre. Derfor kan det være smart å styre temperaturen rom for rom, og holde den lav der du ikke oppholder deg, samtidig som du har det lunt i stua. Har du tekniske installasjoner som elbillading, solceller eller varmtvannsberedere, kan det være aktuelt å installere et system som sørger for at strømmen brukes jevnere og smartere gjennom døgnet. Dette kalles pris- og effektstyring.
               </p>
             ) : (
               <p style={{ marginBottom: '20px' }}>
-                I blokker er det vanlig at trekken kommer rundt eldre vinduer eller i overgangen mot fellesarealer som trapperom, kjeller eller loft. Tetting rundt egne vinduer og inne i leiligheten kan du ofte gjøre selv, så lenge det ikke berører fasade eller felleskonstruksjoner. Hvis lekkasjen gjelder deler av bygget som deles av flere, bør tiltakene vurderes i fellesskap med styret. Tetting er også lurt å gjøre sammen med annet vedlikehold for å få mer igjen for innsatsen.
+                I blokker har man gjerne mindre kontroll over varmeanleggene, men det er likevel mye du kan gjøre i din egen leilighet. Ovner med innebygd døgnstyring eller små enheter som senker temperaturen om natten, kan gi bedre komfort uten mer strømbruk. Har borettslaget felles elbillading, solceller eller varmtvannsberedere, kan det være aktuelt å installere et system som sørger for at strømmen brukes jevnere og smartere gjennom døgnet. Dette kalles pris- og effektstyring.
               </p>
             )}
           </div>
@@ -187,7 +188,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType, stotteor
         <rect
           x="565"
           y="106"
-          width="148"
+          width="155"
           height="30"
           fill="#C7F6C9"
         />
@@ -208,12 +209,12 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType, stotteor
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Bedre inneklima
+          Bedre bokvalitet
         </text>
         <rect
           x="565"
           y="152"
-          width="180"
+          width="183"
           height="30"
           fill="#C7F6C9"
         />
@@ -239,7 +240,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType, stotteor
         <rect
           x="565"
           y="198"
-          width="215.01"
+          width="172"
           height="30"
           fill="#C7F6C9"
         />
@@ -260,7 +261,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType, stotteor
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Bedre temperaturkontroll
+          Bedre strømstyring
         </text>
         
         {/* Dark green box below the list */}
@@ -370,7 +371,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType, stotteor
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://issuu.com/fortidsminneforeningen/docs/en_k-tiltak_i_gamle_hus/13', '_blank')}
+          onClick={() => window.open('https://issuu.com/fortidsminneforeningen/docs/en_k-tiltak_i_gamle_hus/14', '_blank')}
         >
           Fortidsminneforeningen
         </text>
@@ -386,9 +387,9 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType, stotteor
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://byggogbevar.no/enoek/artikler/tiltak/tetting-rundt-vinduer-og-doerer/', '_blank')}
+          onClick={() => window.open('https://www.enova.no/nb/privat/bolig/tema-redusere-eller-styre-stromforbruket/varmestyringssystem/', '_blank')}
         >
-          Bygg og bevar
+          Enova
         </text>
         
         {/* Dynamic table with scrollbar */}
@@ -690,7 +691,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType, stotteor
               transition: `opacity ${isPermitOpen ? '0.4s' : '0.1s'} ease-in-out ${isPermitOpen ? '0.2s' : '0s'}, padding 0.6s ease-in-out`
             }}>
               <p style={{ margin: 0 }}>
-                Tetting regnes som vedlikehold og er normalt ikke søknadspliktig, så lenge tiltaket ikke endrer bygningens uttrykk, fasade eller detaljer. Inngrep som påvirker verneverdige vinduer eller dører, kan likevel være søknadspliktige. Er du i tvil, eller planlegger å gjøre inngrep i eldre konstruksjoner, kan du ta kontakt med Byantikvaren for gratis veiledning før du setter i gang. Du kan også kontakte Plan- og bygningsetaten og mot gebyr få en konkret vurdering av søknadsplikt.
+                Tiltak som å bytte ut ovner, termostater eller sette inn styring er normalt ikke søknadspliktig. Større inngrep, som nytt varmeanlegg eller endringer som berører fasaden eller konstruksjonen, kan derimot være søkandspliktig. Da er det lurt å ta en prat med Byantikvaren for gode tips før du setter i gang. Plan- og bygningsetaten gir også veiledning om søknadsplikt og eventuelt om du må kontakte en fagperson (arkitekt, byggmester eller entreprenør) for å hjelpe deg.
               </p>
               
               {/* Links section */}
