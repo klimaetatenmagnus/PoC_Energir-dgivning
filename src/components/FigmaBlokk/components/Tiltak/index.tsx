@@ -4,6 +4,7 @@ export { Solenergi as SolenergiGul } from './GulListeTiltak/SolenergiGul';
 export { Tetting } from './Tetting';
 export { Tetting as TettingGul } from './GulListeTiltak/TettingGul';
 export { Temperaturstyring } from './Temperaturstyring';
+export { Temperaturstyring as TemperaturstyringGul } from './GulListeTiltak/TemperaturstyringGul';
 export { UtskiftningAvVindu } from './UtskiftningAvVindu';
 export { UtskiftningAvVindu as UtskiftningAvVinduGul } from './GulListeTiltak/UtskiftningAvVinduGul';
 export { IsoleringAvKjellerOgLoft } from './IsoleringAvKjellerOgLoft';

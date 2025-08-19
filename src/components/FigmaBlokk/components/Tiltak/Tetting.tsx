@@ -162,7 +162,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         <rect
           x="565"
           y="60"
-          width="149"
+          width="132"
           height="30"
           fill="#C7F6C9"
         />
@@ -182,7 +182,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Reduser trekk
+          Mindre trekk
         </text>
         <rect
           x="565"
@@ -338,7 +338,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           fill="#FFFFFF"
           textAnchor="middle"
         >
-          Tips om tetting
+          Les mer
         </text>
         
         {/* Link below "Tips om tetting" */}
