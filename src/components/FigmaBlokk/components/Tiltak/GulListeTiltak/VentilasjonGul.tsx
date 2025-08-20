@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 
-interface UtskiftningAvVinduGulProps {
+interface VentilasjonGulProps {
   onBack?: () => void;
   buildingType?: string;
   buildingData?: any;
 }
 
-export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ onBack, buildingType, buildingData }) => {
+export const VentilasjonGul: React.FC<VentilasjonGulProps> = ({ onBack, buildingType, buildingData }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
-  const [activeButton, setActiveButton] = useState<string>('Generelt');
-  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const [stotteordninger, setStotteordninger] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -30,7 +28,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
         const mappedType = bygningstyperMap[buildingType?.toLowerCase() || 'enebolig'] || 'enebolig';
         
         // Kall API endpoint som leser direkte fra Excel
-        const url = `http://localhost:3001/api/stotteordninger-live?gulliste=true&tiltak=vinduer&bygningstype=${mappedType}`;
+        const url = `http://localhost:3001/api/stotteordninger-live?gulliste=true&tiltak=ventilasjon&bygningstype=${mappedType}`;
         console.log('Fetching støtteordninger from:', url);
         const response = await fetch(url);
         
@@ -59,6 +57,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
 
     fetchStotteordninger();
   }, [buildingType]);
+
 
   // Støtteordninger hentes nå via useEffect
   const needsScroll = stotteordninger.length > 4;
@@ -97,7 +96,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
       >
         <text
           x="60"
-          y="-50"
+          y="-30"
           fontFamily="Oslo Sans, sans-serif"
           fontWeight="700"
           fontStyle="normal"
@@ -107,482 +106,99 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
           fill="#2A2859"
           dominantBaseline="hanging"
         >
-          Oppgradering av vindu
+          Ventilasjon
         </text>
         
-        
-        {/* Button boxes - invisible clickable areas */}
-        <rect
-          x="60"
-          y="4"
-          width="101"
-          height="49"
-          fill="transparent"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Generelt')}
-          onMouseEnter={() => setHoveredButton('Generelt')}
-          onMouseLeave={() => setHoveredButton(null)}
-        />
-        
-        <rect
-          x="161"
-          y="4"
-          width="118"
-          height="49"
-          fill="transparent"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Vedlikehold')}
-          onMouseEnter={() => setHoveredButton('Vedlikehold')}
-          onMouseLeave={() => setHoveredButton(null)}
-        />
-        
-        <rect
-          x="279"
-          y="4"
-          width="136"
-          height="49"
-          fill="transparent"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Oppgradering')}
-          onMouseEnter={() => setHoveredButton('Oppgradering')}
-          onMouseLeave={() => setHoveredButton(null)}
-        />
-        
-        <rect
-          x="415"
-          y="4"
-          width="105"
-          height="49"
-          fill="transparent"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Utskiftning')}
-          onMouseEnter={() => setHoveredButton('Utskiftning')}
-          onMouseLeave={() => setHoveredButton(null)}
-        />
-        
-        {/* Text inside button boxes */}
-        <text
-          x="76"
-          y="28.5"
-          fontFamily="Oslo Sans"
-          fontWeight="400"
-          fontStyle="normal"
-          fontSize="16"
-          lineHeight="24"
-          letterSpacing="-0.2"
-          fill={activeButton === 'Generelt' ? "#000000" : hoveredButton === 'Generelt' ? "#1F42AA" : "#666666"}
-          dominantBaseline="middle"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Generelt')}
-          onMouseEnter={() => setHoveredButton('Generelt')}
-          onMouseLeave={() => setHoveredButton(null)}
-        >
-          Generelt
-        </text>
-        
-        <text
-          x="177"
-          y="28.5"
-          fontFamily="Oslo Sans"
-          fontWeight="400"
-          fontStyle="normal"
-          fontSize="16"
-          lineHeight="24"
-          letterSpacing="-0.2"
-          fill={activeButton === 'Vedlikehold' ? "#000000" : hoveredButton === 'Vedlikehold' ? "#1F42AA" : "#666666"}
-          dominantBaseline="middle"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Vedlikehold')}
-          onMouseEnter={() => setHoveredButton('Vedlikehold')}
-          onMouseLeave={() => setHoveredButton(null)}
-        >
-          Vedlikehold
-        </text>
-        
-        <text
-          x="295"
-          y="28.5"
-          fontFamily="Oslo Sans"
-          fontWeight="400"
-          fontStyle="normal"
-          fontSize="16"
-          lineHeight="24"
-          letterSpacing="-0.2"
-          fill={activeButton === 'Oppgradering' ? "#000000" : hoveredButton === 'Oppgradering' ? "#1F42AA" : "#666666"}
-          dominantBaseline="middle"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Oppgradering')}
-          onMouseEnter={() => setHoveredButton('Oppgradering')}
-          onMouseLeave={() => setHoveredButton(null)}
-        >
-          Oppgradering
-        </text>
-        
-        <text
-          x="431"
-          y="28.5"
-          fontFamily="Oslo Sans"
-          fontWeight="400"
-          fontStyle="normal"
-          fontSize="16"
-          lineHeight="24"
-          letterSpacing="-0.2"
-          fill={activeButton === 'Utskiftning' ? "#000000" : hoveredButton === 'Utskiftning' ? "#1F42AA" : "#666666"}
-          dominantBaseline="middle"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Utskiftning')}
-          onMouseEnter={() => setHoveredButton('Utskiftning')}
-          onMouseLeave={() => setHoveredButton(null)}
-        >
-          Utskiftning
-        </text>
-        
-        {/* Button underlines - active and hover */}
-        <rect
-          x="60"
-          y="49"
-          width="101"
-          height="4"
-          fill={activeButton === 'Generelt' ? "#6FE9FF" : "#1F42AA"}
-          opacity={activeButton === 'Generelt' ? 1 : hoveredButton === 'Generelt' ? 1 : 0}
-          style={{ transition: `opacity ${activeButton === 'Generelt' || hoveredButton === 'Generelt' ? '0.3s' : '0.1s'} ease-in-out` }}
-        />
-        
-        <rect
-          x="161"
-          y="49"
-          width="118"
-          height="4"
-          fill={activeButton === 'Vedlikehold' ? "#6FE9FF" : "#1F42AA"}
-          opacity={activeButton === 'Vedlikehold' ? 1 : hoveredButton === 'Vedlikehold' ? 1 : 0}
-          style={{ transition: `opacity ${activeButton === 'Vedlikehold' || hoveredButton === 'Vedlikehold' ? '0.3s' : '0.1s'} ease-in-out` }}
-        />
-        
-        <rect
-          x="279"
-          y="49"
-          width="136"
-          height="4"
-          fill={activeButton === 'Oppgradering' ? "#6FE9FF" : "#1F42AA"}
-          opacity={activeButton === 'Oppgradering' ? 1 : hoveredButton === 'Oppgradering' ? 1 : 0}
-          style={{ transition: `opacity ${activeButton === 'Oppgradering' || hoveredButton === 'Oppgradering' ? '0.3s' : '0.1s'} ease-in-out` }}
-        />
-        
-        <rect
-          x="415"
-          y="49"
-          width="105"
-          height="4"
-          fill={activeButton === 'Utskiftning' ? "#6FE9FF" : "#1F42AA"}
-          opacity={activeButton === 'Utskiftning' ? 1 : hoveredButton === 'Utskiftning' ? 1 : 0}
-          style={{ transition: `opacity ${activeButton === 'Utskiftning' || hoveredButton === 'Utskiftning' ? '0.3s' : '0.1s'} ease-in-out` }}
-        />
-        
-        {/* Horizontal line above content */}
-        <rect
-          x="60"
-          y="53"
-          width="464"
-          height="1"
-          fill="#CCCCCC"
-        />
-        
-        {/* Content areas for each button */}
-        {activeButton === 'Generelt' && (
-          <foreignObject x="60" y="69" width="464" height="289">
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{
-              fontFamily: 'Oslo Sans',
-              fontWeight: 300,
-              fontStyle: 'normal',
-              fontSize: '14px',
-              lineHeight: '22px',
-              letterSpacing: '0px',
-              color: '#000000',
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingRight: '10px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CCCCCC #F5F5F5'
-            }}>
-              <style>{`
-                div::-webkit-scrollbar {
-                  width: 6px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: #F5F5F5;
-                }
-                div::-webkit-scrollbar-thumb {
-                  background: #CCCCCC;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: #AAAAAA;
-                }
-              `}</style>
-              <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                Vinduer har mye å si for både komfort og energibruk i boligen. I eldre hus kan så mye som 40 % av varmetapet komme herfra – noe som også gir stort potensial for å spare energi.
-              </p>
-              <p style={{ marginBottom: '16px' }}>
-                Vinduene er også en viktig del av bygningens uttrykk. På bygg som står på Gul liste må du ta hensyn til at arbeidene du utfører ikke endrer fasaden for mye. Heldigvis finnes det flere løsninger som både bedrer isolasjonen og bevarer utseendet. Det er lurt å starte med de enkleste tiltakene først før du vurderer større arbeider.
-              </p>
-              <p style={{ marginBottom: 0 }}>
-                Byantikvaren tilbyr gratis veiledning og kan hjelpe deg å finne den beste løsningen for din bolig.
-              </p>
-            </div>
-          </foreignObject>
-        )}
-        
-        {activeButton === 'Vedlikehold' && (
-          <foreignObject x="60" y="69" width="464" height="289">
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{
-              fontFamily: 'Oslo Sans',
-              fontWeight: 300,
-              fontStyle: 'normal',
-              fontSize: '14px',
-              lineHeight: '22px',
-              letterSpacing: '0px',
-              color: '#000000',
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingRight: '10px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CCCCCC #F5F5F5'
-            }}>
-              <style>{`
-                div::-webkit-scrollbar {
-                  width: 6px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: #F5F5F5;
-                }
-                div::-webkit-scrollbar-thumb {
-                  background: #CCCCCC;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: #AAAAAA;
-                }
-              `}</style>
-              {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    I mange eldre eneboliger er vinduene laget av solid treverk og passer godt til bygningens stil. Ofte kan de repareres og brukes videre i mange år.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Typiske oppgaver er å fjerne maling og kitt, skifte ut deler som har fått råte, justere hengsler og legge på tetningslister.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Ved å holde vinduene i god stand, reduserer du varmetap og bevarer utseendet på huset.
-                  </p>
-                </>
-              ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    I mange eldre flermannsboliger er vinduene laget av solid treverk og passer godt til bygningens stil. Ofte kan de repareres og brukes videre i mange år.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Typiske oppgaver er å fjerne maling og kitt, skifte ut deler som har fått råte, justere hengsler og legge på tetningslister.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Ved å holde vinduene i god stand, reduserer du varmetap og bevarer utseendet på huset.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    I mange eldre blokker er vinduene laget av solid treverk og passer godt til bygningens stil. Ofte kan de repareres og brukes videre i mange år.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Typiske oppgaver er å fjerne maling og kitt, skifte ut deler som har fått råte, justere hengsler og legge på tetningslister.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Ved å holde vinduene i god stand, reduserer du varmetap og bevarer utseendet på huset.
-                  </p>
-                </>
-              )}
-            </div>
-          </foreignObject>
-        )}
-        
-        {activeButton === 'Oppgradering' && (
-          <foreignObject x="60" y="69" width="464" height="289">
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{
-              fontFamily: 'Oslo Sans',
-              fontWeight: 300,
-              fontStyle: 'normal',
-              fontSize: '14px',
-              lineHeight: '22px',
-              letterSpacing: '0px',
-              color: '#000000',
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingRight: '10px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CCCCCC #F5F5F5'
-            }}>
-              <style>{`
-                div::-webkit-scrollbar {
-                  width: 6px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: #F5F5F5;
-                }
-                div::-webkit-scrollbar-thumb {
-                  background: #CCCCCC;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: #AAAAAA;
-                }
-              `}</style>
-              {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    En vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer fasadens utseende.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Om vindusrammen er i god nok stand, og tåler økt vekt, kan du også bytte ut det gamle glasset med et bedre som isolerer bedre.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Det er lurt å samarbeide med naboen for å finne de beste tekniske og visuelle løsningene.
-                  </p>
-                </>
-              ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    En vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer fasadens utseende.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Om vindusrammen er i god nok stand, og tåler økt vekt, kan du også bytte ut det gamle glasset med et bedre som isolerer bedre.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Det er lurt å samarbeide med naboen for å finne de beste tekniske og visuelle løsningene.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    En vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer fasadens utseende.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Om vindusrammen er i god nok stand kan du også bytte ut det gamle glasset med et bedre isolerende glass.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Det er lurt å samarbeide med naboen for å finne de beste tekniske og visuelle løsningene.
-                  </p>
-                </>
-              )}
-            </div>
-          </foreignObject>
-        )}
-        
-        {activeButton === 'Utskiftning' && (
-          <foreignObject x="60" y="69" width="464" height="289">
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{
-              fontFamily: 'Oslo Sans',
-              fontWeight: 300,
-              fontStyle: 'normal',
-              fontSize: '14px',
-              lineHeight: '22px',
-              letterSpacing: '0px',
-              color: '#000000',
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingRight: '10px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CCCCCC #F5F5F5'
-            }}>
-              <style>{`
-                div::-webkit-scrollbar {
-                  width: 6px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: #F5F5F5;
-                }
-                div::-webkit-scrollbar-thumb {
-                  background: #CCCCCC;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: #AAAAAA;
-                }
-              `}</style>
-              {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Hvis vinduet er i svært dårlig stand, ikke lar seg reparere, eller har blitt skiftet tidligere til en dårligere kopi, kan det være aktuelt å bytte det ut. Et nytt vindu med god isolasjon kan gi både bedre komfort og lavere varmetap.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Skal du først bytte vinduet, er det viktig å velge en løsning som varer lenge og som passer til huset. På bygg som står på Gul liste bør det nye vinduet lages som en kopi av det gamle, med samme utforming, materialer og detaljer.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Byantikvarens <a href="https://www.oslo.kommune.no/getfile.php/1367807-1444143827/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Vinduer%20-%20momentliste%20for%20gode%20vinduskopier.pdf" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>momentliste for gode vinduskopier</a> viser hva som skal til for at vinduskopien blir best mulig.
-                  </p>
-                </>
-              ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Hvis vinduet er i svært dårlig stand, ikke lar seg reparere, eller har blitt skiftet tidligere til en dårligere kopi, kan det være aktuelt å bytte det ut. Et nytt vindu med god isolasjon kan gi både bedre komfort og lavere varmetap.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Skal du først bytte vinduet, er det viktig å velge en løsning som varer lenge og som passer til huset. På bygg som står på Gul liste bør det nye vinduet lages som en kopi av det gamle, med samme utforming, materialer og detaljer.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Byantikvarens <a href="https://www.oslo.kommune.no/getfile.php/1367807-1444143827/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Vinduer%20-%20momentliste%20for%20gode%20vinduskopier.pdf" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>momentliste for gode vinduskopier</a> viser hva som skal til for at vinduskopien blir best mulig.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Det er lurt å samarbeide med naboen for å finne de beste tekniske og visuelle løsningene.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Hvis vinduet er i svært dårlig stand, ikke lar seg reparere, eller har blitt skiftet tidligere til en dårligere kopi, kan det være aktuelt å bytte det ut. Et nytt vindu med god isolasjon kan gi både bedre komfort og lavere varmetap.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Skal du først bytte vinduet, er det viktig å velge en løsning som varer lenge og som passer til huset. På bygg som står på Gul liste bør det nye vinduet lages som en kopi av det gamle, med samme utforming, materialer og detaljer.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Byantikvarens <a href="https://www.oslo.kommune.no/getfile.php/1367807-1444143827/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Vinduer%20-%20momentliste%20for%20gode%20vinduskopier.pdf" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>momentliste for gode vinduskopier</a> viser hva som skal til for at vinduskopien blir best mulig.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Det er lurt å samarbeide med med hele blokka for å finne de beste tekniske og visuelle løsningene.
-                  </p>
-                </>
-              )}
-            </div>
-          </foreignObject>
-        )}
+        {/* Main text content with scroll if needed */}
+        <foreignObject x="60" y="20" width="465" height="338">
+          <div xmlns="http://www.w3.org/1999/xhtml" style={{
+            fontFamily: 'Oslo Sans',
+            fontWeight: 300,
+            fontStyle: 'normal',
+            fontSize: '14px',
+            lineHeight: '22px',
+            letterSpacing: '0px',
+            color: '#000000',
+            textAlign: 'left',
+            height: '100%',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            paddingRight: '10px',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#CCCCCC #F5F5F5'
+          }}>
+            <style>{`
+              div::-webkit-scrollbar {
+                width: 6px;
+              }
+              div::-webkit-scrollbar-track {
+                background: #F5F5F5;
+              }
+              div::-webkit-scrollbar-thumb {
+                background: #CCCCCC;
+                border-radius: 3px;
+              }
+              div::-webkit-scrollbar-thumb:hover {
+                background: #AAAAAA;
+              }
+            `}</style>
+            <p style={{ marginBottom: '16px' }}>
+              Fasaden er ansiktet utad på huset – og ofte en viktig del av bygningens særpreg og identitet. Men selv om bygget er oppført på gul liste betyr ikke det at du ikke kan gjøre noe. Tvert om - i mange tilfeller finnes det gode muligheter for å forbedre komforten og redusere varmetapet, så lenge tiltakene er tilpasset husets konstruksjon og historie. Noen fasader egner seg for skånsom etterisolering, andre krever litt mer kreativ tilnærming – men i de fleste tilfeller finnes det løsninger.
+            </p>
+
+            {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
+              <>
+                <p style={{ marginBottom: '16px' }}>
+                  Eldre eneboliger har stor variasjon i både byggemåte og fasadeuttrykk. Det betyr at løsningene også må tilpasses det enkelte huset.
+                </p>
+                <p style={{ marginBottom: '16px' }}>
+                  Har huset trekledning og tydelige bygningsdetaljer? Da bør du som hovedregel bevare fasaden slik den er. Men det betyr ikke at du står fast – ofte kan innvendig etterisolering eller forbedret tetting gi stor effekt, og utføres på en måte som bevarer husets uttrykk. Hvis kledningen allerede er byttet ut tidligere, eller er i dårlig stand, kan etterisolering utvendig vurderes, med ny kledning i lik stil.
+                </p>
+                <p style={{ marginBottom: '20px' }}>
+                  Har huset mur- eller betongfasade uten særlige detaljer? Da er det større handlingsrom – gavlvegger og fasader mot bakgård og portrom.
+                </p>
+              </>
+            ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
+              <>
+                <p style={{ marginBottom: '16px' }}>
+                  Mange tomannsboliger og rekkehus har symmetrisk oppbygning og felles fasadepreg. Da er det lurt at du samarbeider med naboen, slik at helheten ivaretas. Det gir både bedre visuelle løsninger og større sjanse for byggetillatelse fra Plan- og bygningsetaten.
+                </p>
+                <p style={{ marginBottom: '16px' }}>
+                  Er fasaden enkel og uten detaljer, for eksempel på bakvegg eller gavl? Da kan det være mulig å etterisolere utvendig, gjerne med ny kledning i likt uttrykk. Er huset i mur eller pusset tegl, må man bruke løsninger som lar fukt bevege seg naturlig.
+                </p>
+                <p style={{ marginBottom: '20px' }}>
+                  Er fasaden profilert treverk eller historisk murarbeid? Da anbefales andre tiltak, som forbedret tetting, vindusforbedring og innvendig isolasjon med pustende materialer. Et møte med Byantikvaren er gratis og de kan gi deg gode tips.
+                </p>
+              </>
+            ) : (
+              <>
+                <p style={{ marginBottom: '16px' }}>
+                  Blokker har ofte felleseide fasader og stor variasjon i byggestil. En godt planlagt oppgradering kan gi både energigevinst og løfte helhetsinntrykket til fasaden.
+                </p>
+                <p style={{ marginBottom: '20px' }}>
+                  På enkle, flate fasader, gavlvegger, portrom eller fasader mot bakgård, kan utvendig etterisolering være en god løsning. Fasaden mot gaten, og særlig hvis den er utsmykket med detaljer, bør bevares. Da kan andre tiltak, som tetting og balansert ventilasjon, samt utskifting av vinduer, være bedre løsninger.
+                </p>
+              </>
+            )}
+          </div>
+        </foreignObject>
         
         {/* Blue rectangles */}
         <rect
           x="565"
-          y="40"
-          width="119"
+          y="60"
+          width="132"
           height="30"
           fill="#C7F6C9"
         />
         
-        {/* Sound/speaker icon in first box */}
-        <svg x="573" y="47" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M3.71973 13.75H3.70947C3.70414 13.7499 3.69682 13.7497 3.68799 13.7495C3.67026 13.7492 3.64569 13.7484 3.61523 13.7471C3.55407 13.7445 3.46815 13.7392 3.36621 13.729C3.16479 13.7089 2.88779 13.668 2.604 13.583C2.32538 13.4996 2.00381 13.3632 1.74463 13.1304C1.47111 12.8846 1.27492 12.5362 1.2749 12.085V10.645H0.5V5.36475H3.61865L11.6099 2.00195V14.0083L4.22021 10.8931V13.75H3.71973ZM4.22021 6.19678V9.80811L10.6099 12.501V3.50781L4.22021 6.19678ZM14.7729 10.6304L14.6152 11.105L14.457 11.5791L12.3374 10.8745L12.6528 9.92529L14.7729 10.6304ZM1.5 9.63965H3.22021V6.36475H1.5V9.63965ZM15.1807 6.76514L15.1694 7.76465L12.9346 7.73975L12.9458 6.73975L15.1807 6.76514ZM14.7788 3.70215L12.7788 4.70215L12.3315 3.80762L14.3315 2.80762L14.7788 3.70215ZM2.2749 12.085C2.27492 12.216 2.32204 12.3044 2.41309 12.3862C2.51856 12.481 2.68351 12.5633 2.89111 12.6255C3.00157 12.6586 3.11427 12.6821 3.22021 12.7002V10.645H2.2749V12.085Z" fill="#2A2859"/>
+        {/* Cloud icon in first box */}
+        <svg x="573" y="67" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M12.5087 12.8731H3.49116C3.43379 12.8731 3.37666 12.8711 3.31977 12.8677C2.67867 12.8281 2.06713 12.5841 1.57483 12.1716C1.08253 11.759 0.735383 11.1995 0.584305 10.5752C0.433227 9.95091 0.486166 9.29463 0.735359 8.70261C0.984552 8.1106 1.41688 7.61401 1.96895 7.28567C2.01896 6.37224 2.35248 5.49711 2.92308 4.78207C3.49368 4.06703 4.27298 3.54764 5.15255 3.29618C6.03211 3.04472 6.96819 3.0737 7.83052 3.37908C8.69285 3.68447 9.43853 4.25106 9.96381 5.00003C10.7128 4.81678 11.5036 4.92815 12.1728 5.31115C12.842 5.69415 13.3386 6.31953 13.56 7.05813C14.2039 7.30219 14.7445 7.76 15.0912 8.35496C15.438 8.94991 15.5698 9.64591 15.4648 10.3265C15.3597 11.007 15.0241 11.6308 14.514 12.0935C14.004 12.5562 13.3506 12.8297 12.663 12.8682C12.6132 12.8711 12.561 12.8731 12.5087 12.8731ZM6.36176 4.12674C5.46049 4.12773 4.59641 4.4862 3.95911 5.1235C3.32182 5.7608 2.96334 6.62488 2.96235 7.52615L2.97041 7.90774L2.67133 8.04471C2.26473 8.23061 1.93192 8.54708 1.72579 8.94381C1.51965 9.34054 1.45202 9.79479 1.53364 10.2344C1.61526 10.6739 1.84145 11.0736 2.17626 11.3699C2.51107 11.6662 2.9353 11.8421 3.38154 11.8697C3.41865 11.8721 3.45478 11.8731 3.49116 11.8731H12.5087C12.5415 11.8731 12.5742 11.8721 12.6069 11.8701C13.083 11.8435 13.5341 11.648 13.8791 11.3188C14.2242 10.9895 14.4405 10.5481 14.4894 10.0737C14.5383 9.59928 14.4164 9.123 14.1458 8.73033C13.8751 8.33766 13.4734 8.05432 13.0126 7.93118L12.7084 7.85037L12.6498 7.54129C12.5941 7.25099 12.4749 6.97661 12.3007 6.73778C12.1265 6.49894 11.9017 6.30155 11.6423 6.15974C11.383 6.01793 11.0955 5.93519 10.8004 5.91746C10.5053 5.89973 10.21 5.94743 9.93549 6.05716L9.5312 6.21951L9.31489 5.84158C9.01682 5.32139 8.58689 4.88897 8.06843 4.5879C7.54997 4.28684 6.9613 4.12777 6.36176 4.12674Z" fill="#2A2859"/>
         </svg>
         <text 
           x="597"
-          y="55"
+          y="75"
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontSize="14"
@@ -591,24 +207,24 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Mindre støy
+          Mindre trekk
         </text>
         <rect
           x="565"
-          y="86"
-          width="148"
+          y="106"
+          width="155"
           height="30"
           fill="#C7F6C9"
         />
         
         {/* House with heart icon in second box */}
-        <svg x="573" y="93" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path fillRule="evenodd" clipRule="evenodd" d="M5.092 7.092C5.8795 6.3035 7.1615 6.304 7.95 7.092L7.9995 7.1425L8.0495 7.0925C8.8375 6.3045 10.12 6.3045 10.908 7.0925C11.6955 7.88 11.6955 9.1625 10.908 9.9505L8 12.8585L5.092 9.95C4.304 9.162 4.304 7.88 5.092 7.092ZM10.2015 7.799C9.803 7.401 9.1555 7.401 8.757 7.799L8 8.556L7.243 7.7995C7.044 7.6005 6.7825 7.501 6.521 7.501C6.2595 7.501 5.998 7.6005 5.799 7.7995C5.401 8.1975 5.401 8.845 5.799 9.2435L8 11.4445L10.2015 9.243C10.5995 8.845 10.5995 8.197 10.2015 7.799Z" fill="#2A2859"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M5.323 2.7305L8 0.5L14 5.5V16H2V1H4.8905L5.323 2.7305ZM4.1095 2H3V4.6665L4.47 3.4415L4.1095 2ZM3 5.9685V15H13V5.9685L8 1.802L3 5.9685Z" fill="#2A2859"/>
+        <svg x="573" y="113" width="17" height="16" viewBox="0 0 17 16" fill="none">
+          <path fillRule="evenodd" clipRule="evenodd" d="M5.42501 7.092C6.21251 6.3035 7.49451 6.304 8.28301 7.092L8.33251 7.1425L8.38251 7.0925C9.17051 6.3045 10.453 6.3045 11.241 7.0925C12.0285 7.88 12.0285 9.1625 11.241 9.9505L8.33301 12.8585L5.42501 9.95C4.63701 9.162 4.63701 7.88 5.42501 7.092ZM10.5345 7.799C10.136 7.401 9.48851 7.401 9.09001 7.799L8.33301 8.556L7.57601 7.7995C7.37701 7.6005 7.11551 7.501 6.85401 7.501C6.59251 7.501 6.33101 7.6005 6.13201 7.7995C5.73401 8.1975 5.73401 8.845 6.13201 9.2435L8.33301 11.4445L10.5345 9.243C10.9325 8.845 10.9325 8.197 10.5345 7.799Z" fill="#2A2859"/>
+          <path fillRule="evenodd" clipRule="evenodd" d="M5.65601 2.7305L8.33301 0.5L14.333 5.5V16H2.33301V1H5.22351L5.65601 2.7305ZM4.44251 2H3.33301V4.6665L4.80301 3.4415L4.44251 2ZM3.33301 5.9685V15H13.333V5.9685L8.33301 1.802L3.33301 5.9685Z" fill="#2A2859"/>
         </svg>
         <text 
           x="598"
-          y="101"
+          y="121"
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontSize="14"
@@ -617,23 +233,24 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Bedre inneklima
+          Bedre bokvalitet
         </text>
         <rect
           x="565"
-          y="132"
-          width="186"
+          y="152"
+          width="183"
           height="30"
           fill="#C7F6C9"
         />
         
-        {/* Snowflake icon in third box */}
-        <svg x="573" y="139" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M8.49023 3.23242L10.0698 1.71387L10.7529 2.375L8.49023 4.55762V7.18604L10.8765 5.86035L11.6987 2.90918L11.689 2.89062L12.6299 3.13428L12.0527 5.20703L14.5122 3.84229L15 4.65771L12.5381 6.02344L14.6978 6.59375L14.459 7.50293L11.3262 6.69629L8.98047 7.99951L11.3706 9.32666L14.4492 8.53418V8.50146L14.6978 9.40625L12.5391 9.97559L15 11.3423L14.5122 12.1577L12.0508 10.7905L12.6299 12.8843L11.689 13.1279L10.8525 10.1255L8.49023 8.81348V11.4458L10.7529 13.625L10.0698 14.2861L8.49023 12.7671V15.5H7.51465V12.7661L5.93018 14.2861L5.24268 13.625L7.51465 11.4404V8.81348L5.14062 10.1299L4.31104 13.1094L3.37012 12.8657L3.94385 10.7939L1.48779 12.1577L1 11.3423L3.47461 9.96875L1.30225 9.40625L1.55566 8.51562L4.65381 9.31396L7.02393 7.99951L4.67236 6.69482L1.55566 7.49854L1.30225 6.59375L3.46094 6.02295L1 4.65771L1.48779 3.84229L3.94141 5.20312L3.36523 3.13428L4.30615 2.89062H4.31104L5.13623 5.86621L7.51465 7.18604V4.55908L5.24268 2.375L5.93018 1.71387L7.51465 3.2334V0.5H8.49023V3.23242Z" fill="#2A2859"/>
+        {/* Coins/money icon in third box */}
+        <svg x="573" y="159" width="17" height="16" viewBox="0 0 17 16" fill="none">
+          <path fillRule="evenodd" clipRule="evenodd" d="M9.16699 2.25C9.16699 0.9885 10.814 0 12.917 0C15.02 0 16.667 0.9885 16.667 2.25V11C16.667 12.2615 15.02 13.25 12.917 13.25C10.814 13.25 9.16699 12.2615 9.16699 11V2.25ZM12.917 12.25C14.4905 12.25 15.667 11.59 15.667 11V10.791C14.987 11.2285 14.016 11.5 12.917 11.5C11.818 11.5 10.847 11.2285 10.167 10.791V11C10.167 11.59 11.3435 12.25 12.917 12.25ZM12.917 10.5C14.4905 10.5 15.667 9.84 15.667 9.25V9.041C14.987 9.4785 14.016 9.75 12.917 9.75C11.818 9.75 10.847 9.4785 10.167 9.041V9.25C10.167 9.84 11.3435 10.5 12.917 10.5ZM12.917 8.75C14.4905 8.75 15.667 8.09 15.667 7.5V7.291C14.987 7.7285 14.016 8 12.917 8C11.818 8 10.847 7.7285 10.167 7.291V7.5C10.167 8.09 11.3435 8.75 12.917 8.75ZM12.917 7C14.4905 7 15.667 6.34 15.667 5.75V5.541C14.987 5.9785 14.016 6.25 12.917 6.25C11.818 6.25 10.847 5.9785 10.167 5.541V5.75C10.167 6.34 11.3435 7 12.917 7ZM12.917 5.25C14.4905 5.25 15.667 4.59 15.667 4V3.791C14.987 4.2285 14.016 4.5 12.917 4.5C11.818 4.5 10.847 4.2285 10.167 3.791V4C10.167 4.59 11.3435 5.25 12.917 5.25ZM10.167 2.25C10.167 2.84 11.3435 3.5 12.917 3.5C14.4905 3.5 15.667 2.84 15.667 2.25C15.667 1.66 14.4905 1 12.917 1C11.3435 1 10.167 1.66 10.167 2.25Z" fill="#2A2859"/>
+          <path fillRule="evenodd" clipRule="evenodd" d="M0.666992 8.5C0.666992 7.2385 2.31399 6.25 4.41699 6.25C6.51999 6.25 8.16699 7.2385 8.16699 8.5V13.75C8.16699 15.0115 6.51999 16 4.41699 16C2.31399 16 0.666992 15.0115 0.666992 13.75V8.5ZM4.41699 15C5.99099 15 7.16699 14.34 7.16699 13.75V13.541C6.48699 13.9785 5.51549 14.25 4.41699 14.25C3.31849 14.25 2.34699 13.9785 1.66699 13.541V13.75C1.66699 14.34 2.84299 15 4.41699 15ZM4.41699 13.25C5.99099 13.25 7.16699 12.59 7.16699 12V11.791C6.48699 12.2285 5.51549 12.5 4.41699 12.5C3.31849 12.5 2.34699 12.2285 1.66699 11.791V12C1.66699 12.59 2.84299 13.25 4.41699 13.25ZM4.41699 11.5C5.99099 11.5 7.16699 10.84 7.16699 10.25V10.041C6.48699 10.4785 5.51549 10.75 4.41699 10.75C3.31849 10.75 2.34699 10.4785 1.66699 10.041V10.25C1.66699 10.84 2.84299 11.5 4.41699 11.5ZM1.66699 8.5C1.66699 9.09 2.84299 9.75 4.41699 9.75C5.99099 9.75 7.16699 9.09 7.16699 8.5C7.16699 7.91 5.99099 7.25 4.41699 7.25C2.84299 7.25 1.66699 7.91 1.66699 8.5Z" fill="#2A2859"/>
         </svg>
         <text 
           x="598"
-          y="147"
+          y="167"
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontSize="14"
@@ -642,24 +259,24 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Mindre trekk og kulde
+          Lavere strømregning
         </text>
         <rect
           x="565"
-          y="178"
-          width="197"
+          y="198"
+          width="172"
           height="30"
           fill="#C7F6C9"
         />
         
         {/* Chart/graph icon in fourth box */}
-        <svg x="573" y="185" width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <svg x="573" y="205" width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M14.9333 3.73333V0H11.2V1.06667H13.1176L8.73813 5.44533L4.13595 0.77914L1.15888 3.75621L1.91312 4.51046L4.13067 2.2928L8.73339 6.95953L13.8667 1.82625V3.73333H14.9333Z" fill="#2A2859"/>
           <path fillRule="evenodd" clipRule="evenodd" d="M4.944 6.4H1.12V14.9333H0V16H16V14.9333H14.8747V6.93333H11.0507V14.9333H9.90933V9.06667H6.08533V14.9333H4.944V6.4ZM12.1173 14.9333H13.808V8H12.1173V14.9333ZM8.84267 10.1333V14.9333H7.152V10.1333H8.84267ZM3.87733 14.9333V7.46667H2.18667V14.9333H3.87733Z" fill="#2A2859"/>
         </svg>
         <text 
           x="597"
-          y="193"
+          y="213"
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontSize="14"
@@ -668,13 +285,13 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Boligen kan stige i verdi
+          Bedre strømstyring
         </text>
         
         {/* Dark green box below the list */}
         <rect
           x="565"
-          y="240"
+          y="260"
           width="211"
           height="124"
           fill="#034B45"
@@ -683,7 +300,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
         {/* Årlig strømbesparelse text */}
         <text
           x="589"
-          y="264"
+          y="284"
           width="149"
           height="24"
           fontFamily="Oslo Sans"
@@ -693,7 +310,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
           Årlig strømbesparelse
         </text>
         
-        {/* Window upgrade savings text */}
+        {/* Etterisoleringyttervegg savings text */}
         {(() => {
           // ENERGY_SAVINGS_DATA dictionary
           const ENERGY_SAVINGS_DATA: Record<string | number, any> = {
@@ -798,7 +415,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
             return "eldre";
           };
           
-          // Calculate window upgrade savings based on building data
+          // Calculate etterisoleringyttervegg savings based on building data
           const bruksareal = buildingData?.bruksarealM2 || buildingData?.csvData?.bruksareal_totalt || 0;
           const byggeaar = buildingData?.byggeaar || buildingData?.csvData?.byggeaar || 0;
           
@@ -837,12 +454,12 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
             
             const savingsData = ENERGY_SAVINGS_DATA[tekKey];
             if (savingsData && savingsData[buildingCategory]) {
-              savingsPerM2 = savingsData[buildingCategory][0.75] || 0;
+              savingsPerM2 = savingsData[buildingCategory]["etteriso_yttervegg"] || 0;
               totalSavings = savingsPerM2 * bruksareal;
             }
           }
           
-          if (totalSavings >= 0 && byggeaar && buildingCategory) {
+          if (totalSavings > 0) {
             const lowerSavings = Math.round((totalSavings * 0.9) / 1000) * 1000;
             const upperSavings = Math.round((totalSavings * 1.1) / 1000) * 1000;
             const norgespris = 1.1; // kr/kWh
@@ -853,7 +470,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
               <>
                 <text
                   x="589"
-                  y="296"
+                  y="316"
                   fontFamily="Oslo Sans"
                   fontWeight="100"
                   fontStyle="normal"
@@ -863,12 +480,12 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
                   fill="#FFFFFF"
                   dominantBaseline="hanging"
                 >
-                  {totalSavings === 0 ? '0 kWh' : `${lowerSavings} - ${upperSavings} kWh`}
+                  {`${lowerSavings} - ${upperSavings} kWh`}
                 </text>
                 
                 <text
                   x="589"
-                  y="318"
+                  y="338"
                   fontFamily="Oslo Sans"
                   fontWeight="100"
                   fontStyle="normal"
@@ -878,7 +495,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
                   fill="#FFFFFF"
                   dominantBaseline="hanging"
                 >
-                  {totalSavings === 0 ? '0 kr' : `${lowerKr} - ${upperKr} kr`}
+                  {`${lowerKr} - ${upperKr} kr`}
                 </text>
               </>
             );
@@ -886,7 +503,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
             return (
               <text
                 x="589"
-                y="307"
+                y="327"
                 fontFamily="Oslo Sans"
                 fontWeight="100"
                 fontStyle="normal"
@@ -910,10 +527,10 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
           fill="#2A2859"
         />
         
-        {/* "Tips om tetting" title in circle */}
+        {/* "Les mer" title in circle */}
         <text
           x="170"
-          y="450"
+          y="443"
           fontFamily="Oslo Sans"
           fontWeight="700"
           fontStyle="normal"
@@ -926,75 +543,91 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
           Les mer
         </text>
         
-        {/* Four lines of text below "Tips om tetting" */}
-        <a href="https://www.oslo.kommune.no/getfile.php/134091-1444143604/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Vinduer%20-%20vedlikehold%20av%20vinduer%20i%20bevaringsverdig%20bebyggelse%20-%20Informasjonsark.pdf" target="_blank" rel="noopener noreferrer">
-          <text
-            x="170"
-            y="480"
-            fontFamily="Oslo Sans"
-            fontWeight="300"
-            fontStyle="normal"
-            fontSize="14"
-            lineHeight="22"
-            fill="#FFFFFF"
-            textAnchor="middle"
-            textDecoration="underline"
-            style={{ cursor: 'pointer' }}
-          >
-            Byantikvaren
-          </text>
-        </a>
-        <a href="https://riksantikvaren.no/veileder/rad-om-energisparing-i-gamle-hus/#72aa0e54-2678-43a1-8fd2-f4f2f7697e46" target="_blank" rel="noopener noreferrer">
-          <text
-            x="170"
-            y="502"
-            fontFamily="Oslo Sans"
-            fontWeight="300"
-            fontStyle="normal"
-            fontSize="14"
-            lineHeight="22"
-            fill="#FFFFFF"
-            textAnchor="middle"
-            textDecoration="underline"
-            style={{ cursor: 'pointer' }}
-          >
-            Riksantikvaren
-          </text>
-        </a>
-        <a href="https://issuu.com/fortidsminneforeningen/docs/en_k-tiltak_i_gamle_hus/10" target="_blank" rel="noopener noreferrer">
-          <text
-            x="170"
-            y="524"
-            fontFamily="Oslo Sans"
-            fontWeight="300"
-            fontStyle="normal"
-            fontSize="14"
-            lineHeight="22"
-            fill="#FFFFFF"
-            textAnchor="middle"
-            textDecoration="underline"
-            style={{ cursor: 'pointer' }}
-          >
-            Fortidsminneforvaltningen
-          </text>
-        </a>
-        <a href="https://byggogbevar.no/pusse-opp/vindu-doer/" target="_blank" rel="noopener noreferrer">
-          <text
-            x="170"
-            y="546"
-            fontFamily="Oslo Sans"
-            fontWeight="300"
-            fontStyle="normal"
-            fontSize="14"
-            lineHeight="22"
-            fill="#FFFFFF"
-            textAnchor="middle"
-            textDecoration="underline"
-            style={{ cursor: 'pointer' }}
-          >
-            Bygg og bevar
-          </text>
-        </a>
+        {/* Links below "Les mer" */}
+        <text
+          x="170"
+          y="477"
+          fontFamily="Oslo Sans"
+          fontWeight="300"
+          fontStyle="normal"
+          fontSize="14"
+          lineHeight="22"
+          fill="#FFFFFF"
+          textAnchor="middle"
+          textDecoration="underline"
+          style={{ cursor: 'pointer' }}
+          onClick={() => window.open('https://www.dibk.no/smartere-oppussing/artikler/yttertak-og-vegger', '_blank')}
+        >
+          Direktoratet for byggkvalitet
+        </text>
+        
+        <text
+          x="170"
+          y="503"
+          fontFamily="Oslo Sans"
+          fontWeight="300"
+          fontStyle="normal"
+          fontSize="14"
+          lineHeight="22"
+          fill="#FFFFFF"
+          textAnchor="middle"
+          textDecoration="underline"
+          style={{ cursor: 'pointer' }}
+          onClick={() => window.open('https://issuu.com/fortidsminneforeningen/docs/en_k-tiltak_i_gamle_hus/7', '_blank')}
+        >
+          Fortidsminneforeningen
+        </text>
+        
+        <text
+          x="170"
+          y="529"
+          fontFamily="Oslo Sans"
+          fontWeight="300"
+          fontStyle="normal"
+          fontSize="14"
+          lineHeight="22"
+          fill="#FFFFFF"
+          textAnchor="middle"
+          textDecoration="underline"
+          style={{ cursor: 'pointer' }}
+          onClick={() => window.open('https://www.oslo.kommune.no/getfile.php/1315761-1444138762/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Bevaringsverdige%20murg%C3%A5rdsfasader%20-%20Informasjonsark.pdf', '_blank')}
+        >
+          Byantikvaren
+        </text>
+        
+        <text
+          x="170"
+          y="555"
+          fontFamily="Oslo Sans"
+          fontWeight="300"
+          fontStyle="normal"
+          fontSize="14"
+          lineHeight="22"
+          fill="#FFFFFF"
+          textAnchor="middle"
+          textDecoration="underline"
+          style={{ cursor: 'pointer' }}
+          onClick={() => window.open('https://riksantikvaren.no/veileder/rad-om-energisparing-i-gamle-hus/#72aa0e54-2678-43a1-8fd2-f4f2f7697e46', '_blank')}
+        >
+          Riksantikvaren
+        </text>
+        
+        <text
+          x="170"
+          y="581"
+          fontFamily="Oslo Sans"
+          fontWeight="300"
+          fontStyle="normal"
+          fontSize="14"
+          lineHeight="22"
+          fill="#FFFFFF"
+          textAnchor="middle"
+          textDecoration="underline"
+          style={{ cursor: 'pointer' }}
+          onClick={() => window.open('https://www.enova.no/nb/privat/bolig/boligtyper', '_blank')}
+        >
+          Enova
+        </text>
         
         {/* Dynamic table with scrollbar */}
         {/* Top border */}
@@ -1163,7 +796,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
         {/* Fordeler heading */}
         <text
           x="565"
-          y="0"
+          y="20"
           fontFamily="Oslo Sans"
           fontWeight="700"
           fontStyle="normal"
@@ -1250,7 +883,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
               transition: `opacity ${isPermitOpen ? '0.4s' : '0.1s'} ease-in-out ${isPermitOpen ? '0.2s' : '0s'}, padding 0.6s ease-in-out`
             }}>
               <p style={{ margin: 0 }}>
-                Mindre arbeider, som vedlikehold av eksisterende vinduer, er ikke søknadspliktig. Hvis arbeidene derimot endrer fasadens utseende må du søke om tillatelse. Dette gjelder ofte utskifting av vinduer – særlig i bygg med verneverdi. Bestill en gratis veiledningstime med Byantikvaren for gode tips. Plan- og bygningsetaten gir også veiledning om søknadsplikt og eventuelt om du må kontakte en fagperson (arkitekt, byggmester eller entreprenør) til å hjelpe deg.
+                For å utføre fasadeendring må du kontakte en fagperson (arkitekt, byggmester eller entreprenør) som søker om tillatelse fra Plan- og bygningsetaten for deg. Du kan selv ta kontakt med Byantikvaren for gratis veiledning i forkant. I byggesaken vil fagpersonen (ansvarlig søker) eller saksbehandler i Plan- og bygningsetaten uansett innhente en uttalelse fra Byantikvaren. 
               </p>
               
               {/* Links section */}

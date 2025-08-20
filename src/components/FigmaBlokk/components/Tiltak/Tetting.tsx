@@ -20,7 +20,8 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           'rekkehus': 'rekkehus',
           'tomannsbolig': 'rekkehus',
           'leilighet': 'blokk',
-          'blokk': 'blokk'
+          'blokk': 'blokk',
+          'store boligbygg': 'blokk'
         };
 
         const mappedType = bygningstyperMap[buildingType?.toLowerCase() || 'enebolig'] || 'enebolig';
@@ -429,16 +430,16 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
                     
                     {/* Overskrift box */}
                     <rect
-                      x={ordning.overskrift === 'Enova' ? "353" : "314"}
+                      x={ordning.overskrift === 'Enova' ? "353" : ordning.overskrift === 'Oslo kommune' ? "314" : "314"}
                       y={boxYPosition}
-                      width={ordning.overskrift === 'Enova' ? "43" : "82"}
+                      width={ordning.overskrift === 'Enova' ? "43" : ordning.overskrift === 'Oslo kommune' ? "82" : "82"}
                       height="23"
                       fill={overskriftFarger[ordning.overskrift] || '#E0E0E0'}
                     />
                     
                     {/* Overskrift text */}
                     <text
-                      x={ordning.overskrift === 'Enova' ? "374.5" : "355"}
+                      x={ordning.overskrift === 'Enova' ? "374.5" : ordning.overskrift === 'Oslo kommune' ? "355" : "355"}
                       y={textYPosition}
                       fontFamily="Oslo Sans"
                       fontWeight="300"
@@ -450,7 +451,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
                       textAnchor="middle"
                       dominantBaseline="middle"
                     >
-                      {ordning.overskrift}
+                      {ordning.overskrift === 'Klima- og energifondet' ? 'Oslo kommune' : ordning.overskrift}
                     </text>
                     
                     {/* Lenke text with click handler - moved left to avoid scrollbar */}

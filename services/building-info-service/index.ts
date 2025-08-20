@@ -924,20 +924,11 @@ export async function resolveBuildingData(adresse: string, options: BuildingData
     }
   }
   
-  // Søk etter CSV-data basert på bygningsnummer
+  // Søk etter CSV-data - prioriter adresse først for å få riktig bygningstype
   let csvData = null;
-  if (bygg.bygningsnummer) {
-    csvData = csvService.findByBygningsNr(bygg.bygningsnummer);
-    if (csvData && LOG) {
-      console.log(`📊 CSV-data funnet for bygningsnummer ${bygg.bygningsnummer}:`);
-      console.log(`   - Bruksareal (CSV): ${csvData.bruksarealTotalt} m²`);
-      console.log(`   - Bygningstype (CSV): ${csvData.bygningstype3siffer} - ${csvData.bygningstypeNavn}`);
-      console.log(`   - Tatt i bruk: ${csvData.tattIBrukDato}`);
-    }
-  }
-
-  // Hvis ikke funnet med bygningsnummer, prøv adresse
-  if (!csvData && adr) {
+  
+  // Prøv først å finne basert på adresse (for å få hovedbyggets data)
+  if (adr) {
     // Prøv først med adressetekst fra Geonorge
     if (adr.adressetekst) {
       csvData = csvService.findByExactAddress(adr.adressetekst);
@@ -958,6 +949,17 @@ export async function resolveBuildingData(adresse: string, options: BuildingData
           }
         }
       }
+    }
+  }
+  
+  // Hvis fortsatt ikke funnet og vi har bygningsnummer, prøv det som siste utvei
+  if (!csvData && bygg.bygningsnummer) {
+    csvData = csvService.findByBygningsNr(bygg.bygningsnummer);
+    if (csvData && LOG) {
+      console.log(`📊 CSV-data funnet for bygningsnummer ${bygg.bygningsnummer}:`);
+      console.log(`   - Bruksareal (CSV): ${csvData.bruksarealTotalt} m²`);
+      console.log(`   - Bygningstype (CSV): ${csvData.bygningstype3siffer} - ${csvData.bygningstypeNavn}`);
+      console.log(`   - Tatt i bruk: ${csvData.tattIBrukDato}`);
     }
   }
 

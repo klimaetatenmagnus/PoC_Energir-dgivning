@@ -1,13 +1,77 @@
 import React, { useState } from 'react';
 
-interface SolenergiProps {
+interface TettingProps {
   onBack?: () => void;
   buildingType?: string;
+  stotteordninger?: any[];
+  buildingData?: any;
 }
 
-export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) => {
+export const SolenergiGul: React.FC<TettingProps> = ({ onBack, buildingType, stotteordninger: propStotteordninger, buildingData }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
+  const [stotteordninger, setStotteordninger] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Hent støtteordninger fra Excel via API
+  React.useEffect(() => {
+    const fetchStotteordninger = async () => {
+      try {
+        const bygningstyperMap: { [key: string]: string } = {
+          'enebolig': 'enebolig',
+          'rekkehus': 'rekkehus',
+          'tomannsbolig': 'rekkehus',
+          'leilighet': 'blokk',
+          'blokk': 'blokk',
+          'store boligbygg': 'blokk'
+        };
+
+        const mappedType = bygningstyperMap[buildingType?.toLowerCase() || 'enebolig'] || 'enebolig';
+        
+        // Kall API endpoint som leser direkte fra Excel
+        const url = `http://localhost:3001/api/stotteordninger-live?gulliste=true&tiltak=solenergi&bygningstype=${mappedType}`;
+        console.log('Fetching støtteordninger from:', url);
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API response error:', response.status, errorText);
+          throw new Error(`Failed to fetch støtteordninger: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        setStotteordninger(data);
+      } catch (error) {
+        console.error('Error fetching støtteordninger:', error);
+        // Vis feilmelding i stedet for fallback
+        const errorData = [{
+          ordning: 'Kunne ikke hente støtteordninger',
+          lenke: null,
+          belop: 'Sjekk at API-serveren kjører',
+          overskrift: 'Feil'
+        }];
+        setStotteordninger(errorData);
+        setIsLoading(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStotteordninger();
+  }, [buildingType]);
+
+  const needsScroll = stotteordninger.length > 4;
+
+  // Farger for overskrifter
+  const overskriftFarger: { [key: string]: string } = {
+    'Enova': '#C7F6C9',
+    'Klima- og energifondet': '#D1F9FF',
+    'Oslo kommune': '#D1F9FF',
+    'Klimaetaten': '#D1F9FF',
+    'Byantikvaren': '#FFE4B5',
+    'Riksantikvaren': '#FFB4AC',
+    'Kulturminnefondet': '#DDA0DD'
+  };
 
   return (
     <div style={{ 
@@ -27,12 +91,12 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
           top: 0, 
           left: 0,
           transition: `transform 0.6s ease-in-out ${isPermitOpen ? '0.1s' : '0s'}`,
-          transform: isPermitOpen ? 'translateY(-465px)' : 'translateY(0)'
+          transform: isPermitOpen ? (buildingType && buildingType.toLowerCase().trim() === 'enebolig' ? 'translateY(-625px)' : 'translateY(-540px)') : 'translateY(0)'
         }}
       >
         <text
           x="60"
-          y="10"
+          y="-30"
           fontFamily="Oslo Sans, sans-serif"
           fontWeight="700"
           fontStyle="normal"
@@ -45,8 +109,8 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
           Solenergi
         </text>
         
-        {/* Main text content */}
-        <foreignObject x="60" y="60" width="465" height="400">
+        {/* Main text content with scroll if needed */}
+        <foreignObject x="60" y="20" width="465" height="338">
           <div xmlns="http://www.w3.org/1999/xhtml" style={{
             fontFamily: 'Oslo Sans',
             fontWeight: 300,
@@ -55,22 +119,57 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
             lineHeight: '22px',
             letterSpacing: '0px',
             color: '#000000',
-            textAlign: 'left'
+            textAlign: 'left',
+            height: '100%',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            paddingRight: '10px',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#CCCCCC #F5F5F5'
           }}>
+            <style>{`
+              div::-webkit-scrollbar {
+                width: 6px;
+              }
+              div::-webkit-scrollbar-track {
+                background: #F5F5F5;
+              }
+              div::-webkit-scrollbar-thumb {
+                background: #CCCCCC;
+                border-radius: 3px;
+              }
+              div::-webkit-scrollbar-thumb:hover {
+                background: #AAAAAA;
+              }
+            `}</style>
             <p style={{ marginBottom: '16px' }}>
-              Tetting er et enkelt og effektivt tiltak som kan gi stor forskjell i både komfort og strømforbruk. Ofte holder det å tette rundt vinduer, dører og lister for å stoppe trekken og få lunere rom. Tiltaket krever lite inngrep, koster lite – og passer godt til eldre bygg.
+              Solcelleanlegg kan være et effektivt og lønnsomt tiltak – også for deg som bor i et bygg med verneverdi. Med riktig plassering og god tilpasning er det fullt mulig å produsere egen strøm, samtidig som du tar vare på bygningens uttrykk.
             </p>
             <p style={{ marginBottom: '16px' }}>
-              For å få et varig og trygt resultat, bør du bruke materialer og metoder som er tilpasset bygningens alder og konstruksjon.
+              Har du overskuddsproduksjon, kan du få lavere nettleie ved å registrere deg som plusskunde hos nettselskapet.
+            </p>
+            <p style={{ marginBottom: '16px' }}>
+              I <a 
+                href="https://od2.pbe.oslo.kommune.no/solkart/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ 
+                  color: '#000000', 
+                  textDecoration: 'underline'
+                }}
+              >Oslos solkart</a> kan du sjekke hvor mye sol taket ditt får gjennom året – og vurdere om tiltaket er aktuelt for din bolig.
             </p>
             {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
-              <p>
-                Trekken i eldre eneboliger kommer ofte fra vinduer, dører og overganger mellom etasjer. I murhus er det ofte gulv, hjørner og overgangen mot kjeller og loft som lekker. I trehus kan det være rundt dører og vinduer, der materialene har beveget seg over tid. Tetting med tettelister, dyttestrimmel eller isolering bak listverk er enkle tiltak som raskt gir effekt.
+              <p style={{ marginBottom: '20px' }}>
+                Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. På hus med markerte takdetaljer eller fremtredende arkitektonisk uttrykk, vurderes det ofte som bedre å plassere anlegget på garasje, uthus eller et tilbygg. Et møte med Byantikvaren kan hjelpe deg å finne gode løsninger.
+              </p>
+            ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
+              <p style={{ marginBottom: '20px' }}>
+                Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. I flermannsboliger burde anlegget planlegges i dialog med naboen. Mange av disse husene har symmetrisk utforming eller felles tak, og ved å samarbeide kan dere finne løsninger som både ser helhetlige ut og som enklere får byggetillatelse. Bakside, bod eller tilbygg egner seg ofte best for diskré løsninger med lav visuell påvirkning. Et møte med Byantikvaren kan hjelpe dere å finne gode løsninger.
               </p>
             ) : (
-              <p>
-                I blokker er det vanlig at trekken kommer rundt eldre vinduer eller i overgangen mot fellesarealer som trapperom, kjeller eller loft. Tetting rundt egne vinduer og inne i leiligheten kan du ofte gjøre selv, så lenge det ikke berører fasade eller felleskonstruksjoner. Hvis lekkasjen gjelder deler av bygget som deles av flere, bør tiltakene vurderes i fellesskap med styret. Tetting er også lurt å gjøre sammen med annet vedlikehold for å få mer igjen for innsatsen.
-              </p>
+              <p style={{ marginBottom: '20px' }}>
+                Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. I eldre blokker er flate tak og bakgårdsfasader ofte best egnet. Fasader og tak med arkitektoniske markerte deler bør som regel ikke endres. Når tiltak planlegges som et felles prosjekt i borettslaget eller sameiet, kan dere få til gode løsninger som både gir energigevinst og ivaretar byggets uttrykk. Et møte med Byantikvaren kan hjelpe dere å finne gode løsninger.              </p>
             )}
           </div>
         </foreignObject>
@@ -79,7 +178,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
         <rect
           x="565"
           y="60"
-          width="149"
+          width="132"
           height="30"
           fill="#C7F6C9"
         />
@@ -99,12 +198,12 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Reduser trekk
+          Mindre trekk
         </text>
         <rect
           x="565"
           y="106"
-          width="148"
+          width="155"
           height="30"
           fill="#C7F6C9"
         />
@@ -125,12 +224,12 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Bedre inneklima
+          Bedre bokvalitet
         </text>
         <rect
           x="565"
           y="152"
-          width="180"
+          width="183"
           height="30"
           fill="#C7F6C9"
         />
@@ -156,7 +255,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
         <rect
           x="565"
           y="198"
-          width="215.01"
+          width="172"
           height="30"
           fill="#C7F6C9"
         />
@@ -177,7 +276,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Bedre temperaturkontroll
+          Bedre strømstyring
         </text>
         
         {/* Dark green box below the list */}
@@ -199,40 +298,67 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
           fill="#FFFFFF"
           dominantBaseline="hanging"
         >
-          Strømbesparelser
+          Årlig strømbesparelse
         </text>
         
-        {/* 200-400 mWh text */}
-        <text
-          x="589"
-          y="316"
-          fontFamily="Oslo Sans"
-          fontWeight="100"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          letterSpacing="0"
-          fill="#FFFFFF"
-          dominantBaseline="hanging"
-        >
-          200-400 mWh
-        </text>
-        
-        {/* Tilsvarer text */}
-        <text
-          x="589"
-          y="338"
-          fontFamily="Oslo Sans"
-          fontWeight="100"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          letterSpacing="0"
-          fill="#FFFFFF"
-          dominantBaseline="hanging"
-        >
-          Tilsvarer 100-150kr året
-        </text>
+        {/* Solar energy savings text */}
+        {buildingData?.filteredSolarEnergy && buildingData.filteredSolarEnergy > 0 ? (
+          <>
+            <text
+              x="589"
+              y="316"
+              fontFamily="Oslo Sans"
+              fontWeight="100"
+              fontStyle="normal"
+              fontSize="14"
+              lineHeight="22"
+              letterSpacing="0"
+              fill="#FFFFFF"
+              dominantBaseline="hanging"
+            >
+              {`${Math.round((buildingData.filteredSolarEnergy * 0.9) / 1000) * 1000} - ${Math.round((buildingData.filteredSolarEnergy * 1.1) / 1000) * 1000} kWh`}
+            </text>
+            
+            {/* Tilsvarer text - calculated based on kWh * Norgespris (1.1 kr/kWh) */}
+            <text
+              x="589"
+              y="338"
+              fontFamily="Oslo Sans"
+              fontWeight="100"
+              fontStyle="normal"
+              fontSize="14"
+              lineHeight="22"
+              letterSpacing="0"
+              fill="#FFFFFF"
+              dominantBaseline="hanging"
+            >
+              {(() => {
+                // Norgespris: 1.1 kr/kWh
+                const norgespris = 1.1;
+                const baseKr = buildingData.filteredSolarEnergy * norgespris;
+                const lowerKr = Math.round((baseKr * 0.9) / 1000) * 1000;
+                const upperKr = Math.round((baseKr * 1.1) / 1000) * 1000;
+                return `${lowerKr} - ${upperKr} kr`;
+              })()}
+            </text>
+          </>
+        ) : (
+          <text
+            x="589"
+            y="327"
+            fontFamily="Oslo Sans"
+            fontWeight="100"
+            fontStyle="normal"
+            fontSize="14"
+            lineHeight="22"
+            letterSpacing="0"
+            fill="#FFFFFF"
+            dominantBaseline="hanging"
+          >
+            Boligen din er ikke egnet
+            <tspan x="589" dy="22">for solcellepanel</tspan>
+          </text>
+        )}
         
         {/* Circle below main text */}
         <circle
@@ -255,13 +381,13 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
           fill="#FFFFFF"
           textAnchor="middle"
         >
-          Tips om tetting
+          Les mer
         </text>
         
-        {/* Three lines of text below "Tips om tetting" */}
+        {/* Four lines of text below "Les mer" */}
         <text
           x="170"
-          y="496"
+          y="490"
           fontFamily="Oslo Sans"
           fontWeight="300"
           fontStyle="normal"
@@ -270,256 +396,230 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
           fill="#FFFFFF"
           textAnchor="middle"
           textDecoration="underline"
+          style={{ cursor: 'pointer' }}
+          onClick={() => window.open('https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/solcelleanlegg', '_blank')}
+        >
+          Enova
+        </text>
+        <text
+          x="170"
+          y="510"
+          fontFamily="Oslo Sans"
+          fontWeight="300"
+          fontStyle="normal"
+          fontSize="14"
+          lineHeight="22"
+          fill="#FFFFFF"
+          textAnchor="middle"
+          textDecoration="underline"
+          style={{ cursor: 'pointer' }}
+          onClick={() => window.open('https://www.nve.no/reguleringsmyndigheten/regulering/nettvirksomhet/nettleie/tariffer-for-produksjon/plusskunder/', '_blank')}
+        >
+          Plusskundeordning
+        </text>
+        <text
+          x="170"
+          y="530"
+          fontFamily="Oslo Sans"
+          fontWeight="300"
+          fontStyle="normal"
+          fontSize="14"
+          lineHeight="22"
+          fill="#FFFFFF"
+          textAnchor="middle"
+          textDecoration="underline"
+          style={{ cursor: 'pointer' }}
+          onClick={() => window.open('https://www.oslo.kommune.no/getfile.php/13450103-1751020179/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Om%20solceller%20%E2%80%93%20informasjonsark%20mai%202022.pdf', '_blank')}
+        >
+          Byantikvaren
+        </text>
+        <text
+          x="170"
+          y="550"
+          fontFamily="Oslo Sans"
+          fontWeight="300"
+          fontStyle="normal"
+          fontSize="14"
+          lineHeight="22"
+          fill="#FFFFFF"
+          textAnchor="middle"
+          textDecoration="underline"
+          style={{ cursor: 'pointer' }}
+          onClick={() => window.open('https://www.oslo.kommune.no/getfile.php/13450103-1751020179/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Om%20solceller%20%E2%80%93%20informasjonsark%20mai%202022.pdf', '_blank')}
         >
           Riksantikvaren
         </text>
-        <text
-          x="170"
-          y="518"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-        >
-          Fortidsminneforvaltningen
-        </text>
-        <text
-          x="170"
-          y="540"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-        >
-          Bygg og bevar
-        </text>
         
-        {/* Table with 3 rows */}
+        {/* Dynamic table with scrollbar */}
         {/* Top border */}
         <rect
           x="298"
-          y="470"
+          y={needsScroll ? "440" : "470"}
           width="482"
           height="2"
           fill="#CCCCCC"
         />
         
-        {/* First row - gray background */}
-        <rect
-          x="298"
-          y="472"
-          width="482"
-          height="36"
-          fill="#F9F9F9"
-        />
-        
-        {/* Second row - white background */}
-        <rect
-          x="298"
-          y="508"
-          width="482"
-          height="36"
-          fill="#FFFFFF"
-        />
-        
-        {/* Third row - gray background */}
-        <rect
-          x="298"
-          y="544"
-          width="482"
-          height="36"
-          fill="#F9F9F9"
-        />
-        
-        {/* Text in first row */}
-        <text
-          x="308"
-          y="490"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="12"
-          lineHeight="20"
-          letterSpacing="-0.2"
-          fill="#000000"
-          dominantBaseline="middle"
-        >
-          Støtte til solenergi i borettslag og sameier
-        </text>
-        
-        {/* Text in second row */}
-        <text
-          x="308"
-          y="526"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="12"
-          lineHeight="20"
-          letterSpacing="-0.2"
-          fill="#000000"
-          dominantBaseline="middle"
-        >
-          Støtte til solcelleanlegg
-        </text>
-        
-        {/* Text in third row */}
-        <text
-          x="308"
-          y="562"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="12"
-          lineHeight="20"
-          letterSpacing="-0.2"
-          fill="#000000"
-          dominantBaseline="middle"
-        >
-          Støtte til solenergi i borettslag og sameier
-        </text>
-        
-        {/* Oslo Kommune box in first row */}
-        <rect
-          x="612"
-          y="478.5"
-          width="82"
-          height="23"
-          fill="#D1F9FF"
-        />
-        
-        {/* Oslo Kommune text in box */}
-        <text
-          x="653"
-          y="490"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="10"
-          lineHeight="22"
-          letterSpacing="-0.2"
-          fill="#000000"
-          textAnchor="middle"
-          dominantBaseline="middle"
-        >
-          Oslo kommune
-        </text>
-        
-        {/* "Lenke" text in first row */}
-        <text
-          x="738"
-          y="490"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="12"
-          lineHeight="18.67"
-          letterSpacing="-0.13"
-          fill="#000000"
-          textDecoration="underline"
-          dominantBaseline="middle"
-        >
-          Lenke
-        </text>
-        
-        {/* Enova box in second row */}
-        <rect
-          x="651"
-          y="514.5"
-          width="43"
-          height="23"
-          fill="#C7F6C9"
-        />
-        
-        {/* Enova text in box */}
-        <text
-          x="672.5"
-          y="526"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="10"
-          lineHeight="22"
-          letterSpacing="-0.2"
-          fill="#000000"
-          textAnchor="middle"
-          dominantBaseline="middle"
-        >
-          Enova
-        </text>
-        
-        {/* "Lenke" text in second row */}
-        <text
-          x="738"
-          y="526"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="12"
-          lineHeight="18.67"
-          letterSpacing="-0.13"
-          fill="#000000"
-          textDecoration="underline"
-          dominantBaseline="middle"
-        >
-          Lenke
-        </text>
-        
-        {/* Riksantikvaren box in third row */}
-        <rect
-          x="612"
-          y="550.5"
-          width="82"
-          height="23"
-          fill="#FFB4AC"
-        />
-        
-        {/* Riksantikvaren text in box */}
-        <text
-          x="653"
-          y="562"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="10"
-          lineHeight="22"
-          letterSpacing="-0.2"
-          fill="#000000"
-          textAnchor="middle"
-          dominantBaseline="middle"
-        >
-          Riksantikvaren
-        </text>
-        
-        {/* "Lenke" text in third row */}
-        <text
-          x="738"
-          y="562"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="12"
-          lineHeight="18.67"
-          letterSpacing="-0.13"
-          fill="#000000"
-          textDecoration="underline"
-          dominantBaseline="middle"
-        >
-          Lenke
-        </text>
+        {/* Table container with scrolling via foreignObject */}
+        <foreignObject x="298" y={needsScroll ? "442" : "472"} width="482" height={needsScroll ? "144" : `${Math.max(stotteordninger.length * 36, 36)}`}>
+          <div xmlns="http://www.w3.org/1999/xhtml" style={{
+            width: '100%',
+            height: '100%',
+            overflowY: needsScroll ? 'auto' : 'hidden',
+            overflowX: 'hidden',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#CCCCCC #F5F5F5'
+          }}>
+            <style>{`
+              div::-webkit-scrollbar {
+                width: 8px;
+              }
+              div::-webkit-scrollbar-track {
+                background: #F5F5F5;
+              }
+              div::-webkit-scrollbar-thumb {
+                background: #CCCCCC;
+                border-radius: 4px;
+              }
+              div::-webkit-scrollbar-thumb:hover {
+                background: #AAAAAA;
+              }
+            `}</style>
+            {isLoading ? (
+              <svg width="474" height="36" viewBox="0 0 474 36">
+                <rect x="0" y="0" width="474" height="36" fill="#F9F9F9"/>
+                <text
+                  x="237"
+                  y="18"
+                  fontFamily="Oslo Sans"
+                  fontWeight="300"
+                  fontSize="12"
+                  fill="#666666"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                >
+                  Laster støtteordninger...
+                </text>
+              </svg>
+            ) : stotteordninger.length === 0 ? (
+              <svg width="474" height="36" viewBox="0 0 474 36">
+                <rect x="0" y="0" width="474" height="36" fill="#F9F9F9"/>
+                <text
+                  x="237"
+                  y="18"
+                  fontFamily="Oslo Sans"
+                  fontWeight="300"
+                  fontSize="12"
+                  fill="#666666"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                >
+                  Ingen støtteordninger funnet
+                </text>
+              </svg>
+            ) : (
+            <svg width="474" height={stotteordninger.length * 36} viewBox={`0 0 474 ${stotteordninger.length * 36}`}>
+              {stotteordninger.map((ordning, index) => {
+                const yPosition = index * 36;
+                const textYPosition = yPosition + 18;
+                const boxYPosition = yPosition + 6.5;
+                
+                return (
+                  <g key={index}>
+                    {/* Row background */}
+                    <rect
+                      x="0"
+                      y={yPosition}
+                      width="474"
+                      height="36"
+                      fill={index % 2 === 0 ? '#F9F9F9' : '#FFFFFF'}
+                    />
+                    
+                    {/* Ordning text */}
+                    <text
+                      x="10"
+                      y={textYPosition}
+                      fontFamily="Oslo Sans"
+                      fontWeight="300"
+                      fontStyle="normal"
+                      fontSize="12"
+                      lineHeight="20"
+                      letterSpacing="-0.2"
+                      fill="#000000"
+                      dominantBaseline="middle"
+                    >
+                      <tspan>{ordning.ordning.length > 45 ? ordning.ordning.substring(0, 42) + '...' : ordning.ordning}</tspan>
+                    </text>
+                    
+                    {/* Overskrift box - dynamisk størrelse */}
+                    {(() => {
+                      // Bruk "Oslo kommune" i stedet for "Klima- og energifondet"
+                      const displayText = ordning.overskrift === 'Klima- og energifondet' ? 'Oslo kommune' : ordning.overskrift;
+                      // Beregn bredde basert på tekst (ca 6px per tegn for 10px font)
+                      const textWidth = displayText ? displayText.length * 6 : 0;
+                      const boxWidth = textWidth + 10; // 5px padding på hver side (matcher Enova)
+                      const boxX = 396 - boxWidth; // Høyrejuster til x=396 (samme som Enova: 353 + 43)
+                      
+                      return (
+                        <>
+                          <rect
+                            x={boxX}
+                            y={boxYPosition}
+                            width={boxWidth}
+                            height="23"
+                            fill={overskriftFarger[ordning.overskrift] || '#E0E0E0'}
+                          />
+                          
+                          {/* Overskrift text */}
+                          <text
+                            x={boxX + (boxWidth / 2)}
+                            y={textYPosition}
+                            fontFamily="Oslo Sans"
+                            fontWeight="300"
+                            fontStyle="normal"
+                            fontSize="10"
+                            lineHeight="22"
+                            letterSpacing="-0.2"
+                            fill="#000000"
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                          >
+                            {displayText}
+                          </text>
+                        </>
+                      );
+                    })()}
+                    
+                    {/* Lenke text with click handler - moved left to avoid scrollbar */}
+                    <text
+                      x="425"
+                      y={textYPosition}
+                      fontFamily="Oslo Sans"
+                      fontWeight="300"
+                      fontStyle="normal"
+                      fontSize="12"
+                      lineHeight="18.67"
+                      letterSpacing="-0.13"
+                      fill="#000000"
+                      textDecoration="underline"
+                      dominantBaseline="middle"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => window.open(ordning.lenke, '_blank')}
+                    >
+                      Lenke
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+            )}
+          </div>
+        </foreignObject>
         
         {/* "Relevante støtteordninger" text */}
         <text
           x="308"
-          y="463"
+          y={needsScroll ? "433" : "463"}
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontStyle="normal"
@@ -534,7 +634,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
         {/* "Søk til" text */}
         <text
           x="640"
-          y="463"
+          y={needsScroll ? "433" : "463"}
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontStyle="normal"
@@ -549,7 +649,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
         {/* "Les mer" text */}
         <text
           x="710"
-          y="463"
+          y={needsScroll ? "433" : "463"}
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontStyle="normal"
@@ -601,7 +701,10 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
               width: '100%',
               height: '40px',
               padding: '0 16px',
-              border: '2px solid #2A285980',
+              borderTop: '2px solid #2A285980',
+              borderRight: '2px solid #2A285980',
+              borderBottom: '2px solid #2A285980',
+              borderLeft: '2px solid #2A285980',
               borderRadius: '0',
               background: 'transparent',
               cursor: 'pointer',
@@ -635,8 +738,10 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
               maxHeight: isPermitOpen ? '1000px' : '0',
               overflow: 'hidden',
               transition: 'max-height 0.6s ease-in-out',
-              border: isPermitOpen ? '2px solid #2A285980' : 'none',
               borderTop: 'none',
+              borderRight: isPermitOpen ? '2px solid #2A285980' : 'none',
+              borderBottom: isPermitOpen ? '2px solid #2A285980' : 'none',
+              borderLeft: isPermitOpen ? '2px solid #2A285980' : 'none',
               background: 'white'
             }}>
             <div style={{
@@ -651,13 +756,30 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
               transition: `opacity ${isPermitOpen ? '0.4s' : '0.1s'} ease-in-out ${isPermitOpen ? '0.2s' : '0s'}, padding 0.6s ease-in-out`
             }}>
               <p style={{ margin: 0 }}>
-                Tetting regnes som vedlikehold og er normalt ikke søknadspliktig, så lenge tiltaket ikke endrer bygningens uttrykk, fasade eller detaljer. Inngrep som påvirker verneverdige vinduer eller dører, kan likevel være søknadspliktige. Er du i tvil, eller planlegger å gjøre inngrep i eldre konstruksjoner, kan du ta kontakt med Byantikvaren for gratis veiledning før du setter i gang. Du kan også kontakte Plan- og bygningsetaten og mot gebyr få en konkret vurdering av søknadsplikt.
+                Solcelleanlegg på bygg med verneverdi er som regel søknadspliktig fordi det regnes som teknisk installasjon og fasadeendring. Du må derfor kontakte en fagperson (arkitekt, byggmester eller entreprenør) som søker om tillatelse fra Plan- og bygningsetaten for deg. Du kan selv ta kontakt med Byantikvaren for gratis rådgivning i forkant. I byggesaken vil fagpersonen eller saksbehandler i Plan- og bygningsetaten uansett innhente en uttalelse fra Byantikvaren. Ved søknad om solenergianlegg får du 100% rabatt for saksbehandling, samt forespørsel om søknadsplikt.
               </p>
+              
+              {/* Conditional paragraph for enebolig */}
+              {buildingType && buildingType.toLowerCase().trim() === 'enebolig' && (
+                <p style={{ marginTop: '16px', marginBottom: '0' }}>
+                  I noen tilfeller kan solcelleanlegg på enebolig være unntatt søknadsplikt dersom det regnes som «enkel installasjon». Dette går ikke dersom det fører til fasadeendring. Terskelen for om det regnes som fasadeendring eller ikke er lavere for bevaringsverdige bygg. I <a 
+                    href="https://www.dibk.no/regelverk/sak/2/4/4-1"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: '#2A2859',
+                      textDecoration: 'underline'
+                    }}
+                  >veiledning til SAK10 §4-1 bokstav e nr.4</a> kan du lese mer om hva som regnes som «enkel installasjon».
+                </p>
+              )}
               
               {/* Links section */}
               <div style={{ marginTop: '16px' }}>
                 <a 
-                  href="#"
+                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/skal-du-bygge-rive-eller-endre/ma-du-sende-byggesoknad/solcelle-eller-solfangeranlegg/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -671,7 +793,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
                     marginBottom: '12px'
                   }}
                 >
-                  Sjekk nærmere om tiltaket ditt er søknadsplikt her
+                  Sjekk nærmere om tiltaket ditt er søknadspliktig
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
                     <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
                     <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
@@ -679,7 +801,9 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
                 </a>
                 
                 <a 
-                  href="#"
+                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/#toc-2"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -693,7 +817,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
                     marginBottom: '12px'
                   }}
                 >
-                  Gratis veiledningstime hos Plan- og bygningsetaten for generell informasjon om søknadsplikt her
+                  Gratis veiledningstime hos Plan- og bygningsetaten for generell informasjon om søknadsplikt
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
                     <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
                     <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
@@ -701,7 +825,9 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
                 </a>
                 
                 <a 
-                  href="#"
+                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -711,10 +837,35 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType }) =>
                     lineHeight: '22px',
                     letterSpacing: '0px',
                     color: '#2A2859',
-                    textDecoration: 'underline'
+                    textDecoration: 'underline',
+                    marginBottom: '12px'
                   }}
                 >
-                  Kontakt Plan- og bygningsetaten for en konkret vurdering av søknadsplikt for ditt tiltak, mot gebyr, her
+                  Kontakt Plan- og bygningsetaten for en konkret vurdering av søknadsplikt for ditt tiltak, mot gebyr
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
+                    <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
+                    <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
+                  </svg>
+                </a>
+                
+                <a 
+                  href="https://www.oslo.kommune.no/etater-foretak-og-ombud/byantikvaren/#toc-2"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontFamily: 'Oslo Sans',
+                    fontWeight: 300,
+                    fontSize: '14px',
+                    lineHeight: '22px',
+                    letterSpacing: '0px',
+                    color: '#2A2859',
+                    textDecoration: 'underline',
+                    marginBottom: '12px'
+                  }}
+                >
+                  Bestill gratis veiledningstime, eller saksbehandling over disk, hos Byantikvaren
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
                     <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
                     <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
