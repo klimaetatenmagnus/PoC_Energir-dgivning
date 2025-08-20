@@ -543,7 +543,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
             color: 'white'
           }}
         >
-          Tiltak for din bolig
+          Velg tiltak for din bolig
         </text>
         <button
           onClick={() => setShowDetails(!showDetails)}

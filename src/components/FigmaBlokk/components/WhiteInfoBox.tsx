@@ -1,7 +1,7 @@
 import React from 'react';
 import { getTileUrl } from '../utils/calculations';
 import { LocationPin } from './LocationPin';
-import * as EnergySolutions from './Tiltak';
+import * as EnergySolutions from './Tiltak/index';
 
 interface WhiteInfoBoxProps {
   showHeader: boolean;
@@ -165,22 +165,22 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     if (!selectedSolution) return null;
     
     const componentMap: { [key: string]: React.ComponentType<any> } = {
-      'Varmepumpe': EnergySolutions.Varmepumpe,
+      'Varmepumpe': showYellowBox ? EnergySolutions.VarmepumpeGul : EnergySolutions.Varmepumpe,
       'Solenergi': showYellowBox ? EnergySolutions.SolenergiGul : EnergySolutions.Solenergi,
       'Tetting': showYellowBox ? EnergySolutions.TettingGul : EnergySolutions.Tetting,
       'Temperaturstyring': showYellowBox ? EnergySolutions.TemperaturstyringGul : EnergySolutions.Temperaturstyring,
       'Oppgradering av vindu': showYellowBox ? EnergySolutions.UtskiftningAvVinduGul : EnergySolutions.UtskiftningAvVindu,
-      'Isolering av kjeller og loft': EnergySolutions.IsoleringAvKjellerOgLoft,
-      'Etterisolering av yttervegg': EnergySolutions.EtterisoleringAvYttervegg,
-      'Ventilasjon': EnergySolutions.Ventilasjon
+      'Isolering av kjeller og loft': showYellowBox ? EnergySolutions.IsoleringAvKjellerOgLoftGul : EnergySolutions.IsoleringAvKjellerOgLoft,
+      'Etterisolering av yttervegg': showYellowBox ? EnergySolutions.EtterisoleringYtterveggGul : EnergySolutions.EtterisoleringYttervegg,
+      'Ventilasjon': showYellowBox ? EnergySolutions.VentilasjonGul : EnergySolutions.Ventilasjon
     };
     
     const Component = componentMap[selectedSolution];
     if (!Component) return null;
     
-    // Pass onBack prop to Tetting, Temperaturstyring, Solenergi, and Oppgradering av vindu
-    if (selectedSolution === 'Tetting' || selectedSolution === 'Temperaturstyring' || selectedSolution === 'Solenergi' || selectedSolution === 'Oppgradering av vindu') {
-      return <Component onBack={() => onExpand && onExpand(false)} buildingType={buildingTypeName} />;
+    // Pass onBack prop to Tetting, Temperaturstyring, Solenergi, Oppgradering av vindu, Etterisolering av yttervegg, Isolering av kjeller og loft, Ventilasjon, and Varmepumpe
+    if (selectedSolution === 'Tetting' || selectedSolution === 'Temperaturstyring' || selectedSolution === 'Solenergi' || selectedSolution === 'Oppgradering av vindu' || selectedSolution === 'Etterisolering av yttervegg' || selectedSolution === 'Isolering av kjeller og loft' || selectedSolution === 'Ventilasjon' || selectedSolution === 'Varmepumpe') {
+      return <Component onBack={() => onExpand && onExpand(false)} buildingType={buildingTypeName} buildingData={buildingData} />;
     }
     
     return <Component />;
@@ -1092,16 +1092,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
       </g>
       
       {/* Tiltak content that appears when expanded */}
-      {selectedSolution !== 'Tetting' && selectedSolution !== 'Solenergi' && (
-        <g style={{ 
-          opacity: isExpanded && selectedSolution ? 1 : 0, 
-          transition: isExpanded ? 'opacity 0.5s ease-in-out 1s' : 'opacity 0.2s ease-out',
-          pointerEvents: isExpanded ? 'auto' : 'none'
-        }}>
-          {getSolutionComponent()}
-        </g>
-      )}
-      {selectedSolution === 'Solenergi' && !showYellowBox && (
+      {selectedSolution !== 'Tetting' && selectedSolution !== 'Solenergi' && selectedSolution !== 'Temperaturstyring' && selectedSolution !== 'Oppgradering av vindu' && selectedSolution !== 'Etterisolering av yttervegg' && selectedSolution !== 'Isolering av kjeller og loft' && selectedSolution !== 'Ventilasjon' && selectedSolution !== 'Varmepumpe' && (
         <g style={{ 
           opacity: isExpanded && selectedSolution ? 1 : 0, 
           transition: isExpanded ? 'opacity 0.5s ease-in-out 1s' : 'opacity 0.2s ease-out',
@@ -1119,11 +1110,15 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     </svg>
       </div>
       
-      {/* Render Tetting, Temperaturstyring and SolenergiGul outside SVG */}
+      {/* Render Tetting, Temperaturstyring, Solenergi, Oppgradering av vindu, Etterisolering av yttervegg, Isolering av kjeller og loft, Ventilasjon, and Varmepumpe outside SVG */}
       {(selectedSolution === 'Tetting' || 
         selectedSolution === 'Temperaturstyring' ||
-        (selectedSolution === 'Solenergi' && showYellowBox) || 
-        (selectedSolution === 'Oppgradering av vindu' && showYellowBox)) && (
+        selectedSolution === 'Solenergi' ||
+        selectedSolution === 'Oppgradering av vindu' ||
+        selectedSolution === 'Etterisolering av yttervegg' ||
+        selectedSolution === 'Isolering av kjeller og loft' ||
+        selectedSolution === 'Ventilasjon' ||
+        selectedSolution === 'Varmepumpe') && (
         <div style={{ 
           position: 'absolute',
           top: 0,

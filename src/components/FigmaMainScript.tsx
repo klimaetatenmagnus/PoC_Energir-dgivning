@@ -27,6 +27,15 @@ interface FigmaBlokkProps {
 export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingData, stotteordninger, onBack }) => {
   // Check if building is an Enebolig
   const isEnebolig = React.useMemo(() => {
+    // First check CSV/Excel data
+    const csvBuildingType = buildingData.csvData?.bygningstypeNavn?.toLowerCase();
+    if (csvBuildingType) {
+      return csvBuildingType.includes('enebolig') || 
+             csvBuildingType.includes('tomannsbolig') || 
+             csvBuildingType.includes('rekkehus');
+    }
+    
+    // Fallback to API data
     const buildingTypeCode = buildingData.bygningstypeKode;
     const buildingTypeId = buildingData.bygningstypeKodeId;
     
@@ -322,7 +331,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   
   // Get building type name and calculate width for blue box
   const defaultBuildingType = isEnebolig ? 'Enebolig' : 'Blokk';
-  const buildingTypeName = buildingData.csvData?.bygningstypenavn || buildingData.bygningstypeNavn || defaultBuildingType;
+  const buildingTypeName = buildingData.csvData?.bygningstypeNavn || buildingData.bygningstypeNavn || defaultBuildingType;
   const buildingTypeWidth = calculateBoxWidth(buildingTypeName, BOX_MIN_WIDTHS.buildingType);
   const blocksStartX = (336 - districtNameWidth - 8 - buildingTypeWidth) / 2; // Center the blocks
 

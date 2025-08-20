@@ -21,7 +21,8 @@ export const Temperaturstyring: React.FC<TettingProps> = ({ onBack, buildingType
           'rekkehus': 'rekkehus',
           'tomannsbolig': 'rekkehus',
           'leilighet': 'blokk',
-          'blokk': 'blokk'
+          'blokk': 'blokk',
+          'store boligbygg': 'blokk'
         };
 
         const mappedType = bygningstyperMap[buildingType?.toLowerCase() || 'enebolig'] || 'enebolig';
@@ -495,8 +496,10 @@ export const Temperaturstyring: React.FC<TettingProps> = ({ onBack, buildingType
                     
                     {/* Overskrift box - dynamisk størrelse */}
                     {(() => {
+                      // Bruk "Oslo kommune" i stedet for "Klima- og energifondet"
+                      const displayText = ordning.overskrift === 'Klima- og energifondet' ? 'Oslo kommune' : ordning.overskrift;
                       // Beregn bredde basert på tekst (ca 6px per tegn for 10px font)
-                      const textWidth = ordning.overskrift ? ordning.overskrift.length * 6 : 0;
+                      const textWidth = displayText ? displayText.length * 6 : 0;
                       const boxWidth = textWidth + 10; // 5px padding på hver side (matcher Enova)
                       const boxX = 396 - boxWidth; // Høyrejuster til x=396 (samme som Enova: 353 + 43)
                       
@@ -524,7 +527,7 @@ export const Temperaturstyring: React.FC<TettingProps> = ({ onBack, buildingType
                             textAnchor="middle"
                             dominantBaseline="middle"
                           >
-                            {ordning.overskrift}
+                            {displayText}
                           </text>
                         </>
                       );
@@ -713,7 +716,7 @@ export const Temperaturstyring: React.FC<TettingProps> = ({ onBack, buildingType
                     marginBottom: '12px'
                   }}
                 >
-                  Sjekk nærmere om tiltaket ditt er søknadsplikt
+                  Sjekk nærmere om tiltaket ditt er søknadspliktig
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
                     <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
                     <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>

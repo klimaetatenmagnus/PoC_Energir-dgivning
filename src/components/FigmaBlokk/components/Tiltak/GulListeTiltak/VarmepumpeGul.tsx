@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-interface UtskiftningAvVinduGulProps {
+interface VarmepumpeGulProps {
   onBack?: () => void;
   buildingType?: string;
   buildingData?: any;
 }
 
-export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ onBack, buildingType, buildingData }) => {
+export const VarmepumpeGul: React.FC<VarmepumpeGulProps> = ({ onBack, buildingType, buildingData }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
   const [activeButton, setActiveButton] = useState<string>('Generelt');
@@ -30,7 +30,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
         const mappedType = bygningstyperMap[buildingType?.toLowerCase() || 'enebolig'] || 'enebolig';
         
         // Kall API endpoint som leser direkte fra Excel
-        const url = `http://localhost:3001/api/stotteordninger-live?gulliste=true&tiltak=vinduer&bygningstype=${mappedType}`;
+        const url = `http://localhost:3001/api/stotteordninger-live?gulliste=true&tiltak=varmepumpe&bygningstype=${mappedType}`;
         console.log('Fetching støtteordninger from:', url);
         const response = await fetch(url);
         
@@ -107,7 +107,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
           fill="#2A2859"
           dominantBaseline="hanging"
         >
-          Oppgradering av vindu
+          Varmepumpe
         </text>
         
         
@@ -842,7 +842,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
             }
           }
           
-          if (totalSavings >= 0 && byggeaar && buildingCategory) {
+          if (totalSavings > 0) {
             const lowerSavings = Math.round((totalSavings * 0.9) / 1000) * 1000;
             const upperSavings = Math.round((totalSavings * 1.1) / 1000) * 1000;
             const norgespris = 1.1; // kr/kWh
@@ -863,7 +863,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
                   fill="#FFFFFF"
                   dominantBaseline="hanging"
                 >
-                  {totalSavings === 0 ? '0 kWh' : `${lowerSavings} - ${upperSavings} kWh`}
+                  {`${lowerSavings} - ${upperSavings} kWh`}
                 </text>
                 
                 <text
@@ -878,7 +878,7 @@ export const UtskiftningAvVinduGul: React.FC<UtskiftningAvVinduGulProps> = ({ on
                   fill="#FFFFFF"
                   dominantBaseline="hanging"
                 >
-                  {totalSavings === 0 ? '0 kr' : `${lowerKr} - ${upperKr} kr`}
+                  {`${lowerKr} - ${upperKr} kr`}
                 </text>
               </>
             );

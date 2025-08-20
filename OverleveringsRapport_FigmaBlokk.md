@@ -1,121 +1,63 @@
 # Overleveringsrapport - FigmaBlokk Systemet
 
-## Innholdsfortegnelse
-1. [Systemintroduksjon](#systemintroduksjon)
-2. [Datakilder](#datakilder)
-3. [Variabler og utregninger](#variabler-og-utregninger)
-4. [Utviklingsmiljø og konfigurasjon](#utviklingsmiljø-og-konfigurasjon)
-
-## Systemintroduksjon
+# Systemintroduksjon
 
 FigmaBlokk er et webbasert system utviklet for Oslo kommune som gir energirådgivning til boligeiere. Systemet henter bygningsdata fra ulike kilder og presenterer skreddersydde energitiltak basert på bygningstype, byggeår og vernestatus.
 
-## Datakilder
+# Datakilder
 
-### 1. CSV-filer
+CSV fil "Matrikkel 2023.cvs
+- Henter BRA, bygningstype og byggeår
 
-#### Matrikkel 2023.csv
-- **Innhold**: Historisk bygningsdata fra matrikkelen
-- **Brukes av**: `CSVService` for å hente ut BRA, bygningstype og byggeår
+Data fra "Erfaringspriser Obos Prosjekt AS (versjon 1).xlsb
+- Lagret som en dictionary - brukes til å beregne besparelse for tiltak basert på TEK og byggtype (småhus/blokk)
 
+Energikarakter grenser fra Enova
+- Forenklet versjon basert på levert strøm og BRA
 
-### 2. Eksterne APIer
-
-#### Matrikkel API  (alternativ til cvs)
-- **Tjenester**:
-  - `StoreService` - Generell bygningsinfo
-  - `BygningService` - Detaljert bygningsdata
-  - `MatrikkelenhetService` - Matrikkelenheter
-  - `BruksenhetService` - Bruksenheter
-
-#### Geonorge Adresse API
-  - `/sok` - Adressesøk med autocomplete
-  - `/adresser/{adressekode}` - Detaljert adresseinfo
-- **Brukes for**: Adresse → GNR/BNR/SNR konvertering + Koordinater (til sol APIen)
-
-#### Oslo Kommune - Gul Liste API
-- **Tjenester**:
-  - `WFS_SOK` - Finn teigid fra GNR/BNR
-  - `EIENDOM_TABELL` - Sjekk gul liste status fra teigid
-- **Data**: Bevaringsverdige bygninger i Oslo
-
-#### PBE Solkart 2024 API
-- **Tjeneste**: Beregner solinnstråling på takflater
-- **Input parametere**:
-  - `lat/lon` - Koordinater
-
-#### Enova Energiattest API
-- **Data**: Energikarakter, årlig energiforbruk
-
-### 3. Data fra "Erfaringspriser Obos Prosjekt AS (versjon 1).xlsb
-- **Tjeneste**: Beregner besparelse for tiltak basert på TEK og byggtype (småhus/blokk)
-- **Data**: Lagret som en dictionary
+APIer (mer detaljert under Dataflyt) henter informasjon om:
+* Enova energiattest
+* Vernestatus (gul liste) 
+* Solpotensial
 
 
-
-### Dataflyt
+# Dataflyt
 
 1. **Adressesøk**:
-  Brukerinput → Geonorge API → Adresseforslag med automatisk formatering
+  Fra brukerinput brukes Geonorge API til å komme med adresseforslag, og formatterer adressen riktig til videre bruk
 
 2. **Bygningsoppslag**:
-Fra adressen kjøres API/CVS som backend service:
+Fra adressen som input kjøres API/CVS i bakgrunnen og henter informasjon:
 
-  Geonorge              (Adresse → GNR/BNR + koordinater)
-  CVS / Matrikkel API   (GNR/BNR → bygningsdata)   
-  Enova API             (GNR/BNR → energiattest)
-  Gul Liste sjekk       (GNR/BNR → teigid → gul liste status)
-  Solar service         (koordinater → solpotensial)
+    DATAKILDE               INPUT             OUTPUT
+  Geonorge                Adresse      →   GNR/BNR + koordinater
+  CVS / Matrikkel API     GNR/BNR      →   bygningsdata  
+  Enova API               GNR/BNR      →   energiattest + strømforbruk
+  Gul Liste sjekk         GNR/BNR      →   teigid → gul liste status
+  Solar service           koordinater  →   solpotensial
 
 
+# UI struktur
+Hovedstrukturen er lik for alle og endres automatisk. Forskjellen er animasjon for bygningstype, om tiltakskort vises som gulliste eller ikke (ligger som seperate filer), og en if statement i disse som viser korrekt avsnitt basert på bygningstype
 
-### Caching
+# Variabler
+* Gul liste
+En gul liste variabel "showYellowBox" er True eller False ut ifra om bygget er på gul liste eller ikke
+Hvis gullistet så vises en gul infoboks i den hvite infoboksen til venstre på hovedsiden, og egne tiltak for gullistete bygg.
 
-- **Building-info-service**: 24 timer cache (NodeCache)
-- **Solar-service**: 1 time cache
-- **Frontend**: Ingen persistent cache
+* Bygningstype
+Fra APIen får man en kode som tilsvarer mange forskjellige byggtyper (enebolig, fritidsbolig, koie osv). Disse skal kategoriseres til en av 3: Småhus / Blokk / Flermannsbolig
 
-## Variabler og utregninger
+Ut ifra bygningstype vises det forskjellig tekst på tiltakskortene, og forskjellige tall blir brukt for besparelsen fra hvert av tiltakene. I tillegg vises egen animasjon for hver boligtype. (funksjon for flermannsbolig er foreløpig ikke implementert)
 
-### 1. Gul Liste (Bevaringsverdige bygninger)
+# Beregninger
+* Solenergi
+- Filtrerer bort takflater fra apien med innstrålig mindre enn 800kWh/m^2
+- Regner ut total årlig innstrålig fra gjenværende flater: summen av (innstrålig takflate * takflate areal)
+- Ganger total årlig innstrålig med en virkningsgrad satt til 20%
 
-**Deteksjon**:
-- Automatisk sjekk ved oppstart via GNR/BNR
-- Krever at bygningen er i Oslo kommune
-- Resultat lagres i `showYellowBox` state
-
-**Endringer for gul liste bygninger**:
-- **Visuelt**: Gul infoboks (#FFE7BC) med vernestatus
-- **Tiltak**: Spesialtilpassede varianter for:
-  - Solenergi (SolenergiGul)
-  - Tetting (TettingGul)
-  - Vindusutskiftning (UtskiftningAvVinduGul)
-- **Informasjon**: Ekstra veiledning om kulturminnehensyn
-
-### 2. Bygningstype
-
-**Kategorisering**:
-- **Individuelle boliger** (seksjonsnivå):
-  - 11x: Eneboliger
-  - 12x: Tomannsboliger
-  - 16x: Fritidsboliger
-  - 17x: Koier, seterhus
-
-- **Kollektive boliger** (bygningsnivå):
-  - 13x: Rekkehus, kjedehus
-  - 14x: Store boligbygg
-
-**Visuelle forskjeller**:
-- **Enebolig**: Animert hus fra Oslo skyline
-- **Blokk**: Animert boligblokk med zoom-effekt
-
-**Beregningsforskjeller**:
-- Ulike energiforbruksterskler for småhus vs blokk for estimert energikarakter
-- Påvirker sparepotensialet for tiltak
-
-### 3. TEK-standard (byggeår)
-  Regnes ut ifra byggeåret med innlag 2 års forsinkelse
-**Klassifisering**:
+* TEK
+Regnes ut ifra byggeåret med lag/forsinkelse på 2 år  slik at 
 - Eldre (før 1951)
 - TEK49 (1951-1970)
 - TEK69 (1971-1988)
@@ -123,39 +65,22 @@ Fra adressen kjøres API/CVS som backend service:
 - TEK97 (1999-2008)
 - TEK7 (2009+)
 
-**Påvirkning**:
-- Brukes i alle energispareberegninger
-- Eldre bygg har generelt høyere sparepotensial - men antar at ingen tiltak allerede har blitt gjort
+Dette brukes foreløpig i alle energispareberegninger utenom solenergi
+Her blir det gjort en grov antakelse om at ingen tiltak allerede har blitt gjort, noe som sannsynligvis ikke stemmer
 
-### 4. Energitiltak
+* Besparelse
+Besparelsen for tiltakene implementert er ut ifra data fra Erfaringspriser OBOS basert på TEK, bygningstype og BRA
 
-**Standard tiltak (alltid 8 stk)**:
-1. Varmepumpe
-2. Solenergi
-3. Tetting
-4. Temperaturstyring
-5. Utskiftning av vindu
-6. Isolering av kjeller og loft
-7. Etterisolering av yttervegg
-8. Ventilasjon
+* Energikarakter
+- Estimert energikarakter regnes ut ifra grenseverdier fra enova med utgangspunkt i levert energi pr BRA. Grenseverdiene varierer for blokk og småhus
+- Ny energikarakter er basert på nytt strømforbruk etter tiltak er gjort: orginalt strømforbruk - Besparelse for tiltak (kWh), med samme karaktergrenseverdier som tidligere
 
-**Beregningsgrunnlag** (tar utgangspunkt i Erfaringspris verdiene):
-- Bygningstype (småhus/blokk)
-- TEK-standard
-- Bruksareal
 
-- Solenergi (fra api)
-  * Takflater med innstrålig mindre enn 800kWh/m^2 blir filtrert bort
-  * Regner ut total årlig innstrålig fra gjenværende flater (innstrrålig * takflate areal)
-  * Ganger total årlig innstrålig med en virkningsgrad (20%)
 
-### 5. Energikarakter beregninger
-- Estimert energikarakter regnes ut ifra grenseverdier med utgangspunkt i levert energi pr BRA. Disse varierer for blokk og småhus
-- Ny energikarakter regner ut besparelse for tiltak som er huket av (kWh), og regner ut en ny karakter for det nye strømforbruket (orginalt strømforbruk - besparelse fra tiltak) ut ifra samme grenseverdier for karakterene.
 
-## Utviklingsmiljø og konfigurasjon
 
-### Filstruktur
+Mer teknisk:
+# Filstruktur
 
 #### Frontend (React/TypeScript)
 
@@ -215,10 +140,40 @@ services/
 - `package.json` - Dependencies og scripts
 - Hver service har egen port (3001, 3002, 3003)
 
-### Kjøring av systemet
+### Caching
+
+- **Building-info-service**: 24 timer cache (NodeCache)
+- **Solar-service**: 1 time cache
+- **Frontend**: Ingen persistent cache
+
+
+
+Kjekt å vite
+
+# Kjøring av systemet
   ./start-ui-only.sh kjøres i terminalen
   
-### Lagring til github
+# Lagring til github
   git add .
   git commit -m "kort beskrivelse"
   git push
+
+# Tips for bruk av claude
+* Del opp i mindre oppgaver
+* Vær spesifikk på relevant plassering/navn på komponent/kode - gjør prosessen kjappere
+* Vær tydelig på ønsket kode struktur (lag ny fil - plasser i mappe) - gjør prosessen kjappere, og koden mer   
+  oversiktelig
+* Ctrl Shift C på nettsiden kan gi kode for en spesifikk komponent - har noen ganger matet den til claude
+* Claude sliter med å lage animasjoner, anbefaler på det sterkeste å lagre før en jobber med det
+
+# Generelle kommentarer
+* Anbefaler å plassere alt i skalerbare containere som justeres ut ifra brukerens skjermstørrelse. Alt utenom
+  Adressesøk-siden og blokk figur/animasjonen er implementert på denne måten.
+* Prøvde MCP for å koble figma til claude. Dette fungerte dårlig ettersom token grenser ble for fort nådd. Enklere
+  å bare kopiere inn SVG kode for ikoner eller forklare plassering/typografi ut ifra Figma layout
+
+# Delbar nettside
+Har sett litt på muligheten for å dele nettside. APIene kjøres lokalt på PCen som er et hinder. Har lagd inn lagret data for 3 adresser (slik at du ikke trenger api) som kommer opp ved å skrive 1,2 eller 3 i adressesøkfeltet. Dette er forklart i TEST_MODE_README.md Da kan nettsiden bli delt via IP f.eks lokalt over samme nettverk. Prøvde også kjapt ngrok, uten å få det til.
+
+
+Askeladden passord; hymPTB:YDyHuw4r
