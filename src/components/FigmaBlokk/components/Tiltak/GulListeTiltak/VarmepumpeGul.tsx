@@ -694,213 +694,35 @@ export const VarmepumpeGul: React.FC<VarmepumpeGulProps> = ({ onBack, buildingTy
         </text>
         
         {/* Window upgrade savings text */}
-        {(() => {
-          // ENERGY_SAVINGS_DATA dictionary
-          const ENERGY_SAVINGS_DATA: Record<string | number, any> = {
-            "eldre": {
-              "blokk": {
-                0.75: 38.9,
-                1.2: 32.1,
-                "etteriso_yttervegg": 81.7,
-                "etteriso_takloft": 24.4
-              },
-              "småhus": {
-                0.75: 42.2,
-                1.2: 34.3,
-                "etteriso_yttervegg": 94.1,
-                "etteriso_takloft": 41.2
-              }
-            },
-            49: {
-              "blokk": {
-                0.75: 38.9,
-                1.2: 32.1,
-                "etteriso_yttervegg": 81.7,
-                "etteriso_takloft": 24.4
-              },
-              "småhus": {
-                0.75: 42.2,
-                1.2: 34.3,
-                "etteriso_yttervegg": 94.1,
-                "etteriso_takloft": 41.2
-              }
-            },
-            69: {
-              "blokk": {
-                0.75: 38.3,
-                1.2: 31.3,
-                "etteriso_yttervegg": 39.7,
-                "etteriso_takloft": 8.4
-              },
-              "småhus": {
-                0.75: 41.7,
-                1.2: 33.7,
-                "etteriso_yttervegg": 27.7,
-                "etteriso_takloft": 11.4
-              }
-            },
-            87: {
-              "blokk": {
-                0.75: 28.1,
-                1.2: 21.0,
-                "etteriso_yttervegg": 9.7,
-                "etteriso_takloft": 2.8
-              },
-              "småhus": {
-                0.75: 31.4,
-                1.2: 23.4,
-                "etteriso_yttervegg": 15.0,
-                "etteriso_takloft": 4.7
-              }
-            },
-            97: {
-              "blokk": {
-                0.75: 12.1,
-                1.2: 5.0,
-                "etteriso_yttervegg": 7.3,
-                "etteriso_takloft": 0.4
-              },
-              "småhus": {
-                0.75: 14.2,
-                1.2: 6.1,
-                "etteriso_yttervegg": 3.7,
-                "etteriso_takloft": 0.6
-              }
-            },
-            7: {
-              "blokk": {
-                0.75: 7.2,
-                1.2: 0,
-                "etteriso_yttervegg": 1.3,
-                "etteriso_takloft": 0.4
-              },
-              "småhus": {
-                0.75: 8.2,
-                1.2: 0,
-                "etteriso_yttervegg": 0,
-                "etteriso_takloft": 0
-              }
-            }
-          };
-          
-          // TEK calculation function
-          const calculateTEK = (byggeaar: number): string => {
-            const terskel = 2; // lag i år i forhold til tek
-            
-            // TEK years with threshold applied
-            if (byggeaar >= 2007 + terskel) return "TEK7";      // 2009 and newer
-            if (byggeaar >= 1997 + terskel) return "TEK97";     // 1999-2008
-            if (byggeaar >= 1987 + terskel) return "TEK87";     // 1989-1998
-            if (byggeaar >= 1969 + terskel) return "TEK69";     // 1971-1988
-            if (byggeaar >= 1949 + terskel) return "TEK49";     // 1951-1970
-            
-            // Older than 1951
-            return "eldre";
-          };
-          
-          // Calculate window upgrade savings based on building data
-          const bruksareal = buildingData?.bruksarealM2 || buildingData?.csvData?.bruksareal_totalt || 0;
-          const byggeaar = buildingData?.byggeaar || buildingData?.csvData?.byggeaar || 0;
-          
-          // Determine building category
-          const buildingTypeCode = buildingData?.bygningstypeKode?.substring(0, 2) || 
-                                  buildingData?.csvData?.bygningstypekode?.substring(0, 2) ||
-                                  buildingData?.csvData?.bygningstypeKode?.substring(0, 2);
-          
-          const isSmåhus = ['11', '12', '13'].includes(buildingTypeCode || '');
-          const isBlokk = ['14', '15', '16', '17'].includes(buildingTypeCode || '');
-          let buildingCategory = isSmåhus ? 'småhus' : isBlokk ? 'blokk' : null;
-          
-          if (!buildingCategory) {
-            // Fallback to string matching if code is not available
-            const typeString = buildingType?.toLowerCase() || '';
-            if (typeString.includes('enebolig') || typeString.includes('tomannsbolig') || 
-                typeString.includes('rekkehus') || typeString.includes('kjedehus')) {
-              buildingCategory = 'småhus';
-            } else if (typeString.includes('blokk') || typeString.includes('leilighet') || typeString.includes('store boligbygg')) {
-              buildingCategory = 'blokk';
-            }
-          }
-          
-          let savingsPerM2 = 0;
-          let totalSavings = 0;
-          
-          if (byggeaar && buildingCategory) {
-            const tek = calculateTEK(byggeaar);
-            
-            // Get TEK key for the data structure
-            let tekKey: string | number = tek;
-            if (tek.startsWith('TEK')) {
-              const tekNumber = parseInt(tek.substring(3));
-              tekKey = tekNumber;
-            }
-            
-            const savingsData = ENERGY_SAVINGS_DATA[tekKey];
-            if (savingsData && savingsData[buildingCategory]) {
-              savingsPerM2 = savingsData[buildingCategory][0.75] || 0;
-              totalSavings = savingsPerM2 * bruksareal;
-            }
-          }
-          
-          if (totalSavings > 0) {
-            const lowerSavings = Math.round((totalSavings * 0.9) / 1000) * 1000;
-            const upperSavings = Math.round((totalSavings * 1.1) / 1000) * 1000;
-            const norgespris = 1.1; // kr/kWh
-            const lowerKr = Math.round((lowerSavings * norgespris) / 1000) * 1000;
-            const upperKr = Math.round((upperSavings * norgespris) / 1000) * 1000;
-            
-            return (
-              <>
-                <text
-                  x="589"
-                  y="296"
-                  fontFamily="Oslo Sans"
-                  fontWeight="100"
-                  fontStyle="normal"
-                  fontSize="14"
-                  lineHeight="22"
-                  letterSpacing="0"
-                  fill="#FFFFFF"
-                  dominantBaseline="hanging"
-                >
-                  {`${lowerSavings} - ${upperSavings} kWh`}
-                </text>
-                
-                <text
-                  x="589"
-                  y="318"
-                  fontFamily="Oslo Sans"
-                  fontWeight="100"
-                  fontStyle="normal"
-                  fontSize="14"
-                  lineHeight="22"
-                  letterSpacing="0"
-                  fill="#FFFFFF"
-                  dominantBaseline="hanging"
-                >
-                  {`${lowerKr} - ${upperKr} kr`}
-                </text>
-              </>
-            );
-          } else {
-            return (
-              <text
-                x="589"
-                y="307"
-                fontFamily="Oslo Sans"
-                fontWeight="100"
-                fontStyle="normal"
-                fontSize="14"
-                lineHeight="22"
-                letterSpacing="0"
-                fill="#FFFFFF"
-                dominantBaseline="hanging"
-              >
-                Kunne ikke beregne besparelse
-              </text>
-            );
-          }
-        })()}
+        <text
+          x="589"
+          y="296"
+          fontFamily="Oslo Sans"
+          fontWeight="100"
+          fontStyle="normal"
+          fontSize="14"
+          lineHeight="22"
+          letterSpacing="0"
+          fill="#FFFFFF"
+          dominantBaseline="hanging"
+        >
+          Mangler data kWh
+        </text>
+        
+        <text
+          x="589"
+          y="318"
+          fontFamily="Oslo Sans"
+          fontWeight="100"
+          fontStyle="normal"
+          fontSize="14"
+          lineHeight="22"
+          letterSpacing="0"
+          fill="#FFFFFF"
+          dominantBaseline="hanging"
+        >
+          Mangler data kr
+        </text>
         
         {/* Circle below main text */}
         <circle
@@ -926,8 +748,8 @@ export const VarmepumpeGul: React.FC<VarmepumpeGulProps> = ({ onBack, buildingTy
           Les mer
         </text>
         
-        {/* Four lines of text below "Tips om tetting" */}
-        <a href="https://www.oslo.kommune.no/getfile.php/134091-1444143604/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Vinduer%20-%20vedlikehold%20av%20vinduer%20i%20bevaringsverdig%20bebyggelse%20-%20Informasjonsark.pdf" target="_blank" rel="noopener noreferrer">
+        {/* Four lines of text below "Les mer" */}
+        <a href="https://www.riksantikvaren.no/veileder/rad-om-varmepumper-i-fredede-og-verneverdige-bygninger/" target="_blank" rel="noopener noreferrer">
           <text
             x="170"
             y="480"
@@ -941,10 +763,10 @@ export const VarmepumpeGul: React.FC<VarmepumpeGulProps> = ({ onBack, buildingTy
             textDecoration="underline"
             style={{ cursor: 'pointer' }}
           >
-            Byantikvaren
+            Riksantikvaren
           </text>
         </a>
-        <a href="https://riksantikvaren.no/veileder/rad-om-energisparing-i-gamle-hus/#72aa0e54-2678-43a1-8fd2-f4f2f7697e46" target="_blank" rel="noopener noreferrer">
+        <a href="https://www.sintef.no/ekspertise/sintef-energi/varmepumpeteknologi/" target="_blank" rel="noopener noreferrer">
           <text
             x="170"
             y="502"
@@ -958,10 +780,10 @@ export const VarmepumpeGul: React.FC<VarmepumpeGulProps> = ({ onBack, buildingTy
             textDecoration="underline"
             style={{ cursor: 'pointer' }}
           >
-            Riksantikvaren
+            Sintef
           </text>
         </a>
-        <a href="https://issuu.com/fortidsminneforeningen/docs/en_k-tiltak_i_gamle_hus/10" target="_blank" rel="noopener noreferrer">
+        <a href="https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/vaeske-til-vann-varmepumpe" target="_blank" rel="noopener noreferrer">
           <text
             x="170"
             y="524"
@@ -975,10 +797,10 @@ export const VarmepumpeGul: React.FC<VarmepumpeGulProps> = ({ onBack, buildingTy
             textDecoration="underline"
             style={{ cursor: 'pointer' }}
           >
-            Fortidsminneforvaltningen
+            Enova
           </text>
         </a>
-        <a href="https://byggogbevar.no/pusse-opp/vindu-doer/" target="_blank" rel="noopener noreferrer">
+        <a href="https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/varmepumpebereder" target="_blank" rel="noopener noreferrer">
           <text
             x="170"
             y="546"
@@ -992,7 +814,7 @@ export const VarmepumpeGul: React.FC<VarmepumpeGulProps> = ({ onBack, buildingTy
             textDecoration="underline"
             style={{ cursor: 'pointer' }}
           >
-            Bygg og bevar
+            Enova
           </text>
         </a>
         
@@ -1250,7 +1072,7 @@ export const VarmepumpeGul: React.FC<VarmepumpeGulProps> = ({ onBack, buildingTy
               transition: `opacity ${isPermitOpen ? '0.4s' : '0.1s'} ease-in-out ${isPermitOpen ? '0.2s' : '0s'}, padding 0.6s ease-in-out`
             }}>
               <p style={{ margin: 0 }}>
-                Mindre arbeider, som vedlikehold av eksisterende vinduer, er ikke søknadspliktig. Hvis arbeidene derimot endrer fasadens utseende må du søke om tillatelse. Dette gjelder ofte utskifting av vinduer – særlig i bygg med verneverdi. Bestill en gratis veiledningstime med Byantikvaren for gode tips. Plan- og bygningsetaten gir også veiledning om søknadsplikt og eventuelt om du må kontakte en fagperson (arkitekt, byggmester eller entreprenør) til å hjelpe deg.
+                Varmepumpe kan være søknadspliktig hvis den endrer fasadens karakter. Om det endrer fasadens karakter eller ikke vurderes fra sak til sak, og er strengere for verneverdige bygg. Større installasjoner regnes ofte som byggteknisk installasjon, som også er søknadspliktig. Du kan selv bestille gratis rådgivning med Byantikvaren i forkant for tips. Plan- og bygningsetaten gir også veiledning om søknadsplikt og eventuelt om du må kontakte en fagperson (arkitekt, byggmester eller entreprenør) til å hjelpe deg.
               </p>
               
               {/* Links section */}

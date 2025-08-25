@@ -287,7 +287,7 @@ export const Temperaturstyring: React.FC<TettingProps> = ({ onBack, buildingType
           Strømbesparelser
         </text>
         
-        {/* 200-400 mWh text */}
+        {/* Mangler data kWh text */}
         <text
           x="589"
           y="316"
@@ -300,10 +300,10 @@ export const Temperaturstyring: React.FC<TettingProps> = ({ onBack, buildingType
           fill="#FFFFFF"
           dominantBaseline="hanging"
         >
-          200-400 mWh
+          Mangler data kWh
         </text>
         
-        {/* Tilsvarer text */}
+        {/* Mangler data kr text */}
         <text
           x="589"
           y="338"
@@ -316,7 +316,7 @@ export const Temperaturstyring: React.FC<TettingProps> = ({ onBack, buildingType
           fill="#FFFFFF"
           dominantBaseline="hanging"
         >
-          Tilsvarer 100-150kr året
+          Mangler data kr
         </text>
         
         {/* Circle below main text */}

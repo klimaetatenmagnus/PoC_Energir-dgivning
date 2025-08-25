@@ -143,23 +143,20 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType, 
               }
             `}</style>
             <p style={{ marginBottom: '16px' }}>
-              Etterisolering av fasaden er svært effektivt for å spare strømutgifter, skape bedre inneklima med mindre trekk, og få mer kontroll over temperaturen inne.
+              God ventilasjon er viktig for inneklima og helse – og ikke minst for å få best mulig effekt av andre energitiltak. Når du tetter og isolerer, blir boligen mer energieffektiv, men også tettere. Uten god ventilasjon kan det føre til fukt, dårlig luft og høyt varmebehov.
             </p>
-            <p style={{ marginBottom: '16px' }}>
-              Hvis du uansett må skifte kledning, altså fasadematerialet, lønner det seg å etterisolere samtidig.
-            </p>
-
+            
             {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
               <p style={{ marginBottom: '20px' }}>
-                Har huset ditt en enkel fasade uten mye detaljer, er det som regel uproblematisk å etterisolere utvendig og kle med nytt materiale i ønsket stil. Skal du bevare dagens uttrykk, kan innvendig isolasjon eller forbedret tetting være alternativer.
+                Mange eneboliger har ventiler som er tettet igjen eller ikke i bruk. Ved å åpne eller erstatte disse, kan du forbedre luftkvaliteten uten store inngrep. På bad og kjøkken er avtrekksvifter en enkel løsning mot fukt. Ønsker du jevn temperatur og effektiv ventilasjon i hele boligen, kan balansert ventilasjon være aktuelt. Det er et system som bytter ut luften automatisk og gjenvinner varmen, slik at du sparer energi.
               </p>
             ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
               <p style={{ marginBottom: '20px' }}>
-                I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader. Det gir et helhetlig resultat og gjør det enklere å gjennomføre.
+                I mange rekkehus og tomannsboliger er ventilasjonen svekket over tid. Du kan få bedre luftkvalitet bare ved å rense og åpne ventiler, men vurder også mer moderne løsninger. Balansert ventilasjon sørger for at frisk luft kommer inn, brukt luft trekkes ut og varmen bevares – uten trekk. Et slikt tiltak gir jevnere temperatur. Samarbeider du med naboen kan dere oppnå enda mer effektive løsninger.
               </p>
             ) : (
               <p style={{ marginBottom: '20px' }}>
-                Blokker med store, flate fasader har godt potensial for etterisolering. Ved å etterisolere hele veggflater eller bare utvalgte partier kan dere redusere energiforbruket og oppgradere byggets uttrykk.
+                Mange leiligheter har dårlig ventilasjon etter at gamle systemer ble fjernet eller tettet. Start med å få renset og åpnet ventiler i egen bolig. Hvis flere i bygget har samme utfordring, kan borettslaget vurdere balansert ventilasjon – et system som gir frisk luft og varmegjenbruk. Det gir bedre inneklima for hele bygget.
               </p>
             )}
           </div>
@@ -292,214 +289,36 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType, 
           Årlig strømbesparelse
         </text>
         
-        {/* Etterisoleringyttervegg savings text */}
-        {(() => {
-          // ENERGY_SAVINGS_DATA dictionary
-          const ENERGY_SAVINGS_DATA: Record<string | number, any> = {
-            "eldre": {
-              "blokk": {
-                0.75: 38.9,
-                1.2: 32.1,
-                "etteriso_yttervegg": 81.7,
-                "etteriso_takloft": 24.4
-              },
-              "småhus": {
-                0.75: 42.2,
-                1.2: 34.3,
-                "etteriso_yttervegg": 94.1,
-                "etteriso_takloft": 41.2
-              }
-            },
-            49: {
-              "blokk": {
-                0.75: 38.9,
-                1.2: 32.1,
-                "etteriso_yttervegg": 81.7,
-                "etteriso_takloft": 24.4
-              },
-              "småhus": {
-                0.75: 42.2,
-                1.2: 34.3,
-                "etteriso_yttervegg": 94.1,
-                "etteriso_takloft": 41.2
-              }
-            },
-            69: {
-              "blokk": {
-                0.75: 38.3,
-                1.2: 31.3,
-                "etteriso_yttervegg": 39.7,
-                "etteriso_takloft": 8.4
-              },
-              "småhus": {
-                0.75: 41.7,
-                1.2: 33.7,
-                "etteriso_yttervegg": 27.7,
-                "etteriso_takloft": 11.4
-              }
-            },
-            87: {
-              "blokk": {
-                0.75: 28.1,
-                1.2: 21.0,
-                "etteriso_yttervegg": 9.7,
-                "etteriso_takloft": 2.8
-              },
-              "småhus": {
-                0.75: 31.4,
-                1.2: 23.4,
-                "etteriso_yttervegg": 15.0,
-                "etteriso_takloft": 4.7
-              }
-            },
-            97: {
-              "blokk": {
-                0.75: 12.1,
-                1.2: 5.0,
-                "etteriso_yttervegg": 7.3,
-                "etteriso_takloft": 0.4
-              },
-              "småhus": {
-                0.75: 14.2,
-                1.2: 6.1,
-                "etteriso_yttervegg": 3.7,
-                "etteriso_takloft": 0.6
-              }
-            },
-            7: {
-              "blokk": {
-                0.75: 7.2,
-                1.2: 0,
-                "etteriso_yttervegg": 1.3,
-                "etteriso_takloft": 0.4
-              },
-              "småhus": {
-                0.75: 8.2,
-                1.2: 0,
-                "etteriso_yttervegg": 0,
-                "etteriso_takloft": 0
-              }
-            }
-          };
-          
-          // TEK calculation function
-          const calculateTEK = (byggeaar: number): string => {
-            const terskel = 2; // lag i år i forhold til tek
-            
-            // TEK years with threshold applied
-            if (byggeaar >= 2007 + terskel) return "TEK7";      // 2009 and newer
-            if (byggeaar >= 1997 + terskel) return "TEK97";     // 1999-2008
-            if (byggeaar >= 1987 + terskel) return "TEK87";     // 1989-1998
-            if (byggeaar >= 1969 + terskel) return "TEK69";     // 1971-1988
-            if (byggeaar >= 1949 + terskel) return "TEK49";     // 1951-1970
-            
-            // Older than 1951
-            return "eldre";
-          };
-          
-          // Calculate etterisoleringyttervegg savings based on building data
-          const bruksareal = buildingData?.bruksarealM2 || buildingData?.csvData?.bruksareal_totalt || 0;
-          const byggeaar = buildingData?.byggeaar || buildingData?.csvData?.byggeaar || 0;
-          
-          // Determine building category
-          const buildingTypeCode = buildingData?.bygningstypeKode?.substring(0, 2) || 
-                                  buildingData?.csvData?.bygningstypekode?.substring(0, 2) ||
-                                  buildingData?.csvData?.bygningstypeKode?.substring(0, 2);
-          
-          const isSmåhus = ['11', '12', '13'].includes(buildingTypeCode || '');
-          const isBlokk = ['14', '15', '16', '17'].includes(buildingTypeCode || '');
-          let buildingCategory = isSmåhus ? 'småhus' : isBlokk ? 'blokk' : null;
-          
-          if (!buildingCategory) {
-            // Fallback to string matching if code is not available
-            const typeString = buildingType?.toLowerCase() || '';
-            if (typeString.includes('enebolig') || typeString.includes('tomannsbolig') || 
-                typeString.includes('rekkehus') || typeString.includes('kjedehus')) {
-              buildingCategory = 'småhus';
-            } else if (typeString.includes('blokk') || typeString.includes('leilighet') || typeString.includes('store boligbygg')) {
-              buildingCategory = 'blokk';
-            }
-          }
-          
-          let savingsPerM2 = 0;
-          let totalSavings = 0;
-          
-          if (byggeaar && buildingCategory) {
-            const tek = calculateTEK(byggeaar);
-            
-            // Get TEK key for the data structure
-            let tekKey: string | number = tek;
-            if (tek.startsWith('TEK')) {
-              const tekNumber = parseInt(tek.substring(3));
-              tekKey = tekNumber;
-            }
-            
-            const savingsData = ENERGY_SAVINGS_DATA[tekKey];
-            if (savingsData && savingsData[buildingCategory]) {
-              savingsPerM2 = savingsData[buildingCategory]["etteriso_yttervegg"] || 0;
-              totalSavings = savingsPerM2 * bruksareal;
-            }
-          }
-          
-          if (totalSavings > 0) {
-            const lowerSavings = Math.round((totalSavings * 0.9) / 1000) * 1000;
-            const upperSavings = Math.round((totalSavings * 1.1) / 1000) * 1000;
-            const norgespris = 1.1; // kr/kWh
-            const lowerKr = Math.round((lowerSavings * norgespris) / 1000) * 1000;
-            const upperKr = Math.round((upperSavings * norgespris) / 1000) * 1000;
-            
-            return (
-              <>
-                <text
-                  x="589"
-                  y="316"
-                  fontFamily="Oslo Sans"
-                  fontWeight="100"
-                  fontStyle="normal"
-                  fontSize="14"
-                  lineHeight="22"
-                  letterSpacing="0"
-                  fill="#FFFFFF"
-                  dominantBaseline="hanging"
-                >
-                  {`${lowerSavings} - ${upperSavings} kWh`}
-                </text>
-                
-                <text
-                  x="589"
-                  y="338"
-                  fontFamily="Oslo Sans"
-                  fontWeight="100"
-                  fontStyle="normal"
-                  fontSize="14"
-                  lineHeight="22"
-                  letterSpacing="0"
-                  fill="#FFFFFF"
-                  dominantBaseline="hanging"
-                >
-                  {`${lowerKr} - ${upperKr} kr`}
-                </text>
-              </>
-            );
-          } else {
-            return (
-              <text
-                x="589"
-                y="327"
-                fontFamily="Oslo Sans"
-                fontWeight="100"
-                fontStyle="normal"
-                fontSize="14"
-                lineHeight="22"
-                letterSpacing="0"
-                fill="#FFFFFF"
-                dominantBaseline="hanging"
-              >
-                Kunne ikke beregne besparelse
-              </text>
-            );
-          }
-        })()}
+        {/* Savings text - Display "Mangler data" with two rows */}
+        <text
+          x="589"
+          y="316"
+          fontFamily="Oslo Sans"
+          fontWeight="100"
+          fontStyle="normal"
+          fontSize="14"
+          lineHeight="22"
+          letterSpacing="0"
+          fill="#FFFFFF"
+          dominantBaseline="hanging"
+        >
+          Mangler data kWh
+        </text>
+        
+        <text
+          x="589"
+          y="338"
+          fontFamily="Oslo Sans"
+          fontWeight="100"
+          fontStyle="normal"
+          fontSize="14"
+          lineHeight="22"
+          letterSpacing="0"
+          fill="#FFFFFF"
+          dominantBaseline="hanging"
+        >
+          Mangler data kr
+        </text>
         
         {/* Circle below main text */}
         <circle
@@ -538,9 +357,9 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType, 
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://www.dibk.no/smartere-oppussing/artikler/yttertak-og-vegger', '_blank')}
+          onClick={() => window.open('https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/balansert-ventilasjon', '_blank')}
         >
-          Direktoratet for byggkvalitet
+          Enova
         </text>
         
         <text
@@ -555,24 +374,7 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType, 
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://www.enova.no/nb/privat/bolig/boligtyper', '_blank')}
-        >
-          Enova
-        </text>
-        
-        <text
-          x="170"
-          y="554"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-          style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://www.sintef.no/siste-nytt/2023/etterisolering-er-mer-aktuelt-enn-noen-gang-her-er-vare-tips/', '_blank')}
+          onClick={() => window.open('https://www.sintef.no/fagomrader/energieffektivisering-bygg/slik-virker-balansert-ventilasjon-i-boliger/#:~:text=God%20ventilasjon%20avhenger%20av%20at%20anlegget%20fordeler%20lufta,anbefaler%20balansert%20ventilasjon%20med%20varmegjenvinning%20i%20nye%20boliger.', '_blank')}
         >
           Sintef
         </text>
@@ -831,8 +633,7 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType, 
               transition: `opacity ${isPermitOpen ? '0.4s' : '0.1s'} ease-in-out ${isPermitOpen ? '0.2s' : '0s'}, padding 0.6s ease-in-out`
             }}>
               <p style={{ margin: 0 }}>
-                Etterisolering som endrer fasaden er søknadspliktig. Du må derfor kontakte en fagperson (arkitekt, byggmester eller entreprenør) som søker om tillatelse fra Plan- og bygningsetaten for deg. Etterisolering fra innsiden er som regel ikke søknadspliktig, så lenge du ikke endrer bygningens utseende eller bærende konstruksjon.
-
+                Mindre tiltak som vedlikehold av eksisterende ventiler er normalt ikke søknadspliktig. Hvis du skal installere nytt ventilasjonsanlegg, eller gjøre inngrep i fasaden eller i konstruksjonen, er det vanligvis søknadspliktig. Plan- og bygningsetaten gir nærmere veiledning om søknadsplikt og eventuelt om du må kontakte en fagperson (arkitekt, byggmester eller entreprenør) til å hjelpe deg.
               </p>
               
               {/* Links section */}
