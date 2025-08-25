@@ -143,23 +143,22 @@ export const IsoleringAvKjellerOgLoft: React.FC<IsoleringAvKjellerOgLoftProps> =
               }
             `}</style>
             <p style={{ marginBottom: '16px' }}>
-              Etterisolering av fasaden er svært effektivt for å spare strømutgifter, skape bedre inneklima med mindre trekk, og få mer kontroll over temperaturen inne.
+              Etterisolering av loft og gulv er en effektiv måte å redusere varmetap, få et lunere inneklima og kutte strømregningen. Mange boliger har lite eller utdatert isolasjon – og her kan selv enkle tiltak gjøre stor forskjell.
+
             </p>
-            <p style={{ marginBottom: '16px' }}>
-              Hvis du uansett må skifte kledning, altså fasadematerialet, lønner det seg å etterisolere samtidig.
-            </p>
+
 
             {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
               <p style={{ marginBottom: '20px' }}>
-                Har huset ditt en enkel fasade uten mye detaljer, er det som regel uproblematisk å etterisolere utvendig og kle med nytt materiale i ønsket stil. Skal du bevare dagens uttrykk, kan innvendig isolasjon eller forbedret tetting være alternativer.
+                I eneboliger er det vanlig med tilgjengelig loft og kjeller, noe som gir gode muligheter for etterisolering. Loftet kan isoleres i gulvet med for eksempel trefiber eller cellulose – gjerne 20 cm eller mer – slik at varmen holdes inne uten å måtte endre taket på utsiden. I kjelleren kan det isoleres fra undersiden eller mellom bjelkelag, og i noen tilfeller blåses inn isolasjon uten å åpne gulvet. Det er viktig å sikre ventilasjon slik at det ikke oppstår fukt.
               </p>
             ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
               <p style={{ marginBottom: '20px' }}>
-                I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader. Det gir et helhetlig resultat og gjør det enklere å gjennomføre.
+                I rekkehus og flermannsboliger kan loft og kjeller være felles eller nært knyttet til naboens del. Da kan det være lurt å samarbeide, særlig hvis dere deler bjelkelag eller fellesarealer. Loftsgulv isoleres enkelt fra oversiden, og gulv mot kjeller kan etterisoleres nedenfra, eller ved å blåse isolasjon inn i etasjeskillet. Vurder fuktsikring og ventilasjon for best resultat.
               </p>
             ) : (
               <p style={{ marginBottom: '20px' }}>
-                Blokker med store, flate fasader har godt potensial for etterisolering. Ved å etterisolere hele veggflater eller bare utvalgte partier kan dere redusere energiforbruket og oppgradere byggets uttrykk.
+                I blokker er etterisolering vanligvis et felles tiltak som må planlegges gjennom styret eller borettslaget. Loft og kjeller er ofte fellesarealer, og tiltak her kan gi store energibesparelser for hele bygget. Gulv mot uoppvarmet kjeller kan isoleres nedenfra, og loftsgulvet ovenfra. Dette må alltid vurderes opp mot fuktsikring og tekniske forhold.
               </p>
             )}
           </div>
@@ -540,43 +539,9 @@ export const IsoleringAvKjellerOgLoft: React.FC<IsoleringAvKjellerOgLoftProps> =
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://www.dibk.no/smartere-oppussing/artikler/yttertak-og-vegger', '_blank')}
-        >
-          Direktoratet for byggkvalitet
-        </text>
-        
-        <text
-          x="170"
-          y="528"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-          style={{ cursor: 'pointer' }}
           onClick={() => window.open('https://www.enova.no/nb/privat/bolig/boligtyper', '_blank')}
         >
           Enova
-        </text>
-        
-        <text
-          x="170"
-          y="554"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-          style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://www.sintef.no/siste-nytt/2023/etterisolering-er-mer-aktuelt-enn-noen-gang-her-er-vare-tips/', '_blank')}
-        >
-          Sintef
         </text>
         
         {/* Dynamic table with scrollbar */}
@@ -833,8 +798,7 @@ export const IsoleringAvKjellerOgLoft: React.FC<IsoleringAvKjellerOgLoftProps> =
               transition: `opacity ${isPermitOpen ? '0.4s' : '0.1s'} ease-in-out ${isPermitOpen ? '0.2s' : '0s'}, padding 0.6s ease-in-out`
             }}>
               <p style={{ margin: 0 }}>
-                Etterisolering som endrer fasaden er søknadspliktig. Du må derfor kontakte en fagperson (arkitekt, byggmester eller entreprenør) som søker om tillatelse fra Plan- og bygningsetaten for deg. Etterisolering fra innsiden er som regel ikke søknadspliktig, så lenge du ikke endrer bygningens utseende eller bærende konstruksjon.
-
+                Etterisolering som ikke endrer bygningens utseende er som regel ikke søknadspliktig. Men hvis tiltaket berører bærende konstruksjoner eller fasade, bør du sjekke med Plan- og bygningsetaten. De kan også gi råd om du bør bruke fagperson (arkitekt, byggmester eller entreprenør) til å søke for deg.
               </p>
               
               {/* Links section */}

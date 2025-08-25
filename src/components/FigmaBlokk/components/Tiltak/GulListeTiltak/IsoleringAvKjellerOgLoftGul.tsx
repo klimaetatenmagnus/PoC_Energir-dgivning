@@ -143,40 +143,25 @@ export const IsoleringAvKjellerOgLoftGul: React.FC<IsoleringAvKjellerOgLoftGulPr
               }
             `}</style>
             <p style={{ marginBottom: '16px' }}>
-              Fasaden er ansiktet utad på huset – og ofte en viktig del av bygningens særpreg og identitet. Men selv om bygget er oppført på gul liste betyr ikke det at du ikke kan gjøre noe. Tvert om - i mange tilfeller finnes det gode muligheter for å forbedre komforten og redusere varmetapet, så lenge tiltakene er tilpasset husets konstruksjon og historie. Noen fasader egner seg for skånsom etterisolering, andre krever litt mer kreativ tilnærming – men i de fleste tilfeller finnes det løsninger.
+              Etterisolering av loft, kjeller og gulv er en av de mest effektive og rimelige måtene å spare energi i eldre bygg – uten å endre byggets utseende. Riktig isolasjon kan gjøre boligen mer komfortabel og senke strømforbruket betydelig. I bygg med verneverdi er det ekstra viktig å bruke metoder og materialer som spiller på lag med konstruksjonen. Ofte finnes det gode løsninger, så lenge de tilpasses bygget og utføres på en skånsom måte.
             </p>
 
             {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
               <>
                 <p style={{ marginBottom: '16px' }}>
-                  Eldre eneboliger har stor variasjon i både byggemåte og fasadeuttrykk. Det betyr at løsningene også må tilpasses det enkelte huset.
-                </p>
-                <p style={{ marginBottom: '16px' }}>
-                  Har huset trekledning og tydelige bygningsdetaljer? Da bør du som hovedregel bevare fasaden slik den er. Men det betyr ikke at du står fast – ofte kan innvendig etterisolering eller forbedret tetting gi stor effekt, og utføres på en måte som bevarer husets uttrykk. Hvis kledningen allerede er byttet ut tidligere, eller er i dårlig stand, kan etterisolering utvendig vurderes, med ny kledning i lik stil.
-                </p>
-                <p style={{ marginBottom: '20px' }}>
-                  Har huset mur- eller betongfasade uten særlige detaljer? Da er det større handlingsrom – gavlvegger og fasader mot bakgård og portrom.
+                  I eldre eneboliger er det ofte god tilgang til både loft og kjeller, noe som gir mange muligheter for isolering uten store inngrep. Loftet kan isoleres i gulvet med naturbaserte materialer som trefiber eller cellulose – 20 cm er ofte nok. På den måten beholder du takets uttrykk og unngår å endre byggets karakter. I kjelleren er det lurt å isolere i gulvet over, ikke på innsiden av murveggene. Dette kan gjøres ved innblåsing av isolasjon i etasjeskillet, gjerne uten å ta opp gulv. Husk å sikre god ventilasjon for å unngå fukt.
                 </p>
               </>
             ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
               <>
                 <p style={{ marginBottom: '16px' }}>
-                  Mange tomannsboliger og rekkehus har symmetrisk oppbygning og felles fasadepreg. Da er det lurt at du samarbeider med naboen, slik at helheten ivaretas. Det gir både bedre visuelle løsninger og større sjanse for byggetillatelse fra Plan- og bygningsetaten.
-                </p>
-                <p style={{ marginBottom: '16px' }}>
-                  Er fasaden enkel og uten detaljer, for eksempel på bakvegg eller gavl? Da kan det være mulig å etterisolere utvendig, gjerne med ny kledning i likt uttrykk. Er huset i mur eller pusset tegl, må man bruke løsninger som lar fukt bevege seg naturlig.
-                </p>
-                <p style={{ marginBottom: '20px' }}>
-                  Er fasaden profilert treverk eller historisk murarbeid? Da anbefales andre tiltak, som forbedret tetting, vindusforbedring og innvendig isolasjon med pustende materialer. Et møte med Byantikvaren er gratis og de kan gi deg gode tips.
+                  Loft og kjeller i rekkehus og tomannsboliger kan være felles eller ligge tett inntil naboens del. Det betyr at energitiltak bør samkjøres med naboen der det er mulig. Isolering av loftsgulvet gir stor effekt og kan ofte utføres uten å påvirke byggets fasade. Gulv mot kjeller kan isoleres med innblåst materiale i etasjeskillet, men det krever at man vurderer ventilasjon og eventuell fuktproblematikk.
                 </p>
               </>
             ) : (
               <>
                 <p style={{ marginBottom: '16px' }}>
-                  Blokker har ofte felleseide fasader og stor variasjon i byggestil. En godt planlagt oppgradering kan gi både energigevinst og løfte helhetsinntrykket til fasaden.
-                </p>
-                <p style={{ marginBottom: '20px' }}>
-                  På enkle, flate fasader, gavlvegger, portrom eller fasader mot bakgård, kan utvendig etterisolering være en god løsning. Fasaden mot gaten, og særlig hvis den er utsmykket med detaljer, bør bevares. Da kan andre tiltak, som tetting og balansert ventilasjon, samt utskifting av vinduer, være bedre løsninger.
+                  I blokker er etterisolering vanligvis et felles tiltak som må planlegges gjennom styret eller borettslaget. Loft og kjeller er ofte fellesarealer, og tiltak her kan gi store energibesparelser for hele bygget. Å isolere loftsgulvet med pustende materialer er effektivt og påvirker ikke fasaden. Gulv mot uoppvarmet kjeller kan isoleres nedenfra, men dette må alltid vurderes opp mot fuktsikring og tekniske forhold.
                 </p>
               </>
             )}
@@ -547,9 +532,9 @@ export const IsoleringAvKjellerOgLoftGul: React.FC<IsoleringAvKjellerOgLoftGulPr
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://www.dibk.no/smartere-oppussing/artikler/yttertak-og-vegger', '_blank')}
+          onClick={() => window.open('https://riksantikvaren.no/veileder/rad-om-energisparing-i-gamle-hus/#72aa0e54-2678-43a1-8fd2-f4f2f7697e46', '_blank')}
         >
-          Direktoratet for byggkvalitet
+          Riksantikvaren
         </text>
         
         <text
@@ -572,40 +557,6 @@ export const IsoleringAvKjellerOgLoftGul: React.FC<IsoleringAvKjellerOgLoftGulPr
         <text
           x="170"
           y="529"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-          style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://www.oslo.kommune.no/getfile.php/1315761-1444138762/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Bevaringsverdige%20murg%C3%A5rdsfasader%20-%20Informasjonsark.pdf', '_blank')}
-        >
-          Byantikvaren
-        </text>
-        
-        <text
-          x="170"
-          y="555"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-          style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://riksantikvaren.no/veileder/rad-om-energisparing-i-gamle-hus/#72aa0e54-2678-43a1-8fd2-f4f2f7697e46', '_blank')}
-        >
-          Riksantikvaren
-        </text>
-        
-        <text
-          x="170"
-          y="581"
           fontFamily="Oslo Sans"
           fontWeight="300"
           fontStyle="normal"
@@ -874,7 +825,7 @@ export const IsoleringAvKjellerOgLoftGul: React.FC<IsoleringAvKjellerOgLoftGulPr
               transition: `opacity ${isPermitOpen ? '0.4s' : '0.1s'} ease-in-out ${isPermitOpen ? '0.2s' : '0s'}, padding 0.6s ease-in-out`
             }}>
               <p style={{ margin: 0 }}>
-                For å utføre fasadeendring må du kontakte en fagperson (arkitekt, byggmester eller entreprenør) som søker om tillatelse fra Plan- og bygningsetaten for deg. Du kan selv ta kontakt med Byantikvaren for gratis veiledning i forkant. I byggesaken vil fagpersonen (ansvarlig søker) eller saksbehandler i Plan- og bygningsetaten uansett innhente en uttalelse fra Byantikvaren. 
+                Dersom tiltaket påvirker byggets fasade, utseende eller konstruksjon kan være søknadspliktig. Plan- og bygningsetaten gir veiledning om søknadsplikt og eventuelt om du må kontakte en fagperson (arkitekt, byggmester eller entreprenør) til å hjelpe deg. Det er lurt å ta en tidlig prat med Byantikvaren før du setter i gang for tips til gode løsninger.
               </p>
               
               {/* Links section */}
