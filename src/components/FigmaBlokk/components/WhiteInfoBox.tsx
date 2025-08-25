@@ -49,6 +49,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   
   // State for delayed height expansion
   const [expandHeight, setExpandHeight] = React.useState(false);
+  // Separate states for smooth transitions
+  const [currentWidth, setCurrentWidth] = React.useState(336);
   
   // State for yellow box expansion - use external state if provided
   const [localIsYellowBoxExpanded, setLocalIsYellowBoxExpanded] = React.useState(false);
@@ -142,14 +144,19 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   // Handle sequential animation - expand height after width
   React.useEffect(() => {
     if (isExpanded) {
-      // Delay height expansion to happen after width animation (0.8s)
+      // Expansion: width first, then height
+      setCurrentWidth(840);
       const timer = setTimeout(() => {
         setExpandHeight(true);
       }, 800);
       return () => clearTimeout(timer);
     } else {
-      // Reset height immediately when closing
+      // Collapse: height first, then width
       setExpandHeight(false);
+      const timer = setTimeout(() => {
+        setCurrentWidth(336);
+      }, 600);
+      return () => clearTimeout(timer);
     }
   }, [isExpanded]);
   
@@ -192,10 +199,19 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
         position: 'absolute',
         left: 'calc(50% - 235.5px - 74px - 336px)',
         bottom: `${expandedBottom}px`,
-        width: expandedWidth,
-        height: expandedHeight,
+        width: 840,
+        height: 790,
+        clipPath: expandHeight 
+          ? 'inset(0 0 0 0)'  // Fully expanded
+          : isExpanded 
+            ? 'inset(90px 0 0 0)'  // Width expanded, height not
+            : 'inset(90px 504px 0 0)',  // Fully collapsed
         opacity: showHeader ? 1 : 0,
-        transition: `opacity 1s ease-in-out 0.5s, width 0.8s ease-in-out ${isExpanded ? '0s' : '0.4s'}, height 0.6s ease-in-out ${expandHeight ? '0s' : '0.2s'}`,
+        transition: `opacity 1s ease-in-out 0.5s, clip-path ${
+          expandHeight && isExpanded ? '0.6s' : '0.8s'
+        } ease-in-out ${
+          expandHeight && isExpanded ? '0s' : '0s'
+        }`,
         zIndex: 1000,
         overflow: 'hidden'
       }}
@@ -206,23 +222,24 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           bottom: 0,
           left: 0,
           width: '100%',
-          height: '100%'
+          height: '100%',
+          overflow: 'hidden'
         }}
       >
         <svg
-          width={expandedWidth}
-          height={expandedHeight}
-          viewBox={`0 ${expandHeight ? -topExpansion : 0} ${expandedWidth} ${expandedHeight}`}
+          width="840"
+          height="790"
+          viewBox={`0 -90 840 790`}
           preserveAspectRatio="xMinYMin meet"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           style={{
             position: 'absolute',
             bottom: 0,
-            left: 0
+            left: 0,
           }}
         >
-      <rect width={expandedWidth} height={expandedHeight} y={expandHeight ? -topExpansion : 0} fill="white"/>
+      <rect width="840" height="790" y="-90" fill="white"/>
       <g clipPath="url(#clip0_325_12689)">
         <g style={{ opacity: isExpanded ? 0 : 1, transition: isExpanded ? 'opacity 0.3s ease-in-out' : 'opacity 0.5s ease-in-out 0.5s' }}>
         {/* Address text with proportional scaling */}
@@ -1111,27 +1128,26 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
       </div>
       
       {/* Render Tetting, Temperaturstyring, Solenergi, Oppgradering av vindu, Etterisolering av yttervegg, Isolering av kjeller og loft, Ventilasjon, and Varmepumpe outside SVG */}
-      {(selectedSolution === 'Tetting' || 
-        selectedSolution === 'Temperaturstyring' ||
-        selectedSolution === 'Solenergi' ||
-        selectedSolution === 'Oppgradering av vindu' ||
-        selectedSolution === 'Etterisolering av yttervegg' ||
-        selectedSolution === 'Isolering av kjeller og loft' ||
-        selectedSolution === 'Ventilasjon' ||
-        selectedSolution === 'Varmepumpe') && (
-        <div style={{ 
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          opacity: isExpanded && selectedSolution ? 1 : 0, 
-          transition: isExpanded ? 'opacity 0.5s ease-in-out 1s' : 'opacity 0.2s ease-out',
-          pointerEvents: isExpanded ? 'auto' : 'none'
-        }}>
-          {getSolutionComponent()}
-        </div>
-      )}
+      <div style={{ 
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        opacity: isExpanded && selectedSolution ? 1 : 0, 
+        transition: isExpanded ? 'opacity 0.5s ease-in-out 1s' : 'opacity 0.3s ease-in-out',
+        pointerEvents: isExpanded ? 'auto' : 'none',
+        visibility: (selectedSolution === 'Tetting' || 
+          selectedSolution === 'Temperaturstyring' ||
+          selectedSolution === 'Solenergi' ||
+          selectedSolution === 'Oppgradering av vindu' ||
+          selectedSolution === 'Etterisolering av yttervegg' ||
+          selectedSolution === 'Isolering av kjeller og loft' ||
+          selectedSolution === 'Ventilasjon' ||
+          selectedSolution === 'Varmepumpe') ? 'visible' : 'hidden'
+      }}>
+        {getSolutionComponent()}
+      </div>
     </div>
   );
 };

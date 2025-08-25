@@ -89,7 +89,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           position: 'absolute', 
           top: 0, 
           left: 0,
-          transition: `transform 0.6s ease-in-out ${isPermitOpen ? '0.1s' : '0s'}`,
+          transition: 'transform 0.6s ease-in-out',
           transform: isPermitOpen ? 'translateY(-465px)' : 'translateY(0)'
         }}
       >
@@ -188,7 +188,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         <rect
           x="565"
           y="106"
-          width="148"
+          width="152"
           height="30"
           fill="#C7F6C9"
         />
@@ -209,7 +209,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Bedre inneklima
+          Bedre bokvalitet
         </text>
         <rect
           x="565"
@@ -235,7 +235,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Lavere strømregning
+          Ivaretar boligen
         </text>
         <rect
           x="565"
