@@ -3,6 +3,8 @@
 
 export interface AddressLookupRequest {
   address: string;
+  useImprovedSelection?: boolean;
+  debug?: boolean;
 }
 
 export interface AddressLookupResponse {
@@ -32,6 +34,18 @@ export interface AddressLookupResponse {
     north: number;
     epsg: string;
   };
+  takAreal_m2?: number;
+  sol_kwh_m2_yr?: number;
+  sol_kwh_bygg_tot?: number;
+  solKategori?: string;
+  takflater?: Array<{
+    tak_id: number;
+    bygg_id: number | null;
+    area_m2: number;
+    irr_kwh_m2_yr: number;
+    kWh_tot: number;
+  }>;
+  filteredSolarEnergy?: number;
 }
 
 export interface ApiError {
@@ -125,7 +139,7 @@ export class BuildingApiService {
     this.useMockData = useMockData;
   }
 
-  async lookupAddress(address: string): Promise<AddressLookupResponse> {
+  async lookupAddress(address: string, useImprovedSelection: boolean = false, debug: boolean = false): Promise<AddressLookupResponse> {
     console.log('[BuildingApiService] Looking up address:', address);
     const startTime = Date.now();
 
@@ -152,7 +166,7 @@ export class BuildingApiService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ address } as AddressLookupRequest),
+        body: JSON.stringify({ address, useImprovedSelection, debug } as AddressLookupRequest),
       });
 
       if (!response.ok) {

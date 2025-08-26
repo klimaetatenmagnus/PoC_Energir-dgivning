@@ -17,10 +17,10 @@ const LOG_SOAP = process.env.LOG_SOAP === "1";
 const IS_LIVE = process.env.LIVE === "1";
 
 /* ───────────────── Koordinatsystem-definisjoner ─────────────────── */
-proj4.defs("EPSG:25833", "+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs");
 proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
+proj4.defs("EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs");
 export const PBE_EPSG = "EPSG:32632" as const;
-export type EpsgCode = "EPSG:25833" | "EPSG:32632";
+export type EpsgCode = "EPSG:32632" | "EPSG:4326";
 
 /* ───────────────────── Typedefinisjoner ─────────────────────────── */
 export interface RepPoint {
@@ -419,13 +419,11 @@ export class StoreClient {
       ? {
           east: repXY.east,
           north: repXY.north,
-          epsg: "EPSG:25833",
+          epsg: "EPSG:32632",
           toPBE() {
-            const [x, y] = proj4("EPSG:25833", PBE_EPSG, [
-              this.east,
-              this.north,
-            ]);
-            return { east: x, north: y };
+            // Koordinatene fra Matrikkel er allerede i EPSG:32632
+            // så vi returnerer dem direkte
+            return { east: this.east, north: this.north };
           },
         }
       : undefined;
