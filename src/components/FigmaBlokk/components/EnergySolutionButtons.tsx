@@ -532,7 +532,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       
       {/* Title text with toggle button */}
       <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <text 
+        <span 
           style={{
             fontFamily: 'Oslo Sans, sans-serif',
             fontWeight: 500,
@@ -544,7 +544,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
           }}
         >
           Velg tiltak for din bolig
-        </text>
+        </span>
         <button
           onClick={() => setShowDetails(!showDetails)}
           style={{
@@ -675,7 +675,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
             fontWeight="500" 
             fontStyle="normal"
             fontSize="18" 
-            lineHeight="28"
             letterSpacing="-0.2"
             fill={hoveredIndex === index || checkedItems.has(index) ? "#2A2859" : "#F9F9F9"} 
             textAnchor="start"
@@ -708,7 +707,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                   fontWeight="500" 
                   fontStyle="normal"
                   fontSize="14" 
-                  lineHeight="22"
                   letterSpacing="-0.2"
                   fill="#F9F9F9" 
                   textAnchor="start"
@@ -750,7 +748,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                   fontWeight="500" 
                   fontStyle="normal"
                   fontSize="14" 
-                  lineHeight="22"
                   letterSpacing="-0.2"
                   fill="#F9F9F9" 
                   textAnchor="middle"
@@ -792,7 +789,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
           fontWeight="500" 
           fontStyle="normal"
           fontSize="18" 
-          lineHeight="28"
           letterSpacing="-0.2"
           fill="#F9F9F9" 
           textAnchor="start"

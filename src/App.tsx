@@ -1,5 +1,5 @@
 // src/App.tsx
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import type { House } from "./types/House";
 import DebugDataTable from "./components/DebugDataTable";
 import useBuildingInfo from "./hooks/useBuildingInfo";
@@ -75,6 +75,9 @@ export default function App() {
   
   /* 5. Støtteordninger state */
   const [stotteordninger, setStotteordninger] = useState<any>(null);
+  
+  /* 6. Skyline fade animation state */
+  const [skylineFadeOpacity, setSkylineFadeOpacity] = useState(1);
 
   const handleAddressLookup = async (address: string) => {
     setLookupLoading(true);
@@ -137,8 +140,13 @@ export default function App() {
         setStotteordninger(null);
       }
       
-      // Always use FigmaMainScript component - it will handle the animation internally
-      setMode('figma-blokk');
+      // Start fade animation first
+      setSkylineFadeOpacity(0);
+      
+      // Then switch to FigmaMainScript after fade completes
+      setTimeout(() => {
+        setMode('figma-blokk');
+      }, 2000);
     } catch (error) {
       console.error('[Figma] Lookup failed:', error);
       setFigmaError(error instanceof Error ? error : new Error('Ukjent feil'));
@@ -187,7 +195,12 @@ export default function App() {
       setFigmaResult(LYSEVEIEN_3_DATA.buildingData);
       // Load mock støtteordninger for enebolig
       loadMockStotteordninger('enebolig');
-      setMode('figma-blokk');
+      // Start fade animation immediately
+      setSkylineFadeOpacity(0);
+      // Switch to figma-blokk mode after fade
+      setTimeout(() => {
+        setMode('figma-blokk');
+      }, 2000);
       return;
     } else if (value === "2") {
       console.log('[TEST MODE] Loading Thereses gate 11A data (Blokkleilighet)');
@@ -195,7 +208,12 @@ export default function App() {
       setFigmaResult(THERESES_11A_DATA.buildingData);
       // Load mock støtteordninger for blokk
       loadMockStotteordninger('blokk');
-      setMode('figma-blokk');
+      // Start fade animation immediately
+      setSkylineFadeOpacity(0);
+      // Switch to figma-blokk mode after fade
+      setTimeout(() => {
+        setMode('figma-blokk');
+      }, 2000);
       return;
     } else if (value === "3") {
       console.log('[TEST MODE] Loading Thereses gate 44A data (Bygård)');
@@ -203,7 +221,12 @@ export default function App() {
       setFigmaResult(THERESES_44A_DATA.buildingData);
       // Load mock støtteordninger for blokk
       loadMockStotteordninger('blokk');
-      setMode('figma-blokk');
+      // Start fade animation immediately
+      setSkylineFadeOpacity(0);
+      // Switch to figma-blokk mode after fade
+      setTimeout(() => {
+        setMode('figma-blokk');
+      }, 2000);
       return;
     }
 
@@ -262,6 +285,7 @@ export default function App() {
     setFigmaError(null);
   };
 
+
   /* --- RENDER ---------------------------------------------------- */
   if (error && mode !== "lookup") return <p className="text-red-600 p-4">Feil: {error}</p>;
 
@@ -290,6 +314,7 @@ export default function App() {
             setFigmaSearchValue("");
             setFigmaError(null);
             setStotteordninger(null);
+            setSkylineFadeOpacity(1); // Reset skyline opacity
           }}
         />
       </div>
@@ -301,43 +326,62 @@ export default function App() {
     console.log('[Figma Mode] Rendering Figma design');
 
     return (
-      <div className="figma-design-container" style={{ background: '#034B45', minHeight: '100vh', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-        {/* Back button only shown in figma mode, not in figma-blokk mode */}
-        <button
-          onClick={() => setMode("lookup")}
-          style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            background: '#f0f0f0',
-            border: '1px solid #ddd',
-            color: '#212121',
-            padding: '8px 16px',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif',
-            fontWeight: 500,
-            fontSize: '14px',
-            lineHeight: '1.5',
-            cursor: 'pointer',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            zIndex: 1000,
-            transition: 'background-color 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#e0e0e0';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#f0f0f0';
-          }}
-        >
-          <span>←</span>
-          <span>Tilbake</span>
-        </button>
-        <div className="figma-content">
-          {/* Søkefunksjon container med logo og tekst */}
-          <div className="figma-search-container">
+      <div className="figma-design-container" style={{ 
+        background: '#034B45', 
+        minHeight: '100vh', 
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden'
+      }}>
+        {/* Scaled content container */}
+        <div style={{
+          width: '100vw',
+          height: '100vh',
+          background: '#034B45',
+          border: '3px solid red',
+          boxSizing: 'border-box',
+          position: 'relative'
+        }}>
+          {/* Back button inside scaled container */}
+          <button
+            onClick={() => setMode("lookup")}
+            style={{
+              position: 'absolute',
+              top: '40px',
+              right: '40px',
+              background: '#f0f0f0',
+              border: '1px solid #ddd',
+              color: '#212121',
+              padding: '8px 16px',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif',
+              fontWeight: 500,
+              fontSize: '14px',
+              lineHeight: '1.5',
+              cursor: 'pointer',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              zIndex: 1000,
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#e0e0e0';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#f0f0f0';
+            }}
+          >
+            <span>←</span>
+            <span>Tilbake</span>
+          </button>
+          
+          <div className="figma-content">
+            {/* Søkefunksjon container med logo og tekst */}
+            <div className="figma-search-container">
             {/* Oslo logo med tekst */}
             <div className="oslo-logo-container">
               <svg className="oslo-logo" width="57" height="68" viewBox="0 0 57 68" fill="none">
@@ -437,16 +481,24 @@ export default function App() {
             </div>
           </div>
         </div>
-        
-        {/* Oslo skyline SVG - updated version */}
-        <svg 
-          className="oslo-skyline"
-          viewBox="0 -10 1728 362" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-          preserveAspectRatio="xMidYMax slice"
-          style={{ overflow: 'visible' }}
-        >
+          
+          {/* Oslo skyline SVG - positioned in bottom left corner */}
+          <svg 
+            className="oslo-skyline"
+            viewBox="0 -10 1728 362" 
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
+            preserveAspectRatio="xMidYMax slice"
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              width: '100%',
+              height: 'auto'
+            }}
+          >
+          {/* Buildings that fade out */}
+          <g style={{ opacity: skylineFadeOpacity, transition: 'opacity 1.5s ease-in-out' }}>
           <path d="M1620.3 191.642H1548.51H1512.6V119.506V0.593262H1620.3V191.642Z" fill="#F8F0DD"/>
           <path d="M1300.28 351.876H1244.9H1217.2V219.221V0.593262H1300.28V351.876Z" fill="#D0BFAE"/>
           <path d="M1407.98 351.876H1336.19H1300.28V219.221V0.593262H1407.98V351.876Z" fill="#F8F0DD"/>
@@ -521,15 +573,11 @@ export default function App() {
           <path d="M566.182 290.372V321.186H596.953V352H566.182H554.797H535.411V332.957V321.186V290.372H566.182Z" fill="#F8F0DD"/>
           <path d="M443.099 321.186H473.87V352H443.099V321.186Z" fill="#F8F0DD"/>
           <path d="M412.33 290.372L443.101 321.186V352H412.33H381.559V321.186L412.33 290.372Z" fill="#D0BFAE"/>
-          <path d="M350.783 302.697H381.554V352H350.783V302.697Z" fill="#F8F0DD"/>
-          <path d="M320.018 271.883L350.789 302.697V352H320.018H289.248V302.697L320.018 271.883Z" fill="#D0BFAE"/>
           <path d="M535.411 290.372H566.182L535.411 259.558H504.64L535.411 290.372Z" fill="#2A2859"/>
           <path d="M596.953 321.186H566.182V290.372L596.953 321.186Z" fill="#2A2859"/>
           <path d="M495.408 339.674H507.716V351.999H495.408V339.674Z" fill="#2A2859"/>
           <path d="M443.099 321.186H473.87L443.099 290.372H412.328L443.099 321.186Z" fill="#2A2859"/>
           <path d="M406.174 339.674H418.482V351.999H406.174V339.674Z" fill="#2A2859"/>
-          <path d="M350.783 302.697H381.554L350.783 271.883H320.013L350.783 302.697Z" fill="#2A2859"/>
-          <path d="M313.862 339.674H326.17V351.999H313.862V339.674Z" fill="#2A2859"/>
           <path d="M61.5357 247.23H116.923L86.1525 216.416H30.7648L61.5357 247.23Z" fill="#2A2859"/>
           <path d="M61.5358 247.229H116.923V351.998H61.5358V247.229Z" fill="#F8F0DD"/>
           <path d="M30.7689 216.416L61.5399 247.23V351.999H30.7689H-0.00210571V247.23L30.7689 216.416Z" fill="#D0BFAE"/>
@@ -607,7 +655,16 @@ export default function App() {
           <path d="M1119.01 259.555H1131.32V271.881H1119.01V259.555Z" fill="#2A2859"/>
           <path d="M1094.4 259.555H1106.71V271.881H1094.4V259.555Z" fill="#2A2859"/>
           <path d="M1069.78 259.555H1082.09V271.881H1069.78V259.555Z" fill="#2A2859"/>
+          </g>
+          
+          {/* Enebolig1 - always visible on top */}
+          <path d="M320.018 271.883L350.789 302.697V352H320.018H289.248V302.697L320.018 271.883Z" fill="#D0BFAE"/>
+          <path d="M350.783 302.697H381.554V352H350.783V302.697Z" fill="#F8F0DD"/>
+          <path d="M350.783 302.697H381.554L350.783 271.883H320.013L350.783 302.697Z" fill="#2A2859"/>
+          <path d="M313.862 339.674H326.17V351.999H313.862V339.674Z" fill="#2A2859"/>
         </svg>
+        </div>
+        
       </div>
     );
   }

@@ -251,7 +251,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           fontWeight="500"
           fontStyle="normal"
           fontSize={36 * addressScale} 
-          lineHeight={54 * addressScale}
           letterSpacing="-0.2"
           fill="#2A2859"
           textAnchor="start"
@@ -268,7 +267,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           fontWeight="400"
           fontStyle="normal"
           fontSize="14" 
-          lineHeight="22"
           letterSpacing="-0.2"
           fill="#2A2859"
         >
@@ -288,7 +286,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           fontWeight="400"
           fontStyle="normal"
           fontSize="14" 
-          lineHeight="22"
           letterSpacing="-0.2"
           fill="#2A2859"
         >
@@ -303,7 +300,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           fontWeight="500"
           fontStyle="normal"
           fontSize="20" 
-          lineHeight="32"
           letterSpacing="-0.2"
           fill="#2A2859"
         >
@@ -342,8 +338,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             fontWeight="400"
             fontStyle="normal"
             fontSize="16" 
-            lineHeight="32"
-            letterSpacing="-0.2"
+              letterSpacing="-0.2"
             fill="#2A2859"
           >
             ({isEditMode ? 'Lagre' : 'Rediger'}
@@ -359,8 +354,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             fontWeight="400"
             fontStyle="normal"
             fontSize="16" 
-            lineHeight="32"
-            letterSpacing="-0.2"
+              letterSpacing="-0.2"
             fill="#2A2859"
           >
             )
@@ -375,8 +369,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               y="204" 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
-              lineHeight="28"
-              letterSpacing="-0.2"
+                  letterSpacing="-0.2"
               fill="#2A2859"
             >
               <tspan fontWeight="300">Byggeår: </tspan>
@@ -387,8 +380,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               y="232" 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
-              lineHeight="28"
-              letterSpacing="-0.2"
+                  letterSpacing="-0.2"
               fill="#2A2859"
             >
               <tspan fontWeight="300">Areal: </tspan>
@@ -400,8 +392,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 y="260" 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontSize="18" 
-                lineHeight="28"
-                letterSpacing="-0.2"
+                      letterSpacing="-0.2"
                 fill="#2A2859"
               >
                 <tspan fontWeight="300">Eiertype: </tspan>
@@ -414,8 +405,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 y="288" 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontSize="18" 
-                lineHeight="28"
-                letterSpacing="-0.2"
+                      letterSpacing="-0.2"
                 fill="#2A2859"
               >
                 <tspan fontWeight="300">Vernestatus: </tspan>
@@ -427,8 +417,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               y={showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "304" : "332"} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="16" 
-              lineHeight="28"
-              letterSpacing="-0.2"
+                  letterSpacing="-0.2"
               fill="#2A2859"
               fontWeight="400"
             >
@@ -440,8 +429,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 y="360" 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontSize="18" 
-                lineHeight="28"
-                letterSpacing="-0.2"
+                      letterSpacing="-0.2"
                 fill="#2A2859"
               >
                 <tspan fontWeight="300">Areal Leilighet: </tspan>
@@ -453,8 +441,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               y={buildingTypeName.toLowerCase() === 'blokk' ? "388" : (showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "332" : "360")} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
-              lineHeight="28"
-              letterSpacing="-0.2"
+                  letterSpacing="-0.2"
               fill="#2A2859"
             >
               <tspan fontWeight="300">Energiforbruk: </tspan>
@@ -469,8 +456,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               y="204" 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
-              lineHeight="28"
-              letterSpacing="-0.2"
+                  letterSpacing="-0.2"
               fill="#2A2859"
             >
               <tspan fontWeight="300">Byggeår: </tspan>
@@ -504,8 +490,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               y="232" 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
-              lineHeight="28"
-              letterSpacing="-0.2"
+                  letterSpacing="-0.2"
               fill="#2A2859"
             >
               <tspan fontWeight="300">Areal: </tspan>
@@ -538,8 +523,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               y="232" 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
-              lineHeight="28"
-              letterSpacing="-0.2"
+                  letterSpacing="-0.2"
               fill="#2A2859"
               fontWeight="500"
             >
@@ -552,8 +536,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 y="260" 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontSize="18" 
-                lineHeight="28"
-                letterSpacing="-0.2"
+                      letterSpacing="-0.2"
                 fill="#2A2859"
               >
                 <tspan fontWeight="300">Eiertype: </tspan>
@@ -567,8 +550,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 y="288" 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontSize="18" 
-                lineHeight="28"
-                letterSpacing="-0.2"
+                      letterSpacing="-0.2"
                 fill="#2A2859"
               >
                 <tspan fontWeight="300">Vernestatus: </tspan>
@@ -581,8 +563,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               y={showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "304" : "332"} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="16" 
-              lineHeight="28"
-              letterSpacing="-0.2"
+                  letterSpacing="-0.2"
               fill="#2A2859"
               fontWeight="400"
             >
@@ -596,8 +577,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                   y="360" 
                   fontFamily="Oslo Sans, sans-serif" 
                   fontSize="18" 
-                  lineHeight="28"
-                  letterSpacing="-0.2"
+                          letterSpacing="-0.2"
                   fill="#2A2859"
                 >
                   <tspan fontWeight="300">Areal Leilighet: </tspan>
@@ -630,8 +610,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                   y="360" 
                   fontFamily="Oslo Sans, sans-serif" 
                   fontSize="18" 
-                  lineHeight="28"
-                  letterSpacing="-0.2"
+                          letterSpacing="-0.2"
                   fill="#2A2859"
                   fontWeight="500"
                 >
@@ -645,8 +624,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               y={buildingTypeName.toLowerCase() === 'blokk' ? "388" : (showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "332" : "360")} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
-              lineHeight="28"
-              letterSpacing="-0.2"
+                  letterSpacing="-0.2"
               fill="#2A2859"
             >
               <tspan fontWeight="300">Energiforbruk: </tspan>
@@ -684,8 +662,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               y={buildingTypeName.toLowerCase() === 'blokk' ? "388" : "360"} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
-              lineHeight="28"
-              letterSpacing="-0.2"
+                  letterSpacing="-0.2"
               fill="#2A2859"
               fontWeight="500"
             >
@@ -723,8 +700,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 fontWeight="500"
                 fontStyle="normal"
                 fontSize="18" 
-                lineHeight="28"
-                letterSpacing="-0.2"
+                      letterSpacing="-0.2"
                 fill="#2A2859"
                 dominantBaseline="middle"
                 style={{ 
@@ -879,8 +855,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               fontWeight="500"
               fontStyle="normal"
               fontSize="26" 
-              lineHeight="40"
-              letterSpacing="-0.2"
+                  letterSpacing="-0.2"
               fill="#000000"
               dominantBaseline="middle"
             >
@@ -1034,8 +1009,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 fontFamily="Oslo Sans, sans-serif" 
                 fontWeight="400"
                 fontSize="14" 
-                lineHeight="22"
-                letterSpacing="-0.2"
+                      letterSpacing="-0.2"
                 fill="white"
                 dominantBaseline="middle"
                 style={{ pointerEvents: 'none' }}
