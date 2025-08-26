@@ -1,0 +1,475 @@
+{
+  "testkjøring_dato": "2025-08-13 11:42:43",
+  "antall_tester": 9,
+  "tester": [
+    {
+      "test_nummer": 1,
+      "beskrivelse": "Gulliste + Varmepumpe + Enebolig",
+      "input": {
+        "gulliste": true,
+        "tiltak": "varmepumpe",
+        "bygningstype": "enebolig"
+      },
+      "kolonne_sjekket": 17,
+      "radområde": "8-62",
+      "antall_ordninger": 3,
+      "ordninger": [
+        {
+          "ordning": "Energirådgivning | Enova",
+          "lenke": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/energiradgivning",
+          "belop": "intill 5 000 kr",
+          "rad": 22,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Varmepumpebereder - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/varmepumpebereder/",
+          "belop": "intill 5 000 kr",
+          "rad": 29,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Væske-til-vann-varmepumpe - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/vaeske-til-vann-varmepumpe/",
+          "belop": "intill 10 000 kr",
+          "rad": 31,
+          "overskrift": "Enova"
+        }
+      ]
+    },
+    {
+      "test_nummer": 2,
+      "beskrivelse": "Ikke-gulliste + Vinduer + Blokk",
+      "input": {
+        "gulliste": false,
+        "tiltak": "vinduer",
+        "bygningstype": "blokk"
+      },
+      "kolonne_sjekket": 25,
+      "radområde": "65-150",
+      "antall_ordninger": 5,
+      "ordninger": [
+        {
+          "ordning": "Tilskudd til bytte av vinduer og ytterdører - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/tilskudd-til-bytte-av-vinduer-og-dorer/",
+          "belop": "nye vinduer og dører: 20%         gul liste U-verdi 0,8- 1 : 15%       ",
+          "rad": 67,
+          "overskrift": "Klima- og energifondet"
+        },
+        {
+          "ordning": "Energirådgivning | Enova",
+          "lenke": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/energiradgivning",
+          "belop": "intill 5 000 kr",
+          "rad": 79,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Oppgradering av bygningskropp i privatboliger - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/oppgradering-av-bygningskropp-i-privatboliger/",
+          "belop": "intill 150 000 kr",
+          "rad": 80,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Klimatilskudd: Energitiltak i borettslag og sameier",
+          "lenke": "https://www.klimaoslo.no/tilskudd/stotte-til-energitiltak-i-borettslag-og-sameier/",
+          "belop": "30% av kost. intill 10 mill kr",
+          "rad": 90,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Klimatilskudd: Energikartlegging i borettslag og sameier",
+          "lenke": "https://www.klimaoslo.no/tilskudd/kartleggingsstotte-for-borettslag-og-sameier/",
+          "belop": "…",
+          "rad": 91,
+          "overskrift": "Enova"
+        }
+      ]
+    },
+    {
+      "test_nummer": 3,
+      "beskrivelse": "Gulliste + Etterisolering fasade + Rekkehus",
+      "input": {
+        "gulliste": true,
+        "tiltak": "etterisolering_fasade",
+        "bygningstype": "rekkehus"
+      },
+      "kolonne_sjekket": 12,
+      "radområde": "8-62",
+      "antall_ordninger": 8,
+      "ordninger": [
+        {
+          "ordning": "Energirådgivning | Enova",
+          "lenke": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/energiradgivning",
+          "belop": "intill 5 000 kr",
+          "rad": 22,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Oppgradering av bygningskropp i privatboliger - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/oppgradering-av-bygningskropp-i-privatboliger/",
+          "belop": "intill 150 000 kr",
+          "rad": 23,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Klimatilskudd: Energitiltak i borettslag og sameier",
+          "lenke": "https://www.klimaoslo.no/tilskudd/stotte-til-energitiltak-i-borettslag-og-sameier/",
+          "belop": "30% av kost. intill 10 mill kr",
+          "rad": 33,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Klimatilskudd: Energikartlegging i borettslag og sameier",
+          "lenke": "https://www.klimaoslo.no/tilskudd/kartleggingsstotte-for-borettslag-og-sameier/",
+          "belop": "…",
+          "rad": 34,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Tilskudd til istandsetting av kulturminner - Oslo kommune",
+          "lenke": "https://www.oslo.kommune.no/tilskudd-legater-og-stipend/tilskudd-til-istandsetting-av-kulturminner/",
+          "belop": "…",
+          "rad": 45,
+          "overskrift": "Byantikvaren"
+        },
+        {
+          "ordning": "Søknad | For deg som skal søke Kulturminnefondet",
+          "lenke": "https://kulturminnefondet.no/jeg-skal-soke/",
+          "belop": "0.3",
+          "rad": 50,
+          "overskrift": "Kulturminnefondet"
+        },
+        {
+          "ordning": "Tilskudd til fredete kulturminner i privat eie - Riksantikvaren",
+          "lenke": "https://www.riksantikvaren.no/tilskudd/oversikt-over-tilskuddsordninger/tilskudd-til-fredete-kulturminner-i-privat-eie/",
+          "belop": "…",
+          "rad": 57,
+          "overskrift": "Riksantikvaren"
+        },
+        {
+          "ordning": "Tilskudd til fredete bygninger i privat eie fra før 1537 - Riksantikvaren",
+          "lenke": "https://www.riksantikvaren.no/tilskudd/oversikt-over-tilskuddsordninger/tilskudd-til-fredete-bygninger-i-privat-eie-fra-for-1537/",
+          "belop": "…",
+          "rad": 58,
+          "overskrift": "Riksantikvaren"
+        }
+      ]
+    },
+    {
+      "test_nummer": 4,
+      "beskrivelse": "Ikke-gulliste + Ventilasjon + Enebolig",
+      "input": {
+        "gulliste": false,
+        "tiltak": "ventilasjon",
+        "bygningstype": "enebolig"
+      },
+      "kolonne_sjekket": 20,
+      "radområde": "65-150",
+      "antall_ordninger": 3,
+      "ordninger": [
+        {
+          "ordning": "Balansert ventilasjon - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/balansert-ventilasjon/",
+          "belop": "intill 5 000 kr",
+          "rad": 76,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Energirådgivning | Enova",
+          "lenke": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/energiradgivning",
+          "belop": "intill 5 000 kr",
+          "rad": 79,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Oppgradering av bygningskropp i privatboliger - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/oppgradering-av-bygningskropp-i-privatboliger/",
+          "belop": "intill 150 000 kr",
+          "rad": 80,
+          "overskrift": "Enova"
+        }
+      ]
+    },
+    {
+      "test_nummer": 5,
+      "beskrivelse": "Gulliste + Smart energistyring + Blokk",
+      "input": {
+        "gulliste": true,
+        "tiltak": "smart_energistyring",
+        "bygningstype": "blokk"
+      },
+      "kolonne_sjekket": 28,
+      "radområde": "8-62",
+      "antall_ordninger": 5,
+      "ordninger": [
+        {
+          "ordning": "Energirådgivning | Enova",
+          "lenke": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/energiradgivning",
+          "belop": "intill 5 000 kr",
+          "rad": 22,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Pris- og effektstyrt energilagringssystem for boliger - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/pris-og-effektstyrt-energilagringssystem-for-boliger/",
+          "belop": "intill 10 000 kr",
+          "rad": 24,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Klimatilskudd: Energitiltak i borettslag og sameier",
+          "lenke": "https://www.klimaoslo.no/tilskudd/stotte-til-energitiltak-i-borettslag-og-sameier/",
+          "belop": "30% av kost. intill 10 mill kr",
+          "rad": 33,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Klimatilskudd: Energikartlegging i borettslag og sameier",
+          "lenke": "https://www.klimaoslo.no/tilskudd/kartleggingsstotte-for-borettslag-og-sameier/",
+          "belop": "…",
+          "rad": 34,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Tilskudd til smart energistyring for boliger",
+          "lenke": "https://www.klimaoslo.no/tilskudd/smart-energistyring-for-boliger/",
+          "belop": null,
+          "rad": 38,
+          "overskrift": "Enova"
+        }
+      ]
+    },
+    {
+      "test_nummer": 6,
+      "beskrivelse": "Gulliste + Solenergi + Rekkehus",
+      "input": {
+        "gulliste": true,
+        "tiltak": "solenergi",
+        "bygningstype": "rekkehus"
+      },
+      "kolonne_sjekket": 9,
+      "radområde": "8-62",
+      "antall_ordninger": 7,
+      "ordninger": [
+        {
+          "ordning": "Solenergitilskudd - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/solenergitilskudd/",
+          "belop": "20% av inst.kost. Maks 3 mill. ",
+          "rad": 9,
+          "overskrift": "Klima- og energifondet"
+        },
+        {
+          "ordning": "Tilskudd til deltagelse i energifleksibilitetsmarkedet - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/tilskudd-til-deltagelse-i-energifleksibilitetsmarkedet/",
+          "belop": "70% av kost. intill 3 mill kr",
+          "rad": 12,
+          "overskrift": "Klima- og energifondet"
+        },
+        {
+          "ordning": "Energirådgivning | Enova",
+          "lenke": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/energiradgivning",
+          "belop": "intill 5 000 kr",
+          "rad": 22,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Solcelleanlegg på privatbolig - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/solcelleanlegg-pa-privatbolig/",
+          "belop": "intill 32 500 kr",
+          "rad": 26,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Solfanger - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/solfanger/",
+          "belop": "intill 10 000 kr",
+          "rad": 27,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Klimatilskudd: Energitiltak i borettslag og sameier",
+          "lenke": "https://www.klimaoslo.no/tilskudd/stotte-til-energitiltak-i-borettslag-og-sameier/",
+          "belop": "30% av kost. intill 10 mill kr",
+          "rad": 33,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Klimatilskudd: Energikartlegging i borettslag og sameier",
+          "lenke": "https://www.klimaoslo.no/tilskudd/kartleggingsstotte-for-borettslag-og-sameier/",
+          "belop": "…",
+          "rad": 34,
+          "overskrift": "Enova"
+        }
+      ]
+    },
+    {
+      "test_nummer": 7,
+      "beskrivelse": "Ikke-gulliste + Solenergi + Enebolig",
+      "input": {
+        "gulliste": false,
+        "tiltak": "solenergi",
+        "bygningstype": "enebolig"
+      },
+      "kolonne_sjekket": 8,
+      "radområde": "65-150",
+      "antall_ordninger": 3,
+      "ordninger": [
+        {
+          "ordning": "Energirådgivning | Enova",
+          "lenke": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/energiradgivning",
+          "belop": "intill 5 000 kr",
+          "rad": 79,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Solcelleanlegg på privatbolig - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/solcelleanlegg-pa-privatbolig/",
+          "belop": "intill 32 500 kr",
+          "rad": 83,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Solfanger - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/solfanger/",
+          "belop": "intill 10 000 kr",
+          "rad": 84,
+          "overskrift": "Enova"
+        }
+      ]
+    },
+    {
+      "test_nummer": 8,
+      "beskrivelse": "Gulliste + Tetting + Blokk",
+      "input": {
+        "gulliste": true,
+        "tiltak": "tetting",
+        "bygningstype": "blokk"
+      },
+      "kolonne_sjekket": 7,
+      "radområde": "8-62",
+      "antall_ordninger": 8,
+      "ordninger": [
+        {
+          "ordning": "Energirådgivning | Enova",
+          "lenke": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/energiradgivning",
+          "belop": "intill 5 000 kr",
+          "rad": 22,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Oppgradering av bygningskropp i privatboliger - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/oppgradering-av-bygningskropp-i-privatboliger/",
+          "belop": "intill 150 000 kr",
+          "rad": 23,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Klimatilskudd: Energitiltak i borettslag og sameier",
+          "lenke": "https://www.klimaoslo.no/tilskudd/stotte-til-energitiltak-i-borettslag-og-sameier/",
+          "belop": "30% av kost. intill 10 mill kr",
+          "rad": 33,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Klimatilskudd: Energikartlegging i borettslag og sameier",
+          "lenke": "https://www.klimaoslo.no/tilskudd/kartleggingsstotte-for-borettslag-og-sameier/",
+          "belop": "…",
+          "rad": 34,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Tilskudd til istandsetting av kulturminner - Oslo kommune",
+          "lenke": "https://www.oslo.kommune.no/tilskudd-legater-og-stipend/tilskudd-til-istandsetting-av-kulturminner/",
+          "belop": "…",
+          "rad": 45,
+          "overskrift": "Byantikvaren"
+        },
+        {
+          "ordning": "Søknad | For deg som skal søke Kulturminnefondet",
+          "lenke": "https://kulturminnefondet.no/jeg-skal-soke/",
+          "belop": "0.3",
+          "rad": 50,
+          "overskrift": "Kulturminnefondet"
+        },
+        {
+          "ordning": "Tilskudd til fredete kulturminner i privat eie - Riksantikvaren",
+          "lenke": "https://www.riksantikvaren.no/tilskudd/oversikt-over-tilskuddsordninger/tilskudd-til-fredete-kulturminner-i-privat-eie/",
+          "belop": "…",
+          "rad": 57,
+          "overskrift": "Riksantikvaren"
+        },
+        {
+          "ordning": "Tilskudd til fredete bygninger i privat eie fra før 1537 - Riksantikvaren",
+          "lenke": "https://www.riksantikvaren.no/tilskudd/oversikt-over-tilskuddsordninger/tilskudd-til-fredete-bygninger-i-privat-eie-fra-for-1537/",
+          "belop": "…",
+          "rad": 58,
+          "overskrift": "Riksantikvaren"
+        }
+      ]
+    },
+    {
+      "test_nummer": 9,
+      "beskrivelse": "Gulliste + Solenergi + Blokk (test for 7 X-er)",
+      "input": {
+        "gulliste": true,
+        "tiltak": "solenergi",
+        "bygningstype": "blokk"
+      },
+      "kolonne_sjekket": 10,
+      "radområde": "8-62",
+      "antall_ordninger": 7,
+      "ordninger": [
+        {
+          "ordning": "Solenergitilskudd - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/solenergitilskudd/",
+          "belop": "20% av inst.kost. Maks 3 mill. ",
+          "rad": 9,
+          "overskrift": "Klima- og energifondet"
+        },
+        {
+          "ordning": "Tilskudd til deltagelse i energifleksibilitetsmarkedet - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/tilskudd-til-deltagelse-i-energifleksibilitetsmarkedet/",
+          "belop": "70% av kost. intill 3 mill kr",
+          "rad": 12,
+          "overskrift": "Klima- og energifondet"
+        },
+        {
+          "ordning": "Energirådgivning | Enova",
+          "lenke": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/energiradgivning",
+          "belop": "intill 5 000 kr",
+          "rad": 22,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Solcelleanlegg på privatbolig - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/solcelleanlegg-pa-privatbolig/",
+          "belop": "intill 32 500 kr",
+          "rad": 26,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Solfanger - Klimaetaten",
+          "lenke": "https://www.klimaoslo.no/tilskudd/solfanger/",
+          "belop": "intill 10 000 kr",
+          "rad": 27,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Klimatilskudd: Energitiltak i borettslag og sameier",
+          "lenke": "https://www.klimaoslo.no/tilskudd/stotte-til-energitiltak-i-borettslag-og-sameier/",
+          "belop": "30% av kost. intill 10 mill kr",
+          "rad": 33,
+          "overskrift": "Enova"
+        },
+        {
+          "ordning": "Klimatilskudd: Energikartlegging i borettslag og sameier",
+          "lenke": "https://www.klimaoslo.no/tilskudd/kartleggingsstotte-for-borettslag-og-sameier/",
+          "belop": "…",
+          "rad": 34,
+          "overskrift": "Enova"
+        }
+      ]
+    }
+  ]
+}
