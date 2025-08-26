@@ -58,14 +58,10 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setShowHeader(true);
-      // Also show Enebolig2 if it's an enebolig
-      if (isEnebolig) {
-        setAnimateHouse(true);
-      }
-    }, 4000); // Original timing
+    }, 1000);
     
     return () => clearTimeout(timer);
-  }, [isEnebolig]);
+  }, []);
   
   // State for expanded mode
   const [isExpanded, setIsExpanded] = React.useState(false);
@@ -86,6 +82,12 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const [enebolig1Opacity, setEnebolig1Opacity] = React.useState(1);
   const enebolig1Ref = React.useRef<SVGSVGElement>(null);
   const enebolig2ContainerRef = React.useRef<HTMLDivElement>(null);
+  
+  // State for blokk animation
+  const [animateBlokk, setAnimateBlokk] = React.useState(false);
+  const [blokk1Opacity, setBlokk1Opacity] = React.useState(1);
+  const blokk1Ref = React.useRef<SVGSVGElement>(null);
+  const blokk2ContainerRef = React.useRef<HTMLDivElement>(null);
   
   // State for process slide animation
   const [showProcess, setShowProcess] = React.useState(false);
@@ -178,14 +180,21 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     checkGulListe();
   }, [buildingData]);
 
-  // Handle enebolig animation if building is enebolig
+  // Handle building animation based on type
   React.useEffect(() => {
+    // Start animation immediately
     if (isEnebolig) {
-      // Skip animation - just show Enebolig2 immediately
       setAnimateHouse(true);
-      setEnebolig1Opacity(0); // Hide Enebolig1 immediately
-
-      return () => {};
+      // Delay fading out enebolig1 to let it reach position first
+      setTimeout(() => {
+        setEnebolig1Opacity(0);
+      }, 1000); // Start fading after 1 second
+    } else {
+      setAnimateBlokk(true);
+      // Delay fading out blokk1 to let it reach position first
+      setTimeout(() => {
+        setBlokk1Opacity(0);
+      }, 1000); // Start fading after 1 second
     }
   }, [isEnebolig]);
   
@@ -376,7 +385,33 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         }}
       />
       
-      {/* Enebolig2 - positioned with WhiteInfoBox at bottom 55px */}
+      {/* Enebolig1 - initial small house that animates to Enebolig2 */}
+      {isEnebolig && (
+        <div 
+          ref={enebolig1Ref}
+          style={{
+            position: 'absolute',
+            bottom: animateHouse ? '55px' : '0px', // Start at bottom 0, end at 55px
+            left: animateHouse ? '50%' : '289px', // Start at absolute position (matching Enebolig1 in skyline), end at center
+            transform: animateHouse 
+              ? 'translateX(calc(235.5px + 74px)) scale(5)' // End position (same as Enebolig2)
+              : 'translateX(0) scale(1)', // Start position (no translation needed when using absolute left)
+            transformOrigin: 'bottom left',
+            opacity: enebolig1Opacity,
+            transition: 'transform 2s ease-in-out, opacity 2s ease-in-out, bottom 2s ease-in-out, left 2s ease-in-out',
+            zIndex: 3
+          }}
+        >
+          <svg width="93" height="81" viewBox="0 0 93 81" fill="none">
+            <path d="M31.0182 0.884766L61.7891 31.699V81.0019H31.0182H0.247322V31.699L31.0182 0.884766Z" fill="#D0BFAE"/>
+            <path d="M61.783 31.699H92.554V81.0019H61.783V31.699Z" fill="#F8F0DD"/>
+            <path d="M61.783 31.699H92.554L61.783 0.884766H31.0122L61.783 31.699Z" fill="#2A2859"/>
+            <path d="M24.8618 68.6738H37.1702V80.9995H24.8618V68.6738Z" fill="#2A2859"/>
+          </svg>
+        </div>
+      )}
+
+      {/* Enebolig2 - fades in as Enebolig1 fades out */}
       {isEnebolig && (
         <div 
           ref={enebolig2ContainerRef}
@@ -387,7 +422,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
             transform: 'translateX(calc(235.5px + 74px)) scale(5)',
             transformOrigin: 'bottom left',
             opacity: animateHouse ? 1 : 0,
-            transition: 'opacity 0.5s ease-in-out',
+            transition: 'opacity 2s ease-in-out 1s', // Delay opacity transition
             zIndex: 2
           }}
         >
@@ -402,6 +437,74 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
             <path d="M31.0182 0.884766L61.7891 31.699V81.0019H31.0182H0.247322V31.699L31.0182 0.884766Z" fill="#D0BFAE"/>
             <path d="M61.783 31.6991H92.5537L61.783 0.884766H31.0122L61.783 31.6991Z" fill="#2A2859"/>
             <path d="M24.8615 68.6738H37.1699V80.9995H24.8615V68.6738Z" fill="#2A2859"/>
+          </svg>
+        </div>
+      )}
+
+      {/* Blokk1 - initial block that animates to same position as Enebolig2 */}
+      {!isEnebolig && (
+        <div 
+          ref={blokk1Ref}
+          style={{
+            position: 'absolute',
+            bottom: animateBlokk ? '55px' : '0px', // Start at bottom 0, end at 55px
+            left: animateBlokk ? '50%' : '1051px', // Start at absolute position, end at center
+            transform: animateBlokk 
+              ? 'translateX(calc(235.5px + 74px)) scale(3)' // End position (same as Enebolig2's bottom left corner)
+              : 'translateX(0) scale(1)', // Start position
+            transformOrigin: 'bottom left',
+            opacity: blokk1Opacity,
+            transition: 'transform 2s ease-in-out, opacity 2s ease-in-out, bottom 2s ease-in-out, left 2s ease-in-out',
+            zIndex: 3
+          }}
+        >
+          <svg width="136" height="204" viewBox="0 0 136 204" fill="none">
+            <path d="M86.73 0L99.03 12.326H111.34V24.652H123.65V36.977H135.96V49.303H123.65H86.73V36.977H49.8V0H86.73Z" fill="#2A2859"/>
+            <path d="M99.03 49.302H135.96V203.374H99.03V49.302Z" fill="#F8F0DD"/>
+            <path d="M12.87 36.977V24.651H25.17V12.325H37.48L49.79 0L62.1 12.325H74.41V24.651H86.72V36.977H99.03V49.303V203.375H0.57V49.303V36.977H12.87Z" fill="#D0BFAE"/>
+            <path d="M43.64 191.049H55.95V203.375H43.64V191.049Z" fill="#2A2859"/>
+            <path d="M68.25 61.628H80.56V73.954H68.25V61.628Z" fill="#2A2859"/>
+            <path d="M43.64 61.628H55.95V73.954H43.64V61.628Z" fill="#2A2859"/>
+            <path d="M19.02 61.628H31.33V73.954H19.02V61.628Z" fill="#2A2859"/>
+            <path d="M68.25 86.279H80.56V98.604H68.25V86.279Z" fill="#2A2859"/>
+            <path d="M43.64 86.279H55.95V98.604H43.64V86.279Z" fill="#2A2859"/>
+            <path d="M19.02 86.279H31.33V98.604H19.02V86.279Z" fill="#2A2859"/>
+            <path d="M68.25 110.93H80.56V123.256H68.25V110.93Z" fill="#2A2859"/>
+            <path d="M43.64 110.93H55.95V123.256H43.64V110.93Z" fill="#2A2859"/>
+            <path d="M19.02 110.93H31.33V123.256H19.02V110.93Z" fill="#2A2859"/>
+          </svg>
+        </div>
+      )}
+
+      {/* Blokk2 - fades in as Blokk1 fades out */}
+      {!isEnebolig && (
+        <div 
+          ref={blokk2ContainerRef}
+          style={{
+            position: 'absolute',
+            bottom: '55px',
+            left: '50%',
+            transform: 'translateX(calc(235.5px + 74px)) scale(3)',
+            transformOrigin: 'bottom left',
+            opacity: animateBlokk ? 1 : 0,
+            transition: 'opacity 2s ease-in-out 1s', // Delay opacity transition
+            zIndex: 2
+          }}
+        >
+          <svg width="136" height="204" viewBox="0 0 136 204" fill="none">
+            <path d="M86.73 0L99.03 12.326H111.34V24.652H123.65V36.977H135.96V49.303H123.65H86.73V36.977H49.8V0H86.73Z" fill="#2A2859"/>
+            <path d="M99.03 49.302H135.96V203.374H99.03V49.302Z" fill="#F8F0DD"/>
+            <path d="M12.87 36.977V24.651H25.17V12.325H37.48L49.79 0L62.1 12.325H74.41V24.651H86.72V36.977H99.03V49.303V203.375H0.57V49.303V36.977H12.87Z" fill="#D0BFAE"/>
+            <path d="M43.64 191.049H55.95V203.375H43.64V191.049Z" fill="#2A2859"/>
+            <path d="M68.25 61.628H80.56V73.954H68.25V61.628Z" fill="#2A2859"/>
+            <path d="M43.64 61.628H55.95V73.954H43.64V61.628Z" fill="#2A2859"/>
+            <path d="M19.02 61.628H31.33V73.954H19.02V61.628Z" fill="#2A2859"/>
+            <path d="M68.25 86.279H80.56V98.604H68.25V86.279Z" fill="#2A2859"/>
+            <path d="M43.64 86.279H55.95V98.604H43.64V86.279Z" fill="#2A2859"/>
+            <path d="M19.02 86.279H31.33V98.604H19.02V86.279Z" fill="#2A2859"/>
+            <path d="M68.25 110.93H80.56V123.256H68.25V110.93Z" fill="#2A2859"/>
+            <path d="M43.64 110.93H55.95V123.256H43.64V110.93Z" fill="#2A2859"/>
+            <path d="M19.02 110.93H31.33V123.256H19.02V110.93Z" fill="#2A2859"/>
           </svg>
         </div>
       )}

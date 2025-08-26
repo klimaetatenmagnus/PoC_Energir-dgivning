@@ -25,7 +25,7 @@ const DEFAULT_ADDRESS = "Kapellveien 156C, 0493 Oslo";
 /* ------------------------------------------------------------------ */
 export default function App() {
   const [adresse, setAdresse] = useState(DEFAULT_ADDRESS);
-  const [mode, setMode] = useState<"debug" | "wizard" | "lookup" | "figma" | "figma-enebolig" | "figma-blokk">("lookup");
+  const [mode, setMode] = useState<"debug" | "wizard" | "lookup" | "figma" | "figma-enebolig" | "figma-blokk">("figma");
 
   /* 1. Bygg-/Enova-/sol-data  */
   const { data: lookupData, error } = useBuildingInfo(mode === "debug" || mode === "wizard" ? adresse : "");
@@ -78,6 +78,9 @@ export default function App() {
   
   /* 6. Skyline fade animation state */
   const [skylineFadeOpacity, setSkylineFadeOpacity] = useState(1);
+  
+  /* 7. Header fade animation state */
+  const [headerFadeOpacity, setHeaderFadeOpacity] = useState(1);
 
   const handleAddressLookup = async (address: string) => {
     setLookupLoading(true);
@@ -142,6 +145,7 @@ export default function App() {
       
       // Start fade animation first
       setSkylineFadeOpacity(0);
+      setHeaderFadeOpacity(0);
       
       // Then switch to FigmaMainScript after fade completes
       setTimeout(() => {
@@ -197,6 +201,7 @@ export default function App() {
       loadMockStotteordninger('enebolig');
       // Start fade animation immediately
       setSkylineFadeOpacity(0);
+      setHeaderFadeOpacity(0);
       // Switch to figma-blokk mode after fade
       setTimeout(() => {
         setMode('figma-blokk');
@@ -210,6 +215,7 @@ export default function App() {
       loadMockStotteordninger('blokk');
       // Start fade animation immediately
       setSkylineFadeOpacity(0);
+      setHeaderFadeOpacity(0);
       // Switch to figma-blokk mode after fade
       setTimeout(() => {
         setMode('figma-blokk');
@@ -223,6 +229,7 @@ export default function App() {
       loadMockStotteordninger('blokk');
       // Start fade animation immediately
       setSkylineFadeOpacity(0);
+      setHeaderFadeOpacity(0);
       // Switch to figma-blokk mode after fade
       setTimeout(() => {
         setMode('figma-blokk');
@@ -315,6 +322,7 @@ export default function App() {
             setFigmaError(null);
             setStotteordninger(null);
             setSkylineFadeOpacity(1); // Reset skyline opacity
+            setHeaderFadeOpacity(1); // Reset header opacity
           }}
         />
       </div>
@@ -366,7 +374,8 @@ export default function App() {
               alignItems: 'center',
               gap: '8px',
               zIndex: 1000,
-              transition: 'background-color 0.2s'
+              opacity: headerFadeOpacity,
+              transition: 'background-color 0.2s, opacity 1.5s ease-in-out'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = '#e0e0e0';
@@ -376,12 +385,15 @@ export default function App() {
             }}
           >
             <span>←</span>
-            <span>Tilbake</span>
+            <span>Debug</span>
           </button>
           
           <div className="figma-content">
             {/* Søkefunksjon container med logo og tekst */}
-            <div className="figma-search-container">
+            <div className="figma-search-container" style={{
+              opacity: headerFadeOpacity,
+              transition: 'opacity 1.5s ease-in-out'
+            }}>
             {/* Oslo logo med tekst */}
             <div className="oslo-logo-container">
               <svg className="oslo-logo" width="57" height="68" viewBox="0 0 57 68" fill="none">
@@ -631,17 +643,6 @@ export default function App() {
           <path d="M695.419 197.927H716.959V351.999H695.419V197.927Z" fill="#2A2859"/>
           <path d="M664.649 228.741C656.152 228.741 649.264 221.843 649.264 213.334C649.264 204.825 656.152 197.927 664.649 197.927C673.146 197.927 680.034 204.825 680.034 213.334C680.034 221.843 673.146 228.741 664.649 228.741Z" fill="#2A2859"/>
           <path d="M897.769 290.371V197.928L866.998 167.114L836.227 197.928V352H875.737H897.769H1020.85V290.371H897.769Z" fill="#F8F0DD"/>
-          <path d="M1020.85 250.311V290.37H959.31H942.078H897.768V250.311H1020.85Z" fill="#2A2859"/>
-          <path d="M873.151 327.349H860.843V352.001H873.151V327.349Z" fill="#2A2859"/>
-          <path d="M947.005 315.024H934.696V327.35H947.005V315.024Z" fill="#2A2859"/>
-          <path d="M922.389 315.024H910.081V327.35H922.389V315.024Z" fill="#2A2859"/>
-          <path d="M947.005 302.698H934.696V315.024H947.005V302.698Z" fill="#2A2859"/>
-          <path d="M922.389 302.698H910.081V315.024H922.389V302.698Z" fill="#2A2859"/>
-          <path d="M996.235 315.024H983.927V327.35H996.235V315.024Z" fill="#2A2859"/>
-          <path d="M971.62 315.024H959.312V327.35H971.62V315.024Z" fill="#2A2859"/>
-          <path d="M996.235 302.698H983.927V315.024H996.235V302.698Z" fill="#2A2859"/>
-          <path d="M971.62 302.698H959.312V315.024H971.62V302.698Z" fill="#2A2859"/>
-          <path d="M866.997 231.823C875.494 231.823 882.383 224.925 882.383 216.416C882.383 207.907 875.494 201.009 866.997 201.009C858.5 201.009 851.612 207.907 851.612 216.416C851.612 224.925 858.5 231.823 866.997 231.823Z" fill="#2A2859"/>
           <path d="M1137.48 148.625L1149.78 160.951H1162.09V173.277H1174.4V185.602H1186.71V197.928H1174.4H1137.48V185.602H1100.55V148.625H1137.48Z" fill="#2A2859"/>
           <path d="M1149.78 197.927H1186.71V351.999H1149.78V197.927Z" fill="#F8F0DD"/>
           <path d="M1063.63 185.602V173.276H1075.93V160.951H1088.24L1100.55 148.625L1112.86 160.951H1125.17V173.276H1137.48V185.602H1149.78V197.928V351.999H1051.32V197.928V185.602H1063.63Z" fill="#D0BFAE"/>
@@ -655,13 +656,49 @@ export default function App() {
           <path d="M1119.01 259.555H1131.32V271.881H1119.01V259.555Z" fill="#2A2859"/>
           <path d="M1094.4 259.555H1106.71V271.881H1094.4V259.555Z" fill="#2A2859"/>
           <path d="M1069.78 259.555H1082.09V271.881H1069.78V259.555Z" fill="#2A2859"/>
-          </g>
+          <path d="M1020.85 250.311V290.37H959.31H942.078H897.768V250.311H1020.85Z" fill="#2A2859"/>
+          <path d="M873.151 327.349H860.843V352.001H873.151V327.349Z" fill="#2A2859"/>
+          <path d="M947.005 315.024H934.696V327.35H947.005V315.024Z" fill="#2A2859"/>
+          <path d="M922.389 315.024H910.081V327.35H922.389V315.024Z" fill="#2A2859"/>
+          <path d="M947.005 302.698H934.696V315.024H947.005V302.698Z" fill="#2A2859"/>
+          <path d="M922.389 302.698H910.081V315.024H922.389V302.698Z" fill="#2A2859"/>
+          <path d="M996.235 315.024H983.927V327.35H996.235V315.024Z" fill="#2A2859"/>
+          <path d="M971.62 315.024H959.312V327.35H971.62V315.024Z" fill="#2A2859"/>
+          <path d="M996.235 302.698H983.927V315.024H996.235V302.698Z" fill="#2A2859"/>
+          <path d="M971.62 302.698H959.312V315.024H971.62V302.698Z" fill="#2A2859"/>
+          <path d="M866.997 231.823C875.494 231.823 882.383 224.925 882.383 216.416C882.383 207.907 875.494 201.009 866.997 201.009C858.5 201.009 851.612 207.907 851.612 216.416C851.612 224.925 858.5 231.823 866.997 231.823Z" fill="#2A2859"/>
           
-          {/* Enebolig1 - always visible on top */}
+          {/* Enebolig duplicate inside fade group - for when block is selected */}
           <path d="M320.018 271.883L350.789 302.697V352H320.018H289.248V302.697L320.018 271.883Z" fill="#D0BFAE"/>
           <path d="M350.783 302.697H381.554V352H350.783V302.697Z" fill="#F8F0DD"/>
           <path d="M350.783 302.697H381.554L350.783 271.883H320.013L350.783 302.697Z" fill="#2A2859"/>
           <path d="M313.862 339.674H326.17V351.999H313.862V339.674Z" fill="#2A2859"/>
+          </g>
+          
+          {/* Enebolig1 - visible only when building type is enebolig */}
+          <g style={{ opacity: figmaResult?.bygningstype?.toLowerCase() === 'enebolig' || !figmaResult ? 1 : 0, transition: 'opacity 1.5s ease-in-out' }}>
+            <path d="M320.018 271.883L350.789 302.697V352H320.018H289.248V302.697L320.018 271.883Z" fill="#D0BFAE"/>
+            <path d="M350.783 302.697H381.554V352H350.783V302.697Z" fill="#F8F0DD"/>
+            <path d="M350.783 302.697H381.554L350.783 271.883H320.013L350.783 302.697Z" fill="#2A2859"/>
+            <path d="M313.862 339.674H326.17V351.999H313.862V339.674Z" fill="#2A2859"/>
+          </g>
+          
+          {/* Blokk - visible only when building type is NOT enebolig */}
+          <g style={{ opacity: figmaResult?.bygningstype?.toLowerCase() !== 'enebolig' && figmaResult ? 1 : 0, transition: 'opacity 1.5s ease-in-out' }}>
+            <path d="M1137.48 148.625L1149.78 160.951H1162.09V173.277H1174.4V185.602H1186.71V197.928H1174.4H1137.48V185.602H1100.55V148.625H1137.48Z" fill="#2A2859"/>
+            <path d="M1149.78 197.927H1186.71V351.999H1149.78V197.927Z" fill="#F8F0DD"/>
+            <path d="M1063.63 185.602V173.276H1075.93V160.951H1088.24L1100.55 148.625L1112.86 160.951H1125.17V173.276H1137.48V185.602H1149.78V197.928V351.999H1051.32V197.928V185.602H1063.63Z" fill="#D0BFAE"/>
+            <path d="M1094.4 339.674H1106.71V352H1094.4V339.674Z" fill="#2A2859"/>
+            <path d="M1119.01 210.253H1131.32V222.579H1119.01V210.253Z" fill="#2A2859"/>
+            <path d="M1094.4 210.253H1106.71V222.579H1094.4V210.253Z" fill="#2A2859"/>
+            <path d="M1069.78 210.253H1082.09V222.579H1069.78V210.253Z" fill="#2A2859"/>
+            <path d="M1119.01 234.904H1131.32V247.229H1119.01V234.904Z" fill="#2A2859"/>
+            <path d="M1094.4 234.904H1106.71V247.229H1094.4V234.904Z" fill="#2A2859"/>
+            <path d="M1069.78 234.904H1082.09V247.229H1069.78V234.904Z" fill="#2A2859"/>
+            <path d="M1119.01 259.555H1131.32V271.881H1119.01V259.555Z" fill="#2A2859"/>
+            <path d="M1094.4 259.555H1106.71V271.881H1094.4V259.555Z" fill="#2A2859"/>
+            <path d="M1069.78 259.555H1082.09V271.881H1069.78V259.555Z" fill="#2A2859"/>
+          </g>
         </svg>
         </div>
         
