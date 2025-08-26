@@ -17,7 +17,7 @@ Energikarakter grenser fra Enova
 
 APIer (mer detaljert under Dataflyt) henter informasjon om:
 * Enova energiattest
-* Vernestatus (gul liste) 
+* Vernestatus (Gul liste) 
 * Solpotensial
 
 
@@ -33,7 +33,7 @@ Fra adressen som input kjøres API/CVS i bakgrunnen og henter informasjon:
   Geonorge                Adresse      →   GNR/BNR + koordinater
   CVS / Matrikkel API     GNR/BNR      →   bygningsdata  
   Enova API               GNR/BNR      →   energiattest + strømforbruk
-  Gul Liste sjekk         GNR/BNR      →   teigid → gul liste status
+  Gul Liste sjekk         GNR/BNR      →   teigid → Gul liste status
   Solar service           koordinater  →   solpotensial
 
 
@@ -42,7 +42,7 @@ Hovedstrukturen er lik for alle og endres automatisk. Forskjellen er animasjon f
 
 # Variabler
 * Gul liste
-En gul liste variabel "showYellowBox" er True eller False ut ifra om bygget er på gul liste eller ikke
+En Gul liste variabel "showYellowBox" er True eller False ut ifra om bygget er på Gul liste eller ikke
 Hvis gullistet så vises en gul infoboks i den hvite infoboksen til venstre på hovedsiden, og egne tiltak for gullistete bygg.
 
 * Bygningstype

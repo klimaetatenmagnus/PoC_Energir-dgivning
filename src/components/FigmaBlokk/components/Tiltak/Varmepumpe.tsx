@@ -116,7 +116,7 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
         <rect
           x="60"
           y="4"
-          width="101"
+          width="94"
           height="49"
           fill="transparent"
           style={{ cursor: 'pointer' }}
@@ -126,44 +126,56 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
         />
         
         <rect
-          x="161"
+          x="154"
           y="4"
-          width="118"
+          width="94"
           height="49"
           fill="transparent"
           style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Vedlikehold')}
-          onMouseEnter={() => setHoveredButton('Vedlikehold')}
+          onClick={() => setActiveButton('Luft-luft')}
+          onMouseEnter={() => setHoveredButton('Luft-luft')}
           onMouseLeave={() => setHoveredButton(null)}
         />
         
         <rect
-          x="279"
+          x="248"
           y="4"
-          width="136"
+          width="94"
           height="49"
           fill="transparent"
           style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Oppgradering')}
-          onMouseEnter={() => setHoveredButton('Oppgradering')}
+          onClick={() => setActiveButton('Luft-vann')}
+          onMouseEnter={() => setHoveredButton('Luft-vann')}
           onMouseLeave={() => setHoveredButton(null)}
         />
         
         <rect
-          x="415"
+          x="342"
           y="4"
-          width="105"
+          width="94"
           height="49"
           fill="transparent"
           style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Utskiftning')}
-          onMouseEnter={() => setHoveredButton('Utskiftning')}
+          onClick={() => setActiveButton('Vann-vann')}
+          onMouseEnter={() => setHoveredButton('Vann-vann')}
+          onMouseLeave={() => setHoveredButton(null)}
+        />
+        
+        <rect
+          x="436"
+          y="4"
+          width="94"
+          height="49"
+          fill="transparent"
+          style={{ cursor: 'pointer' }}
+          onClick={() => setActiveButton('Ventilasjon')}
+          onMouseEnter={() => setHoveredButton('Ventilasjon')}
           onMouseLeave={() => setHoveredButton(null)}
         />
         
         {/* Text inside button boxes */}
         <text
-          x="76"
+          x="107"
           y="28.5"
           fontFamily="Oslo Sans"
           fontWeight="400"
@@ -173,6 +185,7 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
           letterSpacing="-0.2"
           fill={activeButton === 'Generelt' ? "#000000" : hoveredButton === 'Generelt' ? "#1F42AA" : "#666666"}
           dominantBaseline="middle"
+          textAnchor="middle"
           style={{ cursor: 'pointer' }}
           onClick={() => setActiveButton('Generelt')}
           onMouseEnter={() => setHoveredButton('Generelt')}
@@ -182,7 +195,7 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
         </text>
         
         <text
-          x="177"
+          x="201"
           y="28.5"
           fontFamily="Oslo Sans"
           fontWeight="400"
@@ -190,14 +203,15 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
           fontSize="16"
           lineHeight="24"
           letterSpacing="-0.2"
-          fill={activeButton === 'Vedlikehold' ? "#000000" : hoveredButton === 'Vedlikehold' ? "#1F42AA" : "#666666"}
+          fill={activeButton === 'Luft-luft' ? "#000000" : hoveredButton === 'Luft-luft' ? "#1F42AA" : "#666666"}
           dominantBaseline="middle"
+          textAnchor="middle"
           style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Vedlikehold')}
-          onMouseEnter={() => setHoveredButton('Vedlikehold')}
+          onClick={() => setActiveButton('Luft-luft')}
+          onMouseEnter={() => setHoveredButton('Luft-luft')}
           onMouseLeave={() => setHoveredButton(null)}
         >
-          Vedlikehold
+          Luft-luft
         </text>
         
         <text
@@ -209,18 +223,19 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
           fontSize="16"
           lineHeight="24"
           letterSpacing="-0.2"
-          fill={activeButton === 'Oppgradering' ? "#000000" : hoveredButton === 'Oppgradering' ? "#1F42AA" : "#666666"}
+          fill={activeButton === 'Luft-vann' ? "#000000" : hoveredButton === 'Luft-vann' ? "#1F42AA" : "#666666"}
           dominantBaseline="middle"
+          textAnchor="middle"
           style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Oppgradering')}
-          onMouseEnter={() => setHoveredButton('Oppgradering')}
+          onClick={() => setActiveButton('Luft-vann')}
+          onMouseEnter={() => setHoveredButton('Luft-vann')}
           onMouseLeave={() => setHoveredButton(null)}
         >
-          Oppgradering
+          Luft-vann
         </text>
         
         <text
-          x="431"
+          x="389"
           y="28.5"
           fontFamily="Oslo Sans"
           fontWeight="400"
@@ -228,21 +243,42 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
           fontSize="16"
           lineHeight="24"
           letterSpacing="-0.2"
-          fill={activeButton === 'Utskiftning' ? "#000000" : hoveredButton === 'Utskiftning' ? "#1F42AA" : "#666666"}
+          fill={activeButton === 'Vann-vann' ? "#000000" : hoveredButton === 'Vann-vann' ? "#1F42AA" : "#666666"}
           dominantBaseline="middle"
+          textAnchor="middle"
           style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Utskiftning')}
-          onMouseEnter={() => setHoveredButton('Utskiftning')}
+          onClick={() => setActiveButton('Vann-vann')}
+          onMouseEnter={() => setHoveredButton('Vann-vann')}
           onMouseLeave={() => setHoveredButton(null)}
         >
-          Utskiftning
+          Vann-vann
+        </text>
+        
+        <text
+          x="483"
+          y="28.5"
+          fontFamily="Oslo Sans"
+          fontWeight="400"
+          fontStyle="normal"
+          fontSize="16"
+          lineHeight="24"
+          letterSpacing="-0.2"
+          fill={activeButton === 'Ventilasjon' ? "#000000" : hoveredButton === 'Ventilasjon' ? "#1F42AA" : "#666666"}
+          dominantBaseline="middle"
+          textAnchor="middle"
+          style={{ cursor: 'pointer' }}
+          onClick={() => setActiveButton('Ventilasjon')}
+          onMouseEnter={() => setHoveredButton('Ventilasjon')}
+          onMouseLeave={() => setHoveredButton(null)}
+        >
+          Ventilasjon
         </text>
         
         {/* Button underlines - active and hover */}
         <rect
           x="60"
           y="49"
-          width="101"
+          width="94"
           height="4"
           fill={activeButton === 'Generelt' ? "#6FE9FF" : "#1F42AA"}
           opacity={activeButton === 'Generelt' ? 1 : hoveredButton === 'Generelt' ? 1 : 0}
@@ -250,40 +286,50 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
         />
         
         <rect
-          x="161"
+          x="154"
           y="49"
-          width="118"
+          width="94"
           height="4"
-          fill={activeButton === 'Vedlikehold' ? "#6FE9FF" : "#1F42AA"}
-          opacity={activeButton === 'Vedlikehold' ? 1 : hoveredButton === 'Vedlikehold' ? 1 : 0}
-          style={{ transition: `opacity ${activeButton === 'Vedlikehold' || hoveredButton === 'Vedlikehold' ? '0.3s' : '0.1s'} ease-in-out` }}
+          fill={activeButton === 'Luft-luft' ? "#6FE9FF" : "#1F42AA"}
+          opacity={activeButton === 'Luft-luft' ? 1 : hoveredButton === 'Luft-luft' ? 1 : 0}
+          style={{ transition: `opacity ${activeButton === 'Luft-luft' || hoveredButton === 'Luft-luft' ? '0.3s' : '0.1s'} ease-in-out` }}
         />
         
         <rect
-          x="279"
+          x="248"
           y="49"
-          width="136"
+          width="94"
           height="4"
-          fill={activeButton === 'Oppgradering' ? "#6FE9FF" : "#1F42AA"}
-          opacity={activeButton === 'Oppgradering' ? 1 : hoveredButton === 'Oppgradering' ? 1 : 0}
-          style={{ transition: `opacity ${activeButton === 'Oppgradering' || hoveredButton === 'Oppgradering' ? '0.3s' : '0.1s'} ease-in-out` }}
+          fill={activeButton === 'Luft-vann' ? "#6FE9FF" : "#1F42AA"}
+          opacity={activeButton === 'Luft-vann' ? 1 : hoveredButton === 'Luft-vann' ? 1 : 0}
+          style={{ transition: `opacity ${activeButton === 'Luft-vann' || hoveredButton === 'Luft-vann' ? '0.3s' : '0.1s'} ease-in-out` }}
         />
         
         <rect
-          x="415"
+          x="342"
           y="49"
-          width="105"
+          width="94"
           height="4"
-          fill={activeButton === 'Utskiftning' ? "#6FE9FF" : "#1F42AA"}
-          opacity={activeButton === 'Utskiftning' ? 1 : hoveredButton === 'Utskiftning' ? 1 : 0}
-          style={{ transition: `opacity ${activeButton === 'Utskiftning' || hoveredButton === 'Utskiftning' ? '0.3s' : '0.1s'} ease-in-out` }}
+          fill={activeButton === 'Vann-vann' ? "#6FE9FF" : "#1F42AA"}
+          opacity={activeButton === 'Vann-vann' ? 1 : hoveredButton === 'Vann-vann' ? 1 : 0}
+          style={{ transition: `opacity ${activeButton === 'Vann-vann' || hoveredButton === 'Vann-vann' ? '0.3s' : '0.1s'} ease-in-out` }}
+        />
+        
+        <rect
+          x="436"
+          y="49"
+          width="94"
+          height="4"
+          fill={activeButton === 'Ventilasjon' ? "#6FE9FF" : "#1F42AA"}
+          opacity={activeButton === 'Ventilasjon' ? 1 : hoveredButton === 'Ventilasjon' ? 1 : 0}
+          style={{ transition: `opacity ${activeButton === 'Ventilasjon' || hoveredButton === 'Ventilasjon' ? '0.3s' : '0.1s'} ease-in-out` }}
         />
         
         {/* Horizontal line above content */}
         <rect
           x="60"
           y="53"
-          width="464"
+          width="470"
           height="1"
           fill="#CCCCCC"
         />
@@ -321,14 +367,73 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
                   background: #AAAAAA;
                 }
               `}</style>
+              <p style={{ marginTop: 0, marginBottom: '16px' }}>
+                Varmepumpe er en effektiv måte å senke strømforbruket, få jevnere temperatur og bedre inneklima. Riktig type og plassering er viktig for at anlegget skal fungere godt og ikke gi unødig støy eller visuell påvirkning. Det finnes løsninger for de fleste boligtyper.
+              </p>
+              {buildingType?.toLowerCase() === 'enebolig' && (
+                <p style={{ marginBottom: 0 }}>
+                  Ved montering av varmepumpe i enebolig bør du vurdere både innendørs og utendørs plassering nøye. Utedelen bør plasseres slik at den ikke er til sjenanse, og at støyen ikke forstyrrer oppholdssoner eller naboer. Mange benytter eksisterende tekniske gjennomføringer, som gamle ventiler, for å unngå nye inngrep i fasaden. Luft-til-luft varmepumpe er det vanligste alternativet, men luft-til-vann kan være aktuelt for større oppvarmingsbehov.
+                </p>
+              )}
+              {(buildingType?.toLowerCase() === 'rekkehus' || buildingType?.toLowerCase() === 'tomannsbolig') && (
+                <p style={{ marginBottom: 0 }}>
+                  Luft-til-luft varmepumpe er ofte den enkleste løsningen på rekkehus og flermannsboliger. Det kan gi god effekt uten store inngrep. Har dere vannbåren varme, kan luft-til-vann være mer aktuelt. I hus med felles tak eller like fasader er det lurt å planlegge varmepumpene i dialog med naboen. Da er det enklere å finne løsninger som fungerer både teknisk og visuelt. Gjerne bruk eksisterende tekniske føringer som gamle ventiler og åpninger.
+                </p>
+              )}
+              {(buildingType?.toLowerCase() === 'leilighet' || buildingType?.toLowerCase() === 'blokk' || buildingType?.toLowerCase() === 'store boligbygg') && (
+                <>
+                  <p style={{ marginBottom: '16px' }}>
+                    I blokker med felles tekniske systemer kan det være aktuelt å installere luft-til-vann eller væske-til-vann varmepumpe, koblet til et felles varmeanlegg. Dette krever planlegging, men gir skjulte installasjoner og energisparing for hele bygget.
+                  </p>
+                  <p style={{ marginBottom: 0 }}>
+                    Ved luft-til-luft varmepumper med utedel må dere ta hensyn til støy og visuell påvirkning. Ta tidlig dialog med styret, borettslaget og naboene – det øker sjansen for å finne løsninger som fungerer for alle.
+                  </p>
+                </>
+              )}
+            </div>
+          </foreignObject>
+        )}
+        
+        {activeButton === 'Luft-luft' && (
+          <foreignObject x="60" y="69" width="464" height="289">
+            <div xmlns="http://www.w3.org/1999/xhtml" style={{
+              fontFamily: 'Oslo Sans',
+              fontWeight: 300,
+              fontStyle: 'normal',
+              fontSize: '14px',
+              lineHeight: '22px',
+              letterSpacing: '0px',
+              color: '#000000',
+              height: '100%',
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              paddingRight: '10px',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#CCCCCC #F5F5F5'
+            }}>
+              <style>{`
+                div::-webkit-scrollbar {
+                  width: 6px;
+                }
+                div::-webkit-scrollbar-track {
+                  background: #F5F5F5;
+                }
+                div::-webkit-scrollbar-thumb {
+                  background: #CCCCCC;
+                  border-radius: 3px;
+                }
+                div::-webkit-scrollbar-thumb:hover {
+                  background: #AAAAAA;
+                }
+              `}</style>
               <p style={{ marginTop: 0, marginBottom: 0 }}>
-                Vinduer har mye å si for både komfort og energibruk i boligen. Så mye som 40 % av varmetapet kan komme herfra. Dette betyr stort potensial for å spare strøm og få et bedre inneklima. Godt isolerte vinduer og dører kan halvere varmetapet sammenlignet med vanlige vinduer og dører. Det finnes det flere måter å forbedre dem på, og det er lurt å starte med de enkleste løsningene først, før du vurderer større arbeider.
+                Luft-til-luft varmepumper henter varme fra uteluften og blåser den direkte inn som varm luft i boligen. Den er rimelig, enkel å installere og passer godt for mindre boliger eller åpne planløsninger. Inne- og utedelen er synlige, så plassering bør planlegges nøye – særlig i verneverdige bygg hvor visuelle hensyn er viktige.
               </p>
             </div>
           </foreignObject>
         )}
         
-        {activeButton === 'Vedlikehold' && (
+        {activeButton === 'Luft-vann' && (
           <foreignObject x="60" y="69" width="464" height="289">
             <div xmlns="http://www.w3.org/1999/xhtml" style={{
               fontFamily: 'Oslo Sans',
@@ -360,42 +465,14 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
                   background: #AAAAAA;
                 }
               `}</style>
-              {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Vinduer i tre kan forbedres med enkle grep som maling, kitting, justering og tetting. Dette gir bedre komfort og forlenger levetiden.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette. Enkle vedlikeholdsoppgaver kan redusere varmetap og utsette behovet for utskifting.
-                  </p>
-                </>
-              ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Vinduer i tre kan forbedres med enkle grep som maling, kitting, justering og tetting. Dette gir bedre komfort og forlenger levetiden.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette. Enkle vedlikeholdsoppgaver kan redusere varmetap og utsette behovet for utskifting.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    I mange eldre flermannsboliger er vinduene laget av solid treverk og passer godt til bygningens stil. Ofte kan de repareres og brukes videre i mange år. Typiske oppgaver er å fjerne maling og kitt, skifte ut deler som har fått råte, justere hengsler og legge på tetningslister.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Ved å holde vinduene i god stand, reduserer du varmetap og bevarer utseendet på huset.
-                  </p>
-                </>
-              )}
+              <p style={{ marginTop: 0, marginBottom: 0 }}>
+                Luft-til-vann-systemer bruker varmen i uteluften til å varme opp vann, som sirkulerer i radiatorer, gulvvarme eller brukes til tappevann. Dette gir en jevn og behagelig oppvarming, men krever at huset har et vannbårent system. Det er en mer omfattende installasjon enn luft-til-luft, og passer godt i boliger der man ønsker en helhetlig løsning.
+              </p>
             </div>
           </foreignObject>
         )}
         
-        {activeButton === 'Oppgradering' && (
+        {activeButton === 'Vann-vann' && (
           <foreignObject x="60" y="69" width="464" height="289">
             <div xmlns="http://www.w3.org/1999/xhtml" style={{
               fontFamily: 'Oslo Sans',
@@ -427,45 +504,14 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
                   background: #AAAAAA;
                 }
               `}</style>
-              {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Om vindusrammen er i god nok stand, og tåler økt vekt fra glasset, kan du bytte ut det gamle glasset med et som isolerer bedre.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    En annen vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer vinduets utseende.
-                  </p>
-                </>
-              ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Om vindusrammen er i god nok stand, og tåler økt vekt fra glasset, kan du bytte ut det gamle glasset med et som isolerer bedre.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    En annen vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer vinduets utseende.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Hvis flere boliger i rekken har like vinduer, kan det være smart å samarbeide for å bevare helheten og oppnå bedre pris.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Om vindusrammen er i god nok stand, og tåler økt vekt fra glasset, kan du bytte ut det gamle glasset med et som isolerer bedre.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    En annen vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer vinduets utseende.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Det er lurt å samarbeide med naboen for å finne de beste tekniske og visuelle løsningene.
-                  </p>
-                </>
-              )}
+              <p style={{ marginTop: 0, marginBottom: 0 }}>
+                Vann-til-vann varmepumper henter varme fra fjell, jord eller sjø via nedgravde rør eller borehull. Den har høy effektivitet, også på kalde vinterdager, og gir varme til både oppvarming og tappevann. Dette er den mest omfattende og kostbare løsningen, men den egner seg godt for større boliger, blokker eller ved rehabilitering der man ønsker et robust og skjult system.
+              </p>
             </div>
           </foreignObject>
         )}
         
-        {activeButton === 'Utskiftning' && (
+        {activeButton === 'Ventilasjon' && (
           <foreignObject x="60" y="69" width="464" height="289">
             <div xmlns="http://www.w3.org/1999/xhtml" style={{
               fontFamily: 'Oslo Sans',
@@ -497,226 +543,9 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
                   background: #AAAAAA;
                 }
               `}</style>
-              {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Dersom vinduene er dårlige og ikke lar seg reparere, vil det ofte lønne seg å bytte dem ut. Nye vinduer med god isolasjon kan gi lavere strømforbruk og bedre inneklima – spesielt i kombinasjon med god tetting rundt vindusåpningen.
-                  </p>
-                  <p style={{ marginBottom: 0, position: 'relative' }}>
-                    Velg vinduer med lav <span 
-                      style={{ 
-                        textDecoration: 'underline', 
-                        textDecorationStyle: 'dotted', 
-                        textUnderlineOffset: '4px',
-                        cursor: 'pointer',
-                        position: 'relative'
-                      }}
-                      onMouseEnter={() => setHoveredWord('U-verdi')}
-                      onMouseLeave={() => setHoveredWord(null)}
-                    >
-                      U-verdi
-                      {hoveredWord === 'U-verdi' && (
-                        <div 
-                          onMouseEnter={() => setHoveredWord('U-verdi')}
-                          onMouseLeave={() => setHoveredWord(null)}
-                          style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: '0',
-                            width: '280px',
-                            backgroundColor: '#D1F9FF',
-                            padding: '12px',
-                            marginTop: '0',
-                            zIndex: 1000
-                          }}>
-                          <h4 style={{
-                            fontFamily: 'Oslo Sans',
-                            fontWeight: 700,
-                            fontStyle: 'normal',
-                            fontSize: '16px',
-                            lineHeight: '24px',
-                            letterSpacing: '-0.2px',
-                            color: '#000000',
-                            margin: '0 0 8px 0'
-                          }}>
-                            Ordforklaring
-                          </h4>
-                          <p style={{
-                            fontFamily: 'Oslo Sans',
-                            fontWeight: 300,
-                            fontSize: '14px',
-                            lineHeight: '22px',
-                            letterSpacing: '0px',
-                            color: '#000000',
-                            margin: 0
-                          }}>
-                            U-verdien sier hvor godt vinduet isolerer. Jo lavere tall, jo mindre varme slipper ut – og jo bedre er vinduet for energibruken. Les mer om U-verdi <a 
-                              href="https://www.dibk.no/regelverk/byggteknisk-forskrift-tek17/14/14-2" 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              style={{ 
-                                color: '#000000', 
-                                textDecoration: 'underline',
-                                fontFamily: 'Oslo Sans',
-                                fontWeight: 300,
-                                fontSize: '14px'
-                              }}
-                            >her</a>.
-                          </p>
-                        </div>
-                      )}
-                    </span>. Et trelags vindu isolerer betydelig bedre mot kulde enn et tolags vindu. Derfor er det særlig mye å energi å spare i det nordiske klimaet.
-                  </p>
-                </>
-              ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Dersom vinduene er dårlige og ikke lar seg reparere, vil det ofte lønne seg å bytte dem ut. Nye vinduer med god isolasjon kan gi lavere strømforbruk og bedre inneklima – spesielt i kombinasjon med god tetting rundt vindusåpningen.
-                  </p>
-                  <p style={{ marginBottom: '16px', position: 'relative' }}>
-                    Velg vinduer med lav <span 
-                      style={{ 
-                        textDecoration: 'underline', 
-                        textDecorationStyle: 'dotted', 
-                        textUnderlineOffset: '4px',
-                        cursor: 'pointer',
-                        position: 'relative'
-                      }}
-                      onMouseEnter={() => setHoveredWord('U-verdi')}
-                      onMouseLeave={() => setHoveredWord(null)}
-                    >
-                      U-verdi
-                      {hoveredWord === 'U-verdi' && (
-                        <div 
-                          onMouseEnter={() => setHoveredWord('U-verdi')}
-                          onMouseLeave={() => setHoveredWord(null)}
-                          style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: '0',
-                            width: '280px',
-                            backgroundColor: '#D1F9FF',
-                            padding: '12px',
-                            marginTop: '0',
-                            zIndex: 1000
-                          }}>
-                          <h4 style={{
-                            fontFamily: 'Oslo Sans',
-                            fontWeight: 700,
-                            fontStyle: 'normal',
-                            fontSize: '16px',
-                            lineHeight: '24px',
-                            letterSpacing: '-0.2px',
-                            color: '#000000',
-                            margin: '0 0 8px 0'
-                          }}>
-                            Ordforklaring
-                          </h4>
-                          <p style={{
-                            fontFamily: 'Oslo Sans',
-                            fontWeight: 300,
-                            fontSize: '14px',
-                            lineHeight: '22px',
-                            letterSpacing: '0px',
-                            color: '#000000',
-                            margin: 0
-                          }}>
-                            U-verdien sier hvor godt vinduet isolerer. Jo lavere tall, jo mindre varme slipper ut – og jo bedre er vinduet for energibruken. Les mer om U-verdi <a 
-                              href="https://www.dibk.no/regelverk/byggteknisk-forskrift-tek17/14/14-2" 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              style={{ 
-                                color: '#000000', 
-                                textDecoration: 'underline',
-                                fontFamily: 'Oslo Sans',
-                                fontWeight: 300,
-                                fontSize: '14px'
-                              }}
-                            >her</a>.
-                          </p>
-                        </div>
-                      )}
-                    </span>. Et trelags vindu isolerer betydelig bedre mot kulde enn et tolags vindu. Derfor er det særlig mye å energi å spare i det nordiske klimaet.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Hvis flere boliger i rekken har like vinduer, kan det være smart å samarbeide for å bevare helheten og oppnå bedre pris.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Dersom vinduene er dårlige og ikke lar seg reparere, vil det ofte lønne seg å bytte dem ut. Nye vinduer med god isolasjon kan gi lavere strømforbruk og bedre inneklima – spesielt i kombinasjon med god tetting rundt vindusåpningen.
-                  </p>
-                  <p style={{ marginBottom: '16px', position: 'relative' }}>
-                    Velg vinduer med lav <span 
-                      style={{ 
-                        textDecoration: 'underline', 
-                        textDecorationStyle: 'dotted', 
-                        textUnderlineOffset: '4px',
-                        cursor: 'pointer',
-                        position: 'relative'
-                      }}
-                      onMouseEnter={() => setHoveredWord('U-verdi')}
-                      onMouseLeave={() => setHoveredWord(null)}
-                    >
-                      U-verdi
-                      {hoveredWord === 'U-verdi' && (
-                        <div 
-                          onMouseEnter={() => setHoveredWord('U-verdi')}
-                          onMouseLeave={() => setHoveredWord(null)}
-                          style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: '0',
-                            width: '280px',
-                            backgroundColor: '#D1F9FF',
-                            padding: '12px',
-                            marginTop: '0',
-                            zIndex: 1000
-                          }}>
-                          <h4 style={{
-                            fontFamily: 'Oslo Sans',
-                            fontWeight: 700,
-                            fontStyle: 'normal',
-                            fontSize: '16px',
-                            lineHeight: '24px',
-                            letterSpacing: '-0.2px',
-                            color: '#000000',
-                            margin: '0 0 8px 0'
-                          }}>
-                            Ordforklaring
-                          </h4>
-                          <p style={{
-                            fontFamily: 'Oslo Sans',
-                            fontWeight: 300,
-                            fontSize: '14px',
-                            lineHeight: '22px',
-                            letterSpacing: '0px',
-                            color: '#000000',
-                            margin: 0
-                          }}>
-                            U-verdien sier hvor godt vinduet isolerer. Jo lavere tall, jo mindre varme slipper ut – og jo bedre er vinduet for energibruken. Les mer om U-verdi <a 
-                              href="https://www.dibk.no/regelverk/byggteknisk-forskrift-tek17/14/14-2" 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              style={{ 
-                                color: '#000000', 
-                                textDecoration: 'underline',
-                                fontFamily: 'Oslo Sans',
-                                fontWeight: 300,
-                                fontSize: '14px'
-                              }}
-                            >her</a>.
-                          </p>
-                        </div>
-                      )}
-                    </span>. Et trelags vindu isolerer betydelig bedre mot kulde enn et tolags vindu. Derfor er det særlig mye å energi å spare i det nordiske klimaet.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Det er lurt å samarbeide med naboen for å finne de beste tekniske og visuelle løsningene.
-                  </p>
-                </>
-              )}
+              <p style={{ marginTop: 0, marginBottom: 0 }}>
+                Ventilasjonsvarmepumper gjenvinner varme fra brukt luft som ventileres ut av boligen, og bruker den til å varme opp tilluft, tappevann eller vannbåren varme. Ventilasjonsvarmepumper krever balansert ventilasjon (altså at både tilluft og avtrekk går i kanalnett), og er derfor mest egnet i nyere hus eller når det etableres nytt ventilasjonsanlegg.
+              </p>
             </div>
           </foreignObject>
         )}
@@ -725,7 +554,7 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
         <rect
           x="565"
           y="40"
-          width="119"
+          width="132"
           height="30"
           fill="#C7F6C9"
         />
@@ -745,20 +574,20 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Mindre støy
+          Redusert støy
         </text>
         <rect
           x="565"
           y="86"
-          width="148"
+          width="147"
           height="30"
           fill="#C7F6C9"
         />
         
-        {/* House with heart icon in second box */}
-        <svg x="573" y="93" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path fillRule="evenodd" clipRule="evenodd" d="M5.092 7.092C5.8795 6.3035 7.1615 6.304 7.95 7.092L7.9995 7.1425L8.0495 7.0925C8.8375 6.3045 10.12 6.3045 10.908 7.0925C11.6955 7.88 11.6955 9.1625 10.908 9.9505L8 12.8585L5.092 9.95C4.304 9.162 4.304 7.88 5.092 7.092ZM10.2015 7.799C9.803 7.401 9.1555 7.401 8.757 7.799L8 8.556L7.243 7.7995C7.044 7.6005 6.7825 7.501 6.521 7.501C6.2595 7.501 5.998 7.6005 5.799 7.7995C5.401 8.1975 5.401 8.845 5.799 9.2435L8 11.4445L10.2015 9.243C10.5995 8.845 10.5995 8.197 10.2015 7.799Z" fill="#2A2859"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M5.323 2.7305L8 0.5L14 5.5V16H2V1H4.8905L5.323 2.7305ZM4.1095 2H3V4.6665L4.47 3.4415L4.1095 2ZM3 5.9685V15H13V5.9685L8 1.802L3 5.9685Z" fill="#2A2859"/>
+        {/* House icon from Oslo kommune in second box */}
+        <svg x="573" y="93" width="16" height="16" viewBox="0 0 32 32" fill="none">
+          <path d="M1.233 16.423L16 1.645l4 4.003V4.06h6v7.592l4.767 4.771-1.414 1.414L16 4.474 2.647 17.837z" fill="#2A2859"/>
+          <path d="M8 29V16H6v15h8V20h4v11h8V16h-2v13h-4V18h-8v11z" fill="#2A2859"/>
         </svg>
         <text 
           x="598"
@@ -771,19 +600,20 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Bedre inneklima
+          Ivaretar boligen
         </text>
         <rect
           x="565"
           y="132"
-          width="186"
+          width="155"
           height="30"
           fill="#C7F6C9"
         />
         
-        {/* Snowflake icon in third box */}
-        <svg x="573" y="139" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M8.49023 3.23242L10.0698 1.71387L10.7529 2.375L8.49023 4.55762V7.18604L10.8765 5.86035L11.6987 2.90918L11.689 2.89062L12.6299 3.13428L12.0527 5.20703L14.5122 3.84229L15 4.65771L12.5381 6.02344L14.6978 6.59375L14.459 7.50293L11.3262 6.69629L8.98047 7.99951L11.3706 9.32666L14.4492 8.53418V8.50146L14.6978 9.40625L12.5391 9.97559L15 11.3423L14.5122 12.1577L12.0508 10.7905L12.6299 12.8843L11.689 13.1279L10.8525 10.1255L8.49023 8.81348V11.4458L10.7529 13.625L10.0698 14.2861L8.49023 12.7671V15.5H7.51465V12.7661L5.93018 14.2861L5.24268 13.625L7.51465 11.4404V8.81348L5.14062 10.1299L4.31104 13.1094L3.37012 12.8657L3.94385 10.7939L1.48779 12.1577L1 11.3423L3.47461 9.96875L1.30225 9.40625L1.55566 8.51562L4.65381 9.31396L7.02393 7.99951L4.67236 6.69482L1.55566 7.49854L1.30225 6.59375L3.46094 6.02295L1 4.65771L1.48779 3.84229L3.94141 5.20312L3.36523 3.13428L4.30615 2.89062H4.31104L5.13623 5.86621L7.51465 7.18604V4.55908L5.24268 2.375L5.93018 1.71387L7.51465 3.2334V0.5H8.49023V3.23242Z" fill="#2A2859"/>
+        {/* House with heart icon in third box */}
+        <svg x="573" y="139" width="17" height="16" viewBox="0 0 17 16" fill="none">
+          <path fillRule="evenodd" clipRule="evenodd" d="M5.42501 7.092C6.21251 6.3035 7.49451 6.304 8.28301 7.092L8.33251 7.1425L8.38251 7.0925C9.17051 6.3045 10.453 6.3045 11.241 7.0925C12.0285 7.88 12.0285 9.1625 11.241 9.9505L8.33301 12.8585L5.42501 9.95C4.63701 9.162 4.63701 7.88 5.42501 7.092ZM10.5345 7.799C10.136 7.401 9.48851 7.401 9.09001 7.799L8.33301 8.556L7.57601 7.7995C7.37701 7.6005 7.11551 7.501 6.85401 7.501C6.59251 7.501 6.33101 7.6005 6.13201 7.7995C5.73401 8.1975 5.73401 8.845 6.13201 9.2435L8.33301 11.4445L10.5345 9.243C10.9325 8.845 10.9325 8.197 10.5345 7.799Z" fill="#2A2859"/>
+          <path fillRule="evenodd" clipRule="evenodd" d="M5.65601 2.7305L8.33301 0.5L14.333 5.5V16H2.33301V1H5.22351L5.65601 2.7305ZM4.44251 2H3.33301V4.6665L4.80301 3.4415L4.44251 2ZM3.33301 5.9685V15H13.333V5.9685L8.33301 1.802L3.33301 5.9685Z" fill="#2A2859"/>
         </svg>
         <text 
           x="598"
@@ -796,20 +626,20 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Mindre trekk og kulde
+          Bedre bokvalitet
         </text>
         <rect
           x="565"
           y="178"
-          width="197"
+          width="183"
           height="30"
           fill="#C7F6C9"
         />
         
-        {/* Chart/graph icon in fourth box */}
-        <svg x="573" y="185" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M14.9333 3.73333V0H11.2V1.06667H13.1176L8.73813 5.44533L4.13595 0.77914L1.15888 3.75621L1.91312 4.51046L4.13067 2.2928L8.73339 6.95953L13.8667 1.82625V3.73333H14.9333Z" fill="#2A2859"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M4.944 6.4H1.12V14.9333H0V16H16V14.9333H14.8747V6.93333H11.0507V14.9333H9.90933V9.06667H6.08533V14.9333H4.944V6.4ZM12.1173 14.9333H13.808V8H12.1173V14.9333ZM8.84267 10.1333V14.9333H7.152V10.1333H8.84267ZM3.87733 14.9333V7.46667H2.18667V14.9333H3.87733Z" fill="#2A2859"/>
+        {/* Coins/money icon in fourth box */}
+        <svg x="573" y="185" width="17" height="16" viewBox="0 0 17 16" fill="none">
+          <path fillRule="evenodd" clipRule="evenodd" d="M9.16699 2.25C9.16699 0.9885 10.814 0 12.917 0C15.02 0 16.667 0.9885 16.667 2.25V11C16.667 12.2615 15.02 13.25 12.917 13.25C10.814 13.25 9.16699 12.2615 9.16699 11V2.25ZM12.917 12.25C14.4905 12.25 15.667 11.59 15.667 11V10.791C14.987 11.2285 14.016 11.5 12.917 11.5C11.818 11.5 10.847 11.2285 10.167 10.791V11C10.167 11.59 11.3435 12.25 12.917 12.25ZM12.917 10.5C14.4905 10.5 15.667 9.84 15.667 9.25V9.041C14.987 9.4785 14.016 9.75 12.917 9.75C11.818 9.75 10.847 9.4785 10.167 9.041V9.25C10.167 9.84 11.3435 10.5 12.917 10.5ZM12.917 8.75C14.4905 8.75 15.667 8.09 15.667 7.5V7.291C14.987 7.7285 14.016 8 12.917 8C11.818 8 10.847 7.7285 10.167 7.291V7.5C10.167 8.09 11.3435 8.75 12.917 8.75ZM12.917 7C14.4905 7 15.667 6.34 15.667 5.75V5.541C14.987 5.9785 14.016 6.25 12.917 6.25C11.818 6.25 10.847 5.9785 10.167 5.541V5.75C10.167 6.34 11.3435 7 12.917 7ZM12.917 5.25C14.4905 5.25 15.667 4.59 15.667 4V3.791C14.987 4.2285 14.016 4.5 12.917 4.5C11.818 4.5 10.847 4.2285 10.167 3.791V4C10.167 4.59 11.3435 5.25 12.917 5.25ZM10.167 2.25C10.167 2.84 11.3435 3.5 12.917 3.5C14.4905 3.5 15.667 2.84 15.667 2.25C15.667 1.66 14.4905 1 12.917 1C11.3435 1 10.167 1.66 10.167 2.25Z" fill="#2A2859"/>
+          <path fillRule="evenodd" clipRule="evenodd" d="M0.666992 8.5C0.666992 7.2385 2.31399 6.25 4.41699 6.25C6.51999 6.25 8.16699 7.2385 8.16699 8.5V13.75C8.16699 15.0115 6.51999 16 4.41699 16C2.31399 16 0.666992 15.0115 0.666992 13.75V8.5ZM4.41699 15C5.99099 15 7.16699 14.34 7.16699 13.75V13.541C6.48699 13.9785 5.51549 14.25 4.41699 14.25C3.31849 14.25 2.34699 13.9785 1.66699 13.541V13.75C1.66699 14.34 2.84299 15 4.41699 15ZM4.41699 13.25C5.99099 13.25 7.16699 12.59 7.16699 12V11.791C6.48699 12.2285 5.51549 12.5 4.41699 12.5C3.31849 12.5 2.34699 12.2285 1.66699 11.791V12C1.66699 12.59 2.84299 13.25 4.41699 13.25ZM4.41699 11.5C5.99099 11.5 7.16699 10.84 7.16699 10.25V10.041C6.48699 10.4785 5.51549 10.75 4.41699 10.75C3.31849 10.75 2.34699 10.4785 1.66699 10.041V10.25C1.66699 10.84 2.84299 11.5 4.41699 11.5ZM1.66699 8.5C1.66699 9.09 2.84299 9.75 4.41699 9.75C5.99099 9.75 7.16699 9.09 7.16699 8.5C7.16699 7.91 5.99099 7.25 4.41699 7.25C2.84299 7.25 1.66699 7.91 1.66699 8.5Z" fill="#2A2859"/>
         </svg>
         <text 
           x="597"
@@ -822,7 +652,7 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Boligen kan stige i verdi
+          Lavere strømregning
         </text>
         
         {/* Dark green box below the list */}

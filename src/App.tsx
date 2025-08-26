@@ -349,7 +349,6 @@ export default function App() {
           width: '100vw',
           height: '100vh',
           background: '#034B45',
-          border: '3px solid red',
           boxSizing: 'border-box',
           position: 'relative'
         }}>

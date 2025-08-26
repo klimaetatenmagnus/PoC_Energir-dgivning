@@ -1,12 +1,12 @@
 /**
  * Gul Liste Service
  * 
- * Sjekker om en eiendom er på Oslo kommunes gul liste (bevaringsverdige bygninger)
+ * Sjekker om en eiendom er på Oslo kommunes Gul liste (bevaringsverdige bygninger)
  * ved å:
  * 1. Ta imot en adresse
  * 2. Hente GNR/BNR fra eksisterende matrikkel-tjenester
  * 3. Finne teigid via Oslo kommunes WFS_SOK API
- * 4. Sjekke om teigid er på gul liste
+ * 4. Sjekke om teigid er på Gul liste
  */
 
 import axios from 'axios';
@@ -75,7 +75,7 @@ async function finnTeigidFraGnrBnr(gnr: number, bnr: number): Promise<string | n
 }
 
 /**
- * Sjekker om et teigid er på gul liste
+ * Sjekker om et teigid er på Gul liste
  */
 async function sjekkGulListeForTeigid(teigid: string): Promise<GulListeResult> {
   try {
@@ -93,7 +93,7 @@ async function sjekkGulListeForTeigid(teigid: string): Promise<GulListeResult> {
     const response = await axios.get(url, { params });
     const xml = response.data;
 
-    // Sjekk om eiendommen er på gul liste
+    // Sjekk om eiendommen er på Gul liste
     if (xml.includes('<gml:featureMember>')) {
       // Parse detaljer fra XML
       const navnMatch = xml.match(/<ms:NAVN>(.*?)<\/ms:NAVN>/);
@@ -115,10 +115,10 @@ async function sjekkGulListeForTeigid(teigid: string): Promise<GulListeResult> {
       teigid: teigid
     };
   } catch (error) {
-    console.error('Feil ved sjekk av gul liste:', error);
+    console.error('Feil ved sjekk av Gul liste:', error);
     return {
       erPaaGulListe: false,
-      error: 'Kunne ikke sjekke gul liste-status'
+      error: 'Kunne ikke sjekke Gul liste-status'
     };
   }
 }
@@ -179,7 +179,7 @@ async function hentMatrikkelDataFraAdresse(adresse: string): Promise<MatrikkelDa
 }
 
 /**
- * Hovedfunksjon: Sjekker om en adresse er på gul liste
+ * Hovedfunksjon: Sjekker om en adresse er på Gul liste
  * 
  * @param adresse - Adressen som skal sjekkes (f.eks. "Thereses gate 3, Oslo")
  * @returns GulListeResult med status og detaljer
@@ -187,7 +187,7 @@ async function hentMatrikkelDataFraAdresse(adresse: string): Promise<MatrikkelDa
 export async function sjekkGulListe(adresse: string): Promise<GulListeResult> {
   try {
     // Steg 1: Hent GNR/BNR fra adresse
-    console.log(`Sjekker gul liste for: ${adresse}`);
+    console.log(`Sjekker Gul liste for: ${adresse}`);
     
     const matrikkelData = await hentMatrikkelDataFraAdresse(adresse);
     
@@ -219,7 +219,7 @@ export async function sjekkGulListe(adresse: string): Promise<GulListeResult> {
     
     console.log(`Fant teigid: ${teigid}`);
     
-    // Steg 3: Sjekk om teigid er på gul liste
+    // Steg 3: Sjekk om teigid er på Gul liste
     const gulListeResultat = await sjekkGulListeForTeigid(teigid);
     
     return {
@@ -230,7 +230,7 @@ export async function sjekkGulListe(adresse: string): Promise<GulListeResult> {
     };
     
   } catch (error) {
-    console.error('Feil i gul liste-sjekk:', error);
+    console.error('Feil i Gul liste-sjekk:', error);
     return {
       erPaaGulListe: false,
       error: 'En uventet feil oppstod',
@@ -256,7 +256,7 @@ export async function sjekkGulListeMedGnrBnr(gnr: number, bnr: number): Promise<
       };
     }
     
-    // Sjekk gul liste
+    // Sjekk Gul liste
     const gulListeResultat = await sjekkGulListeForTeigid(teigid);
     
     return {
@@ -266,7 +266,7 @@ export async function sjekkGulListeMedGnrBnr(gnr: number, bnr: number): Promise<
     };
     
   } catch (error) {
-    console.error('Feil i gul liste-sjekk:', error);
+    console.error('Feil i Gul liste-sjekk:', error);
     return {
       erPaaGulListe: false,
       gnr: gnr,

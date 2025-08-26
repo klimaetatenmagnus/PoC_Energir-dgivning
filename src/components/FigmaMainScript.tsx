@@ -149,28 +149,28 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     loadSolarData();
   }, [buildingData]);
 
-  // Check gul liste status when component mounts
+  // Check Gul liste status when component mounts
   React.useEffect(() => {
     const checkGulListe = async () => {
       if (!buildingData || !buildingData.gnr || !buildingData.bnr) {
-        console.log('🏛️ Missing GNR/BNR, skipping gul liste check');
+        console.log('🏛️ Missing GNR/BNR, skipping Gul liste check');
         setGulListeLoading(false);
         return;
       }
       
       try {
-        console.log(`🏛️ Checking gul liste for GNR ${buildingData.gnr}, BNR ${buildingData.bnr}`);
+        console.log(`🏛️ Checking Gul liste for GNR ${buildingData.gnr}, BNR ${buildingData.bnr}`);
         const result = await sjekkGulListeMedGnrBnr(buildingData.gnr, buildingData.bnr);
         
         if (result.erPaaGulListe) {
-          console.log('🏛️ Building is on gul liste!', result);
+          console.log('🏛️ Building is on Gul liste!', result);
           setShowYellowBox(true);
         } else {
-          console.log('🏛️ Building is NOT on gul liste');
+          console.log('🏛️ Building is NOT on Gul liste');
           setShowYellowBox(false);
         }
       } catch (error) {
-        console.error('🏛️ Error checking gul liste:', error);
+        console.error('🏛️ Error checking Gul liste:', error);
         setShowYellowBox(false); // Default to false on error
       } finally {
         setGulListeLoading(false);
