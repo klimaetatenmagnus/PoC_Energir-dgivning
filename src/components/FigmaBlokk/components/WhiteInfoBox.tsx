@@ -409,7 +409,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 fill="#2A2859"
               >
                 <tspan fontWeight="300">Vernestatus: </tspan>
-                <tspan fontWeight="500">Gul Liste</tspan>
+                <tspan fontWeight="500">Gul liste</tspan>
               </text>
             )}
             <text 
@@ -554,7 +554,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 fill="#2A2859"
               >
                 <tspan fontWeight="300">Vernestatus: </tspan>
-                <tspan fontWeight="500">Gul Liste</tspan>
+                <tspan fontWeight="500">Gul liste</tspan>
               </text>
             )}
             
@@ -708,7 +708,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                   opacity: isYellowBoxExpanded ? 0 : 1
                 }}
               >
-                Hva betyr gul liste?
+                Hva betyr Gul liste?
               </text>
               
               {/* Arrow icon inside yellow box */}
@@ -859,7 +859,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               fill="#000000"
               dominantBaseline="middle"
             >
-              Hva er gul liste?
+              Hva er Gul liste?
             </text>
             
             {/* Beskrivelsestekst */}
@@ -959,7 +959,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                     fontSize: '14px'
                   }}
                 >
-                  Les mer om gul liste her.
+                  Les mer om Gul liste her.
                 </a>
               </div>
             </foreignObject>
@@ -1063,7 +1063,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                     marginBottom: '8px'
                   }}
                 >
-                  Les mer om gul liste
+                  Les mer om Gul liste
                 </a>
                 <a 
                   href="#"
