@@ -33,7 +33,7 @@ export async function fetchSolarData(params: {
   };
 }): Promise<SolarEnergyData | null> {
   try {
-    console.log('☀️ fetchSolarData called with params:', params);
+    // console.log('☀️ fetchSolarData called with params:', params);
     
     let url = "http://localhost:4003/solinnstraling?";
     
@@ -50,49 +50,49 @@ export async function fetchSolarData(params: {
       lon = wgs84Coords[0];
       lat = wgs84Coords[1];
       
-      console.log('📍 Converted coordinates for solar lookup:', {
-        utm: { east: params.representasjonspunkt.east, north: params.representasjonspunkt.north },
-        wgs84: { lat, lon }
-      });
+      // console.log('📍 Converted coordinates for solar lookup:', {
+      //   utm: { east: params.representasjonspunkt.east, north: params.representasjonspunkt.north },
+      //   wgs84: { lat, lon }
+      // });
     }
     
     // Prioritize coordinates over building ID
     if (lat && lon) {
       url += `lat=${lat}&lon=${lon}`;
-      console.log(`☀️ Fetching solar data for coordinates: ${lat}, ${lon}`);
+      // console.log(`☀️ Fetching solar data for coordinates: ${lat}, ${lon}`);
     } else if (params.byggId) {
       url += `bygg_id=${params.byggId}`;
-      console.log(`☀️ Fetching solar data for bygg_id=${params.byggId}`);
+      // console.log(`☀️ Fetching solar data for bygg_id=${params.byggId}`);
     } else if (params.gnr && params.bnr) {
       url += `gnr=${params.gnr}&bnr=${params.bnr}`;
       if (params.seksjonsnummer) {
         url += `&snr=${params.seksjonsnummer}`;
       }
-      console.log(`☀️ Fetching solar data for gnr=${params.gnr}, bnr=${params.bnr}${params.seksjonsnummer ? `, snr=${params.seksjonsnummer}` : ''}`);
+      // console.log(`☀️ Fetching solar data for gnr=${params.gnr}, bnr=${params.bnr}${params.seksjonsnummer ? `, snr=${params.seksjonsnummer}` : ''}`);
     } else {
-      console.log("⚠️ No parameters for solar lookup");
+      // console.log("⚠️ No parameters for solar lookup");
       return null;
     }
     
-    console.log(`☀️ Full URL: ${url}`);
+    // console.log(`☀️ Full URL: ${url}`);
     const response = await fetch(url);
-    console.log(`☀️ Response status: ${response.status}`);
+    // console.log(`☀️ Response status: ${response.status}`);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.log(`⚠️ Solar service error response: ${errorText}`);
+      // console.log(`⚠️ Solar service error response: ${errorText}`);
       if (response.status === 404) {
-        console.log("⚠️ No solar data found (404)");
+        // console.log("⚠️ No solar data found (404)");
         return null;
       }
       throw new Error(`Solar service error: ${response.status}`);
     }
     
     const data = await response.json();
-    console.log(`☀️ Solar data received:`, data);
+    // console.log(`☀️ Solar data received:`, data);
     
     if (data.error) {
-      console.log(`⚠️ Solar service returned error: ${data.error}`);
+      // console.log(`⚠️ Solar service returned error: ${data.error}`);
       return null;
     }
     
@@ -106,11 +106,11 @@ export async function fetchSolarData(params: {
         .filter((tak: any) => tak.irr_kwh_m2_yr > minRadiation)
         .reduce((sum: number, tak: any) => sum + (tak.irr_kwh_m2_yr * tak.area_m2 * solarPanelEfficiency), 0);
       
-      console.log(`☀️ Filtered solar energy calculation:`, {
-        totalSurfaces: data.takflater.length,
-        filteredSurfaces: data.takflater.filter((tak: any) => tak.irr_kwh_m2_yr > minRadiation).length,
-        filteredSolarEnergy: Math.round(filteredSolarEnergy)
-      });
+      // console.log(`☀️ Filtered solar energy calculation:`, {
+      //   totalSurfaces: data.takflater.length,
+      //   filteredSurfaces: data.takflater.filter((tak: any) => tak.irr_kwh_m2_yr > minRadiation).length,
+      //   filteredSolarEnergy: Math.round(filteredSolarEnergy)
+      // });
     }
     
     return {
@@ -122,7 +122,7 @@ export async function fetchSolarData(params: {
       filteredSolarEnergy: Math.round(filteredSolarEnergy)
     };
   } catch (error) {
-    console.log(`❌ Error fetching solar data: ${error}`);
+    // console.log(`❌ Error fetching solar data: ${error}`);
     return null;
   }
 }

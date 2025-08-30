@@ -13,6 +13,7 @@ import { fetchSolarData, SolarEnergyData } from '../services/solarEnergyService'
 import { sjekkGulListeMedGnrBnr } from '../services/gul-liste-service';
 import { LYSEVEIEN_3_DATA } from '../testData/lyseveien3';
 import { THERESES_11A_DATA } from '../testData/theresegate11a';
+import { calculateAnnualEnergyConsumption, determineBuildingType } from '../utils/tekEnergyCalculations';
 import { THERESES_44A_DATA } from '../testData/theresegate44a';
 
 interface FigmaBlokkProps {
@@ -73,8 +74,21 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   
   // State for updated building data
   const [updatedBuildingData, setUpdatedBuildingData] = React.useState(buildingData);
+  
+  // Calculate initial estimated energy consumption
+  const initialEnergyConsumption = React.useMemo(() => {
+    const byggeaar = buildingData?.csvData?.byggeaar || buildingData?.byggeaar;
+    const bruksareal = buildingData?.bruksarealM2 || buildingData?.csvData?.bruksareal_totalt;
+    const buildingType = determineBuildingType(
+      buildingData?.bygningstypeKode || buildingData?.csvData?.bygningstypekode,
+      buildingData?.bygningstype || buildingData?.csvData?.bygningstype
+    );
+    
+    return calculateAnnualEnergyConsumption(byggeaar, bruksareal, buildingType);
+  }, [buildingData]);
+  
   const [energiforbruk, setEnergiforbruk] = React.useState<string>(
-    String(buildingData?.energiattest?.registering?.beregnetLevertEnergiTotaltkWh || '300000')
+    String(buildingData?.energiattest?.registering?.beregnetLevertEnergiTotaltkWh || initialEnergyConsumption)
   );
 
   // State for enebolig animation
@@ -91,6 +105,9 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   
   // State for process slide animation
   const [showProcess, setShowProcess] = React.useState(false);
+  
+  // State for total energy savings
+  const [totalEnergySavings, setTotalEnergySavings] = React.useState<number>(0);
   
   // Enebolig animation function - disabled
   // Animation has been removed - Enebolig2 is shown immediately without animation
@@ -110,22 +127,28 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     setEnergiforbruk(energiforbruk);
   };
   
+  // Track if solar data has been fetched
+  const [hasFetchedSolarData, setHasFetchedSolarData] = React.useState(false);
+  
   // Fetch solar data when component mounts
   React.useEffect(() => {
+    // Only fetch once per component lifecycle
+    if (hasFetchedSolarData || !buildingData) return;
+    
     const loadSolarData = async () => {
-      if (!buildingData) return;
+      setHasFetchedSolarData(true);
       
       // TEST MODE: Check if this is test data
       if (searchAddress === "Lyseveien 3, 0362 OSLO" && buildingData.gnr === 33 && buildingData.bnr === 1139) {
-        console.log('🧪 [TEST MODE] Using cached solar data for Lyseveien 3');
+        // console.log('🧪 [TEST MODE] Using cached solar data for Lyseveien 3');
         setSolarData(LYSEVEIEN_3_DATA.solarData);
         return;
       } else if (searchAddress === "Thereses gate 11A, 0358 OSLO" && buildingData.gnr === 215 && buildingData.bnr === 156) {
-        console.log('🧪 [TEST MODE] Using cached solar data for Thereses gate 11A');
+        // console.log('🧪 [TEST MODE] Using cached solar data for Thereses gate 11A');
         setSolarData(THERESES_11A_DATA.solarData);
         return;
       } else if (searchAddress === "Thereses gate 44A, 0168 OSLO" && buildingData.gnr === 215 && buildingData.bnr === 278) {
-        console.log('🧪 [TEST MODE] Using cached solar data for Thereses gate 44A');
+        // console.log('🧪 [TEST MODE] Using cached solar data for Thereses gate 44A');
         setSolarData(THERESES_44A_DATA.solarData);
         return;
       }
@@ -138,35 +161,43 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         representasjonspunkt: buildingData.representasjonspunkt
       };
       
-      console.log('🌞 Fetching solar data with params:', params);
+      // console.log('🌞 Fetching solar data with params:', params);
       const data = await fetchSolarData(params);
       if (data) {
-        console.log('🌞 Solar data received:', data);
+        // console.log('🌞 Solar data received:', data);
         setSolarData(data);
       }
     };
     
     loadSolarData();
-  }, [buildingData]);
+  }, [buildingData, hasFetchedSolarData, searchAddress]);
 
+  // Track if gul liste has been checked
+  const [hasCheckedGulListe, setHasCheckedGulListe] = React.useState(false);
+  
   // Check Gul liste status when component mounts
   React.useEffect(() => {
-    const checkGulListe = async () => {
+    // Only check once per component lifecycle
+    if (hasCheckedGulListe || !buildingData || !buildingData.gnr || !buildingData.bnr) {
       if (!buildingData || !buildingData.gnr || !buildingData.bnr) {
-        console.log('🏛️ Missing GNR/BNR, skipping Gul liste check');
+        // console.log('🏛️ Missing GNR/BNR, skipping Gul liste check');
         setGulListeLoading(false);
-        return;
       }
+      return;
+    }
+    
+    const checkGulListe = async () => {
+      setHasCheckedGulListe(true);
       
       try {
-        console.log(`🏛️ Checking Gul liste for GNR ${buildingData.gnr}, BNR ${buildingData.bnr}`);
+        // console.log(`🏛️ Checking Gul liste for GNR ${buildingData.gnr}, BNR ${buildingData.bnr}`);
         const result = await sjekkGulListeMedGnrBnr(buildingData.gnr, buildingData.bnr);
         
         if (result.erPaaGulListe) {
-          console.log('🏛️ Building is on Gul liste!', result);
+          // console.log('🏛️ Building is on Gul liste!', result);
           setShowYellowBox(true);
         } else {
-          console.log('🏛️ Building is NOT on Gul liste');
+          // console.log('🏛️ Building is NOT on Gul liste');
           setShowYellowBox(false);
         }
       } catch (error) {
@@ -178,7 +209,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     };
     
     checkGulListe();
-  }, [buildingData]);
+  }, [buildingData, hasCheckedGulListe]);
 
   // Handle building animation based on type
   React.useEffect(() => {
@@ -383,6 +414,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         onCloseYellowBox={() => {
           setIsYellowBoxExpanded(false);
         }}
+        onTotalSavingsChange={setTotalEnergySavings}
       />
       
       {/* Enebolig1 - initial small house that animates to Enebolig2 */}
@@ -531,6 +563,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         onCloseYellowBox={() => {
           setIsYellowBoxExpanded(false);
         }}
+        totalEnergySavings={totalEnergySavings}
       />
     </div>
     
@@ -539,6 +572,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       showProcess={showProcess}
       scaleFactor={scaleFactor}
       onBack={() => setShowProcess(false)}
+      isGulliste={showYellowBox}
     />
     </>
   );
