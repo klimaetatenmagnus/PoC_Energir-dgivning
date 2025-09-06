@@ -327,44 +327,7 @@ export const IsoleringAvKjellerOgLoft: React.FC<IsoleringAvKjellerOgLoftProps> =
           </svg>
         </g>
         
-        {/* Source tooltip - moved outside the g element */}
-        {showSourceTooltip && (
-          <foreignObject x="565" y="188" width="211" height="90">
-            <div 
-              xmlns="http://www.w3.org/1999/xhtml"
-              style={{
-                backgroundColor: '#D1F9FF',
-                padding: '12px',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                width: '100%',
-                boxSizing: 'border-box'
-              }}>
-              <h4 style={{
-                fontFamily: 'Oslo Sans',
-                fontWeight: 700,
-                fontStyle: 'normal',
-                fontSize: '16px',
-                lineHeight: '24px',
-                letterSpacing: '-0.2px',
-                color: '#000000',
-                margin: '0 0 8px 0'
-              }}>
-                Kilde
-              </h4>
-              <p style={{
-                fontFamily: 'Oslo Sans',
-                fontWeight: 300,
-                fontSize: '14px',
-                lineHeight: '22px',
-                letterSpacing: '0px',
-                color: '#000000',
-                margin: 0
-              }}>
-                PLACEHOLDER
-              </p>
-            </div>
-          </foreignObject>
-        )}
+        
         
         {/* Etterisoleringyttervegg savings text */}
         {(() => {
@@ -784,20 +747,22 @@ export const IsoleringAvKjellerOgLoft: React.FC<IsoleringAvKjellerOgLoftProps> =
         </text>
         
         {/* Fordeler heading */}
-        <text
-          x="565"
-          y="20"
-          fontFamily="Oslo Sans"
-          fontWeight="700"
-          fontStyle="normal"
-          fontSize="18"
-          lineHeight="28"
-          letterSpacing="-0.2"
-          fill="#000000"
-          dominantBaseline="hanging"
-        >
-          Fordeler
-        </text>
+        {!showSourceTooltip && (
+          <text
+            x="565"
+            y="20"
+            fontFamily="Oslo Sans"
+            fontWeight="700"
+            fontStyle="normal"
+            fontSize="18"
+            lineHeight="28"
+            letterSpacing="-0.2"
+            fill="#000000"
+            dominantBaseline="hanging"
+          >
+            Fordeler
+          </text>
+        )}
         
         {/* Back button positioned at same y as Tetting heading */}
         <g
@@ -1183,6 +1148,71 @@ export const IsoleringAvKjellerOgLoft: React.FC<IsoleringAvKjellerOgLoftProps> =
             </div>
           </div>
         </foreignObject>
+        
+        {/* Source tooltip - moved to end for proper z-order */}
+        {showSourceTooltip && (
+          <foreignObject x="565" y="30" width="211" height="430"
+            onMouseEnter={() => setShowSourceTooltip(true)}
+            onMouseLeave={() => setShowSourceTooltip(false)}
+          >
+            <div 
+              xmlns="http://www.w3.org/1999/xhtml"
+              style={{
+                backgroundColor: '#034B45',
+                padding: '12px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                width: '100%',
+                boxSizing: 'border-box',
+                height: '354px'
+              }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '8px'
+              }}>
+                <h4 style={{
+                  fontFamily: 'Oslo Sans',
+                  fontWeight: 700,
+                  fontStyle: 'normal',
+                  fontSize: '16px',
+                  lineHeight: '24px',
+                  letterSpacing: '-0.2px',
+                  color: '#FFFFFF',
+                  margin: 0
+                }}>
+                  Kilde
+                </h4>
+                <button
+                  onClick={() => setShowSourceTooltip(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    marginTop: '-4px',
+                    marginRight: '-4px'
+                  }}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+              <p style={{
+                fontFamily: 'Oslo Sans',
+                fontWeight: 300,
+                fontSize: '14px',
+                lineHeight: '22px',
+                letterSpacing: '0px',
+                color: '#FFFFFF',
+                margin: 0
+              }}>
+                Besparelsene estimeres fra datasett basert på bygningstype, bruksareal og teknisk forskrift. Disse variablene hentes automatisk fra Matrikkelen, utenom TEK som estimeres ut fra byggeår. Dette er en forenkling som ikke tar hensyn til tidligere oppgraderinger av bygget. Strømprisen er satt til 1.1kr/kWh.
+              </p>
+            </div>
+          </foreignObject>
+        )}
       </svg>
     </div>
   );

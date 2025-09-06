@@ -137,6 +137,15 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       buildingData?.bygningstype, buildingData?.csvData?.bygningstype]);
   const estimatedRating = enovaRating || calculatedRating;
   
+  // Determine building type for UI display
+  const buildingTypeCode = buildingData?.bygningstypeKode?.substring(0, 2) || buildingData?.csvData?.bygningstypekode?.substring(0, 2);
+  const buildingTypeName = buildingData?.bygningstype || buildingData?.csvData?.bygningstype || '';
+  const isBlokk = ['14', '15', '16', '17'].includes(buildingTypeCode || '') ||
+                  buildingTypeName.toLowerCase().includes('blokk') ||
+                  buildingTypeName.toLowerCase().includes('leilighet') ||
+                  buildingTypeName.toLowerCase().includes('boligbygg') ||
+                  buildingTypeName.toLowerCase() === 'store boligbygg';
+  
   
   // Energy savings data structure - same as in EnergyRatingEstimator
   const ENERGY_SAVINGS_DATA: Record<string | number, any> = {
@@ -967,7 +976,11 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
 
               <p style={{ marginBottom: '16px' }}>
                 {enovaRating ? (
-                  <>Din nåværende energikarakteren og energiforbruk er hentet direkte fra bygningens energiattest registrert hos Enova.</>
+                  isBlokk ? (
+                    <>Blokkens energiforbruk beregnes fra energikarakteren til en av leilighetene. Deretter brukes de samme grenseverdiene fra Enova for å beregne energiforbruket for hele blokken basert på blokkens bruksareal.</>
+                  ) : (
+                    <>Din nåværende energikarakteren og energiforbruk er hentet direkte fra bygningens energiattest registrert hos Enova.</>
+                  )
                 ) : (
                   <>Siden bygningen ikke har en registrert energiattest, estimeres energiforbruket basert på byggeår og gjeldende teknisk forskrift (TEK) ved byggeåret. Vi bruker deretter de samme grenseverdiene fra Enova for å beregne en estimert energikarakter.</>
                 )}
