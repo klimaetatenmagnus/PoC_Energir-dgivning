@@ -324,44 +324,7 @@ export const SolenergiGul: React.FC<TettingProps> = ({ onBack, buildingType, sto
           </svg>
         </g>
         
-        {/* Source tooltip - moved outside the g element */}
-        {showSourceTooltip && (
-          <foreignObject x="565" y="188" width="211" height="90">
-            <div 
-              xmlns="http://www.w3.org/1999/xhtml"
-              style={{
-                backgroundColor: '#D1F9FF',
-                padding: '12px',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                width: '100%',
-                boxSizing: 'border-box'
-              }}>
-              <h4 style={{
-                fontFamily: 'Oslo Sans',
-                fontWeight: 700,
-                fontStyle: 'normal',
-                fontSize: '16px',
-                lineHeight: '24px',
-                letterSpacing: '-0.2px',
-                color: '#000000',
-                margin: '0 0 8px 0'
-              }}>
-                Kilde
-              </h4>
-              <p style={{
-                fontFamily: 'Oslo Sans',
-                fontWeight: 300,
-                fontSize: '14px',
-                lineHeight: '22px',
-                letterSpacing: '0px',
-                color: '#000000',
-                margin: 0
-              }}>
-                PLACEHOLDER
-              </p>
-            </div>
-          </foreignObject>
-        )}
+        
         
         {/* Solar energy savings text */}
         {buildingData?.filteredSolarEnergy && buildingData.filteredSolarEnergy > 0 ? (
@@ -724,20 +687,22 @@ export const SolenergiGul: React.FC<TettingProps> = ({ onBack, buildingType, sto
         </text>
         
         {/* Fordeler heading */}
-        <text
-          x="565"
-          y="20"
-          fontFamily="Oslo Sans"
-          fontWeight="700"
-          fontStyle="normal"
-          fontSize="18"
-          lineHeight="28"
-          letterSpacing="-0.2"
-          fill="#000000"
-          dominantBaseline="hanging"
-        >
-          Fordeler
-        </text>
+        {!showSourceTooltip && (
+          <text
+            x="565"
+            y="20"
+            fontFamily="Oslo Sans"
+            fontWeight="700"
+            fontStyle="normal"
+            fontSize="18"
+            lineHeight="28"
+            letterSpacing="-0.2"
+            fill="#000000"
+            dominantBaseline="hanging"
+          >
+            Fordeler
+          </text>
+        )}
         
         {/* Back button positioned at same y as Tetting heading */}
         <g
@@ -1168,6 +1133,78 @@ export const SolenergiGul: React.FC<TettingProps> = ({ onBack, buildingType, sto
             </div>
           </div>
         </foreignObject>
+        
+        {/* Source tooltip - moved to end for proper z-order */}
+        {showSourceTooltip && (
+          <foreignObject x="565" y="20" width="211" height="450"
+            onMouseEnter={() => setShowSourceTooltip(true)}
+            onMouseLeave={() => setShowSourceTooltip(false)}
+          >
+            <div 
+              xmlns="http://www.w3.org/1999/xhtml"
+              style={{
+                backgroundColor: '#034B45',
+                padding: '12px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                width: '100%',
+                boxSizing: 'border-box'
+              }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '8px'
+              }}>
+                <h4 style={{
+                  fontFamily: 'Oslo Sans',
+                  fontWeight: 700,
+                  fontStyle: 'normal',
+                  fontSize: '16px',
+                  lineHeight: '24px',
+                  letterSpacing: '-0.2px',
+                  color: '#FFFFFF',
+                  margin: 0
+                }}>
+                  Kilde
+                </h4>
+                <button
+                  onClick={() => setShowSourceTooltip(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    marginTop: '-4px',
+                    marginRight: '-4px'
+                  }}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+              <p style={{
+                fontFamily: 'Oslo Sans',
+                fontWeight: 300,
+                fontSize: '14px',
+                lineHeight: '22px',
+                letterSpacing: '0px',
+                color: '#FFFFFF',
+                margin: 0
+              }}>
+                Data for årlig solinnstårlig og areal for ulike takflater blir hentet fra Oslo kommunes <a 
+                  href="https://od2.pbe.oslo.kommune.no/solkart/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ 
+                    color: '#FFFFFF', 
+                    textDecoration: 'underline'
+                  }}
+                >Solkart</a>. For alle takflater med årlig solpotensial over 800 kWh/m², så summeres produktene av innstårligen og takflatearealet. Deretter antas det at 85% av takarealet kan utnyttes til solceller, og at solcellene har en en virkningsgrad på 20%.
+              </p>
+            </div>
+          </foreignObject>
+        )}
       </svg>
     </div>
   );
