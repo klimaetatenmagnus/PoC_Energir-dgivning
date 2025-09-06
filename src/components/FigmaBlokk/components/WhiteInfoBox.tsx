@@ -117,24 +117,57 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   // State for edit mode
   const [isEditMode, setIsEditMode] = React.useState(false);
   const [savedByggeaar, setSavedByggeaar] = React.useState(
-    String(buildingData?.csvData?.byggeaar || buildingData?.byggeaar || '')
+    String(buildingData?.byggeaar || '')
   );
   const [savedAreal, setSavedAreal] = React.useState(
-    String(buildingData?.bruksarealM2 || buildingData?.csvData?.bruksareal_totalt || '')
+    String(buildingData?.bruksarealM2 || '')
   );
   const [savedArealLeilighet, setSavedArealLeilighet] = React.useState(
     String(buildingData?.arealLeilighet || '')
   );
-  // Calculate estimated energy consumption based on TEK
+  // Calculate estimated energy consumption based on TEK or energy rating
   // Use saved values if available (they might have been edited)
   const estimatedConsumption = React.useMemo(() => {
-    const byggeaar = savedByggeaar || buildingData?.csvData?.byggeaar || buildingData?.byggeaar;
-    const bruksareal = savedAreal || buildingData?.bruksarealM2 || buildingData?.csvData?.bruksareal_totalt;
+    const byggeaar = savedByggeaar || buildingData?.byggeaar;
+    const bruksareal = savedAreal || buildingData?.bruksarealM2;
     const buildingType = determineBuildingType(
       buildingData?.bygningstypeKode,
       buildingTypeName
     );
     
+    // If building is apartment/large building and has energy rating, estimate based on that
+    if ((buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && 
+        buildingData?.energiattest?.energikarakter && bruksareal) {
+      const energikarakter = buildingData.energiattest.energikarakter;
+      
+      // Get energy intensity thresholds from JSON file for apartments
+      const thresholds: Record<string, number> = {
+        'A': 85 + 600 / bruksareal,
+        'B': 95 + 1000 / bruksareal,
+        'C': 100 + 1500 / bruksareal,
+        'D': 135 + 2200 / bruksareal,
+        'E': 160 + 3000 / bruksareal,
+        'F': 200 + 4000 / bruksareal,
+        'G': 250 + 5000 / bruksareal // Use higher value for G
+      };
+      
+      // Use the threshold for the current rating as the estimated intensity
+      const estimatedIntensity = thresholds[energikarakter] || thresholds['E'];
+      
+      // Log the calculation details
+      console.log(`🏢 Estimerer energiforbruk for blokk med energikarakter ${energikarakter}:`, {
+        energikarakter,
+        bruksareal: `${bruksareal} m²`,
+        grenseverdi: `${estimatedIntensity.toFixed(1)} kWh/m²/år`,
+        beregning: `${estimatedIntensity.toFixed(1)} × ${bruksareal} = ${(estimatedIntensity * bruksareal).toFixed(0)} kWh/år`,
+        resultat: Math.round(estimatedIntensity * bruksareal)
+      });
+      
+      // Calculate total consumption: intensity * area
+      return Math.round(estimatedIntensity * bruksareal);
+    }
+    
+    // Otherwise use TEK-based calculation
     return calculateAnnualEnergyConsumption(byggeaar, bruksareal, buildingType);
   }, [savedByggeaar, savedAreal, buildingData, buildingTypeName]);
   
@@ -151,11 +184,18 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   
   // Update saved energy consumption when estimated value changes (only if user hasn't edited it)
   React.useEffect(() => {
-    if (!buildingData?.energiattest?.registering?.beregnetLevertEnergiTotaltkWh && !hasUserEditedEnergy) {
+    // For apartments/large buildings with energy rating, always use our estimate
+    if ((buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && 
+        buildingData?.energiattest?.energikarakter && !hasUserEditedEnergy) {
+      setSavedEnergiforbruk(String(estimatedConsumption));
+      setEditedEnergiforbruk(String(estimatedConsumption));
+    } 
+    // For other cases, only update if no Enova data exists
+    else if (!buildingData?.energiattest?.registering?.beregnetLevertEnergiTotaltkWh && !hasUserEditedEnergy) {
       setSavedEnergiforbruk(String(estimatedConsumption));
       setEditedEnergiforbruk(String(estimatedConsumption));
     }
-  }, [estimatedConsumption, buildingData, hasUserEditedEnergy]);
+  }, [estimatedConsumption, buildingData, buildingTypeName, hasUserEditedEnergy]);
   
   // Recalculate energy consumption when building year or area changes in edit mode (only if user hasn't edited it)
   React.useEffect(() => {
@@ -461,11 +501,11 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               <tspan fontWeight="300">Areal: </tspan>
               <tspan fontWeight="500">{savedAreal || 'Ukjent'} m²</tspan>
             </text>
-            {hasEnovaRating && (
+            {hasEnovaRating && !(buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && (
               <>
                 <text 
                   x="30" 
-                  y="260" 
+                  y="288" 
                   fontFamily="Oslo Sans, sans-serif" 
                   fontSize="18" 
                         letterSpacing="-0.2"
@@ -475,17 +515,30 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                   <tspan fontWeight="500">{roundToNearestThousand(Number(savedEnergiforbruk || '300000'))} kWh/år</tspan>
                 </text>
                 {totalEnergySavings > 0 && (
-                  <text 
-                    x="30" 
-                    y="288" 
-                    fontFamily="Oslo Sans, sans-serif" 
-                    fontSize="18" 
-                          letterSpacing="-0.2"
-                    fill="#2A2859"
-                  >
-                    <tspan fontWeight="300">Mulig besparelse: </tspan>
-                    <tspan fontWeight="500">{roundToNearestThousand(totalEnergySavings)} kWh/år</tspan>
-                  </text>
+                  <>
+                    <text 
+                      x="30" 
+                      y="320" 
+                      fontFamily="Oslo Sans, sans-serif" 
+                      fontSize="16" 
+                            letterSpacing="-0.2"
+                      fill="#2A2859"
+                      fontWeight="400"
+                    >
+                      Estimerte verdier:
+                    </text>
+                    <text 
+                      x="30" 
+                      y="348" 
+                      fontFamily="Oslo Sans, sans-serif" 
+                      fontSize="18" 
+                            letterSpacing="-0.2"
+                      fill="#2A2859"
+                    >
+                      <tspan fontWeight="300">Mulig besparelse: </tspan>
+                      <tspan fontWeight="500">{roundToNearestThousand(totalEnergySavings)} kWh/år</tspan>
+                    </text>
+                  </>
                 )}
               </>
             )}
@@ -505,7 +558,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             {showYellowBox && (
               <text 
                 x="30" 
-                y={buildingTypeName.toLowerCase() === 'blokk' ? (hasEnovaRating ? (totalEnergySavings > 0 ? "344" : "316") : "288") : (hasEnovaRating ? (totalEnergySavings > 0 ? "316" : "288") : "260")} 
+                y={buildingTypeName.toLowerCase() === 'blokk' ? "288" : "260"} 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontSize="18" 
                       letterSpacing="-0.2"
@@ -515,10 +568,10 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 <tspan fontWeight="500">Gul liste</tspan>
               </text>
             )}
-            {!hasEnovaRating && (
+            {(!hasEnovaRating || ((buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && buildingData?.energiattest?.energikarakter)) && (
               <text 
                 x="30" 
-                y={showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "320" : "348"} 
+                y="320" 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontSize="16" 
                       letterSpacing="-0.2"
@@ -541,11 +594,11 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 <tspan fontWeight="500">{savedArealLeilighet || 'Ukjent'} m²</tspan>
               </text>
             )}
-            {!hasEnovaRating && (
+            {(!hasEnovaRating || ((buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && buildingData?.energiattest?.energikarakter)) && (
               <>
                 <text 
                   x="30" 
-                  y={buildingTypeName.toLowerCase() === 'blokk' ? "404" : (showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "348" : "376")} 
+                  y="348" 
                   fontFamily="Oslo Sans, sans-serif" 
                   fontSize="18" 
                         letterSpacing="-0.2"
@@ -557,7 +610,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 {totalEnergySavings > 0 && (
                   <text 
                     x="30" 
-                    y={buildingTypeName.toLowerCase() === 'blokk' ? "432" : (showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "376" : "404")} 
+                    y="376" 
                     fontFamily="Oslo Sans, sans-serif" 
                     fontSize="18" 
                           letterSpacing="-0.2"
@@ -652,11 +705,11 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               m²
             </text>
             
-            {hasEnovaRating && (
+            {hasEnovaRating && !(buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && (
               <>
                 <text 
                   x="30" 
-                  y="260" 
+                  y="288" 
                   fontFamily="Oslo Sans, sans-serif" 
                   fontSize="18" 
                           letterSpacing="-0.2"
@@ -664,7 +717,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 >
                   <tspan fontWeight="300">Energiforbruk: </tspan>
                 </text>
-                <foreignObject x="155" y="242" width={calculateInputWidth(editedEnergiforbruk)} height="24">
+                <foreignObject x="155" y="270" width={calculateInputWidth(editedEnergiforbruk)} height="24">
                   <input
                     xmlns="http://www.w3.org/1999/xhtml"
                     type="text"
@@ -695,7 +748,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 </foreignObject>
                 <text 
                   x={155 + calculateInputWidth(editedEnergiforbruk) + 3}
-                  y="260" 
+                  y="288" 
                   fontFamily="Oslo Sans, sans-serif" 
                   fontSize="18" 
                           letterSpacing="-0.2"
@@ -705,17 +758,30 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                   kWh/år
                 </text>
                 {totalEnergySavings > 0 && (
-                  <text 
-                    x="30" 
-                    y="288" 
-                    fontFamily="Oslo Sans, sans-serif" 
-                    fontSize="18" 
-                          letterSpacing="-0.2"
-                    fill="#2A2859"
-                  >
-                    <tspan fontWeight="300">Mulig besparelse: </tspan>
-                    <tspan fontWeight="500">{roundToNearestThousand(totalEnergySavings)} kWh/år</tspan>
-                  </text>
+                  <>
+                    <text 
+                      x="30" 
+                      y="320" 
+                      fontFamily="Oslo Sans, sans-serif" 
+                      fontSize="16" 
+                            letterSpacing="-0.2"
+                      fill="#2A2859"
+                      fontWeight="400"
+                    >
+                      Estimerte verdier:
+                    </text>
+                    <text 
+                      x="30" 
+                      y="348" 
+                      fontFamily="Oslo Sans, sans-serif" 
+                      fontSize="18" 
+                            letterSpacing="-0.2"
+                      fill="#2A2859"
+                    >
+                      <tspan fontWeight="300">Mulig besparelse: </tspan>
+                      <tspan fontWeight="500">{roundToNearestThousand(totalEnergySavings)} kWh/år</tspan>
+                    </text>
+                  </>
                 )}
               </>
             )}
@@ -723,7 +789,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             {buildingTypeName.toLowerCase() === 'blokk' && (
               <text 
                 x="30" 
-                y={hasEnovaRating ? "288" : "260"} 
+                y="260" 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontSize="18" 
                       letterSpacing="-0.2"
@@ -737,7 +803,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             {showYellowBox && (
               <text 
                 x="30" 
-                y={buildingTypeName.toLowerCase() === 'blokk' ? (hasEnovaRating ? "316" : "288") : (hasEnovaRating ? "288" : "260")} 
+                y={hasEnovaRating ? "260" : (buildingTypeName.toLowerCase() === 'blokk' ? "288" : "260")} 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontSize="18" 
                       letterSpacing="-0.2"
@@ -748,10 +814,10 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               </text>
             )}
             
-            {!hasEnovaRating && (
+            {(!hasEnovaRating || ((buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && buildingData?.energiattest?.energikarakter)) && (
               <text 
                 x="30" 
-                y={showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "320" : "348"} 
+                y={showYellowBox ? "320" : (buildingTypeName.toLowerCase() === 'blokk' ? "288" : "260")} 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontSize="16" 
                       letterSpacing="-0.2"
@@ -766,7 +832,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               <>
                 <text 
                   x="30" 
-                  y="376" 
+                  y={showYellowBox ? "348" : "288"} 
                   fontFamily="Oslo Sans, sans-serif" 
                   fontSize="18" 
                           letterSpacing="-0.2"
@@ -774,7 +840,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 >
                   <tspan fontWeight="300">Areal Leilighet: </tspan>
                 </text>
-                <foreignObject x="153" y="358" width={calculateInputWidth(editedArealLeilighet)} height="24">
+                <foreignObject x="153" y={showYellowBox ? "330" : "270"} width={calculateInputWidth(editedArealLeilighet)} height="24">
                   <input
                     xmlns="http://www.w3.org/1999/xhtml"
                     type="text"
@@ -799,7 +865,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 </foreignObject>
                 <text 
                   x={153 + calculateInputWidth(editedArealLeilighet) + 3}
-                  y="376" 
+                  y={showYellowBox ? "348" : "288"} 
                   fontFamily="Oslo Sans, sans-serif" 
                   fontSize="18" 
                           letterSpacing="-0.2"
@@ -811,11 +877,11 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               </>
             )}
             
-            {!hasEnovaRating && (
+            {(!hasEnovaRating || ((buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && buildingData?.energiattest?.energikarakter)) && (
               <>
                 <text 
                   x="30" 
-                  y={buildingTypeName.toLowerCase() === 'blokk' ? "404" : (showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "348" : "376")} 
+                  y="348" 
                   fontFamily="Oslo Sans, sans-serif" 
                   fontSize="18" 
                       letterSpacing="-0.2"
@@ -853,7 +919,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             </foreignObject>
                 <text 
                   x={155 + calculateInputWidth(editedEnergiforbruk) + 3}
-                  y={buildingTypeName.toLowerCase() === 'blokk' ? "404" : (showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "348" : "376")} 
+                  y="348" 
                   fontFamily="Oslo Sans, sans-serif" 
                   fontSize="18" 
                       letterSpacing="-0.2"
@@ -862,6 +928,19 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 >
                   kWh/år
                 </text>
+                {totalEnergySavings > 0 && (
+                  <text 
+                    x="30" 
+                    y="376" 
+                    fontFamily="Oslo Sans, sans-serif" 
+                    fontSize="18" 
+                          letterSpacing="-0.2"
+                    fill="#2A2859"
+                  >
+                    <tspan fontWeight="300">Mulig besparelse: </tspan>
+                    <tspan fontWeight="500">{roundToNearestThousand(totalEnergySavings)} kWh/år</tspan>
+                  </text>
+                )}
               </>
             )}
           </>
@@ -877,7 +956,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             >
               <rect 
                 x="30" 
-                y={hasEnovaRating ? (buildingTypeName.toLowerCase() === 'blokk' ? "348" : (showYellowBox ? "320" : "292")) : "432"} 
+                y="432" 
                 width="235" 
                 height="46" 
                 fill="#FFE7BC"
@@ -891,7 +970,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               {/* Text inside yellow box */}
               <text 
                 x="46" 
-                y={hasEnovaRating ? (buildingTypeName.toLowerCase() === 'blokk' ? "371" : (showYellowBox ? "343" : "315")) : "455"} 
+                y="455" 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontWeight="500"
                 fontStyle="normal"
@@ -910,7 +989,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               {/* Arrow icon inside yellow box */}
               <svg 
                 x="225" 
-                y={hasEnovaRating ? (buildingTypeName.toLowerCase() === 'blokk' ? "357" : (showYellowBox ? "329" : "301")) : "441"} 
+                y="441" 
                 width="24" 
                 height="28" 
                 viewBox="0 0 24 28" 

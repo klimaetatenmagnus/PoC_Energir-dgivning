@@ -100,11 +100,19 @@ export async function fetchSolarData(params: {
     let filteredSolarEnergy = 0;
     const minRadiation = 800; // kWh/m²
     const solarPanelEfficiency = 0.2; // 20% efficiency
+    const takUtnyttelsesgrad = 0.85;
     
     if (data.takflater && Array.isArray(data.takflater)) {
-      filteredSolarEnergy = data.takflater
-        .filter((tak: any) => tak.irr_kwh_m2_yr > minRadiation)
-        .reduce((sum: number, tak: any) => sum + (tak.irr_kwh_m2_yr * tak.area_m2 * solarPanelEfficiency), 0);
+      const filteredTakflater = data.takflater.filter((tak: any) => tak.irr_kwh_m2_yr > minRadiation);
+      
+      // Log filtered roof surfaces
+      console.log(`☀️ Filtrerte takflater (innstråling > ${minRadiation} kWh/m²):`);
+      filteredTakflater.forEach((tak: any) => {
+        console.log(`  - Takflate ID: ${tak.tak_id}, Innstråling: ${tak.irr_kwh_m2_yr.toFixed(0)} kWh/m²/år`);
+      });
+      
+      filteredSolarEnergy = filteredTakflater
+        .reduce((sum: number, tak: any) => sum + (tak.irr_kwh_m2_yr * tak.area_m2 * takUtnyttelsesgrad * solarPanelEfficiency), 0);
       
       // console.log(`☀️ Filtered solar energy calculation:`, {
       //   totalSurfaces: data.takflater.length,

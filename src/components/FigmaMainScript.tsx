@@ -557,6 +557,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         buildingData={updatedBuildingData}
         onExpand={setIsExpanded}
         showYellowBox={showYellowBox}
+        gulListeLoading={gulListeLoading}
         onUpdateBuildingData={handleUpdateBuildingData}
         isYellowBoxExpanded={isYellowBoxExpanded}
         onYellowBoxExpandedChange={setIsYellowBoxExpanded}
