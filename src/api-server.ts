@@ -246,7 +246,7 @@ app.get('/api/stotteordninger', async (req, res) => {
   try {
     // Kjør Python script med UTF-8 encoding
     const { stdout, stderr } = await execAsync(
-      `python hent_stotteordninger_api.py ${gullisteParam} ${tiltak} ${bygningstype}`,
+      `python hent_stotteordninger_api_google.py ${gullisteParam} ${tiltak} ${bygningstype}`,
       { encoding: 'utf8' }
     );
     
@@ -289,7 +289,7 @@ app.get('/api/stotteordninger-live', async (req, res) => {
   
   try {
     const { stdout, stderr } = await execAsync(
-      `python hent_stotteordninger_direkte.py ${gulliste || 'false'} "${tiltak}" "${bygningstype}"`,
+      `python hent_stotteordninger_direkte_google.py ${gulliste || 'false'} "${tiltak}" "${bygningstype}"`,
       { encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' } }
     );
     

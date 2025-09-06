@@ -17,7 +17,7 @@ app.get('/api/stotteordninger', (req, res) => {
   
   const gullisteParam = gulliste === 'true' ? 'true' : 'false';
   
-  exec(`python hent_stotteordninger_api.py ${gullisteParam} ${tiltak} ${bygningstype}`, (error, stdout, stderr) => {
+  exec(`python hent_stotteordninger_api_google.py ${gullisteParam} ${tiltak} ${bygningstype}`, (error, stdout, stderr) => {
     if (error) {
       console.error(`Error: ${error}`);
       return res.status(500).json({ error: error.message });
@@ -45,7 +45,7 @@ app.get('/api/alle-stotteordninger', (req, res) => {
     return res.status(400).json({ error: 'Missing bygningstype parameter' });
   }
   
-  exec(`python hent_alle_stotteordninger_api.py ${bygningstype}`, (error, stdout, stderr) => {
+  exec(`python hent_alle_stotteordninger_api_google.py ${bygningstype}`, (error, stdout, stderr) => {
     if (error) {
       console.error(`Error: ${error}`);
       return res.status(500).json({ error: error.message });

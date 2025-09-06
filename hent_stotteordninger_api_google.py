@@ -1,7 +1,7 @@
 import sys
 import json
 import io
-from hent_stotteordninger import StotteordningFinner
+from hent_stotteordninger_google import StotteordningFinner
 
 # Sett UTF-8 encoding for stdout
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -16,7 +16,7 @@ def main():
     bygningstype = sys.argv[3]
     
     try:
-        finder = StotteordningFinner("(2) Matrise_Energitiltak og relevante støtteordninger.xlsx")
+        finder = StotteordningFinner()  # Bruker Google Sheets, ikke Excel-fil
         resultater = finder.finn_stotteordninger(gulliste, tiltak, bygningstype)
         print(json.dumps(resultater, ensure_ascii=False))
     except Exception as e:
