@@ -1,17 +1,26 @@
-import openpyxl
+import requests
+import csv
+from io import StringIO
 from typing import List, Dict, Optional
+import re
 
-# Import konfigurasjon fra hent_stotteordninger_direkte
-try:
-    from hent_stotteordninger_direkte import EXCEL_FILNAVN
-except ImportError:
-    # Fallback hvis importen feiler
-    EXCEL_FILNAVN = "(2) Matrise_Energitiltak og relevante støtteordninger.xlsx"
+# KONFIGURASJON - Endre denne URL-en for å bruke et annet Google Sheets
+# Kopier hele URL-en fra Google Sheets (inkludert /edit eller /view delen)
+# Eksempel: "https://docs.google.com/spreadsheets/d/ABC123/edit?usp=sharing"
+GOOGLE_SHEETS_URL = "https://docs.google.com/spreadsheets/d/1leRApSj2shrINHooseors2QjpZQO3ez08YuXzK3E0M8/edit?usp=sharing"
 
 class StotteordningFinner:
-    def __init__(self, excel_path: str):
-        self.wb = openpyxl.load_workbook(excel_path, data_only=True)
-        self.sheet = self.wb.active
+    def __init__(self, excel_path: str = None):
+        """
+        Initialiserer Google Sheets-basert støtteordning-finder.
+        excel_path parameter ignoreres siden vi bruker Google Sheets URL direkte.
+        """
+        # Ekstraher sheet ID fra URL
+        self.sheet_id = self._extract_sheet_id(GOOGLE_SHEETS_URL)
+        if not self.sheet_id:
+            raise ValueError(f"Kunne ikke finne Google Sheets ID i URL: {GOOGLE_SHEETS_URL}")
+        
+        self.csv_url = f"https://docs.google.com/spreadsheets/d/{self.sheet_id}/export?format=csv"
         
         # Definer tiltak og deres kolonneposisjoner
         self.tiltak_kolonner = {
@@ -33,45 +42,70 @@ class StotteordningFinner:
             "blokk": 2
         }
         
-        # Finn dynamisk start- og sluttrad basert på markøren "For bygg som ikke er på gul liste"
-        self._finn_rad_grenser()
+        # Last ned og parse data
+        self._last_ned_data()
+    
+    def _extract_sheet_id(self, url: str) -> Optional[str]:
+        """Ekstraherer Google Sheets ID fra en Google Sheets URL"""
+        # Matcher både standard URLs og delte URLs
+        patterns = [
+            r'/spreadsheets/d/([a-zA-Z0-9-_]+)',
+            r'/d/([a-zA-Z0-9-_]+)',
+        ]
         
+        for pattern in patterns:
+            match = re.search(pattern, url)
+            if match:
+                return match.group(1)
+        
+        return None
+        
+    def _last_ned_data(self):
+        """Laster ned og parser data fra Google Sheets"""
+        try:
+            response = requests.get(self.csv_url)
+            response.raise_for_status()
+            
+            # Parse CSV med UTF-8 encoding
+            response.encoding = 'utf-8'
+            csv_reader = csv.reader(StringIO(response.text))
+            self.all_values = list(csv_reader)
+            
+            # Finn dynamisk start- og sluttrad basert på markørene
+            self._finn_rad_grenser()
+            
+        except Exception as e:
+            raise Exception(f"Kunne ikke laste data fra Google Sheets: {e}")
+    
     def _finn_rad_grenser(self):
-        """Finner dynamisk rad-grenser basert på tekstene i kolonne C"""
-        gulliste_marker_rad = None
-        ikke_gulliste_marker_rad = None
+        """Finner dynamisk rad-grenser basert på tekstene i sheets"""
+        self.gulliste_marker_rad = None
+        self.ikke_gulliste_marker_rad = None
         
-        # Søk i kolonne C (kolonne 3) etter markørene
-        for rad in range(1, 200):  # Søk i de første 200 radene
-            celle = self.sheet.cell(row=rad, column=3)  # Kolonne C
-            if celle.value:
-                celle_tekst = str(celle.value).strip()
-                if celle_tekst == "For bygg på gul liste":
-                    gulliste_marker_rad = rad
-                elif celle_tekst == "For bygg som ikke er på gul liste":
-                    ikke_gulliste_marker_rad = rad
+        # Søk etter markørene (kolonne C er indeks 2)
+        for i, row in enumerate(self.all_values):
+            if len(row) > 2:
+                celle_tekst = str(row[2]).strip()
+                # Håndter både korrekt encoding og mulige encoding-problemer
+                if celle_tekst in ["For bygg på gul liste", "For bygg p\xe5 gul liste", "For bygg p� gul liste"]:
+                    self.gulliste_marker_rad = i + 1
+                elif celle_tekst in ["For bygg som ikke er på gul liste", "For bygg som ikke er p\xe5 gul liste", "For bygg som ikke er p� gul liste"]:
+                    self.ikke_gulliste_marker_rad = i + 1
         
-        if gulliste_marker_rad and ikke_gulliste_marker_rad:
+        if self.gulliste_marker_rad and self.ikke_gulliste_marker_rad:
             # Sett grenser basert på markørenes posisjoner
-            # Start 2 rader under markøren (markør + 1 er byggtypeoverskrift, markør + 2 er første datarad)
-            self.gulliste_start = gulliste_marker_rad + 2
-            self.gulliste_slutt = ikke_gulliste_marker_rad - 1
+            self.gulliste_start = self.gulliste_marker_rad + 2
+            self.gulliste_slutt = self.ikke_gulliste_marker_rad - 1
             
-            self.ikke_gulliste_start = ikke_gulliste_marker_rad + 2
-            self.ikke_gulliste_slutt = 100  # Sjekk opp til rad 100
-            
-            # print(f"Gulliste-markør funnet på rad {gulliste_marker_rad}")
-            # print(f"Ikke-gulliste-markør funnet på rad {ikke_gulliste_marker_rad}")
-            # print(f"Gulliste-område: rad {self.gulliste_start} til {self.gulliste_slutt}")
-            # print(f"Ikke-gulliste-område: rad {self.ikke_gulliste_start} til {self.ikke_gulliste_slutt}")
+            self.ikke_gulliste_start = self.ikke_gulliste_marker_rad + 2
+            self.ikke_gulliste_slutt = len(self.all_values)
         else:
             # Fallback til standard verdier hvis markørene ikke finnes
-            # print("Advarsel: Kunne ikke finne markørene. Bruker standard verdier.")
             self.gulliste_start = 7
             self.gulliste_slutt = 50
             self.ikke_gulliste_start = 52
             self.ikke_gulliste_slutt = 80
-        
+    
     def finn_stotteordninger(self, gulliste: bool, tiltak: str, bygningstype: str) -> List[Dict[str, str]]:
         """
         Finner støtteordninger basert på gulliste-status, tiltak og bygningstype.
@@ -93,9 +127,9 @@ class StotteordningFinner:
         if bygningstype not in self.bygningstype_offset:
             raise ValueError(f"Ukjent bygningstype: {bygningstype}. Gyldige typer: {list(self.bygningstype_offset.keys())}")
         
-        # Finn riktig kolonne
+        # Finn riktig kolonne (0-indeksert for Python)
         tiltak_info = self.tiltak_kolonner[tiltak]
-        kolonne = tiltak_info["start"] + self.bygningstype_offset[bygningstype]
+        kolonne = tiltak_info["start"] + self.bygningstype_offset[bygningstype] - 1  # -1 for 0-indeksering
         
         # Bestem radområde basert på gulliste
         if gulliste:
@@ -110,51 +144,40 @@ class StotteordningFinner:
         gjeldende_overskrift = None
         
         # Gå gjennom rader og finn markerte celler
-        for rad in range(start_rad, slutt_rad + 1):
-            # Sjekk om denne raden har en overskrift
-            ordning_celle = self.sheet.cell(row=rad, column=3)  # Kolonne C
-            if ordning_celle.value:
-                celle_verdi = str(ordning_celle.value).strip()
+        for rad_idx in range(start_rad - 1, min(slutt_rad, len(self.all_values))):
+            row = self.all_values[rad_idx]
+            
+            if len(row) <= kolonne:
+                continue
                 
-                # Sjekk om dette er en ren overskrift (eksakt match eller nesten eksakt)
-                if celle_verdi == "Klima- og energifondet":
-                    gjeldende_overskrift = "Klima- og energifondet"
-                elif celle_verdi == "Enova":
-                    gjeldende_overskrift = "Enova"
-                elif celle_verdi == "Byantikvaren":
-                    gjeldende_overskrift = "Byantikvaren"
-                elif celle_verdi == "Riksantikvaren":
-                    gjeldende_overskrift = "Riksantikvaren"
-                elif celle_verdi == "Kulturminnefondet":
-                    gjeldende_overskrift = "Kulturminnefondet"
-                # Hvis det ikke er en ren overskrift, sjekk om det er en støtteordning med "Enova" i navnet
+            # Sjekk om denne raden har en overskrift
+            if len(row) > 2 and row[2]:
+                celle_verdi = str(row[2]).strip()
+                
+                # Sjekk om dette er en ren overskrift
+                if celle_verdi in overskrifter:
+                    gjeldende_overskrift = celle_verdi
                 elif "| Enova" in celle_verdi:
                     # Dette er en Enova-støtteordning, ikke en overskriftsendring
                     pass
-                # Sjekk om det er en Klimaetaten-støtteordning
                 elif "- Klimaetaten" in celle_verdi and gjeldende_overskrift != "Enova":
-                    # Hvis vi er under Klima- og energifondet, behold den overskriften
                     if gjeldende_overskrift != "Klima- og energifondet":
                         gjeldende_overskrift = "Klima- og energifondet"
             
-            # Sjekk om cellen er markert (inneholder X eller annen verdi)
-            celle = self.sheet.cell(row=rad, column=kolonne)
-            if celle.value and str(celle.value).strip() not in ["", "None"]:
-                # Finn ordningsnavn og lenke
-                belop_celle = self.sheet.cell(row=rad, column=4)   # Kolonne D har beløp/info
-                
-                if ordning_celle.value:
+            # Sjekk om cellen er markert
+            if row[kolonne] and str(row[kolonne]).strip() not in ["", "None"]:
+                # Finn ordningsnavn og beløp
+                if len(row) > 2 and row[2]:
                     ordning_info = {
-                        "ordning": str(ordning_celle.value),
+                        "ordning": str(row[2]),  # Kolonne C
                         "lenke": None,
-                        "belop": str(belop_celle.value) if belop_celle.value else None,
-                        "rad": rad,
+                        "belop": str(row[3]) if len(row) > 3 and row[3] else None,  # Kolonne D
+                        "rad": rad_idx + 1,
                         "overskrift": gjeldende_overskrift
                     }
                     
-                    # Sjekk om det er en hyperlink
-                    if ordning_celle.hyperlink:
-                        ordning_info["lenke"] = ordning_celle.hyperlink.target
+                    # Google Sheets CSV export inkluderer ikke hyperlinks
+                    # Lenker må eventuelt lagres i egen kolonne eller hentes på annen måte
                     
                     resultater.append(ordning_info)
         
@@ -185,7 +208,7 @@ class StotteordningFinner:
 
 def main():
     # Opprett objekt
-    finder = StotteordningFinner(EXCEL_FILNAVN)
+    finder = StotteordningFinner()
     
     # Test case 1: Gulliste=True, Solenergi, Rekkehus
     print("\n\nTEST CASE 1:")

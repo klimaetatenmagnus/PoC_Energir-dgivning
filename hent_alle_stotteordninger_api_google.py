@@ -1,6 +1,10 @@
 import sys
 import json
-from hent_stotteordninger import StotteordningFinner
+import io
+from hent_stotteordninger_google import StotteordningFinner
+
+# Sett UTF-8 encoding for stdout
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 def main():
     if len(sys.argv) != 2:
@@ -10,7 +14,7 @@ def main():
     bygningstype = sys.argv[1]
     
     try:
-        finder = StotteordningFinner("(2) Matrise_Energitiltak og relevante støtteordninger.xlsx")
+        finder = StotteordningFinner()  # Bruker Google Sheets
         
         # Definer alle tiltak
         tiltak_liste = [
