@@ -969,7 +969,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                 {enovaRating ? (
                   <>Din nåværende energikarakteren og energiforbruk er hentet direkte fra bygningens energiattest registrert hos Enova.</>
                 ) : (
-                  <>Siden bygningen ikke har en registrert energiattest, estimeres energiforbruket basert på byggeår og gjeldende teknisk forskrift (TEK) ved byggetidspunktet. Vi bruker deretter de samme grenseverdiene fra Enova for å beregne en estimert energikarakter.</>
+                  <>Siden bygningen ikke har en registrert energiattest, estimeres energiforbruket basert på byggeår og gjeldende teknisk forskrift (TEK) ved byggeåret. Vi bruker deretter de samme grenseverdiene fra Enova for å beregne en estimert energikarakter.</>
                 )}
               </p>
 
@@ -978,7 +978,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
               </h3>
               <p style={{ marginBottom: '16px' }}>
                 Besparelsene beregnes fra datasett som gir estimert besparelse basert på bygningstype, bruksareal (BRA) og 
-                teknisk forskrift (TEK). Disse variablene hentes automatisk fra Matrikkelen, utenom TEK som estimeres ut fra byggeår.
+                teknisk forskrift (TEK). Disse variablene hentes automatisk fra Matrikkelen, utenom TEK som estimeres ut fra byggeår. Dette er en forenkling som gjør at det ikke blir tatt hensyn til om bygget har tidligere blitt oppgradert.
               </p>
               <p style={{ marginBottom: '16px' }}>
                 For solenergi hentes data fra Oslo kommunes{' '}
@@ -990,7 +990,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                 >
                   Solkart
                 </a>
-                . Alle takflater med solpotensial over 800 kWh/m² summeres og multipliseres med en virkningsgrad på 20%.
+                . Alle takflater med solpotensial over 800 kWh/m² summeres og multipliseres. Deretter antas det at 85% av takarealet kan utnyttes til solceller, og at solcellene har en en virkningsgrad på 20%.
               </p>
 
               <p style={{ marginTop: '16px', fontSize: '16px', color: '#555', fontWeight: 'bold', lineHeight: '1.6' }}>

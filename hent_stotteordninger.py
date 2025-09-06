@@ -1,6 +1,13 @@
 import openpyxl
 from typing import List, Dict, Optional
 
+# Import konfigurasjon fra hent_stotteordninger_direkte
+try:
+    from hent_stotteordninger_direkte import EXCEL_FILNAVN
+except ImportError:
+    # Fallback hvis importen feiler
+    EXCEL_FILNAVN = "(2) Matrise_Energitiltak og relevante støtteordninger.xlsx"
+
 class StotteordningFinner:
     def __init__(self, excel_path: str):
         self.wb = openpyxl.load_workbook(excel_path, data_only=True)
@@ -26,11 +33,44 @@ class StotteordningFinner:
             "blokk": 2
         }
         
-        # Start- og sluttrad for gulliste og ikke-gulliste
-        self.gulliste_start = 7
-        self.gulliste_slutt = 50
-        self.ikke_gulliste_start = 52
-        self.ikke_gulliste_slutt = 80  # Antar maks 150 rader
+        # Finn dynamisk start- og sluttrad basert på markøren "For bygg som ikke er på gul liste"
+        self._finn_rad_grenser()
+        
+    def _finn_rad_grenser(self):
+        """Finner dynamisk rad-grenser basert på tekstene i kolonne C"""
+        gulliste_marker_rad = None
+        ikke_gulliste_marker_rad = None
+        
+        # Søk i kolonne C (kolonne 3) etter markørene
+        for rad in range(1, 200):  # Søk i de første 200 radene
+            celle = self.sheet.cell(row=rad, column=3)  # Kolonne C
+            if celle.value:
+                celle_tekst = str(celle.value).strip()
+                if celle_tekst == "For bygg på gul liste":
+                    gulliste_marker_rad = rad
+                elif celle_tekst == "For bygg som ikke er på gul liste":
+                    ikke_gulliste_marker_rad = rad
+        
+        if gulliste_marker_rad and ikke_gulliste_marker_rad:
+            # Sett grenser basert på markørenes posisjoner
+            # Start 2 rader under markøren (markør + 1 er byggtypeoverskrift, markør + 2 er første datarad)
+            self.gulliste_start = gulliste_marker_rad + 2
+            self.gulliste_slutt = ikke_gulliste_marker_rad - 1
+            
+            self.ikke_gulliste_start = ikke_gulliste_marker_rad + 2
+            self.ikke_gulliste_slutt = 100  # Sjekk opp til rad 100
+            
+            # print(f"Gulliste-markør funnet på rad {gulliste_marker_rad}")
+            # print(f"Ikke-gulliste-markør funnet på rad {ikke_gulliste_marker_rad}")
+            # print(f"Gulliste-område: rad {self.gulliste_start} til {self.gulliste_slutt}")
+            # print(f"Ikke-gulliste-område: rad {self.ikke_gulliste_start} til {self.ikke_gulliste_slutt}")
+        else:
+            # Fallback til standard verdier hvis markørene ikke finnes
+            # print("Advarsel: Kunne ikke finne markørene. Bruker standard verdier.")
+            self.gulliste_start = 7
+            self.gulliste_slutt = 50
+            self.ikke_gulliste_start = 52
+            self.ikke_gulliste_slutt = 80
         
     def finn_stotteordninger(self, gulliste: bool, tiltak: str, bygningstype: str) -> List[Dict[str, str]]:
         """
@@ -145,7 +185,7 @@ class StotteordningFinner:
 
 def main():
     # Opprett objekt
-    finder = StotteordningFinner("(2) Matrise_Energitiltak og relevante støtteordninger.xlsx")
+    finder = StotteordningFinner(EXCEL_FILNAVN)
     
     # Test case 1: Gulliste=True, Solenergi, Rekkehus
     print("\n\nTEST CASE 1:")

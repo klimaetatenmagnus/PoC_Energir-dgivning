@@ -153,6 +153,14 @@ export default function App() {
       setFigmaResult(result);
       console.log('[Figma] Lookup successful:', result);
       
+      // Debug Herslebs gate 11
+      if (figmaSearchValue.includes('Herslebs gate 11')) {
+        console.log('🔍 DEBUG Herslebs gate 11 frontend:');
+        console.log('  bruksarealM2:', result.bruksarealM2);
+        console.log('  byggeaar:', result.byggeaar);
+        console.log('  csvData:', result.csvData);
+      }
+      
       // Hent støtteordninger basert på bygningstype
       const bygningstype = result?.bygningstype?.toLowerCase() || 'enebolig';
       try {
