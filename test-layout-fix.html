@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Layout Test - Gul Liste Spacing Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+        }
+        .box {
+            width: 336px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #2A2859;
+        }
+        .field {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .label {
+            font-weight: 300;
+            color: #2A2859;
+        }
+        .value {
+            font-weight: 500;
+            color: #2A2859;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 400;
+            color: #2A2859;
+            margin: 20px 0 10px 0;
+        }
+        .vernestatus {
+            background: #FFE7BC;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .comparison {
+            margin-top: 40px;
+            padding: 20px;
+            background: #e8f4f8;
+            border-radius: 8px;
+        }
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Layout Comparison: Energy Information Spacing</h1>
+    
+    <div class="container">
+        <div class="box">
+            <h2>With Gul Liste (showYellowBox=true)</h2>
+            <div class="field">
+                <span class="label">Byggeår:</span> <span class="value">1920</span>
+            </div>
+            <div class="field">
+                <span class="label">Areal:</span> <span class="value">120 m²</span>
+            </div>
+            <div class="field">
+                <span class="label">Vernestatus:</span> <span class="value vernestatus">Gul liste</span>
+            </div>
+            <div class="section-title">Estimerte verdier:</div>
+            <div class="field">
+                <span class="label">Energiforbruk:</span> <span class="value">24 000 kWh/år</span>
+            </div>
+            <div class="field">
+                <span class="label">Mulig besparelse:</span> <span class="value">6 000 kWh/år</span>
+            </div>
+        </div>
+        
+        <div class="box">
+            <h2>Without Gul Liste (showYellowBox=false)</h2>
+            <div class="field">
+                <span class="label">Byggeår:</span> <span class="value">1920</span>
+            </div>
+            <div class="field">
+                <span class="label">Areal:</span> <span class="value">120 m²</span>
+            </div>
+            <div class="section-title">Estimerte verdier:</div>
+            <div class="field">
+                <span class="label">Energiforbruk:</span> <span class="value">24 000 kWh/år</span>
+            </div>
+            <div class="field">
+                <span class="label">Mulig besparelse:</span> <span class="value">6 000 kWh/år</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="comparison">
+        <h3>Y Position Changes Summary:</h3>
+        <p><strong>When showYellowBox = false (not on Gul Liste):</strong></p>
+        <ul>
+            <li><code>Vernestatus</code>: Hidden (was at y=260)</li>
+            <li><code>Estimerte verdier</code>: Moves from y=320 → y=260</li>
+            <li><code>Energiforbruk</code>: Moves from y=348 → y=288</li>
+            <li><code>Mulig besparelse</code>: Moves from y=376 → y=316</li>
+        </ul>
+        <p><strong>For Blokk buildings:</strong></p>
+        <ul>
+            <li>Additional <code>Areal Leilighet</code> field adjusts accordingly</li>
+            <li>Positions are slightly different to accommodate the extra field</li>
+        </ul>
+        <p><strong>Result:</strong> The gap is eliminated, and elements flow naturally without empty space.</p>
+    </div>
+</body>
+</html>

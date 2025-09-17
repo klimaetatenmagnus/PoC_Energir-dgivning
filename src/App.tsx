@@ -81,6 +81,33 @@ export default function App() {
   
   /* 7. Header fade animation state */
   const [headerFadeOpacity, setHeaderFadeOpacity] = useState(1);
+  
+  /* Helper function to determine if building is Enebolig */
+  const isEnebolig = React.useMemo(() => {
+    if (!figmaResult) return false;
+    
+    // First check CSV/Excel data
+    const csvBuildingType = figmaResult.csvData?.bygningstypeNavn?.toLowerCase();
+    if (csvBuildingType) {
+      return csvBuildingType.includes('enebolig') || 
+             csvBuildingType.includes('tomannsbolig') || 
+             csvBuildingType.includes('rekkehus');
+    }
+    
+    // Fallback to API data
+    const buildingTypeCode = figmaResult.bygningstypeKode;
+    const buildingTypeId = figmaResult.bygningstypeKodeId;
+    
+    if (buildingTypeCode) {
+      const code = parseInt(buildingTypeCode);
+      // Enebolig (11x codes) or Tomannsbolig/rekkehus (12x-13x codes)
+      return code >= 110 && code < 140;
+    } else if (buildingTypeId) {
+      // Handle internal IDs for enebolig types
+      return buildingTypeId === 1 || buildingTypeId === 4 || buildingTypeId === 5 || buildingTypeId === 8;
+    }
+    return false;
+  }, [figmaResult]);
 
   const handleAddressLookup = async (address: string) => {
     setLookupLoading(true);
@@ -125,6 +152,14 @@ export default function App() {
       const result = await buildingApi.lookupAddress(figmaSearchValue);
       setFigmaResult(result);
       console.log('[Figma] Lookup successful:', result);
+      
+      // Debug Herslebs gate 11
+      if (figmaSearchValue.includes('Herslebs gate 11')) {
+        console.log('🔍 DEBUG Herslebs gate 11 frontend:');
+        console.log('  bruksarealM2:', result.bruksarealM2);
+        console.log('  byggeaar:', result.byggeaar);
+        console.log('  csvData:', result.csvData);
+      }
       
       // Hent støtteordninger basert på bygningstype
       const bygningstype = result?.bygningstype?.toLowerCase() || 'enebolig';
@@ -349,7 +384,6 @@ export default function App() {
           width: '100vw',
           height: '100vh',
           background: '#034B45',
-          border: '3px solid red',
           boxSizing: 'border-box',
           position: 'relative'
         }}>
@@ -675,16 +709,16 @@ export default function App() {
           <path d="M313.862 339.674H326.17V351.999H313.862V339.674Z" fill="#2A2859"/>
           </g>
           
-          {/* Enebolig1 - visible only when building type is enebolig */}
-          <g style={{ opacity: figmaResult?.bygningstype?.toLowerCase() === 'enebolig' || !figmaResult ? 1 : 0, transition: 'opacity 1.5s ease-in-out' }}>
+          {/* Enebolig1 - visible only when isEnebolig is true */}
+          <g style={{ opacity: isEnebolig || !figmaResult ? 1 : 0, transition: 'opacity 1.5s ease-in-out' }}>
             <path d="M320.018 271.883L350.789 302.697V352H320.018H289.248V302.697L320.018 271.883Z" fill="#D0BFAE"/>
             <path d="M350.783 302.697H381.554V352H350.783V302.697Z" fill="#F8F0DD"/>
             <path d="M350.783 302.697H381.554L350.783 271.883H320.013L350.783 302.697Z" fill="#2A2859"/>
             <path d="M313.862 339.674H326.17V351.999H313.862V339.674Z" fill="#2A2859"/>
           </g>
           
-          {/* Blokk - visible only when building type is NOT enebolig */}
-          <g style={{ opacity: figmaResult?.bygningstype?.toLowerCase() !== 'enebolig' && figmaResult ? 1 : 0, transition: 'opacity 1.5s ease-in-out' }}>
+          {/* Blokk - visible only when isEnebolig is false */}
+          <g style={{ opacity: !isEnebolig && figmaResult ? 1 : 0, transition: 'opacity 1.5s ease-in-out' }}>
             <path d="M1137.48 148.625L1149.78 160.951H1162.09V173.277H1174.4V185.602H1186.71V197.928H1174.4H1137.48V185.602H1100.55V148.625H1137.48Z" fill="#2A2859"/>
             <path d="M1149.78 197.927H1186.71V351.999H1149.78V197.927Z" fill="#F8F0DD"/>
             <path d="M1063.63 185.602V173.276H1075.93V160.951H1088.24L1100.55 148.625L1112.86 160.951H1125.17V173.276H1137.48V185.602H1149.78V197.928V351.999H1051.32V197.928V185.602H1063.63Z" fill="#D0BFAE"/>

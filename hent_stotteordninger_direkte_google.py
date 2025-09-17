@@ -1,9 +1,16 @@
 import json
 import sys
-from hent_stotteordninger import StotteordningFinner
+import io
+from hent_stotteordninger_google import StotteordningFinner
+
+# Sett UTF-8 encoding for stdout
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
+# Konfigurasjon - Google Sheets brukes direkte i klassen
+# Ingen filnavn nødvendig
 
 def main():
-    """Henter støtteordninger direkte fra Excel basert på parametre"""
+    """Henter støtteordninger direkte fra Google Sheets basert på parametre"""
     if len(sys.argv) < 4:
         print(json.dumps({"error": "Mangler parametre: gulliste, tiltak, bygningstype"}))
         sys.exit(1)
@@ -13,8 +20,8 @@ def main():
     bygningstype = sys.argv[3]
     
     try:
-        # Opprett instans og hent data direkte fra Excel
-        henter = StotteordningFinner("(2) Matrise_Energitiltak og relevante støtteordninger.xlsx")
+        # Opprett instans og hent data direkte fra Google Sheets
+        henter = StotteordningFinner()  # Bruker Google Sheets
         resultater = henter.finn_stotteordninger(gulliste, tiltak, bygningstype)
         
         # Konverter til JSON og print

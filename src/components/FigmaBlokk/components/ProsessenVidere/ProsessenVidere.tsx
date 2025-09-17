@@ -6,12 +6,14 @@ interface ProsessenVidereProps {
   showProcess: boolean;
   scaleFactor: number;
   onBack: () => void;
+  isGulliste?: boolean;
 }
 
 export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({ 
   showProcess, 
   scaleFactor, 
-  onBack 
+  onBack,
+  isGulliste = false
 }) => {
   const [isCircle1Hovered, setIsCircle1Hovered] = React.useState(false);
   const [isCircle2Hovered, setIsCircle2Hovered] = React.useState(false);
@@ -203,7 +205,7 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
             text="Skaff deg oversikt over boligen"
             hoverText={
               <>
-                Sjekk hva som er gjort i boligen din fra før. Er det etterisolert tidligere? Hvor gamle er vinduene? Finn frem tilstandsrapport, energimerke eller{' '}
+                Sjekk hva som er gjort i boligen tidligere fra tilstandsrapport, energimerke eller{' '}
                 <a 
                   href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/#toc-3" 
                   target="_blank" 
@@ -215,7 +217,7 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
                 >
                   gamle tegninger fra Plan- og bygningsetaten
                 </a>
-                . Er du usikker, eller vurderer større endringer, kan det være lurt å kontakte en fagperson, som en energirådgiver, byggmester eller arkitekt. De hjelper deg med vurderinger, byggesøknad og gjennomføring.
+                . Er du usikker, eller vurderer større endringer, kontakt en fagperson som en energirådgiver, byggmester eller arkitekt for hjelp med vurderinger, byggesøknad og gjennomføring.
               </>
             }
             icon={<Blokk />}
@@ -228,6 +230,7 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
             onHoverChange={setIsCircle2Hovered}
             extraLarge={true}
             expandUpwards={true}
+            isGulliste={isGulliste}
           />
         </div>
         

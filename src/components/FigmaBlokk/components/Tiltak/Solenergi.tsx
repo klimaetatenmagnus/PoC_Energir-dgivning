@@ -15,6 +15,7 @@ export const Solenergi: React.FC<TettingProps> = ({ onBack, buildingType, buildi
   const [stotteordninger, setStotteordninger] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [contentOpacity, setContentOpacity] = useState(1); // Tilbake til 1 som standard
+  const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
   // Hent støtteordninger fra Excel via API
   useEffect(() => {
@@ -225,10 +226,10 @@ export const Solenergi: React.FC<TettingProps> = ({ onBack, buildingType, buildi
           fill="#C7F6C9"
         />
         
-        {/* Home icon in first box */}
-        <svg x="573" y="67" width="16" height="16" viewBox="0 0 32 32" fill="none">
-          <path d="M1.233 16.423 16 1.645l4 4.003V4.06h6v7.592l4.767 4.771-1.414 1.414L16 4.474 2.647 17.837z" fill="#2A2859"/>
-          <path d="M8 29V16H6v15h8V20h4v11h8V16h-2v13h-4V18h-8v11z" fill="#2A2859"/>
+        {/* Chart/graph icon in first box */}
+        <svg x="573" y="67" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M14.9333 3.73333V0H11.2V1.06667H13.1176L8.73813 5.44533L4.13595 0.77914L1.15888 3.75621L1.91312 4.51046L4.13067 2.2928L8.73339 6.95953L13.8667 1.82625V3.73333H14.9333Z" fill="#2A2859"/>
+          <path fillRule="evenodd" clipRule="evenodd" d="M4.944 6.4H1.12V14.9333H0V16H16V14.9333H14.8747V6.93333H11.0507V14.9333H9.90933V9.06667H6.08533V14.9333H4.944V6.4ZM12.1173 14.9333H13.808V8H12.1173V14.9333ZM8.84267 10.1333V14.9333H7.152V10.1333H8.84267ZM3.87733 14.9333V7.46667H2.18667V14.9333H3.87733Z" fill="#2A2859"/>
         </svg>
         <text 
           x="597"
@@ -251,10 +252,11 @@ export const Solenergi: React.FC<TettingProps> = ({ onBack, buildingType, buildi
           fill="#C7F6C9"
         />
         
-        {/* Chart/graph icon in second box */}
-        <svg x="573" y="113" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M14.9333 3.73333V0H11.2V1.06667H13.1176L8.73813 5.44533L4.13595 0.77914L1.15888 3.75621L1.91312 4.51046L4.13067 2.2928L8.73339 6.95953L13.8667 1.82625V3.73333H14.9333Z" fill="#2A2859"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M4.944 6.4H1.12V14.9333H0V16H16V14.9333H14.8747V6.93333H11.0507V14.9333H9.90933V9.06667H6.08533V14.9333H4.944V6.4ZM12.1173 14.9333H13.808V8H12.1173V14.9333ZM8.84267 10.1333V14.9333H7.152V10.1333H8.84267ZM3.87733 14.9333V7.46667H2.18667V14.9333H3.87733Z" fill="#2A2859"/>
+        {/* Bulb icon from Oslo kommune */}
+        <svg x="573" y="113" width="16" height="16" viewBox="0 0 32 32" fill="none">
+          <path fill="#2A2859" fillRule="evenodd"
+            d="M10.169 2.377C11.868 1.423 13.842 1 16.012 1s4.144.423 5.843 1.377c1.706.958 3.078 2.42 4.084 4.401 1.539 3.032 1.228 5.892.182 8.472-.908 2.24-2.402 4.336-3.725 6.193l-.324.455v7.439L16 31l-5.59-1.682v-7.393q-.168-.214-.342-.43c-1.452-1.827-3.08-3.875-4.08-6.101-1.155-2.575-1.506-5.458.097-8.616 1.006-1.981 2.378-3.443 4.084-4.4m.91 1.635c-1.35.758-2.476 1.93-3.332 3.616-1.29 2.544-1.035 4.819-.058 6.997.896 1.995 2.367 3.848 3.838 5.701l.267.337h3.831q.069-.072.15-.162c.243-.27.55-.645.82-1.08.572-.921.81-1.821.445-2.553a5 5 0 0 0-.161-.298 4 4 0 0 1-.259.37c-.292.371-.68.714-1.182.894-.521.187-1.075.166-1.623-.04-1.078-.405-1.908-1.138-1.924-2.186-.016-.985.71-1.704 1.444-2.053.763-.363 1.747-.455 2.722-.101.16-.715.262-1.437.325-2.014a22 22 0 0 0 .09-1.044l.003-.058v-.016l.933.041.932.042v.008l-.002.02-.004.07q-.004.09-.016.255a24 24 0 0 1-.081.887c-.08.724-.22 1.694-.46 2.64q-.034.137-.072.277a6 6 0 0 1 1.004 1.469c.821 1.649.125 3.324-.531 4.382q-.08.128-.162.25h2.642l.22-.31c1.34-1.882 2.695-3.788 3.515-5.81.9-2.22 1.114-4.49-.117-6.915-.855-1.686-1.98-2.858-3.332-3.616-1.358-.763-3.001-1.14-4.932-1.14s-3.574.377-4.932 1.14m1.198 20.396v-1.873h7.93v1.873zm0 1.873v1.644l3.747 1.127 4.182-1.145V26.28zm2.88-10.503q.172-.219.325-.54l-.03-.012c-.508-.194-.988-.136-1.318.021-.304.145-.363.296-.375.33.024.057.148.252.711.464.185.07.282.05.34.03.076-.027.196-.102.347-.293"
+            clipRule="evenodd" />
         </svg>
         <text 
           x="598"
@@ -303,9 +305,9 @@ export const Solenergi: React.FC<TettingProps> = ({ onBack, buildingType, buildi
           fill="#C7F6C9"
         />
         
-        {/* Charging point icon in fourth box */}
-        <svg x="573" y="205" width="16" height="16" viewBox="0 0 19 26" fill="none">
-          <path d="M14.79 7.461c.109.19.18.4.21.618v2.094A3 3 0 0 0 13.01 13H14v2h1v-2h2v2h1v-2h.98A3 3 0 0 0 17 10.178V8.033l-.002-.064A3.097 3.097 0 0 0 13.878 5H0v2h13.874a.94.94 0 0 1 .915.461M16 17.81a4 4 0 1 0 0 8 4 4 0 0 0 0-8m-1.5 5a1 1 0 1 1 0-2 1 1 0 0 1 0 2m3 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2" fill="#2A2859"/>
+        {/* Lightning bolt icon in fourth box */}
+        <svg x="573" y="205" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M9.5 1L3 9.25H7.5L6.5 15L13 6.75H8.5L9.5 1Z" fill="none" stroke="#2A2859" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round"/>
         </svg>
         <text 
           x="597"
@@ -330,7 +332,7 @@ export const Solenergi: React.FC<TettingProps> = ({ onBack, buildingType, buildi
           fill="#034B45"
         />
         
-        {/* Årlig strømbesparelse text */}
+        {/* Årlig besparelse text */}
         <text
           x="589"
           y="284"
@@ -340,8 +342,31 @@ export const Solenergi: React.FC<TettingProps> = ({ onBack, buildingType, buildi
           fill="#FFFFFF"
           dominantBaseline="hanging"
         >
-          Årlig strømbesparelse
+          Årlig besparelse
         </text>
+        
+        {/* Question mark icon with hover area */}
+        <g>
+          {/* Invisible hover area that covers the entire icon */}
+          <rect
+            x="728"
+            y="278"
+            width="24"
+            height="24"
+            fill="transparent"
+            onMouseEnter={() => setShowSourceTooltip(true)}
+            onMouseLeave={() => setShowSourceTooltip(false)}
+            style={{ cursor: 'pointer' }}
+          />
+          
+          {/* The actual icon */}
+          <svg x="728" y="278" width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
+            <path d="M15.93 7.6C17.1356 7.5897 18.3022 8.02698 19.204 8.82721C20.1058 9.62744 20.6787 10.7337 20.8118 11.932C20.945 13.1303 20.6289 14.3354 19.9247 15.314C19.2206 16.2927 18.1785 16.9754 17 17.23H16.94V18.91H14.94V15.35H15.94C16.479 15.3516 17.0077 15.2019 17.4658 14.9179C17.924 14.634 18.2932 14.2271 18.5316 13.7437C18.77 13.2602 18.8679 12.7196 18.8142 12.1832C18.7606 11.6469 18.5574 11.1364 18.228 10.7098C17.8986 10.2831 17.456 9.95754 16.9507 9.76998C16.4453 9.58243 15.8975 9.54045 15.3695 9.64883C14.8415 9.75721 14.3545 10.0116 13.9639 10.383C13.5733 10.7545 13.2948 11.2281 13.16 11.75V11.92L11.16 11.53C11.3793 10.425 11.9741 9.42996 12.8436 8.71364C13.713 7.99731 14.8035 7.60384 15.93 7.6ZM16 3C13.4288 3 10.9154 3.76244 8.77759 5.1909C6.63975 6.61935 4.97351 8.64968 3.98957 11.0251C3.00563 13.4006 2.74818 16.0144 3.24979 18.5362C3.7514 21.0579 4.98953 23.3743 6.80761 25.1924C8.62569 27.0105 10.9421 28.2486 13.4638 28.7502C15.9856 29.2518 18.5994 28.9944 20.9749 28.0104C23.3503 27.0265 25.3806 25.3603 26.8091 23.2224C28.2376 21.0846 29 18.5712 29 16C29 12.5522 27.6304 9.24558 25.1924 6.80761C22.7544 4.36964 19.4478 3 16 3ZM16 1C18.9667 1 21.8668 1.87973 24.3336 3.52796C26.8003 5.17618 28.7229 7.51886 29.8582 10.2597C30.9935 13.0006 31.2906 16.0166 30.7118 18.9264C30.133 21.8361 28.7044 24.5088 26.6066 26.6066C24.5088 28.7044 21.8361 30.133 18.9264 30.7118C16.0166 31.2906 13.0006 30.9935 10.2597 29.8582C7.51886 28.7229 5.17618 26.8003 3.52796 24.3336C1.87973 21.8668 1 18.9667 1 16C1 12.0218 2.58035 8.20644 5.3934 5.3934C8.20644 2.58035 12.0218 1 16 1Z" fill="#FFFFFF"/>
+            <path fillRule="evenodd" clipRule="evenodd" d="M17.65 22.38C17.648 22.7197 17.5455 23.0513 17.3553 23.3328C17.1651 23.6144 16.8958 23.8333 16.5813 23.9619C16.2669 24.0906 15.9213 24.1232 15.5884 24.0557C15.2554 23.9882 14.9498 23.8236 14.7103 23.5827C14.4707 23.3418 14.3079 23.0353 14.2424 22.7019C14.1768 22.3685 14.2114 22.0232 14.3419 21.7095C14.4724 21.3958 14.6928 21.1277 14.9755 20.9392C15.2581 20.7506 15.5902 20.65 15.93 20.65C16.1567 20.65 16.3812 20.6948 16.5905 20.7819C16.7999 20.8689 16.9899 20.9965 17.1498 21.1573C17.3096 21.3181 17.4361 21.5089 17.522 21.7187C17.6078 21.9285 17.6513 22.1533 17.65 22.38Z" fill="#FFFFFF"/>
+          </svg>
+        </g>
+        
+        
         
         {/* Solar energy savings text */}
         {buildingData?.filteredSolarEnergy && buildingData.filteredSolarEnergy > 0 ? (
@@ -625,20 +650,22 @@ export const Solenergi: React.FC<TettingProps> = ({ onBack, buildingType, buildi
         </text>
         
         {/* Fordeler heading */}
-        <text
-          x="565"
-          y="20"
-          fontFamily="Oslo Sans"
-          fontWeight="700"
-          fontStyle="normal"
-          fontSize="18"
-          lineHeight="28"
-          letterSpacing="-0.2"
-          fill="#000000"
-          dominantBaseline="hanging"
-        >
-          Fordeler
-        </text>
+        {!showSourceTooltip && (
+          <text
+            x="565"
+            y="20"
+            fontFamily="Oslo Sans"
+            fontWeight="700"
+            fontStyle="normal"
+            fontSize="18"
+            lineHeight="28"
+            letterSpacing="-0.2"
+            fill="#000000"
+            dominantBaseline="hanging"
+          >
+            Fordeler
+          </text>
+        )}
         
         {/* Back button positioned at same y as Tetting heading */}
         <g
@@ -1049,6 +1076,79 @@ export const Solenergi: React.FC<TettingProps> = ({ onBack, buildingType, buildi
             </div>
           </div>
         </foreignObject>
+        
+        {/* Source tooltip - moved to end for proper z-order */}
+        {showSourceTooltip && (
+          <foreignObject x="565" y="20" width="211" height="450"
+            onMouseEnter={() => setShowSourceTooltip(true)}
+            onMouseLeave={() => setShowSourceTooltip(false)}
+          >
+            <div 
+              xmlns="http://www.w3.org/1999/xhtml"
+              style={{
+                backgroundColor: '#034B45',
+                padding: '12px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                width: '100%',
+                boxSizing: 'border-box',
+                height: '354px'
+              }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '8px'
+              }}>
+                <h4 style={{
+                  fontFamily: 'Oslo Sans',
+                  fontWeight: 700,
+                  fontStyle: 'normal',
+                  fontSize: '16px',
+                  lineHeight: '24px',
+                  letterSpacing: '-0.2px',
+                  color: '#FFFFFF',
+                  margin: 0
+                }}>
+                  Kilde
+                </h4>
+                <button
+                  onClick={() => setShowSourceTooltip(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    marginTop: '-4px',
+                    marginRight: '-4px'
+                  }}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+              <p style={{
+                fontFamily: 'Oslo Sans',
+                fontWeight: 300,
+                fontSize: '14px',
+                lineHeight: '22px',
+                letterSpacing: '0px',
+                color: '#FFFFFF',
+                margin: 0
+              }}>
+                Data for årlig solinnstårlig og areal for ulike takflater blir hentet fra Oslo kommunes <a 
+                  href="https://od2.pbe.oslo.kommune.no/solkart/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ 
+                    color: '#FFFFFF', 
+                    textDecoration: 'underline'
+                  }}
+                >Solkart</a>. For alle takflater med årlig solpotensial over 800 kWh/m², så summeres produktene av innstårligen og takflatearealet. Deretter antas det at 85% av takarealet kan utnyttes til solceller, og at solcellene har en en virkningsgrad på 20%.
+              </p>
+            </div>
+          </foreignObject>
+        )}
       </svg>
     </div>
   );
