@@ -962,11 +962,33 @@ export async function resolveBuildingData(adresse: string, options: BuildingData
       console.log(`   - Tatt i bruk: ${csvData.tattIBrukDato}`);
     }
   }
+  
+  // Debug logging for Herslebs gate
+  if (adr?.adressetekst?.includes('Herslebs gate 11')) {
+    console.log('\n🔍 DEBUG Herslebs gate 11:');
+    console.log('  Matrikkel bygningsnummer:', bygg.bygningsnummer);
+    console.log('  CSV funnet:', csvData ? 'JA' : 'NEI');
+    if (csvData) {
+      console.log('  CSV bygningsnummer:', csvData.bygningsNr);
+      console.log('  CSV bruksareal:', csvData.bruksarealTotalt);
+      console.log('  CSV adresse:', csvData.gateAdresse);
+    }
+  }
 
-  // Use Enova data to fill gaps in Matrikkel data if available
-  const finalBruksareal = bygg.bruksarealM2 || attest?.enovaBuildingData?.bruksareal || null;
-  const finalByggeaar = bygg.byggeaar || attest?.enovaBuildingData?.byggeaar || null;
-  const finalBygningstype = bygg.bygningstypeBeskrivelse || attest?.enovaBuildingData?.bygningstype || strategy.description;
+  // Priority order: 1. CSV, 2. Enova, 3. Matrikkel
+  const csvByggeaar = csvData?.tattIBrukDato ? parseInt(csvData.tattIBrukDato.substring(0, 4)) : null;
+  const finalBruksareal = csvData?.bruksarealTotalt || attest?.enovaBuildingData?.bruksareal || bygg.bruksarealM2 || null;
+  const finalByggeaar = csvByggeaar || attest?.enovaBuildingData?.byggeaar || bygg.byggeaar || null;
+  const finalBygningstype = csvData?.bygningstypeNavn || attest?.enovaBuildingData?.bygningstype || bygg.bygningstypeBeskrivelse || strategy.description;
+  
+  // Debug final values for Herslebs
+  if (adr?.adressetekst?.includes('Herslebs gate 11')) {
+    console.log('  Final verdier:');
+    console.log('    - finalBruksareal:', finalBruksareal);
+    console.log('    - finalByggeaar:', finalByggeaar);
+    console.log('    - Matrikkel areal:', bygg.bruksarealM2);
+    console.log('    - Matrikkel byggeår:', bygg.byggeaar);
+  }
 
   return {
     gnr: adr.gnr,

@@ -11,6 +11,7 @@ export const IsoleringAvKjellerOgLoftGul: React.FC<IsoleringAvKjellerOgLoftGulPr
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
   const [stotteordninger, setStotteordninger] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
   // Hent støtteordninger fra Excel via API
   useEffect(() => {
@@ -177,9 +178,9 @@ export const IsoleringAvKjellerOgLoftGul: React.FC<IsoleringAvKjellerOgLoftGulPr
           fill="#C7F6C9"
         />
         
-        {/* Cloud icon in first box */}
+        {/* Snowflake icon in first box */}
         <svg x="573" y="67" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M12.5087 12.8731H3.49116C3.43379 12.8731 3.37666 12.8711 3.31977 12.8677C2.67867 12.8281 2.06713 12.5841 1.57483 12.1716C1.08253 11.759 0.735383 11.1995 0.584305 10.5752C0.433227 9.95091 0.486166 9.29463 0.735359 8.70261C0.984552 8.1106 1.41688 7.61401 1.96895 7.28567C2.01896 6.37224 2.35248 5.49711 2.92308 4.78207C3.49368 4.06703 4.27298 3.54764 5.15255 3.29618C6.03211 3.04472 6.96819 3.0737 7.83052 3.37908C8.69285 3.68447 9.43853 4.25106 9.96381 5.00003C10.7128 4.81678 11.5036 4.92815 12.1728 5.31115C12.842 5.69415 13.3386 6.31953 13.56 7.05813C14.2039 7.30219 14.7445 7.76 15.0912 8.35496C15.438 8.94991 15.5698 9.64591 15.4648 10.3265C15.3597 11.007 15.0241 11.6308 14.514 12.0935C14.004 12.5562 13.3506 12.8297 12.663 12.8682C12.6132 12.8711 12.561 12.8731 12.5087 12.8731ZM6.36176 4.12674C5.46049 4.12773 4.59641 4.4862 3.95911 5.1235C3.32182 5.7608 2.96334 6.62488 2.96235 7.52615L2.97041 7.90774L2.67133 8.04471C2.26473 8.23061 1.93192 8.54708 1.72579 8.94381C1.51965 9.34054 1.45202 9.79479 1.53364 10.2344C1.61526 10.6739 1.84145 11.0736 2.17626 11.3699C2.51107 11.6662 2.9353 11.8421 3.38154 11.8697C3.41865 11.8721 3.45478 11.8731 3.49116 11.8731H12.5087C12.5415 11.8731 12.5742 11.8721 12.6069 11.8701C13.083 11.8435 13.5341 11.648 13.8791 11.3188C14.2242 10.9895 14.4405 10.5481 14.4894 10.0737C14.5383 9.59928 14.4164 9.123 14.1458 8.73033C13.8751 8.33766 13.4734 8.05432 13.0126 7.93118L12.7084 7.85037L12.6498 7.54129C12.5941 7.25099 12.4749 6.97661 12.3007 6.73778C12.1265 6.49894 11.9017 6.30155 11.6423 6.15974C11.383 6.01793 11.0955 5.93519 10.8004 5.91746C10.5053 5.89973 10.21 5.94743 9.93549 6.05716L9.5312 6.21951L9.31489 5.84158C9.01682 5.32139 8.58689 4.88897 8.06843 4.5879C7.54997 4.28684 6.9613 4.12777 6.36176 4.12674Z" fill="#2A2859"/>
+          <path d="M8.49023 3.23242L10.0698 1.71387L10.7529 2.375L8.49023 4.55762V7.18604L10.8765 5.86035L11.6987 2.90918L11.689 2.89062L12.6299 3.13428L12.0527 5.20703L14.5122 3.84229L15 4.65771L12.5381 6.02344L14.6978 6.59375L14.459 7.50293L11.3262 6.69629L8.98047 7.99951L11.3706 9.32666L14.4492 8.53418V8.50146L14.6978 9.40625L12.5391 9.97559L15 11.3423L14.5122 12.1577L12.0508 10.7905L12.6299 12.8843L11.689 13.1279L10.8525 10.1255L8.49023 8.81348V11.4458L10.7529 13.625L10.0698 14.2861L8.49023 12.7671V15.5H7.51465V12.7661L5.93018 14.2861L5.24268 13.625L7.51465 11.4404V8.81348L5.14062 10.1299L4.31104 13.1094L3.37012 12.8657L3.94385 10.7939L1.48779 12.1577L1 11.3423L3.47461 9.96875L1.30225 9.40625L1.55566 8.51562L4.65381 9.31396L7.02393 7.99951L4.67236 6.69482L1.55566 7.49854L1.30225 6.59375L3.46094 6.02295L1 4.65771L1.48779 3.84229L3.94141 5.20312L3.36523 3.13428L4.30615 2.89062H4.31104L5.13623 5.86621L7.51465 7.18604V4.55908L5.24268 2.375L5.93018 1.71387L7.51465 3.2334V0.5H8.49023V3.23242Z" fill="#2A2859"/>
         </svg>
         <text 
           x="597"
@@ -197,15 +198,15 @@ export const IsoleringAvKjellerOgLoftGul: React.FC<IsoleringAvKjellerOgLoftGulPr
         <rect
           x="565"
           y="106"
-          width="155"
+          width="147"
           height="30"
           fill="#C7F6C9"
         />
         
-        {/* House with heart icon in second box */}
-        <svg x="573" y="113" width="17" height="16" viewBox="0 0 17 16" fill="none">
-          <path fillRule="evenodd" clipRule="evenodd" d="M5.42501 7.092C6.21251 6.3035 7.49451 6.304 8.28301 7.092L8.33251 7.1425L8.38251 7.0925C9.17051 6.3045 10.453 6.3045 11.241 7.0925C12.0285 7.88 12.0285 9.1625 11.241 9.9505L8.33301 12.8585L5.42501 9.95C4.63701 9.162 4.63701 7.88 5.42501 7.092ZM10.5345 7.799C10.136 7.401 9.48851 7.401 9.09001 7.799L8.33301 8.556L7.57601 7.7995C7.37701 7.6005 7.11551 7.501 6.85401 7.501C6.59251 7.501 6.33101 7.6005 6.13201 7.7995C5.73401 8.1975 5.73401 8.845 6.13201 9.2435L8.33301 11.4445L10.5345 9.243C10.9325 8.845 10.9325 8.197 10.5345 7.799Z" fill="#2A2859"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M5.65601 2.7305L8.33301 0.5L14.333 5.5V16H2.33301V1H5.22351L5.65601 2.7305ZM4.44251 2H3.33301V4.6665L4.80301 3.4415L4.44251 2ZM3.33301 5.9685V15H13.333V5.9685L8.33301 1.802L3.33301 5.9685Z" fill="#2A2859"/>
+        {/* House icon in second box */}
+        <svg x="573" y="113" width="16" height="16" viewBox="0 0 32 32" fill="none">
+          <path d="M1.233 16.423L16 1.645l4 4.003V4.06h6v7.592l4.767 4.771-1.414 1.414L16 4.474 2.647 17.837z" fill="#2A2859"/>
+          <path d="M8 29V16H6v15h8V20h4v11h8V16h-2v13h-4V18h-8v11z" fill="#2A2859"/>
         </svg>
         <text 
           x="598"
@@ -218,7 +219,7 @@ export const IsoleringAvKjellerOgLoftGul: React.FC<IsoleringAvKjellerOgLoftGulPr
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Bedre bokvalitet
+          Ivaretar boligen
         </text>
         <rect
           x="565"
@@ -249,15 +250,29 @@ export const IsoleringAvKjellerOgLoftGul: React.FC<IsoleringAvKjellerOgLoftGulPr
         <rect
           x="565"
           y="198"
-          width="172"
+          width="190"
           height="30"
           fill="#C7F6C9"
         />
         
-        {/* Chart/graph icon in fourth box */}
+        {/* Heater icon in fourth box */}
         <svg x="573" y="205" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M14.9333 3.73333V0H11.2V1.06667H13.1176L8.73813 5.44533L4.13595 0.77914L1.15888 3.75621L1.91312 4.51046L4.13067 2.2928L8.73339 6.95953L13.8667 1.82625V3.73333H14.9333Z" fill="#2A2859"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M4.944 6.4H1.12V14.9333H0V16H16V14.9333H14.8747V6.93333H11.0507V14.9333H9.90933V9.06667H6.08533V14.9333H4.944V6.4ZM12.1173 14.9333H13.808V8H12.1173V14.9333ZM8.84267 10.1333V14.9333H7.152V10.1333H8.84267ZM3.87733 14.9333V7.46667H2.18667V14.9333H3.87733Z" fill="#2A2859"/>
+          {/* Heat waves - wavy */}
+          <path d="M4.5 0.5C4.5 0.5 4 1 4 1.5C4 2 4.5 2.5 4.5 2.5C4.5 2.5 5 2 5 1.5C5 1 4.5 0.5 4.5 0.5Z" fill="#2A2859"/>
+          <path d="M8 0.5C8 0.5 7.5 1 7.5 1.5C7.5 2 8 2.5 8 2.5C8 2.5 8.5 2 8.5 1.5C8.5 1 8 0.5 8 0.5Z" fill="#2A2859"/>
+          <path d="M11.5 0.5C11.5 0.5 11 1 11 1.5C11 2 11.5 2.5 11.5 2.5C11.5 2.5 12 2 12 1.5C12 1 11.5 0.5 11.5 0.5Z" fill="#2A2859"/>
+          {/* Heater body */}
+          <rect x="1" y="4" width="14" height="9" rx="2" fill="#2A2859"/>
+          <rect x="2" y="5" width="12" height="7" rx="1" fill="#C7F6C9"/>
+          {/* Vertical heater lines - 5 lines */}
+          <rect x="3.5" y="6" width="0.8" height="5" fill="#2A2859"/>
+          <rect x="5.5" y="6" width="0.8" height="5" fill="#2A2859"/>
+          <rect x="7.6" y="6" width="0.8" height="5" fill="#2A2859"/>
+          <rect x="9.7" y="6" width="0.8" height="5" fill="#2A2859"/>
+          <rect x="11.7" y="6" width="0.8" height="5" fill="#2A2859"/>
+          {/* Legs */}
+          <rect x="3" y="13" width="1.5" height="2" fill="#2A2859"/>
+          <rect x="11.5" y="13" width="1.5" height="2" fill="#2A2859"/>
         </svg>
         <text 
           x="597"
@@ -270,7 +285,7 @@ export const IsoleringAvKjellerOgLoftGul: React.FC<IsoleringAvKjellerOgLoftGulPr
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Bedre strømstyring
+          Redusert energibehov
         </text>
         
         {/* Dark green box below the list */}
@@ -282,7 +297,7 @@ export const IsoleringAvKjellerOgLoftGul: React.FC<IsoleringAvKjellerOgLoftGulPr
           fill="#034B45"
         />
         
-        {/* Årlig strømbesparelse text */}
+        {/* Årlig besparelse text */}
         <text
           x="589"
           y="284"
@@ -292,8 +307,31 @@ export const IsoleringAvKjellerOgLoftGul: React.FC<IsoleringAvKjellerOgLoftGulPr
           fill="#FFFFFF"
           dominantBaseline="hanging"
         >
-          Årlig strømbesparelse
+          Årlig besparelse
         </text>
+        
+        {/* Question mark icon with hover area */}
+        <g>
+          {/* Invisible hover area that covers the entire icon */}
+          <rect
+            x="728"
+            y="278"
+            width="24"
+            height="24"
+            fill="transparent"
+            onMouseEnter={() => setShowSourceTooltip(true)}
+            onMouseLeave={() => setShowSourceTooltip(false)}
+            style={{ cursor: 'pointer' }}
+          />
+          
+          {/* The actual icon */}
+          <svg x="728" y="278" width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ pointerEvents: 'none' }}>
+            <path d="M15.93 7.6C17.1356 7.5897 18.3022 8.02698 19.204 8.82721C20.1058 9.62744 20.6787 10.7337 20.8118 11.932C20.945 13.1303 20.6289 14.3354 19.9247 15.314C19.2206 16.2927 18.1785 16.9754 17 17.23H16.94V18.91H14.94V15.35H15.94C16.479 15.3516 17.0077 15.2019 17.4658 14.9179C17.924 14.634 18.2932 14.2271 18.5316 13.7437C18.77 13.2602 18.8679 12.7196 18.8142 12.1832C18.7606 11.6469 18.5574 11.1364 18.228 10.7098C17.8986 10.2831 17.456 9.95754 16.9507 9.76998C16.4453 9.58243 15.8975 9.54045 15.3695 9.64883C14.8415 9.75721 14.3545 10.0116 13.9639 10.383C13.5733 10.7545 13.2948 11.2281 13.16 11.75V11.92L11.16 11.53C11.3793 10.425 11.9741 9.42996 12.8436 8.71364C13.713 7.99731 14.8035 7.60384 15.93 7.6ZM16 3C13.4288 3 10.9154 3.76244 8.77759 5.1909C6.63975 6.61935 4.97351 8.64968 3.98957 11.0251C3.00563 13.4006 2.74818 16.0144 3.24979 18.5362C3.7514 21.0579 4.98953 23.3743 6.80761 25.1924C8.62569 27.0105 10.9421 28.2486 13.4638 28.7502C15.9856 29.2518 18.5994 28.9944 20.9749 28.0104C23.3503 27.0265 25.3806 25.3603 26.8091 23.2224C28.2376 21.0846 29 18.5712 29 16C29 12.5522 27.6304 9.24558 25.1924 6.80761C22.7544 4.36964 19.4478 3 16 3ZM16 1C18.9667 1 21.8668 1.87973 24.3336 3.52796C26.8003 5.17618 28.7229 7.51886 29.8582 10.2597C30.9935 13.0006 31.2906 16.0166 30.7118 18.9264C30.133 21.8361 28.7044 24.5088 26.6066 26.6066C24.5088 28.7044 21.8361 30.133 18.9264 30.7118C16.0166 31.2906 13.0006 30.9935 10.2597 29.8582C7.51886 28.7229 5.17618 26.8003 3.52796 24.3336C1.87973 21.8668 1 18.9667 1 16C1 12.0218 2.58035 8.20644 5.3934 5.3934C8.20644 2.58035 12.0218 1 16 1Z" fill="#FFFFFF"/>
+            <path fillRule="evenodd" clipRule="evenodd" d="M17.65 22.38C17.648 22.7197 17.5455 23.0513 17.3553 23.3328C17.1651 23.6144 16.8958 23.8333 16.5813 23.9619C16.2669 24.0906 15.9213 24.1232 15.5884 24.0557C15.2554 23.9882 14.9498 23.8236 14.7103 23.5827C14.4707 23.3418 14.3079 23.0353 14.2424 22.7019C14.1768 22.3685 14.2114 22.0232 14.3419 21.7095C14.4724 21.3958 14.6928 21.1277 14.9755 20.9392C15.2581 20.7506 15.5902 20.65 15.93 20.65C16.1567 20.65 16.3812 20.6948 16.5905 20.7819C16.7999 20.8689 16.9899 20.9965 17.1498 21.1573C17.3096 21.3181 17.4361 21.5089 17.522 21.7187C17.6078 21.9285 17.6513 22.1533 17.65 22.38Z" fill="#FFFFFF"/>
+          </svg>
+        </g>
+        
+        
         
         {/* Etterisoleringyttervegg savings text */}
         {(() => {
@@ -736,20 +774,22 @@ export const IsoleringAvKjellerOgLoftGul: React.FC<IsoleringAvKjellerOgLoftGulPr
         </text>
         
         {/* Fordeler heading */}
-        <text
-          x="565"
-          y="20"
-          fontFamily="Oslo Sans"
-          fontWeight="700"
-          fontStyle="normal"
-          fontSize="18"
-          lineHeight="28"
-          letterSpacing="-0.2"
-          fill="#000000"
-          dominantBaseline="hanging"
-        >
-          Fordeler
-        </text>
+        {!showSourceTooltip && (
+          <text
+            x="565"
+            y="20"
+            fontFamily="Oslo Sans"
+            fontWeight="700"
+            fontStyle="normal"
+            fontSize="18"
+            lineHeight="28"
+            letterSpacing="-0.2"
+            fill="#000000"
+            dominantBaseline="hanging"
+          >
+            Fordeler
+          </text>
+        )}
         
         {/* Back button positioned at same y as Tetting heading */}
         <g
@@ -1160,6 +1200,71 @@ export const IsoleringAvKjellerOgLoftGul: React.FC<IsoleringAvKjellerOgLoftGulPr
             </div>
           </div>
         </foreignObject>
+        
+        {/* Source tooltip - moved to end for proper z-order */}
+        {showSourceTooltip && (
+          <foreignObject x="565" y="30" width="211" height="430"
+            onMouseEnter={() => setShowSourceTooltip(true)}
+            onMouseLeave={() => setShowSourceTooltip(false)}
+          >
+            <div 
+              xmlns="http://www.w3.org/1999/xhtml"
+              style={{
+                backgroundColor: '#034B45',
+                padding: '12px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                width: '100%',
+                boxSizing: 'border-box',
+                height: '354px'
+              }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '8px'
+              }}>
+                <h4 style={{
+                  fontFamily: 'Oslo Sans',
+                  fontWeight: 700,
+                  fontStyle: 'normal',
+                  fontSize: '16px',
+                  lineHeight: '24px',
+                  letterSpacing: '-0.2px',
+                  color: '#FFFFFF',
+                  margin: 0
+                }}>
+                  Kilde
+                </h4>
+                <button
+                  onClick={() => setShowSourceTooltip(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    marginTop: '-4px',
+                    marginRight: '-4px'
+                  }}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+              <p style={{
+                fontFamily: 'Oslo Sans',
+                fontWeight: 300,
+                fontSize: '14px',
+                lineHeight: '22px',
+                letterSpacing: '0px',
+                color: '#FFFFFF',
+                margin: 0
+              }}>
+                Besparelsene estimeres fra datasett basert på bygningstype, bruksareal og teknisk forskrift. Disse variablene hentes automatisk fra Matrikkelen, utenom TEK som estimeres ut fra byggeår. Dette er en forenkling som ikke tar hensyn til tidligere oppgraderinger av bygget. Strømprisen er satt til 1.1kr/kWh.
+              </p>
+            </div>
+          </foreignObject>
+        )}
       </svg>
     </div>
   );

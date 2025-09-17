@@ -11,6 +11,7 @@ interface CircleWithHoverProps {
   onHoverChange?: (isHovered: boolean) => void; // Callback for hover state changes
   extraLarge?: boolean; // For circles with extra long text
   expandUpwards?: boolean; // Expand upwards for bottom circles
+  isGulliste?: boolean; // Show extra text for gulliste buildings
 }
 
 export const CircleWithHover: React.FC<CircleWithHoverProps> = ({ 
@@ -22,7 +23,8 @@ export const CircleWithHover: React.FC<CircleWithHoverProps> = ({
   growFullCircle = false,
   onHoverChange,
   extraLarge = false,
-  expandUpwards = false
+  expandUpwards = false,
+  isGulliste = false
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
   const [showOriginalText, setShowOriginalText] = React.useState(true);
@@ -208,6 +210,11 @@ export const CircleWithHover: React.FC<CircleWithHoverProps> = ({
                   padding: '0 15px'
                 }}>
                   {hoverText}
+                  {number === 2 && isGulliste && (
+                    <div style={{ marginTop: '10px' }}>
+                      Byantikvaren gir også gratis veiledning i arbeider på verneverdige bygg.
+                    </div>
+                  )}
                 </div>
               </div>
             )}
