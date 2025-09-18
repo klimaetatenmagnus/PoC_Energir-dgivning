@@ -1,0 +1,20 @@
+🔍 loadEnv.ts – before config:
+  PROD: undefined
+  TEST: undefined
+🔍 loadEnv.ts – after  config:
+  PROD: https://www.matrikkel.no/matrikkelapi/wsapi/v1
+  TEST: https://prodtest.matrikkel.no/matrikkelapi/wsapi/v1
+  USERNAME: SET
+  PASSWORD: SET
+[CSVService] Loaded 123232 records from Matrikkel CSV
+<<<<< BygningClient.ts lastet – robust id-parsing (v6) >>>>>
+[Building Info Service] Environment check:
+  BASE_URL: https://www.matrikkel.no/matrikkelapi/wsapi/v1
+  USERNAME: SET
+  PASSWORD: SET
+  ENOVA_KEY: SET
+[API Server] Running on http://localhost:3001
+[API Server] Environment: LIVE (real APIs)
+[API Server] Try: POST http://localhost:3001/api/address-lookup
+[API Server] Try: GET http://localhost:3001/api/address-suggestions?query=karl
+[API Server] Try: POST http://localhost:3001/api/energy-rating
