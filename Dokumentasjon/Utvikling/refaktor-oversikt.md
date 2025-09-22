@@ -141,6 +141,7 @@ Anbefalinger: sentraliser URL-er i config; støtt proxy (`HTTP_PROXY` etc.); log
 | 2025-09-24 | Flyttet støtteordningshenting til felles `shared.ts`, typet alle Tiltak-/GulListe-komponenter og fjernet `any`/`console.log`; `npx tsc --noEmit`, `npx eslint src/components/FigmaBlokk/components/Tiltak` kjørt | `src/components/FigmaBlokk/components/Tiltak/**/*`, `src/components/FigmaBlokk/components/Tiltak/shared.ts` |
 | 2025-09-24 | Hentet `ProsessenVidere`, `hooks` og `utils` inn i lint/tsc-løpet med typed Geonorge-respons og tydelig solar-parameter; `npx tsc --noEmit`, `npx eslint src/components/FigmaBlokk/hooks`, `npx eslint src/components/FigmaMainScript.tsx`, `npx eslint src/components/FigmaBlokk/utils` kjørt | `src/components/FigmaBlokk/hooks/useAddressCoordinates.ts`, `src/components/FigmaBlokk/utils/calculations.ts`, `src/components/FigmaMainScript.tsx` |
 | 2025-09-24 | Ryddet `EnergySolutionButtons`/`WhiteInfoBox` med felles energispare-tabell, stabile hooks og fjernet konsoll-logging; `npx eslint src/components/FigmaBlokk/components`, `npx tsc --noEmit` kjørt | `src/components/FigmaBlokk/components/EnergySolutionButtons.tsx`, `src/components/FigmaBlokk/components/WhiteInfoBox.tsx` |
+| 2025-09-24 | Fjernet legacy Debug/Wizard-flyten, `house.json` og `useBuildingInfo`; fokuserer App på lookup/Figma før videre backend-opprydding. `npx tsc --noEmit`, `npx eslint src/components/FigmaBlokk/components` kjørt | `src/App.tsx`, `public/house.json` (slettet), `src/components/DebugDataTable.tsx` (slettet), `src/hooks/useBuildingInfo.ts` (slettet), `src/types/House.ts` (slettet) |
 
 ### Umiddelbare handlinger
 
@@ -158,21 +159,19 @@ Anbefalinger: sentraliser URL-er i config; støtt proxy (`HTTP_PROXY` etc.); log
 
 ### Neste delmål
 
-1. **Figma-path under lint/tsc**
+1. **Starte Fase B – building-info-service**
 
-   - ProsessenVidere, `hooks`, `utils`, `EnergySolutionButtons` og `WhiteInfoBox` er tatt inn i lint/tsc og renser Geonorge-/sparingstabeller (2025-09-24). Neste pulje er resterende `FigmaBlokk/components` som fortsatt står ekskludert (f.eks. eventuelle debug/wizard-moduler) – ta én mappe av gangen med `npx tsc --noEmit`, `npx eslint <sti>` + `./start-ui-only.sh`.
-   - Status: solar- og gul liste-tjenestene er med (2025-09-22), `FigmaMainScript` er tilbake (2025-09-23), Tiltak-/GulListe-komponentene er grønn via `shared.ts` (2025-09-24), ProsessenVidere/hook/util-puljen er validert (2025-09-24), og energiknappene/infoboksen er harmonisert (2025-09-24).
-   - Dokumenter hvilke filer som er tatt inn per pulje slik at vi ser framdriften og hvilke områder som gjenstår.
-2. **Frontend-gjeld videre**
+   - Del `services/building-info-service/index.ts` i avgrensede moduler (context, matrikkel, resultat) uten å introdusere ny app-struktur. For hvert delsteg: opprett mappe, flytt kode, oppdater imports, og kjør `npx tsc --noEmit`.
+   - Etter hvert modul-kutt: kjør `./start-ui-only.sh` eller tilsvarende smoke-test lokalt og noter resultat i statusloggen.
 
-   - Etter at hoved-Figma-komponentene validerer, fortsett med resterende mapper (`FigmaBlokk/components`, `hooks`, `utils`) én og én. Oppdater dokumentasjonen her fortløpende med hva som er grønt.
-   - Eldre `lookup/wizard/debug` kan stå ekskludert inntil Figma-kjeden er stabil; planlegg opprydding i en egen bolk.
-3. **Backend lint/tsc alignment**
+2. **Oppdatere `src/api-server.ts`**
 
-   - Når frontend-blokkene er grønn, flytt fokus til `services/building-info-service/**` og `src/api-server.ts` i tråd med Fase B. Samme rytme: små delsteg + smoke test med `start-ui-only.sh`.
-4. **Observability & dokumentasjon**
+   - Refaktor API-serveren til å konsumere de nye modulene. Sikre at typer eksporteres via `packages/config`/`packages/core-domain` der det er behov og at eksisterende endepunkter fortsetter å fungere.
 
-   - Oppdater README/refaktor-notater når lint/build-steg endres (f.eks. hvilke mapper inngår, nye scripts). Sørg for at dokumentasjonen speiler hvilke tester som kjøres fast.
+3. **Dokumentasjon og tester**
+
+   - Oppdater `refaktor-oversikt.md` etter hvert delsteg med hva som ble flyttet, testløp og funn.
+   - Sørg for at `npx tsc --noEmit` og målrettede lint-løp kjøres ved hvert milepælskutt; noter eventuelle midlertidige unntak som må ryddes senere.
 
 > Husk: Hver gang du er ferdig med et delsteg, loggfør status/testresultat her før neste oppgave.
 
