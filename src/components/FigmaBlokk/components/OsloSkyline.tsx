@@ -3,13 +3,12 @@ import React from 'react';
 interface OsloSkylineProps {
   fadeOpacity: number;
   blockTransform: string;
-  showHeader: boolean;
   isExpanded?: boolean;
   selectedSolution?: string | null;
   hideBlockAnimation?: boolean;
 }
 
-export const OsloSkyline: React.FC<OsloSkylineProps> = ({ fadeOpacity, blockTransform, showHeader, isExpanded, selectedSolution, hideBlockAnimation = false }) => {
+export const OsloSkyline: React.FC<OsloSkylineProps> = ({ fadeOpacity, blockTransform, isExpanded, selectedSolution, hideBlockAnimation = false }) => {
   // Check if we should zoom on window for "Tetting"
   const shouldZoomWindow = isExpanded && selectedSolution === 'Tetting';
   

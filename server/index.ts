@@ -1,7 +1,7 @@
-import dotenv from 'dotenv';
-dotenv.config();
+import "../loadEnv.ts";
 import express from "express";
 import fetch from "node-fetch";
+import { getRuntimeConfig } from "../packages/config/src/runtime.ts";
 
 // ────── Globale feilloggere ─────────────────────────────────────────────
 process.on("uncaughtException", (err) =>
@@ -11,20 +11,18 @@ process.on("unhandledRejection", (err) =>
   console.error("❌ unhandledRejection:", err)
 );
 
-const env = process.env.API_ENV ?? "test"; // default = test
+const runtimeConfig = getRuntimeConfig();
+const env = runtimeConfig.environment;
 
 // ────── 1. Miljø-spesifikke variabler ───────────────────────────────────
-const BASE_URL =
+const matrikkelCredentials =
   env === "prod"
-    ? process.env.MATRIKKEL_API_BASE_URL_PROD!
-    : process.env.MATRIKKEL_API_BASE_URL_TEST!;
+    ? runtimeConfig.matrikkel.prod
+    : runtimeConfig.matrikkel.test;
 
-const USERNAME =
-  env === "prod"
-    ? process.env.MATRIKKEL_USERNAME!
-    : process.env.MATRIKKEL_USERNAME_TEST!;
-
-const PASSWORD = process.env.MATRIKKEL_PASSWORD!;
+const BASE_URL = matrikkelCredentials.baseUrl;
+const USERNAME = matrikkelCredentials.username;
+const PASSWORD = matrikkelCredentials.password;
 
 function basicAuth(u: string, p: string) {
   return "Basic " + Buffer.from(`${u}:${p}`).toString("base64");

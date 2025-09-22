@@ -19,13 +19,10 @@ export const getTileUrl = (lat: number, lng: number, zoom: number = 16): string 
   const y = n * (1 - (Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI)) / 2;
   
   // Calculate offset within the tile (0-1)
-  const xOffset = x - Math.floor(x);
-  const yOffset = y - Math.floor(y);
-  
   // Adjust tile selection to better center the location
   // If the location is near the edge of a tile, we might want to show the adjacent tile
-  let tileX = Math.floor(x);
-  let tileY = Math.floor(y);
+  const tileX = Math.floor(x);
+  const tileY = Math.floor(y);
   
   // If the location is in the right half of the tile and we're close to the edge,
   // we could adjust, but for now let's use the standard calculation

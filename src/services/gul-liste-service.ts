@@ -60,8 +60,12 @@ async function finnTeigidFraGnrBnr(gnr: number, bnr: number): Promise<string | n
     }
 
     // Sjekk om det er flere treff
-    const multipleMatches = xml.matchAll(/<ms:ID>(\d+)<\/ms:ID>/gi);
-    const ids = Array.from(multipleMatches).map(m => m[1]);
+    const multipleMatches: RegExpMatchArray[] = Array.from(
+      xml.matchAll(/<ms:ID>(\d+)<\/ms:ID>/gi)
+    );
+    const ids = multipleMatches
+      .map((match) => match[1])
+      .filter((id): id is string => Boolean(id));
     if (ids.length > 1) {
       console.warn(`Flere teigid funnet for GNR ${gnr}, BNR ${bnr}:`, ids);
       return ids[0]; // Returner første match
@@ -187,7 +191,7 @@ async function hentMatrikkelDataFraAdresse(adresse: string): Promise<MatrikkelDa
 export async function sjekkGulListe(adresse: string): Promise<GulListeResult> {
   try {
     // Steg 1: Hent GNR/BNR fra adresse
-    console.log(`Sjekker Gul liste for: ${adresse}`);
+    console.warn(`[gul-liste] Sjekker Gul liste for ${adresse}`);
     
     const matrikkelData = await hentMatrikkelDataFraAdresse(adresse);
     
@@ -199,7 +203,9 @@ export async function sjekkGulListe(adresse: string): Promise<GulListeResult> {
       };
     }
     
-    console.log(`Fant GNR: ${matrikkelData.gardsnummer}, BNR: ${matrikkelData.bruksnummer}`);
+    console.warn(
+      `[gul-liste] Fant GNR ${matrikkelData.gardsnummer}, BNR ${matrikkelData.bruksnummer}`
+    );
     
     // Steg 2: Finn teigid fra GNR/BNR
     const teigid = await finnTeigidFraGnrBnr(
@@ -217,7 +223,7 @@ export async function sjekkGulListe(adresse: string): Promise<GulListeResult> {
       };
     }
     
-    console.log(`Fant teigid: ${teigid}`);
+    console.warn(`[gul-liste] Fant teigid ${teigid}`);
     
     // Steg 3: Sjekk om teigid er på Gul liste
     const gulListeResultat = await sjekkGulListeForTeigid(teigid);

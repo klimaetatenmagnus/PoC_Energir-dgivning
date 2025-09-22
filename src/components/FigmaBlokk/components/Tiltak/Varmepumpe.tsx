@@ -1,80 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import {
+  getOverskriftColor,
+  openExternalLink,
+  TiltakComponentProps,
+  useStotteordninger
+} from './shared';
 
-interface VarmepumpeProps {
-  onBack?: () => void;
-  buildingType?: string;
-  buildingData?: any;
-}
+type VarmepumpeProps = TiltakComponentProps;
 
-export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, buildingData }) => {
+export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
   const [activeButton, setActiveButton] = useState<string>('Generelt');
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
-  const [stotteordninger, setStotteordninger] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
+  const { stotteordninger } = useStotteordninger({
+    tiltak: 'varmepumpe',
+    buildingType
+  });
 
-  // Hent støtteordninger fra Excel via API
-  useEffect(() => {
-    const fetchStotteordninger = async () => {
-      try {
-        const bygningstyperMap: { [key: string]: string } = {
-          'enebolig': 'enebolig',
-          'rekkehus': 'rekkehus',
-          'tomannsbolig': 'rekkehus',
-          'leilighet': 'blokk',
-          'blokk': 'blokk',
-          'store boligbygg': 'blokk'
-        };
-
-        const mappedType = bygningstyperMap[buildingType?.toLowerCase() || 'enebolig'] || 'enebolig';
-        
-        // Kall API endpoint som leser direkte fra Excel
-        const url = `http://localhost:3001/api/stotteordninger-live?gulliste=false&tiltak=varmepumpe&bygningstype=${mappedType}`;
-        console.log('Fetching støtteordninger from:', url);
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('API response error:', response.status, errorText);
-          throw new Error(`Failed to fetch støtteordninger: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('Støtteordninger received for varmepumpe:', data);
-        setStotteordninger(data);
-      } catch (error) {
-        console.error('Error fetching støtteordninger:', error);
-        // Vis feilmelding i stedet for fallback
-        const errorData = [{
-          ordning: 'Kunne ikke hente støtteordninger',
-          lenke: null,
-          belop: 'Sjekk at API-serveren kjører',
-          overskrift: 'Feil'
-        }];
-        setStotteordninger(errorData);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStotteordninger();
-  }, [buildingType]);
-
-  // Støtteordninger hentes nå via useEffect
   const needsScroll = stotteordninger.length > 4;
-
-  // Farger for overskrifter
-  const overskriftFarger: { [key: string]: string } = {
-    'Enova': '#C7F6C9',
-    'Klima- og energifondet': '#D1F9FF',
-    'Oslo kommune': '#D1F9FF',
-    'Klimaetaten': '#D1F9FF',
-    'Byantikvaren': '#FFE4B5',
-    'Riksantikvaren': '#FFB4AC',
-    'Kulturminnefondet': '#DDA0DD'
-  };
 
   return (
     <div style={{ 
@@ -920,7 +865,7 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
                       y={boxYPosition}
                       width={ordning.overskrift === 'Enova' ? "43" : ordning.overskrift === 'Oslo kommune' ? "82" : "82"}
                       height="23"
-                      fill={overskriftFarger[ordning.overskrift] || '#E0E0E0'}
+                      fill={getOverskriftColor(ordning.overskrift)}
                     />
                     
                     {/* Overskrift text */}
@@ -954,7 +899,7 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType, bu
                       textDecoration="underline"
                       dominantBaseline="middle"
                       style={{ cursor: 'pointer' }}
-                      onClick={() => window.open(ordning.lenke, '_blank')}
+                      onClick={() => openExternalLink(ordning.lenke)}
                     >
                       Lenke
                     </text>

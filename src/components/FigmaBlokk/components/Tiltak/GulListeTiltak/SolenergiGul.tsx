@@ -1,78 +1,29 @@
 import React, { useState } from 'react';
+import {
+  getOverskriftColor,
+  openExternalLink,
+  TiltakComponentProps,
+  useStotteordninger
+} from '../shared';
 
-interface TettingProps {
-  onBack?: () => void;
-  buildingType?: string;
-  stotteordninger?: any[];
-  buildingData?: any;
-}
+type SolenergiGulProps = TiltakComponentProps;
 
-export const SolenergiGul: React.FC<TettingProps> = ({ onBack, buildingType, stotteordninger: propStotteordninger, buildingData }) => {
+export const SolenergiGul: React.FC<SolenergiGulProps> = ({ onBack, buildingType, buildingData }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
-  const [stotteordninger, setStotteordninger] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
-  // Hent støtteordninger fra Excel via API
-  React.useEffect(() => {
-    const fetchStotteordninger = async () => {
-      try {
-        const bygningstyperMap: { [key: string]: string } = {
-          'enebolig': 'enebolig',
-          'rekkehus': 'rekkehus',
-          'tomannsbolig': 'rekkehus',
-          'leilighet': 'blokk',
-          'blokk': 'blokk',
-          'store boligbygg': 'blokk'
-        };
+  const { stotteordninger, isLoading } = useStotteordninger({
+    tiltak: 'solenergi',
+    buildingType,
+    gulliste: true
+  });
 
-        const mappedType = bygningstyperMap[buildingType?.toLowerCase() || 'enebolig'] || 'enebolig';
-        
-        // Kall API endpoint som leser direkte fra Excel
-        const url = `http://localhost:3001/api/stotteordninger-live?gulliste=true&tiltak=solenergi&bygningstype=${mappedType}`;
-        console.log('Fetching støtteordninger from:', url);
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('API response error:', response.status, errorText);
-          throw new Error(`Failed to fetch støtteordninger: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setStotteordninger(data);
-      } catch (error) {
-        console.error('Error fetching støtteordninger:', error);
-        // Vis feilmelding i stedet for fallback
-        const errorData = [{
-          ordning: 'Kunne ikke hente støtteordninger',
-          lenke: null,
-          belop: 'Sjekk at API-serveren kjører',
-          overskrift: 'Feil'
-        }];
-        setStotteordninger(errorData);
-        setIsLoading(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStotteordninger();
-  }, [buildingType]);
-
+  // Håndter tilbake-knapp med animasjon
+  // Støtteordninger hentes nå via useEffect
   const needsScroll = stotteordninger.length > 4;
 
   // Farger for overskrifter
-  const overskriftFarger: { [key: string]: string } = {
-    'Enova': '#C7F6C9',
-    'Klima- og energifondet': '#D1F9FF',
-    'Oslo kommune': '#D1F9FF',
-    'Klimaetaten': '#D1F9FF',
-    'Byantikvaren': '#FFE4B5',
-    'Riksantikvaren': '#FFB4AC',
-    'Kulturminnefondet': '#DDA0DD'
-  };
 
   return (
     <div style={{ 
@@ -422,7 +373,7 @@ export const SolenergiGul: React.FC<TettingProps> = ({ onBack, buildingType, sto
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/solcelleanlegg', '_blank')}
+          onClick={() => openExternalLink('https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/solcelleanlegg')}
         >
           Enova
         </text>
@@ -438,7 +389,7 @@ export const SolenergiGul: React.FC<TettingProps> = ({ onBack, buildingType, sto
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://www.nve.no/reguleringsmyndigheten/regulering/nettvirksomhet/nettleie/tariffer-for-produksjon/plusskunder/', '_blank')}
+          onClick={() => openExternalLink('https://www.nve.no/reguleringsmyndigheten/regulering/nettvirksomhet/nettleie/tariffer-for-produksjon/plusskunder/')}
         >
           Plusskundeordning
         </text>
@@ -454,7 +405,7 @@ export const SolenergiGul: React.FC<TettingProps> = ({ onBack, buildingType, sto
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://www.oslo.kommune.no/getfile.php/13450103-1751020179/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Om%20solceller%20%E2%80%93%20informasjonsark%20mai%202022.pdf', '_blank')}
+          onClick={() => openExternalLink('https://www.oslo.kommune.no/getfile.php/13450103-1751020179/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Om%20solceller%20%E2%80%93%20informasjonsark%20mai%202022.pdf')}
         >
           Byantikvaren
         </text>
@@ -470,7 +421,7 @@ export const SolenergiGul: React.FC<TettingProps> = ({ onBack, buildingType, sto
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://www.oslo.kommune.no/getfile.php/13450103-1751020179/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Om%20solceller%20%E2%80%93%20informasjonsark%20mai%202022.pdf', '_blank')}
+          onClick={() => openExternalLink('https://www.oslo.kommune.no/getfile.php/13450103-1751020179/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Om%20solceller%20%E2%80%93%20informasjonsark%20mai%202022.pdf')}
         >
           Riksantikvaren
         </text>
@@ -592,7 +543,7 @@ export const SolenergiGul: React.FC<TettingProps> = ({ onBack, buildingType, sto
                             y={boxYPosition}
                             width={boxWidth}
                             height="23"
-                            fill={overskriftFarger[ordning.overskrift] || '#E0E0E0'}
+                            fill={getOverskriftColor(ordning.overskrift)}
                           />
                           
                           {/* Overskrift text */}
@@ -629,7 +580,7 @@ export const SolenergiGul: React.FC<TettingProps> = ({ onBack, buildingType, sto
                       textDecoration="underline"
                       dominantBaseline="middle"
                       style={{ cursor: 'pointer' }}
-                      onClick={() => window.open(ordning.lenke, '_blank')}
+                      onClick={() => openExternalLink(ordning.lenke)}
                     >
                       Lenke
                     </text>

@@ -1,29 +1,31 @@
 import React from 'react';
-import { getTileUrl } from '../utils/calculations';
 import { LocationPin } from './LocationPin';
 import * as EnergySolutions from './Tiltak/index';
 import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../../utils/tekEnergyCalculations';
+import { AddressLookupResponse } from '../../../services/buildingApi';
 
 interface WhiteInfoBoxProps {
   showHeader: boolean;
   isExpanded: boolean;
   selectedSolution: string | null;
   addressOnly: string;
-  fontSize: number;
   districtName: string;
-  districtNameWidth: number;
   buildingTypeName: string;
-  buildingTypeWidth: number;
-  blocksStartX: number;
   mapCoordinates: { lat: number; lng: number } | null;
-  buildingData: any;
+  buildingData: AddressLookupResponse;
   onExpand?: (expanded: boolean) => void;
   showYellowBox?: boolean;
   onUpdateBuildingData?: (byggeaar: string, areal: string, arealLeilighet: string, energiforbruk: string) => void;
-  onCloseYellowBox?: () => void;
   isYellowBoxExpanded?: boolean;
   onYellowBoxExpandedChange?: (expanded: boolean) => void;
   totalEnergySavings?: number;
+  gulListeLoading?: boolean;
+}
+
+interface EnergySolutionProps {
+  onBack?: () => void;
+  buildingType?: string;
+  buildingData?: AddressLookupResponse;
 }
 
 export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
@@ -31,29 +33,20 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   isExpanded,
   selectedSolution,
   addressOnly,
-  fontSize,
   districtName,
-  districtNameWidth,
   buildingTypeName,
-  buildingTypeWidth,
-  blocksStartX,
   mapCoordinates,
   buildingData,
   onExpand,
   showYellowBox = true,
   onUpdateBuildingData,
-  onCloseYellowBox,
   isYellowBoxExpanded: externalIsYellowBoxExpanded,
   onYellowBoxExpandedChange,
-  totalEnergySavings = 0
+  totalEnergySavings = 0,
+  gulListeLoading = false
 }) => {
-  // Calculate expanded width to reach where the energy solutions list ends
-  const expandedWidth = isExpanded ? 840 : 336; // Expanded to 840px
-  
   // State for delayed height expansion
   const [expandHeight, setExpandHeight] = React.useState(false);
-  // Separate states for smooth transitions
-  const [currentWidth, setCurrentWidth] = React.useState(336);
   
   // State for yellow box expansion - use external state if provided
   const [localIsYellowBoxExpanded, setLocalIsYellowBoxExpanded] = React.useState(false);
@@ -67,6 +60,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   // ADJUST THIS VALUE TO CHANGE DROPDOWN EXPANSION SIZE
   // Positive values = expand more upward, Negative values = expand less upward
   const DROPDOWN_EXPANSION_ADJUSTMENT = 50; // Try values like -20, 0, 20, 40, 60, etc.
+
+  const shouldShowYellowBox = showYellowBox && !gulListeLoading;
   
   // State for tooltip visibility
   const [showByantikvarTooltip, setShowByantikvarTooltip] = React.useState(false);
@@ -128,8 +123,17 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   // Calculate estimated energy consumption based on TEK or energy rating
   // Use saved values if available (they might have been edited)
   const estimatedConsumption = React.useMemo(() => {
-    const byggeaar = savedByggeaar || buildingData?.byggeaar;
-    const bruksareal = savedAreal || buildingData?.bruksarealM2;
+    const rawByggeaar = savedByggeaar || buildingData?.byggeaar?.toString() || buildingData?.csvData?.byggeaar;
+    const parsedByggeaar = rawByggeaar ? Number(rawByggeaar) : undefined;
+
+    const rawBruksareal =
+      savedAreal ||
+      (typeof buildingData?.bruksarealM2 === 'number'
+        ? buildingData.bruksarealM2.toString()
+        : undefined) ||
+      buildingData?.csvData?.bruksareal_totalt;
+
+    const bruksareal = rawBruksareal ? Number(rawBruksareal) : undefined;
     const buildingType = determineBuildingType(
       buildingData?.bygningstypeKode,
       buildingTypeName
@@ -137,7 +141,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     
     // If building is apartment/large building and has energy rating, estimate based on that
     if ((buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && 
-        buildingData?.energiattest?.energikarakter && bruksareal) {
+        buildingData?.energiattest?.energikarakter && bruksareal && bruksareal > 0) {
       const energikarakter = buildingData.energiattest.energikarakter;
       
       // Get energy intensity thresholds from JSON file for apartments
@@ -154,21 +158,12 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
       // Use the threshold for the current rating as the estimated intensity
       const estimatedIntensity = thresholds[energikarakter] || thresholds['E'];
       
-      // Log the calculation details
-      console.log(`🏢 Estimerer energiforbruk for blokk med energikarakter ${energikarakter}:`, {
-        energikarakter,
-        bruksareal: `${bruksareal} m²`,
-        grenseverdi: `${estimatedIntensity.toFixed(1)} kWh/m²/år`,
-        beregning: `${estimatedIntensity.toFixed(1)} × ${bruksareal} = ${(estimatedIntensity * bruksareal).toFixed(0)} kWh/år`,
-        resultat: Math.round(estimatedIntensity * bruksareal)
-      });
-      
       // Calculate total consumption: intensity * area
       return Math.round(estimatedIntensity * bruksareal);
     }
     
     // Otherwise use TEK-based calculation
-    return calculateAnnualEnergyConsumption(byggeaar, bruksareal, buildingType);
+    return calculateAnnualEnergyConsumption(parsedByggeaar, bruksareal, buildingType);
   }, [savedByggeaar, savedAreal, buildingData, buildingTypeName]);
   
   const [savedEnergiforbruk, setSavedEnergiforbruk] = React.useState(
@@ -219,10 +214,17 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   
   // Call the callback with initial values when component mounts or when savedEnergiforbruk changes
   React.useEffect(() => {
-    if (onUpdateBuildingData) {
-      onUpdateBuildingData(savedByggeaar, savedAreal, savedArealLeilighet, savedEnergiforbruk);
+    if (!onUpdateBuildingData) {
+      return;
     }
-  }, [savedEnergiforbruk]); // Update when energy consumption changes
+    onUpdateBuildingData(savedByggeaar, savedAreal, savedArealLeilighet, savedEnergiforbruk);
+  }, [
+    onUpdateBuildingData,
+    savedAreal,
+    savedArealLeilighet,
+    savedByggeaar,
+    savedEnergiforbruk,
+  ]); // Update when energy consumption changes
   
   // Calculate address text scaling
   React.useEffect(() => {
@@ -258,43 +260,34 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   // Handle sequential animation - expand height after width
   React.useEffect(() => {
     if (isExpanded) {
-      // Expansion: width first, then height
-      setCurrentWidth(840);
       const timer = setTimeout(() => {
         setExpandHeight(true);
       }, 800);
       return () => clearTimeout(timer);
-    } else {
-      // Collapse: height first, then width
-      setExpandHeight(false);
-      const timer = setTimeout(() => {
-        setCurrentWidth(336);
-      }, 600);
-      return () => clearTimeout(timer);
     }
+
+    setExpandHeight(false);
+    return undefined;
   }, [isExpanded]);
   
   // Calculate expanded height to fill screen with equal margins
   // Total container height is 900px, current bottom is 55px
-  // To center vertically: expandedHeight = 900 - (2 * 55) = 790px
-  const expandedHeight = expandHeight ? 790 : 700;
-  const expandedBottom = expandHeight ? 55 : 55; // Keep same bottom position
-  const topExpansion = expandHeight ? 90 : 0; // 790 - 700 = 90px expansion upward
+  const expandedBottom = 55; // Keep same bottom position
   
   // Get the component for the selected solution
   const getSolutionComponent = () => {
     if (!selectedSolution) return null;
     
-    const componentMap: { [key: string]: React.ComponentType<any> } = {
-      'Varmepumpe': showYellowBox ? EnergySolutions.VarmepumpeGul : EnergySolutions.Varmepumpe,
-      'Solenergi': showYellowBox ? EnergySolutions.SolenergiGul : EnergySolutions.Solenergi,
-      'Tetting': showYellowBox ? EnergySolutions.TettingGul : EnergySolutions.Tetting,
-      'Temperaturstyring': showYellowBox ? EnergySolutions.TemperaturstyringGul : EnergySolutions.Temperaturstyring,
-      'Oppgradering av vindu': showYellowBox ? EnergySolutions.UtskiftningAvVinduGul : EnergySolutions.UtskiftningAvVindu,
-      'Isolering av kjeller og loft': showYellowBox ? EnergySolutions.IsoleringAvKjellerOgLoftGul : EnergySolutions.IsoleringAvKjellerOgLoft,
-      'Etterisolering av yttervegg': showYellowBox ? EnergySolutions.EtterisoleringYtterveggGul : EnergySolutions.EtterisoleringYttervegg,
-      'Ventilasjon': showYellowBox ? EnergySolutions.VentilasjonGul : EnergySolutions.Ventilasjon
-    };
+  const componentMap: Record<string, React.ComponentType<EnergySolutionProps>> = {
+    'Varmepumpe': (shouldShowYellowBox ? EnergySolutions.VarmepumpeGul : EnergySolutions.Varmepumpe) as React.ComponentType<EnergySolutionProps>,
+    'Solenergi': (shouldShowYellowBox ? EnergySolutions.SolenergiGul : EnergySolutions.Solenergi) as React.ComponentType<EnergySolutionProps>,
+    'Tetting': (shouldShowYellowBox ? EnergySolutions.TettingGul : EnergySolutions.Tetting) as React.ComponentType<EnergySolutionProps>,
+    'Temperaturstyring': (shouldShowYellowBox ? EnergySolutions.TemperaturstyringGul : EnergySolutions.Temperaturstyring) as React.ComponentType<EnergySolutionProps>,
+    'Oppgradering av vindu': (shouldShowYellowBox ? EnergySolutions.UtskiftningAvVinduGul : EnergySolutions.UtskiftningAvVindu) as React.ComponentType<EnergySolutionProps>,
+    'Isolering av kjeller og loft': (shouldShowYellowBox ? EnergySolutions.IsoleringAvKjellerOgLoftGul : EnergySolutions.IsoleringAvKjellerOgLoft) as React.ComponentType<EnergySolutionProps>,
+    'Etterisolering av yttervegg': (shouldShowYellowBox ? EnergySolutions.EtterisoleringYtterveggGul : EnergySolutions.EtterisoleringYttervegg) as React.ComponentType<EnergySolutionProps>,
+    'Ventilasjon': (shouldShowYellowBox ? EnergySolutions.VentilasjonGul : EnergySolutions.Ventilasjon) as React.ComponentType<EnergySolutionProps>
+  };
     
     const Component = componentMap[selectedSolution];
     if (!Component) return null;

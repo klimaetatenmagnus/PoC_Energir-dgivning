@@ -1,77 +1,25 @@
 import React, { useState } from 'react';
+import {
+  getOverskriftColor,
+  openExternalLink,
+  TiltakComponentProps,
+  useStotteordninger
+} from '../shared';
 
-interface TettingProps {
-  onBack?: () => void;
-  buildingType?: string;
-  stotteordninger?: any[];
-}
+type TemperaturstyringProps = TiltakComponentProps;
 
-export const Temperaturstyring: React.FC<TettingProps> = ({ onBack, buildingType, stotteordninger: propStotteordninger }) => {
+export const Temperaturstyring: React.FC<TemperaturstyringProps> = ({ onBack, buildingType }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
-  const [stotteordninger, setStotteordninger] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
-  // Hent støtteordninger fra Excel via API
-  React.useEffect(() => {
-    const fetchStotteordninger = async () => {
-      try {
-        const bygningstyperMap: { [key: string]: string } = {
-          'enebolig': 'enebolig',
-          'rekkehus': 'rekkehus',
-          'tomannsbolig': 'rekkehus',
-          'leilighet': 'blokk',
-          'blokk': 'blokk',
-          'store boligbygg': 'blokk'
-        };
-
-        const mappedType = bygningstyperMap[buildingType?.toLowerCase() || 'enebolig'] || 'enebolig';
-        
-        // Kall API endpoint som leser direkte fra Excel
-        const url = `http://localhost:3001/api/stotteordninger-live?gulliste=true&tiltak=smart_energistyring&bygningstype=${mappedType}`;
-        console.log('Fetching støtteordninger from:', url);
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('API response error:', response.status, errorText);
-          throw new Error(`Failed to fetch støtteordninger: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setStotteordninger(data);
-      } catch (error) {
-        console.error('Error fetching støtteordninger:', error);
-        // Vis feilmelding i stedet for fallback
-        const errorData = [{
-          ordning: 'Kunne ikke hente støtteordninger',
-          lenke: null,
-          belop: 'Sjekk at API-serveren kjører',
-          overskrift: 'Feil'
-        }];
-        setStotteordninger(errorData);
-        setIsLoading(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStotteordninger();
-  }, [buildingType]);
+  const { stotteordninger, isLoading } = useStotteordninger({
+    tiltak: 'smart_energistyring',
+    buildingType,
+    gulliste: true
+  });
 
   const needsScroll = stotteordninger.length > 4;
-
-  // Farger for overskrifter
-  const overskriftFarger: { [key: string]: string } = {
-    'Enova': '#C7F6C9',
-    'Klima- og energifondet': '#D1F9FF',
-    'Oslo kommune': '#D1F9FF',
-    'Klimaetaten': '#D1F9FF',
-    'Byantikvaren': '#FFE4B5',
-    'Riksantikvaren': '#FFB4AC',
-    'Kulturminnefondet': '#DDA0DD'
-  };
 
   return (
     <div style={{ 
@@ -434,7 +382,7 @@ export const Temperaturstyring: React.FC<TettingProps> = ({ onBack, buildingType
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://riksantikvaren.no/veileder/rad-om-energisparing-i-gamle-hus/#72aa0e54-2678-43a1-8fd2-f4f2f7697e46', '_blank')}
+          onClick={() => openExternalLink('https://riksantikvaren.no/veileder/rad-om-energisparing-i-gamle-hus/#72aa0e54-2678-43a1-8fd2-f4f2f7697e46')}
         >
           Riksantikvaren
         </text>
@@ -450,7 +398,7 @@ export const Temperaturstyring: React.FC<TettingProps> = ({ onBack, buildingType
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://issuu.com/fortidsminneforeningen/docs/en_k-tiltak_i_gamle_hus/14', '_blank')}
+          onClick={() => openExternalLink('https://issuu.com/fortidsminneforeningen/docs/en_k-tiltak_i_gamle_hus/14')}
         >
           Fortidsminneforeningen
         </text>
@@ -466,7 +414,7 @@ export const Temperaturstyring: React.FC<TettingProps> = ({ onBack, buildingType
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://www.enova.no/nb/privat/bolig/tema-redusere-eller-styre-stromforbruket/varmestyringssystem/', '_blank')}
+          onClick={() => openExternalLink('https://www.enova.no/nb/privat/bolig/tema-redusere-eller-styre-stromforbruket/varmestyringssystem/')}
         >
           Enova
         </text>
@@ -588,7 +536,7 @@ export const Temperaturstyring: React.FC<TettingProps> = ({ onBack, buildingType
                             y={boxYPosition}
                             width={boxWidth}
                             height="23"
-                            fill={overskriftFarger[ordning.overskrift] || '#E0E0E0'}
+                            fill={getOverskriftColor(ordning.overskrift)}
                           />
                           
                           {/* Overskrift text */}
@@ -625,7 +573,7 @@ export const Temperaturstyring: React.FC<TettingProps> = ({ onBack, buildingType
                       textDecoration="underline"
                       dominantBaseline="middle"
                       style={{ cursor: 'pointer' }}
-                      onClick={() => window.open(ordning.lenke, '_blank')}
+                      onClick={() => openExternalLink(ordning.lenke)}
                     >
                       Lenke
                     </text>

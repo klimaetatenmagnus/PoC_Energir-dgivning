@@ -22,7 +22,8 @@
   "dependencies": {
     "@oslokommune/punkt-assets": "^12.42.11",
     "@oslokommune/punkt-css": "^12.42.13",
-    "@oslokommune/punkt-react": "^12.42.13",
+    "@oslokommune/punkt-react": "^11.16.6",
+    "@rollup/rollup-darwin-arm64": "^4.52.0",
     "@turf/turf": "7.2.0",
     "axios": "^1.9.0",
     "cors": "2.8.5",

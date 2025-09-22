@@ -4,6 +4,7 @@
 // Oppdatert: juni 2025 (v2.3) – bytter ut SOAP-kallet som gav fault
 // ---------------------------------------------------------------------------
 import "../../loadEnv.ts"; 
+import { getRuntimeConfig } from "../../packages/config/src/runtime.ts";
 import express, {
   Request,
   Response as ExpressResponse, // ← alias
@@ -34,20 +35,16 @@ proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
 proj4.defs("EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs");
 
 /* ───────────── Miljøvariabler ───────────── */
-const BASE_URL = process.env.MATRIKKEL_API_BASE_URL_PROD || "https://www.matrikkel.no/matrikkelapi/wsapi/v1";
-const USERNAME = process.env.MATRIKKEL_USERNAME!;
-const PASSWORD = process.env.MATRIKKEL_PASSWORD!;
-const ENOVA_KEY = process.env.ENOVA_API_KEY ?? "";
-const PORT = Number(process.env.PORT) || 4000;
-const LOG = process.env.LOG === "1" || process.env.LOG_SOAP === "1";
-
-// Debug logging
-console.log("[Building Info Service] Environment check:");
-console.log("  BASE_URL:", BASE_URL);
-console.log("  USERNAME:", USERNAME ? "SET" : "NOT SET");
-console.log("  PASSWORD:", PASSWORD ? "SET" : "NOT SET");
-console.log("  ENOVA_KEY:", ENOVA_KEY ? "SET" : "NOT SET");
-
+const runtimeConfig = getRuntimeConfig();
+const matrikkelConfig = runtimeConfig.flags.liveMode
+  ? runtimeConfig.matrikkel.prod
+  : runtimeConfig.matrikkel.current;
+const BASE_URL = matrikkelConfig.baseUrl;
+const USERNAME = matrikkelConfig.username;
+const PASSWORD = matrikkelConfig.password;
+const ENOVA_KEY = runtimeConfig.enova.apiKey ?? "";
+const PORT = runtimeConfig.ports.buildingInfo;
+const LOG = runtimeConfig.flags.logSoap;
 
 /* ───────────── Klient-instanser ─────────── */
 const storeClient = new StoreClient(

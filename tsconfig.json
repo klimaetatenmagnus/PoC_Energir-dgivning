@@ -44,7 +44,23 @@
   /* ------------------------------------------------------------ */
   /*  Filsett                                                     */
   /* ------------------------------------------------------------ */
-  "include": ["src/**/*", "server/**/*", "services/**/*", "scripts/**/*"],
+  "include": [
+    "server/**/*",
+    "services/**/*",
+    "packages/**/*",
+    "src/services/solarEnergyService.ts",
+    "src/services/gul-liste-service.ts",
+    "src/services/gul-liste-integration.ts",
+    "src/components/FigmaMainScript.tsx",
+    "src/components/FigmaBlokk/**/*",
+    "src/types/**/*"
+  ],
+  "exclude": [
+    "src/components/FigmaBlokk/components/Tiltak/fordelsbokser.tsx",
+    "scripts/**/*",
+    "samples/**/*",
+    "services/building-info-service/index.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }],
 
   /* ------------------------------------------------------------ */

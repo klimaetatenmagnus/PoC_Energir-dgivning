@@ -18,6 +18,7 @@ export interface AddressLookupResponse {
   bygningstype?: string;
   bygningstypeKode?: string;
   bygningstypeKodeId?: number;
+  bygningstypeNavn?: string;
   bygningsnummer?: string;
   matrikkelenhetsId?: number;
   byggId?: number;
@@ -28,6 +29,9 @@ export interface AddressLookupResponse {
     utstedelsesdato?: string;
     attestnummer?: string;
     attestUrl?: string;
+    registering?: {
+      beregnetLevertEnergiTotaltkWh?: number;
+    };
   };
   representasjonspunkt?: {
     east: number;
@@ -46,6 +50,24 @@ export interface AddressLookupResponse {
     kWh_tot: number;
   }>;
   filteredSolarEnergy?: number;
+  arealLeilighet?: number;
+  csvData?: {
+    adresse?: string;
+    bygningstype?: string;
+    bygningstypeNavn?: string;
+    bygningstypekode?: string;
+    bygningstypeKode?: string;
+    byggeaar?: string;
+    bruksareal_totalt?: string;
+    takflate_main?: string;
+    vurdert_egnet_for_solceller?: string;
+    kwh_sol_tak_aar?: string;
+    kategori_sol?: string;
+    gnr?: string;
+    bnr?: string;
+    bydelsnavn?: string;
+    areal_leilighet?: string;
+  };
 }
 
 export interface ApiError {

@@ -1,78 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import {
+  ENERGY_SAVINGS_DATA,
+  TiltakComponentProps,
+  calculateTekPeriod,
+  parseNumericValue,
+  resolveEnergyCategory,
+  useStotteordninger,
+  getOverskriftColor,
+  openExternalLink
+} from './shared';
 
-interface UtskiftningAvVinduProps {
-  onBack?: () => void;
-  buildingType?: string;
-  buildingData?: any;
-}
+type UtskiftningAvVinduProps = TiltakComponentProps;
 
 export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, buildingType, buildingData }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
   const [activeButton, setActiveButton] = useState<string>('Generelt');
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
-  const [stotteordninger, setStotteordninger] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
+  const { stotteordninger } = useStotteordninger({
+    tiltak: 'vinduer',
+    buildingType
+  });
 
-  // Hent støtteordninger fra Excel via API
-  useEffect(() => {
-    const fetchStotteordninger = async () => {
-      try {
-        const bygningstyperMap: { [key: string]: string } = {
-          'enebolig': 'enebolig',
-          'rekkehus': 'rekkehus',
-          'tomannsbolig': 'rekkehus',
-          'leilighet': 'blokk',
-          'blokk': 'blokk',
-          'store boligbygg': 'blokk'
-        };
-
-        const mappedType = bygningstyperMap[buildingType?.toLowerCase() || 'enebolig'] || 'enebolig';
-        
-        // Kall API endpoint som leser direkte fra Excel
-        const url = `http://localhost:3001/api/stotteordninger-live?gulliste=false&tiltak=vinduer&bygningstype=${mappedType}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('API response error:', response.status, errorText);
-          throw new Error(`Failed to fetch støtteordninger: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setStotteordninger(data);
-      } catch (error) {
-        console.error('Error fetching støtteordninger:', error);
-        // Vis feilmelding i stedet for fallback
-        const errorData = [{
-          ordning: 'Kunne ikke hente støtteordninger',
-          lenke: null,
-          belop: 'Sjekk at API-serveren kjører',
-          overskrift: 'Feil'
-        }];
-        setStotteordninger(errorData);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStotteordninger();
-  }, [buildingType]);
-
-  // Støtteordninger hentes nå via useEffect
   const needsScroll = stotteordninger.length > 4;
-
-  // Farger for overskrifter
-  const overskriftFarger: { [key: string]: string } = {
-    'Enova': '#C7F6C9',
-    'Klima- og energifondet': '#D1F9FF',
-    'Oslo kommune': '#D1F9FF',
-    'Klimaetaten': '#D1F9FF',
-    'Byantikvaren': '#FFE4B5',
-    'Riksantikvaren': '#FFB4AC',
-    'Kulturminnefondet': '#DDA0DD'
-  };
 
   return (
     <div style={{ 
@@ -884,194 +835,33 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
         
         {/* Window upgrade savings text */}
         {(() => {
-          // ENERGY_SAVINGS_DATA dictionary
-          const ENERGY_SAVINGS_DATA: Record<string | number, any> = {
-            "eldre": {
-              "blokk": {
-                0.75: 38.9,
-                1.2: 32.1,
-                "etteriso_yttervegg": 81.7,
-                "etteriso_takloft": 24.4
-              },
-              "småhus": {
-                0.75: 42.2,
-                1.2: 34.3,
-                "etteriso_yttervegg": 94.1,
-                "etteriso_takloft": 41.2
+          const determineEnergyCategory = (): 'småhus' | 'blokk' | undefined => {
+            const codePrefix =
+              buildingData?.bygningstypeKode?.substring(0, 2) ??
+              buildingData?.csvData?.bygningstypekode?.substring(0, 2) ??
+              buildingData?.csvData?.bygningstypeKode?.substring(0, 2);
+
+            if (codePrefix) {
+              if (['11', '12', '13'].includes(codePrefix)) {
+                return 'småhus';
               }
-            },
-            49: {
-              "blokk": {
-                0.75: 38.9,
-                1.2: 32.1,
-                "etteriso_yttervegg": 81.7,
-                "etteriso_takloft": 24.4
-              },
-              "småhus": {
-                0.75: 42.2,
-                1.2: 34.3,
-                "etteriso_yttervegg": 94.1,
-                "etteriso_takloft": 41.2
-              }
-            },
-            69: {
-              "blokk": {
-                0.75: 38.3,
-                1.2: 31.3,
-                "etteriso_yttervegg": 39.7,
-                "etteriso_takloft": 8.4
-              },
-              "småhus": {
-                0.75: 41.7,
-                1.2: 33.7,
-                "etteriso_yttervegg": 27.7,
-                "etteriso_takloft": 11.4
-              }
-            },
-            87: {
-              "blokk": {
-                0.75: 28.1,
-                1.2: 21.0,
-                "etteriso_yttervegg": 9.7,
-                "etteriso_takloft": 2.8
-              },
-              "småhus": {
-                0.75: 31.4,
-                1.2: 23.4,
-                "etteriso_yttervegg": 15.0,
-                "etteriso_takloft": 4.7
-              }
-            },
-            97: {
-              "blokk": {
-                0.75: 12.1,
-                1.2: 5.0,
-                "etteriso_yttervegg": 7.3,
-                "etteriso_takloft": 0.4
-              },
-              "småhus": {
-                0.75: 14.2,
-                1.2: 6.1,
-                "etteriso_yttervegg": 3.7,
-                "etteriso_takloft": 0.6
-              }
-            },
-            7: {
-              "blokk": {
-                0.75: 7.2,
-                1.2: 0,
-                "etteriso_yttervegg": 1.3,
-                "etteriso_takloft": 0.4
-              },
-              "småhus": {
-                0.75: 8.2,
-                1.2: 0,
-                "etteriso_yttervegg": 0,
-                "etteriso_takloft": 0
+              if (['14', '15', '16', '17'].includes(codePrefix)) {
+                return 'blokk';
               }
             }
+
+            return resolveEnergyCategory(buildingType);
           };
-          
-          // TEK calculation function
-          const calculateTEK = (byggeaar: number): string => {
-            const terskel = 2; // lag i år i forhold til tek
-            
-            // TEK years with threshold applied
-            if (byggeaar >= 2007 + terskel) return "TEK7";      // 2009 and newer
-            if (byggeaar >= 1997 + terskel) return "TEK97";     // 1999-2008
-            if (byggeaar >= 1987 + terskel) return "TEK87";     // 1989-1998
-            if (byggeaar >= 1969 + terskel) return "TEK69";     // 1971-1988
-            if (byggeaar >= 1949 + terskel) return "TEK49";     // 1951-1970
-            
-            // Older than 1951
-            return "eldre";
-          };
-          
-          // Calculate window upgrade savings based on building data
-          const bruksareal = buildingData?.bruksarealM2 || buildingData?.csvData?.bruksareal_totalt || 0;
-          const byggeaar = buildingData?.byggeaar || buildingData?.csvData?.byggeaar || 0;
-          
-          // Determine building category
-          const buildingTypeCode = buildingData?.bygningstypeKode?.substring(0, 2) || 
-                                  buildingData?.csvData?.bygningstypekode?.substring(0, 2) ||
-                                  buildingData?.csvData?.bygningstypeKode?.substring(0, 2);
-          
-          const isSmåhus = ['11', '12', '13'].includes(buildingTypeCode || '');
-          const isBlokk = ['14', '15', '16', '17'].includes(buildingTypeCode || '');
-          let buildingCategory = isSmåhus ? 'småhus' : isBlokk ? 'blokk' : null;
-          
-          if (!buildingCategory) {
-            // Fallback to string matching if code is not available
-            const typeString = buildingType?.toLowerCase() || '';
-            if (typeString.includes('enebolig') || typeString.includes('tomannsbolig') || 
-                typeString.includes('rekkehus') || typeString.includes('kjedehus')) {
-              buildingCategory = 'småhus';
-            } else if (typeString.includes('blokk') || typeString.includes('leilighet') || typeString.includes('store boligbygg')) {
-              buildingCategory = 'blokk';
-            }
-          }
-          
-          let savingsPerM2 = 0;
-          let totalSavings = 0;
-          
-          if (byggeaar && buildingCategory) {
-            const tek = calculateTEK(byggeaar);
-            
-            // Get TEK key for the data structure
-            let tekKey: string | number = tek;
-            if (tek.startsWith('TEK')) {
-              const tekNumber = parseInt(tek.substring(3));
-              tekKey = tekNumber;
-            }
-            
-            const savingsData = ENERGY_SAVINGS_DATA[tekKey];
-            if (savingsData && savingsData[buildingCategory]) {
-              savingsPerM2 = savingsData[buildingCategory][0.75] || 0;
-              totalSavings = savingsPerM2 * bruksareal;
-            }
-          }
-          
-          if (totalSavings >= 0 && byggeaar && buildingCategory) {
-            const lowerSavings = Math.round((totalSavings * 0.9) / 1000) * 1000;
-            const upperSavings = Math.round((totalSavings * 1.1) / 1000) * 1000;
-            const norgespris = 1.1; // kr/kWh
-            const lowerKr = Math.round((lowerSavings * norgespris) / 1000) * 1000;
-            const upperKr = Math.round((upperSavings * norgespris) / 1000) * 1000;
-            
-            return (
-              <>
-                <text
-                  x="589"
-                  y="296"
-                  fontFamily="Oslo Sans"
-                  fontWeight="100"
-                  fontStyle="normal"
-                  fontSize="14"
-                  lineHeight="22"
-                  letterSpacing="0"
-                  fill="#FFFFFF"
-                  dominantBaseline="hanging"
-                >
-                  {totalSavings === 0 ? '0 kWh' : `${lowerSavings} - ${upperSavings} kWh`}
-                </text>
-                
-                <text
-                  x="589"
-                  y="318"
-                  fontFamily="Oslo Sans"
-                  fontWeight="100"
-                  fontStyle="normal"
-                  fontSize="14"
-                  lineHeight="22"
-                  letterSpacing="0"
-                  fill="#FFFFFF"
-                  dominantBaseline="hanging"
-                >
-                  {totalSavings === 0 ? '0 kr' : `${lowerKr} - ${upperKr} kr`}
-                </text>
-              </>
-            );
-          } else {
+
+          const bruksareal = parseNumericValue(
+            buildingData?.bruksarealM2 ?? buildingData?.csvData?.bruksareal_totalt
+          );
+          const byggeaar = Math.trunc(
+            parseNumericValue(buildingData?.byggeaar ?? buildingData?.csvData?.byggeaar)
+          );
+          const buildingCategory = determineEnergyCategory();
+
+          if (!buildingCategory || byggeaar <= 0) {
             return (
               <text
                 x="589"
@@ -1089,8 +879,91 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
               </text>
             );
           }
+
+          const tekPeriod = calculateTekPeriod(byggeaar);
+          const savingsData = ENERGY_SAVINGS_DATA[tekPeriod]?.[buildingCategory];
+
+          if (!savingsData) {
+            return (
+              <text
+                x="589"
+                y="307"
+                fontFamily="Oslo Sans"
+                fontWeight="100"
+                fontStyle="normal"
+                fontSize="14"
+                lineHeight="22"
+                letterSpacing="0"
+                fill="#FFFFFF"
+                dominantBaseline="hanging"
+              >
+                Kunne ikke beregne besparelse
+              </text>
+            );
+          }
+
+          const savingsPerM2 = savingsData['0.75'] ?? 0;
+          const totalSavings = savingsPerM2 * bruksareal;
+
+          if (totalSavings <= 0) {
+            return (
+              <text
+                x="589"
+                y="307"
+                fontFamily="Oslo Sans"
+                fontWeight="100"
+                fontStyle="normal"
+                fontSize="14"
+                lineHeight="22"
+                letterSpacing="0"
+                fill="#FFFFFF"
+                dominantBaseline="hanging"
+              >
+                Kunne ikke beregne besparelse
+              </text>
+            );
+          }
+
+          const lowerSavings = Math.round((totalSavings * 0.9) / 1000) * 1000;
+          const upperSavings = Math.round((totalSavings * 1.1) / 1000) * 1000;
+          const norgespris = 1.1;
+          const lowerKr = Math.round((lowerSavings * norgespris) / 1000) * 1000;
+          const upperKr = Math.round((upperSavings * norgespris) / 1000) * 1000;
+
+          return (
+            <>
+              <text
+                x="589"
+                y="296"
+                fontFamily="Oslo Sans"
+                fontWeight="100"
+                fontStyle="normal"
+                fontSize="14"
+                lineHeight="22"
+                letterSpacing="0"
+                fill="#FFFFFF"
+                dominantBaseline="hanging"
+              >
+                {`${lowerSavings} - ${upperSavings} kWh`}
+              </text>
+
+              <text
+                x="589"
+                y="318"
+                fontFamily="Oslo Sans"
+                fontWeight="100"
+                fontStyle="normal"
+                fontSize="14"
+                lineHeight="22"
+                letterSpacing="0"
+                fill="#FFFFFF"
+                dominantBaseline="hanging"
+              >
+                {`${lowerKr} - ${upperKr} kr`}
+              </text>
+            </>
+          );
         })()}
-        
         {/* Circle below main text */}
         <circle
           cx="170"
@@ -1208,7 +1081,7 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
                       y={boxYPosition}
                       width={ordning.overskrift === 'Enova' ? "43" : ordning.overskrift === 'Oslo kommune' ? "82" : "82"}
                       height="23"
-                      fill={overskriftFarger[ordning.overskrift] || '#E0E0E0'}
+                      fill={getOverskriftColor(ordning.overskrift)}
                     />
                     
                     {/* Overskrift text */}
@@ -1242,7 +1115,7 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
                       textDecoration="underline"
                       dominantBaseline="middle"
                       style={{ cursor: 'pointer' }}
-                      onClick={() => window.open(ordning.lenke, '_blank')}
+                      onClick={() => openExternalLink(ordning.lenke)}
                     >
                       Lenke
                     </text>

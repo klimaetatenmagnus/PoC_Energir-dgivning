@@ -1,78 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import {
+  getOverskriftColor,
+  openExternalLink,
+  TiltakComponentProps,
+  useStotteordninger
+} from './shared';
 
-interface VentilasjonProps {
-  onBack?: () => void;
-  buildingType?: string;
-  buildingData?: any;
-}
+type VentilasjonProps = TiltakComponentProps;
 
-export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType, buildingData }) => {
+export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
-  const [stotteordninger, setStotteordninger] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
+  const { stotteordninger } = useStotteordninger({
+    tiltak: 'ventilasjon',
+    buildingType
+  });
 
-  // Hent støtteordninger fra Excel via API
-  useEffect(() => {
-    const fetchStotteordninger = async () => {
-      try {
-        const bygningstyperMap: { [key: string]: string } = {
-          'enebolig': 'enebolig',
-          'rekkehus': 'rekkehus',
-          'tomannsbolig': 'rekkehus',
-          'leilighet': 'blokk',
-          'blokk': 'blokk',
-          'store boligbygg': 'blokk'
-        };
-
-        const mappedType = bygningstyperMap[buildingType?.toLowerCase() || 'enebolig'] || 'enebolig';
-        
-        // Kall API endpoint som leser direkte fra Excel
-        const url = `http://localhost:3001/api/stotteordninger-live?gulliste=false&tiltak=ventilasjon&bygningstype=${mappedType}`;
-        console.log('Fetching støtteordninger from:', url);
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('API response error:', response.status, errorText);
-          throw new Error(`Failed to fetch støtteordninger: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setStotteordninger(data);
-      } catch (error) {
-        console.error('Error fetching støtteordninger:', error);
-        // Vis feilmelding i stedet for fallback
-        const errorData = [{
-          ordning: 'Kunne ikke hente støtteordninger',
-          lenke: null,
-          belop: 'Sjekk at API-serveren kjører',
-          overskrift: 'Feil'
-        }];
-        setStotteordninger(errorData);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStotteordninger();
-  }, [buildingType]);
-
-
-  // Støtteordninger hentes nå via useEffect
   const needsScroll = stotteordninger.length > 4;
-
-  // Farger for overskrifter
-  const overskriftFarger: { [key: string]: string } = {
-    'Enova': '#C7F6C9',
-    'Klima- og energifondet': '#D1F9FF',
-    'Oslo kommune': '#D1F9FF',
-    'Klimaetaten': '#D1F9FF',
-    'Byantikvaren': '#FFE4B5',
-    'Riksantikvaren': '#FFB4AC',
-    'Kulturminnefondet': '#DDA0DD'
-  };
 
   return (
     <div style={{ 
@@ -432,7 +377,7 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType, 
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/balansert-ventilasjon', '_blank')}
+          onClick={() => openExternalLink('https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/balansert-ventilasjon')}
         >
           Enova
         </text>
@@ -449,7 +394,7 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType, 
           textAnchor="middle"
           textDecoration="underline"
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open('https://www.sintef.no/fagomrader/energieffektivisering-bygg/slik-virker-balansert-ventilasjon-i-boliger/#:~:text=God%20ventilasjon%20avhenger%20av%20at%20anlegget%20fordeler%20lufta,anbefaler%20balansert%20ventilasjon%20med%20varmegjenvinning%20i%20nye%20boliger.', '_blank')}
+          onClick={() => openExternalLink('https://www.sintef.no/fagomrader/energieffektivisering-bygg/slik-virker-balansert-ventilasjon-i-boliger/#:~:text=God%20ventilasjon%20avhenger%20av%20at%20anlegget%20fordeler%20lufta,anbefaler%20balansert%20ventilasjon%20med%20varmegjenvinning%20i%20nye%20boliger.')}
         >
           Sintef
         </text>
@@ -528,7 +473,7 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType, 
                       y={boxYPosition}
                       width={ordning.overskrift === 'Enova' ? "43" : ordning.overskrift === 'Oslo kommune' ? "82" : "82"}
                       height="23"
-                      fill={overskriftFarger[ordning.overskrift] || '#E0E0E0'}
+                      fill={getOverskriftColor(ordning.overskrift)}
                     />
                     
                     {/* Overskrift text */}
@@ -562,7 +507,7 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType, 
                       textDecoration="underline"
                       dominantBaseline="middle"
                       style={{ cursor: 'pointer' }}
-                      onClick={() => window.open(ordning.lenke, '_blank')}
+                      onClick={() => openExternalLink(ordning.lenke)}
                     >
                       Lenke
                     </text>
