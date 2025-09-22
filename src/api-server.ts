@@ -6,13 +6,94 @@ import fetch from 'node-fetch';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
 import { energyRatingService } from './services/energyRatingService.js';
 import { csvService } from './services/csvService.js';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
+import type { ExecFileOptions } from 'child_process';
 import { promisify } from 'util';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 const app = express();
 const PORT = process.env.API_PORT || 3001;
+
+const pythonCandidates = [
+  process.env.PYTHON_BINARY,
+  process.env.PYTHON_BIN,
+  process.env.PYTHON_PATH,
+  'python',
+  'python3',
+  'py'
+].filter((candidate): candidate is string => Boolean(candidate));
+
+const pythonEnv: NodeJS.ProcessEnv = {
+  ...process.env,
+  PYTHONIOENCODING: 'utf-8'
+};
+
+let pythonDetectionPromise: Promise<string> | null = null;
+let cachedPythonBinary: string | null = null;
+
+async function detectPythonBinary(): Promise<string> {
+  const attempted: string[] = [];
+
+  for (const candidate of pythonCandidates) {
+    if (attempted.includes(candidate)) {
+      continue;
+    }
+
+    attempted.push(candidate);
+
+    try {
+      const { stdout, stderr } = await execFileAsync(candidate, ['--version'], { encoding: 'utf8' }) as { stdout: string; stderr: string };
+      const version = (stdout || stderr || '').trim();
+      console.log(`[API Server] Using ${candidate} for Python scripts${version ? ` (${version})` : ''}`);
+      return candidate;
+    } catch (error) {
+      const err = error as NodeJS.ErrnoException & { stderr?: string };
+      const stderr = typeof err.stderr === 'string' ? err.stderr.toLowerCase() : '';
+      const isMissing = err.code === 'ENOENT' || err.errno === 'ENOENT' || stderr.includes('not found') || stderr.includes('not recognized');
+
+      if (isMissing) {
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  const attemptedList = attempted.length > 0 ? attempted.join(', ') : 'python, python3';
+  throw new Error(`Fant ikke Python-tolk i PATH (forsøkte: ${attemptedList}). Installer Python 3 eller sett PYTHON_BINARY.`);
+}
+
+async function getPythonBinary(): Promise<string> {
+  if (cachedPythonBinary) {
+    return cachedPythonBinary;
+  }
+
+  if (!pythonDetectionPromise) {
+    pythonDetectionPromise = detectPythonBinary()
+      .then((binary) => {
+        cachedPythonBinary = binary;
+        return binary;
+      })
+      .catch((error) => {
+        pythonDetectionPromise = null;
+        throw error;
+      });
+  }
+
+  return pythonDetectionPromise;
+}
+
+async function runPythonScript(script: string, args: string[] = [], options: ExecFileOptions = {}) {
+  const pythonBinary = await getPythonBinary();
+  const mergedEnv = { ...pythonEnv, ...(options.env ?? {}) };
+  const execOptions: ExecFileOptions = {
+    ...options,
+    env: mergedEnv
+  };
+
+  return execFileAsync(pythonBinary, [script, ...args], { ...execOptions, encoding: 'utf8' }) as Promise<{ stdout: string; stderr: string }>;
+}
 
 // Middleware
 app.use(cors({
@@ -244,10 +325,12 @@ app.get('/api/stotteordninger', async (req, res) => {
   const startTime = Date.now();
 
   try {
-    // Kjør Python script med UTF-8 encoding
-    const { stdout, stderr } = await execAsync(
-      `python hent_stotteordninger_api_google.py ${gullisteParam} ${tiltak} ${bygningstype}`,
-      { encoding: 'utf8' }
+    const tiltakParam = String(tiltak);
+    const bygningstypeParam = String(bygningstype);
+
+    const { stdout, stderr } = await runPythonScript(
+      'hent_stotteordninger_api_google.py',
+      [gullisteParam, tiltakParam, bygningstypeParam]
     );
     
     if (stderr) {
@@ -288,9 +371,13 @@ app.get('/api/stotteordninger-live', async (req, res) => {
   const startTime = Date.now();
   
   try {
-    const { stdout, stderr } = await execAsync(
-      `python hent_stotteordninger_direkte_google.py ${gulliste || 'false'} "${tiltak}" "${bygningstype}"`,
-      { encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' } }
+    const tiltakParam = String(tiltak);
+    const bygningstypeParam = String(bygningstype);
+    const gullisteParam = (gulliste ?? 'false').toString();
+
+    const { stdout, stderr } = await runPythonScript(
+      'hent_stotteordninger_direkte_google.py',
+      [gullisteParam, tiltakParam, bygningstypeParam]
     );
     
     if (stderr) {
@@ -324,10 +411,7 @@ app.post('/api/update-stotteordninger', async (req, res) => {
   
   try {
     // Run the Python script to update cache
-    const { stdout, stderr } = await execAsync(
-      'python stotteordning_cache.py',
-      { encoding: 'utf8' }
-    );
+    const { stdout, stderr } = await runPythonScript('stotteordning_cache.py');
     
     if (stderr) {
       console.error('[API Server] Python stderr:', stderr);
