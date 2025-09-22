@@ -3,7 +3,7 @@ import { ANIMATION_TIMINGS, ANIMATION_TRANSFORMS, calculateBlockTransform } from
 
 export const useAnimation = () => {
   const [fadeOpacity, setFadeOpacity] = useState(1);
-  const [blockTransform, setBlockTransform] = useState(ANIMATION_TRANSFORMS.initial);
+  const [blockTransform, setBlockTransform] = useState<string>(ANIMATION_TRANSFORMS.initial);
   const [showHeader, setShowHeader] = useState(false);
 
   useEffect(() => {

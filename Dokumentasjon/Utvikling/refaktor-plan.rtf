@@ -1,0 +1,83 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2865
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;}
+{\colortbl;\red255\green255\blue255;\red89\green138\blue67;\red24\green24\blue24;\red193\green193\blue193;
+\red85\green129\blue224;\red194\green126\blue101;}
+{\*\expandedcolortbl;;\cssrgb\c41569\c60000\c33333;\cssrgb\c12157\c12157\c12157;\cssrgb\c80000\c80000\c80000;
+\cssrgb\c40392\c58824\c90196;\cssrgb\c80784\c56863\c47059;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 >\cf4 \strokec4  Major Gaps\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf5 \strokec5 -\cf4 \strokec4  services/building-info-service/index.ts:1 holds >1\uc0\u8239 000 lines covering HTTP setup, caching,\cb1 \
+\cb3   Geonorge lookup, Matrikkel SOAP orchestration, building selection and solar/enova integrations,\cb1 \
+\cb3   making the core flow impossible to reason about, test or reuse.\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Server modules import browser code and Node primitives interchangeably (services/building-info-\cb1 \
+\cb3   service/index.ts:17-30, src/services/csvService.ts:1-4), while the public API is defined in src/\cb1 \
+\cb3   api-server.ts:1-152 but compiled runtime paths point at .js files that do not exist when running\cb1 \
+\cb3   TypeScript directly.\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Environment handling relies on side-effectful logging and implicit globals (loadEnv.ts:1-\cb1 \
+\cb3   18, services/building-info-service/index.ts:36-49), and external calls lack common timeouts/\cb1 \
+\cb3   retry/error modelling (services/solar-service/index.js:63-116, src/services/stotteordning-\cb1 \
+\cb3   service.ts:27-38).\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  The React shell bundles mock APIs, ad-hoc fetches and feature orchestration into src/\cb1 \
+\cb3   App.tsx:26-200, mixing UI state, network calls and animation toggles without separation, which\cb1 \
+\cb3   blocks reuse (Figma vs. wizard) and automated testing.\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Critical data sources (CSV cache, st\'f8tteordninger JSON, Python scripts) are loaded\cb1 \
+\cb3   synchronously at runtime without lifecycle management (src/services/csvService.ts:15-70, src/api-\cb1 \
+\cb3   server.ts:61-90), leading to blocking startup, unclear refresh strategy and no validation.\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Deploy og drift er ikke tilpasset Marvin: applikasjonen forventer .env-filer og lokal ts-node\cb1 \
+\cb3   kj\'f8ring, mangler GitOps-struktur for ArgoCD/ApplicationSet, har ingen kobling til External\cb1 \
+\cb3   Secrets/Key Vault, og dokumenterer ikke egress-behov for Squid/Zero-Trust-krav.\cb1 \
+\
+\cb3   Refactor Plan\cb1 \
+\
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Etabler grunnlag: dokumenter hele request-flyten (frontend \uc0\u8594  API \u8594  Matrikkel/Enova/Solkart),\cb1 \
+\cb3   kartlegg eksterne endepunkter og krav til egress, og innf\'f8r en typed konfig-modul (zod/io-ts)\cb1 \
+\cb3   som leser n\'f8dvendige milj\'f8variabler uten \'e5 logge hemmeligheter.\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Modulariser backend: trekk ut et \cf6 \strokec6 `apps/backend`\cf4 \strokec4  (eller tilsvarende) med tydelige domene-\cb1 \
+\cb3   tjenester (addressLookupService, matrikkelService, buildingSelectionService, solarService,\cb1 \
+\cb3   supportProgramsService) og porter/adapters slik at HTTP-laget blir tynt.\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Strukturer data- og cachinglag: kapsle CSV/JSON/Python-avhengigheter i repository-klasser med\cb1 \
+\cb3   asynkron init, valider avtalt skjema, og erstatt global NodeCache med et cache-interface som kan\cb1 \
+\cb3   byttes ut (Redis senere) og som eksponerer metrikker.\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Harden eksterne integrasjoner: standardiser HTTP-klienter (timeout, retry, proxy-st\'f8tte),\cb1 \
+\cb3   pakk Matrikkel/SOAP-kall i typed klienter med konsistent feilh\'e5ndtering, og legg p\'e5 audit-logg\cb1 \
+\cb3   for alle outbounds.\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Sikre konfig og hemmeligheter: fjern \cf6 \strokec6 `.env`\cf4 \strokec4 -avhengighet i runtime-kode, forvent env-variabler\cb1 \
+\cb3   som injiseres via External Secrets Operator, og lever README/overlevering som beskriver hvilke\cb1 \
+\cb3   SecretStore/ExternalSecret-ressurser som m\'e5 opprettes i Marvin.\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Forbered containerdrift: lag Dockerfile som bygger ferdigkompilerte JS-artefakter (pnpm/npm\cb1 \
+\cb3   install \uc0\u8594  \cf6 \strokec6 `tsc`\cf4 \strokec4 /\cf6 \strokec6 `vite build`\cf4 \strokec4  \uc0\u8594  node-dist), definer entrypoints uten \cf6 \strokec6 `ts-node`\cf4 \strokec4 , og legg til\cb1 \
+\cb3   forventede milj\'f8variabler/ports.\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Dokumenter GitOps-strategi: beskriv anbefalt mappestruktur (\cf6 \strokec6 `applications/`\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 `applicationsets/`\cf4 \strokec4 , secrets-manifester), eksempel ApplicationSet-mal med \cf6 \strokec6 `targetRevision`\cf4 \strokec4 -tagger,\cb1 \
+\cb3   og krav til ArgoCD repo-tilgang \'96 uten \'e5 sette det opp i selve koden (se ogs\'e5\cb1 \
+\cb3   \cf6 \strokec6 `Overlevering/Marvin-tilpasning.md`\cf4 \strokec4 ).\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Restaurer frontend: flytt datainnhenting til hooks (React Query/SWR), del \cf6 \strokec6 `App.tsx`\cf4 \strokec4  i\cb1 \
+\cb3   rutekonteinere, isoler mock/test-data og introduser global state for feature-flagg.\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Observability og operasjonell scaffolding: innf\'f8r strukturert logger (pino/winston) med\cb1 \
+\cb3   korrelasjons-ID, etabler middleware for request/audit-logging, samle error-h\'e5ndtering i \'e9n\cb1 \
+\cb3   pipeline (HTTP 4xx/5xx, retriable vs ikke), eksponer Prometheus-metrikker (request latency,\cb1 \
+\cb3   cache hit/miss, eksterne kall), legg til health-/readiness-endepunkt og dokumenter hvordan teamet\cb1 \
+\cb3   kan koble p\'e5 Grafana-varsling og loggs\'f8k (f.eks. s\'f8kekeys, trace-id).\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Refaktoreringens arbeidsflyt: etabler feature-branches med kontinuerlig logging av\cb1 \
+\cb3   endringer (commit-meldinger knyttet til planpunktene), definer regresjonskriterier pr modul og\cb1 \
+\cb3   kj\'f8r automatiserte tester (lint, typecheck, enhet, kontrakt) som gate p\'e5 hver PR. Hold en\cb1 \
+\cb3   l\'f8pende endringslogg (refaktor-journal) i repoet hvor status/notater legges inn for hver st\'f8rre\cb1 \
+\cb3   del-leveranse slik at andre kan plukke opp arbeidet s\'f8ml\'f8st.\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Kvalitetssikring: bygg ut test-suite parallelt med refaktoren (domene-enhetstester,\cb1 \
+\cb3   kontrakttester for HTTP-endepunkter via supertest/nock, e2e-smoke mot stubber) og konfigurer CI\cb1 \
+\cb3   til \'e5 kj\'f8re hele pakken for hver branch.\cb1 \
+\cb3   \cf5 \strokec5 -\cf4 \strokec4  Utvikleropplevelse: rydd i TypeScript-paths, fjern blanding av ESM/CommonJS, forbedre README med\cb1 \
+\cb3   "local-dev" vs "Marvin" modus, og dokumenter dataoppdateringsl\'f8p (CSV/JSON, Python).\cb1 \
+\
+\cb3   Suggested next steps: 1) avklar forventet sikkerhetsniv\'e5 og samle egress-url-liste slik at Squid\cb1 \
+\cb3   /brannmur kan planlegges; 2) beskriv anbefalt GitOps-/secrets-oppsett i overleveringsdokument f\'f8r\cb1 \
+\cb3   modul-splitting starter; 3) avtal API-kontrakter for address lookup/st\'f8tteordninger og prioriter\cb1 \
+\cb3   teststrategi sammen med teamet.\cb1 \
+\
+}

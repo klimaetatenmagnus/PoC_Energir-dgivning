@@ -2,9 +2,7 @@
 import React from 'react';
 import { AddressLookupResponse } from '../services/buildingApi';
 import { useAddressCoordinates } from './FigmaBlokk/hooks/useAddressCoordinates';
-import { calculateFontSize, calculateBoxWidth, getTileUrl } from './FigmaBlokk/utils/calculations';
-import { ENERGY_SOLUTIONS, BOX_MIN_WIDTHS } from './FigmaBlokk/constants';
-import { getLayoutStyles, getTitleStyles, getButtonTextStyles } from './FigmaBlokk/styles';
+import { getLayoutStyles } from './FigmaBlokk/styles';
 import { EnergySolutionButtons } from './FigmaBlokk/components/EnergySolutionButtons';
 import { WhiteInfoBox } from './FigmaBlokk/components/WhiteInfoBox';
 import { OsloLogo } from './FigmaBlokk/components/OsloLogo';
@@ -19,11 +17,10 @@ import { THERESES_44A_DATA } from '../testData/theresegate44a';
 interface FigmaBlokkProps {
   searchAddress: string;
   buildingData: AddressLookupResponse;
-  stotteordninger?: any;
   onBack: () => void;
 }
 
-export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingData, stotteordninger, onBack }) => {
+export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingData, onBack }) => {
   // Check if building is an Enebolig
   const isEnebolig = React.useMemo(() => {
     // First check CSV/Excel data
@@ -73,7 +70,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const [isYellowBoxExpanded, setIsYellowBoxExpanded] = React.useState(false);
   
   // State for updated building data
-  const [updatedBuildingData, setUpdatedBuildingData] = React.useState(buildingData);
+  const [updatedBuildingData, setUpdatedBuildingData] = React.useState<AddressLookupResponse>(buildingData);
   
   // Calculate initial estimated energy consumption
   const initialEnergyConsumption = React.useMemo(() => {
@@ -94,13 +91,13 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   // State for enebolig animation
   const [animateHouse, setAnimateHouse] = React.useState(false);
   const [enebolig1Opacity, setEnebolig1Opacity] = React.useState(1);
-  const enebolig1Ref = React.useRef<SVGSVGElement>(null);
+  const enebolig1Ref = React.useRef<HTMLDivElement>(null);
   const enebolig2ContainerRef = React.useRef<HTMLDivElement>(null);
   
   // State for blokk animation
   const [animateBlokk, setAnimateBlokk] = React.useState(false);
   const [blokk1Opacity, setBlokk1Opacity] = React.useState(1);
-  const blokk1Ref = React.useRef<SVGSVGElement>(null);
+  const blokk1Ref = React.useRef<HTMLDivElement>(null);
   const blokk2ContainerRef = React.useRef<HTMLDivElement>(null);
   
   // State for process slide animation
@@ -113,17 +110,28 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   // Animation has been removed - Enebolig2 is shown immediately without animation
 
   // Handle building data updates from WhiteInfoBox
-  const handleUpdateBuildingData = (byggeaar: string, areal: string, arealLeilighet: string, energiforbruk: string) => {
-    setUpdatedBuildingData({
-      ...updatedBuildingData,
-      byggeaar: byggeaar,
-      bruksarealM2: areal,
+  const handleUpdateBuildingData = (
+    byggeaar: string,
+    areal: string,
+    arealLeilighet: string,
+    energiforbruk: string
+  ) => {
+    const parsedByggeaar = byggeaar ? Number(byggeaar) : undefined;
+    const parsedAreal = areal ? Number(areal) : undefined;
+    const parsedArealLeilighet = arealLeilighet ? Number(arealLeilighet) : undefined;
+
+    setUpdatedBuildingData((previous) => ({
+      ...previous,
+      byggeaar: parsedByggeaar,
+      bruksarealM2: parsedAreal,
+      arealLeilighet: parsedArealLeilighet,
       csvData: {
-        ...updatedBuildingData.csvData,
-        byggeaar: byggeaar,
-        bruksareal_totalt: areal
-      }
-    });
+        ...previous.csvData,
+        byggeaar,
+        bruksareal_totalt: areal,
+        areal_leilighet: arealLeilighet,
+      },
+    }));
     setEnergiforbruk(energiforbruk);
   };
   
@@ -153,7 +161,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         return;
       }
       
-      const params: any = {
+      const params: Parameters<typeof fetchSolarData>[0] = {
         gnr: buildingData.gnr,
         bnr: buildingData.bnr,
         seksjonsnummer: buildingData.seksjonsnummer,
@@ -263,22 +271,16 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   
   // Calculate dynamic font size based on address length
   const addressOnly = searchAddress.split(',')[0];
-  const fontSize = calculateFontSize(addressOnly);
   
   // Calculate district name width for green box
   const districtName = buildingData.csvData?.bydelsnavn || 'Bydel';
-  const districtNameWidth = calculateBoxWidth(districtName, BOX_MIN_WIDTHS.district);
-  
-  // Get building type name and calculate width for blue box
+
+  // Get building type name
   const defaultBuildingType = isEnebolig ? 'Enebolig' : 'Blokk';
   const buildingTypeName = buildingData.csvData?.bygningstypeNavn || buildingData.bygningstypeNavn || defaultBuildingType;
-  const buildingTypeWidth = calculateBoxWidth(buildingTypeName, BOX_MIN_WIDTHS.buildingType);
-  const blocksStartX = (336 - districtNameWidth - 8 - buildingTypeWidth) / 2; // Center the blocks
 
   // Get styles
   const layoutStyles = getLayoutStyles();
-  const titleStyles = getTitleStyles();
-  const buttonTextStyles = getButtonTextStyles();
 
   return (
     <>
@@ -353,11 +355,9 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Tilbake button clicked!');
               // Remove any animated clones before going back
               const clones = document.querySelectorAll('div[style*="z-index: 9999"]');
               clones.forEach(clone => clone.remove());
-              console.log('Calling onBack function...');
               onBack();
             }}
             style={{
@@ -411,9 +411,6 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         onToggleYellowBox={setShowYellowBox}
         yearlyConsumption={energiforbruk}
         onProcessClick={() => setShowProcess(true)}
-        onCloseYellowBox={() => {
-          setIsYellowBoxExpanded(false);
-        }}
         onTotalSavingsChange={setTotalEnergySavings}
       />
       
@@ -547,12 +544,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         isExpanded={isExpanded}
         selectedSolution={selectedSolution}
         addressOnly={addressOnly}
-        fontSize={fontSize}
         districtName={districtName}
-        districtNameWidth={districtNameWidth}
         buildingTypeName={buildingTypeName}
-        buildingTypeWidth={buildingTypeWidth}
-        blocksStartX={blocksStartX}
         mapCoordinates={mapCoordinates}
         buildingData={updatedBuildingData}
         onExpand={setIsExpanded}
@@ -561,9 +554,6 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         onUpdateBuildingData={handleUpdateBuildingData}
         isYellowBoxExpanded={isYellowBoxExpanded}
         onYellowBoxExpandedChange={setIsYellowBoxExpanded}
-        onCloseYellowBox={() => {
-          setIsYellowBoxExpanded(false);
-        }}
         totalEnergySavings={totalEnergySavings}
       />
     </div>

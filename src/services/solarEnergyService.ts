@@ -17,7 +17,49 @@ export interface SolarEnergyData {
     kWh_tot: number;
   }>;
   filteredSolarEnergy?: number;
+  id?: number;
+  center_x?: number;
+  center_y?: number;
+  usable_roof_area_m2?: number;
+  total_irr_yr_kwh?: number;
+  avg_irr_m2_yr_kwh?: number;
+  category?: string;
+  roof_complexity?: string;
+  estimated_panels?: number;
+  estimated_capacity_kw?: number;
+  annual_production_kwh?: number;
+  co2_savings_kg?: number;
+  payback_years?: number;
+  subsidy_available?: boolean;
+  subsidy_amount?: number;
+  installation_cost_estimate?: number;
+  annual_savings_nok?: number;
+  share_percentage?: number;
+  heritage_status?: string;
+  heritage_description?: string;
+  roof_orientations?: Array<{
+    direction: string;
+    percentage: number;
+    suitability: string;
+  }>;
 }
+
+type SolarRoofSurface = {
+  tak_id: number;
+  bygg_id: number | null;
+  area_m2: number;
+  irr_kwh_m2_yr: number;
+  kWh_tot: number;
+};
+
+type SolarServiceResponse = {
+  takAreal_m2?: number;
+  sol_kwh_m2_yr?: number;
+  sol_kwh_bygg_tot?: number;
+  category?: string;
+  takflater?: SolarRoofSurface[];
+  error?: unknown;
+};
 
 export async function fetchSolarData(params: {
   byggId?: number;
@@ -79,8 +121,8 @@ export async function fetchSolarData(params: {
     // console.log(`☀️ Response status: ${response.status}`);
     
     if (!response.ok) {
-      const errorText = await response.text();
-      // console.log(`⚠️ Solar service error response: ${errorText}`);
+      await response.text();
+      // Optional: inspect response body here for debugging if needed.
       if (response.status === 404) {
         // console.log("⚠️ No solar data found (404)");
         return null;
@@ -88,7 +130,7 @@ export async function fetchSolarData(params: {
       throw new Error(`Solar service error: ${response.status}`);
     }
     
-    const data = await response.json();
+    const data = (await response.json()) as SolarServiceResponse;
     // console.log(`☀️ Solar data received:`, data);
     
     if (data.error) {
@@ -102,23 +144,16 @@ export async function fetchSolarData(params: {
     const solarPanelEfficiency = 0.2; // 20% efficiency
     const takUtnyttelsesgrad = 0.85;
     
-    if (data.takflater && Array.isArray(data.takflater)) {
-      const filteredTakflater = data.takflater.filter((tak: any) => tak.irr_kwh_m2_yr > minRadiation);
-      
-      // Log filtered roof surfaces
-      console.log(`☀️ Filtrerte takflater (innstråling > ${minRadiation} kWh/m²):`);
-      filteredTakflater.forEach((tak: any) => {
-        console.log(`  - Takflate ID: ${tak.tak_id}, Innstråling: ${tak.irr_kwh_m2_yr.toFixed(0)} kWh/m²/år`);
-      });
-      
-      filteredSolarEnergy = filteredTakflater
-        .reduce((sum: number, tak: any) => sum + (tak.irr_kwh_m2_yr * tak.area_m2 * takUtnyttelsesgrad * solarPanelEfficiency), 0);
-      
-      // console.log(`☀️ Filtered solar energy calculation:`, {
-      //   totalSurfaces: data.takflater.length,
-      //   filteredSurfaces: data.takflater.filter((tak: any) => tak.irr_kwh_m2_yr > minRadiation).length,
-      //   filteredSolarEnergy: Math.round(filteredSolarEnergy)
-      // });
+    if (Array.isArray(data.takflater)) {
+      const filteredTakflater = data.takflater.filter(
+        (tak) => tak.irr_kwh_m2_yr > minRadiation
+      );
+
+      filteredSolarEnergy = filteredTakflater.reduce(
+        (sum: number, tak: SolarRoofSurface) =>
+          sum + tak.irr_kwh_m2_yr * tak.area_m2 * takUtnyttelsesgrad * solarPanelEfficiency,
+        0
+      );
     }
     
     return {
@@ -130,7 +165,7 @@ export async function fetchSolarData(params: {
       filteredSolarEnergy: Math.round(filteredSolarEnergy)
     };
   } catch (error) {
-    // console.log(`❌ Error fetching solar data: ${error}`);
+    console.warn("[solarEnergyService] Failed to fetch solar data", error);
     return null;
   }
 }

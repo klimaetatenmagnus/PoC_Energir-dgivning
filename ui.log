@@ -1,0 +1,56 @@
+🚀 Starting Adresseoppslag UI with backend services...
+
+🧹 Cleaning up...
+❌ Python is not installed or not in PATH!
+   Støtteordninger API will not work properly.
+
+🏢 Starting building-info-service on port 4000...
+☀️  Starting solar-service on port 4003...
+🔧 Starting API server on port 3001...
+  USERNAME: oslokommun...
+  BASE_URL: https://www.matrikkel.no/matrikkelapi/wsapi/v1
+⏳ Waiting for services to start...
+solar-service ▶ lytter på 4003
+[CSVService] Loaded 123232 records from Matrikkel CSV
+<<<<< BygningClient.ts lastet – robust id-parsing (v6) >>>>>
+[API Server] Running on http://localhost:3001
+[API Server] Environment: LIVE (real APIs)
+[API Server] Try: POST http://localhost:3001/api/address-lookup
+[API Server] Try: GET http://localhost:3001/api/address-suggestions?query=karl
+[API Server] Try: POST http://localhost:3001/api/energy-rating
+[CSVService] Loaded 123232 records from Matrikkel CSV
+<<<<< BygningClient.ts lastet – robust id-parsing (v6) >>>>>
+✓ building-info-service på http://localhost:4000
+🎨 Starting UI on port 5173...
+
+================================================
+✅ Ready! All services are running:
+
+🌐 UI: http://localhost:5173
+🔌 API: http://localhost:3001
+🏢 Building Service: http://localhost:4000
+☀️  Solar Service: http://localhost:4003
+📊 Støtteordninger: http://localhost:3001/api/stotteordninger
+
+📋 Test addresses:
+  - Rosenholmveien 25, Oslo
+  - Kapellveien 156B, 0493 Oslo
+  - Kjelsåsveien 143A, Oslo
+
+🔍 Solenergi-data vises nå i søkeresultatene!
+
+Press Ctrl+C to stop all services
+================================================
+
+
+> react-vite-ts@0.0.0 dev:client
+> vite
+
+11:53:41 AM [vite] (client) Re-optimizing dependencies because lockfile has changed
+
+  VITE v6.3.6  ready in 686 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+
+🛑 Stopping all services...

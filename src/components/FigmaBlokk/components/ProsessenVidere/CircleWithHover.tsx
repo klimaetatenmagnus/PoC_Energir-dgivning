@@ -9,7 +9,6 @@ interface CircleWithHoverProps {
   iconStyle?: React.CSSProperties;
   growFullCircle?: boolean; // New prop to control growth behavior
   onHoverChange?: (isHovered: boolean) => void; // Callback for hover state changes
-  extraLarge?: boolean; // For circles with extra long text
   expandUpwards?: boolean; // Expand upwards for bottom circles
   isGulliste?: boolean; // Show extra text for gulliste buildings
 }
@@ -22,7 +21,6 @@ export const CircleWithHover: React.FC<CircleWithHoverProps> = ({
   iconStyle,
   growFullCircle = false,
   onHoverChange,
-  extraLarge = false,
   expandUpwards = false,
   isGulliste = false
 }) => {

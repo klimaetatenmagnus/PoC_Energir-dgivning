@@ -1,5 +1,3 @@
-import React from 'react';
-
 // Document icon
 export const Document = () => (
   <svg width="190" height="232" viewBox="0 0 190 232" fill="none" xmlns="http://www.w3.org/2000/svg">

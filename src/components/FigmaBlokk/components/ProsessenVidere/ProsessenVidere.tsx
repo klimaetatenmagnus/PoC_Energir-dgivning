@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Blokk, PersonPresentingGraph, PersonPresentingQuestion, Shovel, Trees, Pil } from './Ikoner';
+import { Document, Blokk, PersonPresentingGraph, PersonPresentingQuestion, Shovel, Trees } from './Ikoner';
 import { CircleWithHover } from './CircleWithHover';
 
 interface ProsessenVidereProps {
@@ -15,12 +15,12 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
   onBack,
   isGulliste = false
 }) => {
-  const [isCircle1Hovered, setIsCircle1Hovered] = React.useState(false);
-  const [isCircle2Hovered, setIsCircle2Hovered] = React.useState(false);
-  const [isCircle3Hovered, setIsCircle3Hovered] = React.useState(false);
-  const [isCircle4Hovered, setIsCircle4Hovered] = React.useState(false);
-  const [isCircle5Hovered, setIsCircle5Hovered] = React.useState(false);
-  const [isCircle6Hovered, setIsCircle6Hovered] = React.useState(false);
+  const [, setIsCircle1Hovered] = React.useState(false);
+  const [, setIsCircle2Hovered] = React.useState(false);
+  const [, setIsCircle3Hovered] = React.useState(false);
+  const [, setIsCircle4Hovered] = React.useState(false);
+  const [, setIsCircle5Hovered] = React.useState(false);
+  const [, setIsCircle6Hovered] = React.useState(false);
   
   return (
     <div style={{
@@ -228,7 +228,6 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
             }}
             growFullCircle={true}
             onHoverChange={setIsCircle2Hovered}
-            extraLarge={true}
             expandUpwards={true}
             isGulliste={isGulliste}
           />

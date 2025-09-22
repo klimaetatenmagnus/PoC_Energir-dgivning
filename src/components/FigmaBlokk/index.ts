@@ -1,2 +1,2 @@
-// Re-export the FigmaBlokk component
-export { FigmaBlokk } from '../FigmaBlokk';
+// Re-export the Figma main script under the historical FigmaBlokk alias
+export { FigmaMainScript as FigmaBlokk } from '../FigmaMainScript';
