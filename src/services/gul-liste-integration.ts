@@ -35,11 +35,11 @@ export interface BuildingInfoMedGulListe {
  * 
  * Denne kan kalles etter at GNR/BNR er hentet fra matrikkel
  */
-export async function berikBuildingInfoMedGulListe(
-  buildingInfo: any,
+export async function berikBuildingInfoMedGulListe<T extends object>(
+  buildingInfo: T,
   gnr: number,
   bnr: number
-): Promise<BuildingInfoMedGulListe> {
+): Promise<T & BuildingInfoMedGulListe> {
   try {
     // Sjekk gul liste-status
     const gulListeResult = await sjekkGulListeMedGnrBnr(gnr, bnr);
@@ -54,7 +54,7 @@ export async function berikBuildingInfoMedGulListe(
         kategori: gulListeResult.kategori,
         vernestatus: gulListeResult.vernestatus
       }
-    };
+    } as T & BuildingInfoMedGulListe;
   } catch (error) {
     console.error('Feil ved berikelse med gul liste-data:', error);
     
@@ -62,7 +62,7 @@ export async function berikBuildingInfoMedGulListe(
     return {
       ...buildingInfo,
       gulListeStatus: undefined
-    };
+    } as T & BuildingInfoMedGulListe;
   }
 }
 

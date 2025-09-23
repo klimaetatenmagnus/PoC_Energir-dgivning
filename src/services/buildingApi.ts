@@ -70,10 +70,15 @@ export interface AddressLookupResponse {
   };
 }
 
+export interface AddressSuggestion {
+  adresse?: string;
+  adressetekst?: string;
+}
+
 export interface ApiError {
   message: string;
   code?: string;
-  details?: any;
+  details?: unknown;
 }
 
 // Mock data for testing
@@ -161,67 +166,109 @@ export class BuildingApiService {
     this.useMockData = useMockData;
   }
 
-  async lookupAddress(address: string, useImprovedSelection: boolean = false, debug: boolean = false): Promise<AddressLookupResponse> {
-    console.log('[BuildingApiService] Looking up address:', address);
-    const startTime = Date.now();
+  private buildUrl(path: string): string {
+    const normalizedBase = this.baseUrl.endsWith('/')
+      ? this.baseUrl.slice(0, -1)
+      : this.baseUrl;
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return `${normalizedBase}${normalizedPath}`;
+  }
 
-    try {
-      if (this.useMockData) {
-        // Simuler nettverkslatens
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Sjekk om vi har mock data for denne adressen
-        const mockResult = mockData[address];
-        if (mockResult) {
-          const duration = Date.now() - startTime;
-          console.log(`[BuildingApiService] Mock lookup completed in ${duration}ms`);
-          return mockResult;
-        }
-        
-        // Hvis ikke, kast en 404 feil
-        throw new Error('404: Ingen bygningsdata funnet for denne adressen');
-      }
-
-      // Real API call (når backend er implementert)
-      const response = await fetch(`${this.baseUrl}/address-lookup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ address, useImprovedSelection, debug } as AddressLookupRequest),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message || `${response.status}: ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-      const duration = Date.now() - startTime;
-      console.log(`[BuildingApiService] API lookup completed in ${duration}ms`);
-      
-      return data;
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      console.error(`[BuildingApiService] Error after ${duration}ms:`, error);
-      
-      // Re-throw med mer kontekst
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Ukjent feil ved adresseoppslag');
+  private isAddressSuggestion(value: unknown): value is AddressSuggestion {
+    if (!value || typeof value !== 'object') {
+      return false;
     }
+
+    const entry = value as Record<string, unknown>;
+    const hasValidAdresse =
+      entry.adresse === undefined || typeof entry.adresse === 'string';
+    const hasValidTekst =
+      entry.adressetekst === undefined ||
+      typeof entry.adressetekst === 'string';
+
+    return hasValidAdresse && hasValidTekst;
+  }
+
+  async lookupAddress(
+    address: string,
+    useImprovedSelection: boolean = false,
+    debug: boolean = false
+  ): Promise<AddressLookupResponse> {
+    if (this.useMockData) {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      const mockResult = mockData[address];
+      if (mockResult) {
+        return mockResult;
+      }
+
+      throw new Error('404: Ingen bygningsdata funnet for denne adressen');
+    }
+
+    const response = await fetch(this.buildUrl('/address-lookup'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ address, useImprovedSelection, debug } satisfies AddressLookupRequest),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        (errorData as ApiError).message || `${response.status}: ${response.statusText}`
+      );
+    }
+
+    const data: unknown = await response.json();
+
+    if (!this.validateResponse(data)) {
+      throw new Error('Ugyldig respons fra adresseoppslag');
+    }
+
+    return data;
+  }
+
+  async fetchSuggestions(query: string): Promise<AddressSuggestion[]> {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) {
+      return [];
+    }
+
+    const url = `${this.buildUrl('/address-suggestions')}?query=${encodeURIComponent(
+      trimmedQuery
+    )}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      const errorMessage = `${response.status}: ${response.statusText}`;
+      throw new Error(`Feil ved henting av adresseforslag (${errorMessage})`);
+    }
+
+    const payload = (await response.json()) as {
+      suggestions?: unknown;
+    };
+
+    if (!Array.isArray(payload.suggestions)) {
+      return [];
+    }
+
+    return payload.suggestions.filter((suggestion): suggestion is AddressSuggestion =>
+      this.isAddressSuggestion(suggestion)
+    );
   }
 
   // Hjelpemetode for å validere respons
-  validateResponse(data: any): data is AddressLookupResponse {
+  validateResponse(data: unknown): data is AddressLookupResponse {
+    if (!data || typeof data !== 'object') {
+      return false;
+    }
+
+    const record = data as Record<string, unknown>;
+
     return (
-      typeof data === 'object' &&
-      data !== null &&
-      typeof data.gnr === 'number' &&
-      typeof data.bnr === 'number'
+      typeof record.gnr === 'number' &&
+      typeof record.bnr === 'number'
     );
   }
 }

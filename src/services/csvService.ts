@@ -2,6 +2,36 @@ import fs from 'fs';
 import path from 'path';
 import { parse } from 'csv-parse/sync';
 
+interface RawCSVRecord {
+  BYGNINGS_NR: string;
+  BYGGID_ANONYM: string;
+  BRUKSAREAL_TOTALT: string;
+  BRA_BOLIG: string;
+  BRA_ANNET_BOLIG: string;
+  BRA_hentet_fra_matrikkel: string;
+  AREAL_BYGGFLATE: string;
+  ANTALL_ETASJER: string;
+  BYGNINGSSTATUS_NAVN: string;
+  Bygningstype: string;
+  Bygningstype_navn: string;
+  BYGNINGSTYPE_3siffer: string;
+  TATT_I_BRUK_DATO: string;
+  FYLKE: string;
+  KOM: string;
+  BYDELNR: string;
+  BYDELSNAVN: string;
+  DELBYDELNR: string;
+  DELBYDELSNAVN: string;
+  GRUNNKRETS_NR: string;
+  GRUNNKRETS_NAVN: string;
+  Lokalitetskode: string;
+  GateAdresse: string;
+  Kalenderår: string;
+  Hjelpekolonne: string;
+  Tiår: string;
+  [key: string]: string;
+}
+
 export interface MatrikkelCSVRecord {
   bygningsNr: string;
   byggidAnonym: string;
@@ -45,7 +75,7 @@ export class CSVService {
       const fileContent = fs.readFileSync(csvPath, 'utf-8');
       
       // Parse CSV with semicolon delimiter
-      const records = parse(fileContent, {
+      const records = parse<RawCSVRecord>(fileContent, {
         columns: true,
         delimiter: ';',
         skip_empty_lines: true,
@@ -53,7 +83,7 @@ export class CSVService {
       });
 
       // Transform records to camelCase and proper types
-      this.data = records.map((record: any) => ({
+      this.data = records.map((record) => ({
         bygningsNr: record.BYGNINGS_NR,
         byggidAnonym: record.BYGGID_ANONYM,
         bruksarealTotalt: parseInt(String(record.BRUKSAREAL_TOTALT).replace(/\s/g, '')) || 0,
@@ -83,7 +113,7 @@ export class CSVService {
       }));
 
       this.isLoaded = true;
-      console.log(`[CSVService] Loaded ${this.data.length} records from Matrikkel CSV`);
+      console.warn(`[CSVService] Loaded ${this.data.length} records from Matrikkel CSV`);
     } catch (error) {
       console.error('[CSVService] Error loading CSV:', error);
       this.data = [];

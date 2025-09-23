@@ -25,6 +25,9 @@ const WFS_URL = "https://od2.pbe.oslo.kommune.no/cgi-bin/wms";
 const MAP_FILE = "d:/data_mapserver/kartfiler/solkart.map";
 const LAYER = "takflater2024";
 
+const infoLog = (...args) => console.warn('[solar-service]', ...args);
+const errorLog = (...args) => console.error('[solar-service:error]', ...args);
+
 app.use(cors());
 
 /* ───────── Mini-helper for WFS-kall ───────────────────────────────────── */
@@ -223,7 +226,7 @@ app.get("/solinnstraling", async (req, res) => {
     CACHE.set(cacheKey, result);
     res.json(result);
   } catch (err) {
-    console.error("[solar-service]", err);
+    errorLog('Feil i request handler', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -231,7 +234,7 @@ app.get("/solinnstraling", async (req, res) => {
 /* ───────── Start server ──────────────────────────────────────────────── */
 const PORT = process.env.PORT || 4003;
 app.listen(PORT, "0.0.0.0", () =>
-  console.log(`solar-service ▶ lytter på ${PORT}`)
+  infoLog(`Lytter på port ${PORT}`)
 );
 
 /* ---------------- helper for trygg BYGG_ID ----------------------------- */

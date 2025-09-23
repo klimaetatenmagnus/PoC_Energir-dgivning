@@ -3,7 +3,10 @@
 // Adresse (husnr + bokstav) ► én matrikkelenhets-ID                v1.1
 // ---------------------------------------------------------------------------
 import axios, { AxiosRequestConfig } from "axios";
-import "../../loadEnv.ts"; 
+import "../../loadEnv.ts";
+import { debugLog } from "../../services/building-info-service/logging.ts";
+
+const LOG_SOAP = process.env.LOG_SOAP === "1";
 
 /* ------------------------------------------------------------------ */
 /* 1. Offentlig API                                                   */
@@ -109,14 +112,8 @@ async function fetchVegadresseBubble(id: number): Promise<string> {
 async function soapPost(opts: { url: string; action: string; body: string }) {
   const requestXml = wrapEnvelope(opts.body);
 
-  if (process.env.LOG_SOAP === "1") {
-    console.log(
-      "\n=== SOAP REQUEST to",
-      opts.action,
-      "===\n",
-      requestXml,
-      "\n"
-    );
+  if (LOG_SOAP) {
+    debugLog(`\n=== SOAP REQUEST to ${opts.action} ===\n${requestXml}\n`);
   }
 
   const cfg: AxiosRequestConfig = {
@@ -137,14 +134,8 @@ async function soapPost(opts: { url: string; action: string; body: string }) {
 
   const resp = await axios.request<string>(cfg);
 
-  if (process.env.LOG_SOAP === "1") {
-    console.log(
-      "\n=== SOAP RESPONSE from",
-      opts.action,
-      "===\n",
-      resp.data,
-      "\n"
-    );
+  if (LOG_SOAP) {
+    debugLog(`\n=== SOAP RESPONSE from ${opts.action} ===\n${resp.data}\n`);
   }
   return resp;
 }

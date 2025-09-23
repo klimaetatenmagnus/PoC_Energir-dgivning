@@ -5,7 +5,7 @@ interface ErrorDisplayProps {
   error: Error | string;
   type?: 'error' | 'warning';
   onRetry?: () => void;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ 
@@ -21,8 +21,8 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
   
   // Logger feilen med kontekst
   useEffect(() => {
-    const logLevel = type === 'error' ? 'error' : 'warn';
-    console[logLevel]('[ErrorDisplay]', {
+    const logFn = type === 'error' ? console.error : console.warn;
+    logFn('[ErrorDisplay]', {
       message: errorMessage,
       stack: errorStack,
       context,

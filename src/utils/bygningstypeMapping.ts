@@ -6,6 +6,9 @@
 import { BygningClient, type BygningstypeKode, type MatrikkelContext } from "../clients/BygningClient.ts";
 import { matrikkelEndpoint } from "./endpoints.ts";
 
+const infoLog = (...args: unknown[]) => console.warn("[bygningstype-mapping]", ...args);
+const errorLog = (...args: unknown[]) => console.error("[bygningstype-mapping:error]", ...args);
+
 // Cache for bygningstype-koder
 let bygningstypeCache: Map<number, BygningstypeKode> | null = null;
 let cacheTimestamp = 0;
@@ -42,10 +45,10 @@ async function fetchBygningstypeKoder(
       map.set(kode.id, kode);
     }
     
-    console.log(`Hentet ${map.size} bygningstype-koder fra Matrikkelen`);
+    infoLog(`Hentet ${map.size} bygningstype-koder fra Matrikkelen`);
     return map;
   } catch (error) {
-    console.error("Feil ved henting av bygningstype-koder:", error);
+    errorLog("Feil ved henting av bygningstype-koder", error);
     // Returnerer en hardkodet mapping som fallback
     return getHardcodedMapping();
   }
@@ -90,7 +93,7 @@ export async function mapBygningstypeId(
 ): Promise<string | undefined> {
   // Sjekk cache
   if (!bygningstypeCache || Date.now() - cacheTimestamp > CACHE_DURATION_MS) {
-    console.log("Bygningstype-cache er utdatert, henter nye koder...");
+    infoLog("Cache er utdatert – henter nye bygningstype-koder");
     bygningstypeCache = await fetchBygningstypeKoder(baseUrl, username, password);
     cacheTimestamp = Date.now();
   }
@@ -101,7 +104,7 @@ export async function mapBygningstypeId(
   }
   
   if (process.env.DEBUG_BYGNINGSTYPE === "1") {
-    console.warn(`Ingen mapping funnet for bygningstype-ID ${internId}`);
+    infoLog(`Ingen mapping funnet for bygningstype-ID ${internId}`);
   }
   return undefined;
 }
