@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: energiveiledning
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: prod
+            namespace: energiveiledning
+            targetRevision: main
+          - name: test
+            namespace: energiveiledning-test
+            targetRevision: develop
+  template:
+    metadata:
+      name: energiveiledning-{{name}}
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/oslokommune/energiveiledning.git
+        targetRevision: '{{targetRevision}}'
+        path: deploy/marvin
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

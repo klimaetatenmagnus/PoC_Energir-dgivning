@@ -129,6 +129,10 @@ Anbefalinger: sentraliser URL-er i config; støtt proxy (`HTTP_PROXY` etc.); log
 4. **Fase D – Frontend og DX**
    - Flytt datahåndtering til hooks og rydd mockdata uten å blokkere backend-leveransen.
    - Dokumenter utvikleropplevelse (local vs Marvin) og oppdater README/overlevering ved hver større endring.
+5. **Fase E – Marvin deployment og leveranseartefakter**
+   - Produser prod-klar `Dockerfile`/byggeoppskrift som ikke er avhengig av `ts-node`, og beskriv Python-runtime behovet for scripts.
+   - Sjekk inn eksempelmanifester for `Deployment`/`Service`, `ExternalSecret`/`SecretStore`, `ServiceMonitor` og Argo CD Application/ApplicationSet.
+   - Dokumenter egress/proxy-krav og nettverksavklaringer for eksterne avhengigheter (Matrikkel, Geonorge, Enova, PBE Solkart) i Marvin-notatene.
 
 ### Statuslogg (runde 2)
 
@@ -152,6 +156,8 @@ Anbefalinger: sentraliser URL-er i config; støtt proxy (`HTTP_PROXY` etc.); log
 | 2025-09-28 | Flyttet frontendlogikk til typed hooks: Figma-adressesøk (`useFigmaAddressSearch`), energimerke-beregning (`useEnergyRatingEstimator`) og gul liste-status (`useGulListeStatus`). Utrensket lokale `console.log` og sentralisert BuildingApi-oppgaver. | `src/App.tsx`, `src/hooks/useFigmaAddressSearch.ts`, `src/hooks/useEnergyRatingEstimator.ts`, `src/hooks/useGulListeStatus.ts`, `src/components/{EnergyRatingEstimator,GulListeStatus}.tsx`, `src/services/buildingApi.ts` |
 | 2025-09-28 | Standardiserte legacy-logger (scripts/utils), flyttet SOAP-debug til `debugLog` og rettet TEK-switch slik at `npm run lint` går grønt igjen. `npm run lint` kjørt | `api-server.js`, `korrekt-teigid.js`, `services/solar-service/index.js`, `services/subsidy-service/index.js`, `src/clients/adresseClient.ts`, `src/components/{AddressSearch.tsx,ErrorDisplay.tsx}`, `src/utils/{bygningstypeMapping.ts,soapDump.ts,tekEnergyCalculations.ts}` |
 | 2025-09-28 | `npm run verify` grønn (typecheck, lint, kontrakttester). Forsøk på `npm run test:full-chain` feilet fordi script mangler i `package.json`; må gjenopprettes før neste løp. | `npm run verify`, `npm run test:full-chain` |
+| 2025-09-28 | Gjenopprettet `npm run test:full-chain` (starter solar-, building-info- og API-tjenestene via `tsx`) og la til solkart-mock (`SOLAR_SERVICE_MOCK`). Kjøring i MacosSeatbelt feilet fordi sandbox blokkerer localhost-tilkoblinger; kjør lokalt uten sandbox for full verifikasjon. | `scripts/test-full-chain.ts`, `package.json`, `services/solar-service/index.js` |
+| 2025-09-28 | `npm run test:full-chain -- --mock` kjørt lokalt (uten sandbox). Full kjede leverer gnr/bnr 130/136, byggeår 1892, bruksareal 280 m², solpotensial 796 157 kWh og filtrert solenergi 94 904 kWh. Tjenestene avslutter med exit code 0 etter testen (forventet). | `scripts/test-full-chain.ts`, `solinnstraling`-logg |
 
 ### Umiddelbare handlinger
 
@@ -161,19 +167,22 @@ Anbefalinger: sentraliser URL-er i config; støtt proxy (`HTTP_PROXY` etc.); log
 - ✅ Prometheus-metrikker for building-info-service er etablert (`/metrics`), og kontrakttestene dokumenterer navn/labels. Observability-handover (ServiceMonitor-utkast, dashboardidéer, alert-prinsipper) er beskrevet i dokumentasjonen til bruk for GitOps-teamet.
 - ✅ `npm run verify` samler typecheck, lint og kontraktstester; GitHub Actions-workflow `Verify` kjører samme løp på push/PR (frontend-legacy gjenstår i lint-trinnet).
 
-### Status (sist oppdatert 2025-09-28)
+### Status (sist oppdatert 2025-09-29)
 
 - building-info-service er splittet i tydelige moduler (`context`, `matrikkel`, `resultAssembler`) og `index.ts` eksponerer kun Express-skallet. Klientene bruker felles `MatrikkelContext` og `runPythonScript` erstatter hardkodet `python` i API-serveren.
 - Frontend-adresseoppslag, energimerke-estimator og gul liste-status drives nå av typed hooks (`useFigmaAddressSearch`, `useEnergyRatingEstimator`, `useGulListeStatus`), med felles byggkategorier/TEK-data og oppdatert `BuildingApiService` for forslag.
 - End-to-end typekontroll (`npx tsc --noEmit`) og `npm run lint` er grønne etter opprydding i legacy-scripts, utils og `tekEnergyCalculations`.
 - Observability-krav fra Marvin er gjennomgått; applikasjonen leverer Prometheus-metrikker og dokumentasjon på navn/labels, mens GitOps-/driftsteamet følger opp ServiceMonitor, dashboards og alarmer når de etablerer Marvin-miljøet.
-- `npm run verify` binder sammen `tsc --noEmit`, lint og kontraktstester lokalt; lint-blokkeringen fra gamle loggere er fjernet, og verify-løpet er klart når frontend-hookdokumentasjon er på plass.
+- `npm run verify` binder sammen `tsc --noEmit`, lint og kontraktstester lokalt; lint er nå grønn etter opprydding i legacy-scripts og verifiseres som del av full chain-kjøringen.
 - `/metrics` eksponeres nå med Prometheus-metrikker for cache, lookup, eksterne kall og resultAssembler-kilder (`building_info_service_*`), og `npm run test:contract` kjører nye kontraktstester for matrikkel-lookup og resultAssembler.
 - `Dokumentasjon/Utvikling/prometheus-metrikker.md` beskriver alle custom metrics, labels, ServiceMonitor-mal og kontrakttestene; oppdater filen ved endringer i observability-laget.
+- Fase E er i gang: prodklar `Dockerfile`, `npm run build:backend` (esbuild) og `build:prod`-løpet er på plass; eksempelmanifester for Marvin (`deploy/marvin/`) er lagt til (SecretStore/ExternalSecret, Deployment, Service, ServiceMonitor, Argo Application/ApplicationSet). Gjenstående arbeid: konkretisere egress/Python-krav og ferdigstille GitOps-repo.
 
 ### Neste delmål
 
-- Planlegg full verify-håndtering: gjenopprett `npm run test:full-chain`-scriptet (mangler i `package.json`) og logg nytt testrun når scriptet er på plass.
+- Start parkert tiltak #1: skisser plan for å erstatte Enova-fallback i `useTiltakSubsidies` med reell datakilde, inkludert mapping og testløp.
+- Beskriv hvordan `npm run build:backend` og relevant CI-jobb bør settes opp (parkert tiltak #2), slik at vi kan planlegge implementeringen i neste runde.
+- Legg inn hurtig-test av Dockerimagen (lokal `docker run` + helsesjekk) og dokumenter expected env/porter som del av overleveringspakken.
 
 ### Fast testsekvens
 

@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: energiveiledning-config
+  namespace: energiveiledning
+  labels:
+    app.kubernetes.io/name: energiveiledning
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: energiveiledning
+    app.kubernetes.io/managed-by: gitops
+    environment: prod
+  annotations:
+    marvin.oslo.kommune.no/sensitivity: "internal"
+data:
+  API_ENV: "prod"
+  API_PORT: "3001"
+  PORT: "4000"
+  LIVE: "1"
+  LOG_SOAP: "0"
+  DEBUG_BUILDING_INFO: "0"

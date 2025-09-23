@@ -27,6 +27,9 @@ const LAYER = "takflater2024";
 
 const infoLog = (...args) => console.warn('[solar-service]', ...args);
 const errorLog = (...args) => console.error('[solar-service:error]', ...args);
+const MOCK_MODE =
+  process.env.SOLAR_SERVICE_MOCK === "1" ||
+  process.env.SOLAR_SERVICE_MOCK?.toLowerCase() === "true";
 
 app.use(cors());
 
@@ -169,6 +172,39 @@ function categorize(avg, ref = REF_OSLO) {
 app.get("/solinnstraling", async (req, res) => {
   try {
     const { bygg_id, polygon, gnr, bnr, snr, lat, lon, delta } = req.query;
+
+    if (MOCK_MODE) {
+      const mockByggId = bygg_id ? Number.parseInt(String(bygg_id), 10) || 1 : 1;
+      const mockTakflater = [
+        {
+          tak_id: mockByggId * 10 + 1,
+          bygg_id: mockByggId,
+          area_m2: 120,
+          irr_kwh_m2_yr: 950,
+          kWh_tot: 114_000,
+        },
+        {
+          tak_id: mockByggId * 10 + 2,
+          bygg_id: mockByggId,
+          area_m2: 60,
+          irr_kwh_m2_yr: 820,
+          kWh_tot: 49_200,
+        },
+      ];
+
+      const mockSumPot = mockTakflater.reduce((sum, tak) => sum + tak.kWh_tot, 0);
+      const mockSumArea = mockTakflater.reduce((sum, tak) => sum + tak.area_m2, 0);
+      const mockAvgIrr = mockSumArea ? mockSumPot / mockSumArea : null;
+
+      return res.json({
+        reference: REF_OSLO,
+        takflater: mockTakflater,
+        takAreal_m2: mockSumArea,
+        sol_kwh_m2_yr: mockAvgIrr,
+        sol_kwh_bygg_tot: mockSumPot,
+        category: mockAvgIrr ? categorize(mockAvgIrr) : "Ukjent",
+      });
+    }
 
     const cacheKey = JSON.stringify(req.query);
     const hit = CACHE.get(cacheKey);

@@ -13,6 +13,8 @@
     "dev:local": "cross-env API_ENV=test concurrently -k -n client,server,buildings,subsidy -c blue,green,yellow,magenta \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:buildings\" \"npm run dev:subsidy\"",
     "start:prod": "cross-env API_ENV=prod ts-node server/index.ts",
     "build": "tsc && vite build",
+    "build:backend": "node scripts/build-backend.mjs",
+    "build:prod": "npm run build && npm run build:backend",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
@@ -20,13 +22,13 @@
     "start:solar-service": "node services/solar-service/index.js",
     "test:matrikkel": "node scripts/testMatrikkel.cjs",
     "test:e2e:live": "cross-env LIVE=1 LOG_SOAP=1 node --loader ts-node/esm scripts/test-e2e-building.ts",
+    "test:full-chain": "node --import tsx scripts/test-full-chain.ts",
     "test:contract": "TS_NODE_PROJECT=tsconfig.contract.json node --loader ts-node/esm scripts/test-contract-matrikkel.ts && node --import tsx scripts/test-contract-resultAssembler.ts"
   },
   "dependencies": {
     "@oslokommune/punkt-assets": "^12.42.11",
     "@oslokommune/punkt-css": "^12.42.13",
     "@oslokommune/punkt-react": "^11.16.6",
-    "@rollup/rollup-darwin-arm64": "^4.52.0",
     "@turf/turf": "7.2.0",
     "axios": "^1.9.0",
     "cors": "2.8.5",
@@ -42,7 +44,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "soap": "^1.1.11",
-    "swr": "^2.3.3"
+    "swr": "^2.3.3",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@swc/core": "^1.7.0",
@@ -59,6 +62,7 @@
     "autoprefixer": "10.4.20",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
+    "esbuild": "^0.23.0",
     "eslint": "^9.16.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.16",
@@ -70,7 +74,6 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.20.5",
     "typescript": "^5.7.2",
-    "vite": "^6.0.3",
-    "xml2js": "^0.6.2"
+    "vite": "^6.0.3"
   }
 }

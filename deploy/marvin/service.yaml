@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: energiveiledning
+  namespace: energiveiledning
+  labels:
+    app.kubernetes.io/name: energiveiledning
+    app.kubernetes.io/part-of: energiveiledning
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: energiveiledning
+    app.kubernetes.io/component: api
+  ports:
+    - name: http-building
+      port: 4000
+      targetPort: http-building
+    - name: http-api
+      port: 3001
+      targetPort: http-api
