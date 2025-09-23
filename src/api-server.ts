@@ -5,7 +5,6 @@ import cors from 'cors';
 import fetch from 'node-fetch';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
 import { energyRatingService } from './services/energyRatingService.js';
-import { csvService } from './services/csvService.js';
 import { execFile } from 'child_process';
 import type { ExecFileOptions } from 'child_process';
 import { promisify } from 'util';
@@ -29,6 +28,31 @@ const pythonEnv: NodeJS.ProcessEnv = {
   PYTHONIOENCODING: 'utf-8'
 };
 
+const debugEnabled = process.env.API_DEBUG === '1';
+const infoLog = (...args: unknown[]) => console.warn('[api-server]', ...args);
+const debugLog = (...args: unknown[]) => {
+  if (debugEnabled) {
+    console.warn('[api-server:debug]', ...args);
+  }
+};
+
+interface GeonorgeAddress {
+  adressenavn?: string;
+  nummer?: string;
+  bokstav?: string | null;
+  adressetekst?: string;
+  postnummer?: string;
+  poststed?: string;
+  kommunenummer?: string;
+  gardsnummer?: number;
+  bruksnummer?: number;
+  adressekode?: number;
+}
+
+interface GeonorgeResponse {
+  adresser?: GeonorgeAddress[];
+}
+
 let pythonDetectionPromise: Promise<string> | null = null;
 let cachedPythonBinary: string | null = null;
 
@@ -45,7 +69,7 @@ async function detectPythonBinary(): Promise<string> {
     try {
       const { stdout, stderr } = await execFileAsync(candidate, ['--version'], { encoding: 'utf8' }) as { stdout: string; stderr: string };
       const version = (stdout || stderr || '').trim();
-      console.log(`[API Server] Using ${candidate} for Python scripts${version ? ` (${version})` : ''}`);
+      infoLog(`Using ${candidate} for Python scripts${version ? ` (${version})` : ''}`);
       return candidate;
     } catch (error) {
       const err = error as NodeJS.ErrnoException & { stderr?: string };
@@ -117,9 +141,9 @@ app.post('/api/address-lookup', async (req, res) => {
     });
   }
 
-  console.log(`[API Server] Looking up address: ${address}`);
+  infoLog(`Looking up address: ${address}`);
   if (useImprovedSelection) {
-    console.log(`[API Server] Using improved building selection`);
+    debugLog('Using improved building selection');
   }
   const startTime = Date.now();
 
@@ -127,7 +151,7 @@ app.post('/api/address-lookup', async (req, res) => {
     const result = await resolveBuildingData(address, { useImprovedSelection, debug });
     const duration = Date.now() - startTime;
     
-    console.log(`[API Server] Lookup successful in ${duration}ms`);
+    infoLog(`Lookup successful in ${duration}ms`);
     res.json({
       ...result,
       adresse: address,
@@ -174,7 +198,7 @@ app.get('/api/address-suggestions', async (req, res) => {
     });
   }
 
-  console.log(`[API Server] Fetching address suggestions for: ${query}`);
+  infoLog(`Fetching address suggestions for: ${query}`);
   const startTime = Date.now();
 
   try {
@@ -193,13 +217,15 @@ app.get('/api/address-suggestions', async (req, res) => {
       throw new Error(`Geonorge API returned ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as GeonorgeResponse;
     const duration = Date.now() - startTime;
     
     // Format addresses for frontend - ensure we have complete address with postal code and city
-    const suggestions = data.adresser?.map((addr: any) => {
+    const suggestions = data.adresser?.map((addr: GeonorgeAddress) => {
       // Build complete address string
-      const streetAndNumber = `${addr.adressenavn} ${addr.nummer}${addr.bokstav || ''}`;
+      const streetName = addr.adressenavn ?? '';
+      const houseNumber = addr.nummer ?? '';
+      const streetAndNumber = `${streetName} ${houseNumber}${addr.bokstav ?? ''}`.trim();
       const postalAndCity = `${addr.postnummer || ''} ${addr.poststed || 'Oslo'}`.trim();
       
       return {
@@ -216,7 +242,7 @@ app.get('/api/address-suggestions', async (req, res) => {
       };
     }) || [];
 
-    console.log(`[API Server] Found ${suggestions.length} suggestions in ${duration}ms`);
+    infoLog(`Found ${suggestions.length} suggestions in ${duration}ms`);
     res.json({
       suggestions,
       _meta: {
@@ -255,7 +281,7 @@ app.post('/api/energy-rating', async (req, res) => {
     });
   }
 
-  console.log(`[API Server] Calculating energy rating for: ${address}, consumption: ${yearlyConsumption} kWh/year`);
+  infoLog(`Calculating energy rating for ${address}, consumption: ${yearlyConsumption} kWh/year`);
   const startTime = Date.now();
 
   try {
@@ -282,7 +308,7 @@ app.post('/api/energy-rating', async (req, res) => {
 
     const duration = Date.now() - startTime;
     
-    console.log(`[API Server] Energy rating calculated in ${duration}ms: ${ratingResult.rating}`);
+    infoLog(`Energy rating calculated in ${duration}ms: ${ratingResult.rating}`);
     res.json({
       address,
       bygningsnummer: building.bygningsnummer,
@@ -321,7 +347,7 @@ app.get('/api/stotteordninger', async (req, res) => {
 
   const gullisteParam = gulliste === 'true' ? 'true' : 'false';
   
-  console.log(`[API Server] Fetching støtteordninger: gulliste=${gullisteParam}, tiltak=${tiltak}, bygningstype=${bygningstype}`);
+  infoLog(`Fetching støtteordninger: gulliste=${gullisteParam}, tiltak=${tiltak}, bygningstype=${bygningstype}`);
   const startTime = Date.now();
 
   try {
@@ -341,7 +367,7 @@ app.get('/api/stotteordninger', async (req, res) => {
     const data = JSON.parse(stdout);
     const duration = Date.now() - startTime;
     
-    console.log(`[API Server] Found ${Array.isArray(data) ? data.length : 0} støtteordninger in ${duration}ms`);
+    infoLog(`Found ${Array.isArray(data) ? data.length : 0} støtteordninger in ${duration}ms`);
     res.json(data);
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -367,7 +393,7 @@ app.get('/api/stotteordninger-live', async (req, res) => {
     });
   }
   
-  console.log(`[API Server] Henter støtteordninger direkte fra Excel: gulliste=${gulliste}, tiltak=${tiltak}, bygningstype=${bygningstype}`);
+  infoLog(`Henter støtteordninger direkte fra Excel: gulliste=${gulliste}, tiltak=${tiltak}, bygningstype=${bygningstype}`);
   const startTime = Date.now();
   
   try {
@@ -387,7 +413,7 @@ app.get('/api/stotteordninger-live', async (req, res) => {
     const data = JSON.parse(stdout);
     const duration = Date.now() - startTime;
     
-    console.log(`[API Server] Hentet støtteordninger direkte i ${duration}ms`);
+    infoLog(`Hentet støtteordninger direkte i ${duration}ms`);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.json(data);
   } catch (error) {
@@ -406,7 +432,7 @@ app.get('/api/stotteordninger-live', async (req, res) => {
 
 // Update støtteordninger cache endpoint
 app.post('/api/update-stotteordninger', async (req, res) => {
-  console.log('[API Server] Updating støtteordninger cache...');
+  infoLog('Updating støtteordninger cache...');
   const startTime = Date.now();
   
   try {
@@ -418,7 +444,7 @@ app.post('/api/update-stotteordninger', async (req, res) => {
     }
     
     const duration = Date.now() - startTime;
-    console.log(`[API Server] Støtteordninger cache updated in ${duration}ms`);
+    infoLog(`Støtteordninger cache updated in ${duration}ms`);
     
     res.json({
       success: true,
@@ -445,9 +471,9 @@ app.post('/api/update-stotteordninger', async (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`[API Server] Running on http://localhost:${PORT}`);
-  console.log(`[API Server] Environment: ${process.env.LIVE ? 'LIVE (real APIs)' : 'MOCK'}`);
-  console.log(`[API Server] Try: POST http://localhost:${PORT}/api/address-lookup`);
-  console.log(`[API Server] Try: GET http://localhost:${PORT}/api/address-suggestions?query=karl`);
-  console.log(`[API Server] Try: POST http://localhost:${PORT}/api/energy-rating`);
+  infoLog(`Running on http://localhost:${PORT}`);
+  infoLog(`Environment: ${process.env.LIVE ? 'LIVE (real APIs)' : 'MOCK'}`);
+  debugLog(`Try: POST http://localhost:${PORT}/api/address-lookup`);
+  debugLog(`Try: GET http://localhost:${PORT}/api/address-suggestions?query=karl`);
+  debugLog(`Try: POST http://localhost:${PORT}/api/energy-rating`);
 });

@@ -1,8 +1,25 @@
-# React + Tailwind
+# Energirådgivning – PoC
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules. One top of the standard Vite setup, [tailwindcss](https://tailwindcss.com/) is installed and ready to be used in React components.
+Monorepo for energirådgivnings-prototypen til Oslo kommune. Repoet inneholder bygg-/solar-tjenester (Node/TypeScript), støtteordningsscripts og React-frontend (Vite).
 
-Additional references:
-* [Getting started with Vite](https://vitejs.dev/guide/)
-* [Tailwind documentation](https://tailwindcss.com/docs/installation)
+## Utvikling
 
+- `npm install` – installerer avhengigheter.
+- `npm run dev` – starter frontend, backend og solar-service lokalt (bruker `.env`).
+- `npm run dev:local` – variant som bytter solar-service med subsidy-service.
+
+Se `Dokumentasjon/Utvikling/refaktor-oversikt.md` for gjeldende refaktorplan og status.
+
+## Verifisering
+
+- `npm run verify` – kjører `tsc --noEmit`, `npm run lint` og kontraktstestene (`scripts/test-contract-*`). Kommandoen speiler GitHub Actions-workflowen `.github/workflows/verify.yml`.
+- Lint-delen feiler fortsatt for enkelte legacy-filer; disse ryddes fortløpende i fase C/D (se refaktor-oversikten for plan/risiko).
+- `npm run test:contract` kan kjøres separat dersom du ønsker kun kontrakttestene.
+
+## Dokumentasjon
+
+Alt Marvin- og refaktor-relatert underlag ligger i `Dokumentasjon/Utvikling/`. Viktige oppslag:
+
+- `Dokumentasjon/Utvikling/refaktor-oversikt.md` – single source of truth for plan, status, testløp.
+- `Dokumentasjon/Utvikling/prometheus-metrikker.md` – detaljert observability-handover (metrics, dashboards, alerts).
+- Øvrige `.docx`/`.pdf`-filer beskriver GitOps, Argo CD, secrets og drift på Marvin-plattformen.

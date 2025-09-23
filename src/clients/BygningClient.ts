@@ -2,24 +2,39 @@
 // ------------------------------------------------------------------
 // Klient mot Matrikkels BygningServiceWS
 // ------------------------------------------------------------------
-console.log("<<<<< BygningClient.ts lastet – robust id-parsing (v6) >>>>>");
 
 import axios, { AxiosResponse } from "axios";
 import crypto from "node:crypto";
 import { XMLParser } from "fast-xml-parser";
-import { dumpSoap, SoapPhase } from "../utils/soapDump.ts";
-import "../../loadEnv.ts"; 
+import { dumpSoap } from "../utils/soapDump.ts";
+import "../../loadEnv.ts";
+import { debugLog } from "../../services/building-info-service/logging.ts";
 
-function serviceUrl(base: string, svc = "BygningServiceWS"): string {
-  // 1) full URL sendt inn?  → bruk som den er
-  if (base.includes("://")) return base;
+debugLog("<<<<< BygningClient.ts lastet – robust id-parsing (v6) >>>>>");
 
-  // 2) base *slutter allerede* med /BygningServiceWS  → bruk som den er
-  if (base.replace(/\/$/, "").endsWith(`/${svc}`)) return base;
+type SoapRecord = Record<string, unknown>;
 
-  // 3) ellers bygg normal sti  “…/service/bygning/BygningServiceWS”
-  const root = base.replace(/\/$/, "");
-  return `${root}/service/bygning/${svc}`;
+function valueAsRecord(value: unknown): SoapRecord | undefined {
+  return typeof value === "object" && value !== null
+    ? (value as SoapRecord)
+    : undefined;
+}
+
+function extractSoapBody(parsed: SoapRecord): SoapRecord | undefined {
+  const envelope =
+    valueAsRecord(parsed["soap:Envelope"]) ??
+    valueAsRecord(parsed.Envelope) ??
+    valueAsRecord(parsed["soapenv:Envelope"]);
+
+  if (!envelope) {
+    return undefined;
+  }
+
+  return (
+    valueAsRecord(envelope["soap:Body"]) ??
+    valueAsRecord((envelope as SoapRecord).Body) ??
+    valueAsRecord(envelope["soapenv:Body"])
+  );
 }
 
 /* ────────────── felles typer ─────────────────────────────── */
@@ -61,10 +76,8 @@ export class BygningClient {
       await dumpSoap(corrId, "request", xmlRequest);
     }
     if (process.env.LOG_SOAP === "1") {
-      console.log(
-        `\n===== SOAP Request (${soapAction}, corrId=${corrId}) =====\n`
-      );
-      console.log(xmlRequest, "\n");
+      debugLog(`\n===== SOAP Request (${soapAction}, corrId=${corrId}) =====\n`);
+      debugLog(xmlRequest, "\n");
     }
 
     /* — kall webservicen — */
@@ -99,8 +112,8 @@ export class BygningClient {
         phase === "fault"
           ? "SOAP Fault"
           : `SOAP Response (HTTP ${resp.status})`;
-      console.log(`===== ${tag}, corrId=${corrId}) =====\n`);
-      console.log(
+      debugLog(`===== ${tag}, corrId=${corrId}) =====\n`);
+      debugLog(
         resp.data.slice(0, 1200),
         resp.data.length > 1200 ? "…" : "",
         "\n"
@@ -121,29 +134,29 @@ export class BygningClient {
       parseTagValue: true,
       trimValues: true,
     });
-    const parsed = parser.parse(resp.data) as Record<string, unknown>;
+    const parsed = parser.parse(resp.data) as SoapRecord;
 
     /* — finn <return>-noden — */
-    const body =
-      (parsed["soap:Envelope"] as any)?.["soap:Body"] ??
-      (parsed.Envelope as any)?.Body ??
-      (parsed["soapenv:Envelope"] as any)?.["soapenv:Body"];
+    const body = extractSoapBody(parsed);
 
     if (!body) throw new Error("SOAP-body mangler");
 
     const respKey = Object.keys(body).find((k) =>
       k.endsWith("findByggForMatrikkelenhetResponse")
     );
-    const retBlock = respKey ? (body as any)[respKey] : undefined;
-    const ret = retBlock?.return ?? retBlock?.["ns2:return"];
+    const retBlock = respKey ? valueAsRecord(body[respKey]) : undefined;
+    const ret = retBlock?.["return"] ?? retBlock?.["ns2:return"];
 
     if (!ret) return []; // ingen bygg assosiert med matrikkelenheten
 
     /* — <item>-liste → number[] — */
-    const rawItems = Array.isArray(ret.item)
-      ? ret.item
-      : ret.item
-      ? [ret.item]
+    const rawItemsSource = (
+      (typeof ret === "object" && ret !== null ? (ret as { item?: unknown }) : undefined)
+    )?.item;
+    const rawItems = Array.isArray(rawItemsSource)
+      ? rawItemsSource
+      : rawItemsSource
+      ? [rawItemsSource]
       : [];
 
     const extractNumber = (v: unknown): number | undefined => {
@@ -181,10 +194,10 @@ export class BygningClient {
       await dumpSoap(corrId, "request", xmlRequest);
     }
     if (process.env.LOG_SOAP === "1") {
-      console.log(
+      debugLog(
         `\n===== SOAP Request (${soapAction}, corrId=${corrId}) =====\n`
       );
-      console.log(xmlRequest, "\n");
+      debugLog(xmlRequest, "\n");
     }
 
     /* — kall webservicen — */
@@ -219,8 +232,8 @@ export class BygningClient {
         phase === "fault"
           ? "SOAP Fault"
           : `SOAP Response (HTTP ${resp.status})`;
-      console.log(`===== ${tag}, corrId=${corrId}) =====\n`);
-      console.log(
+      debugLog(`===== ${tag}, corrId=${corrId}) =====\n`);
+      debugLog(
         resp.data.slice(0, 1200),
         resp.data.length > 1200 ? "…" : "",
         "\n"
@@ -241,38 +254,46 @@ export class BygningClient {
       parseTagValue: true,
       trimValues: true,
     });
-    const parsed = parser.parse(resp.data) as Record<string, unknown>;
+    const parsed = parser.parse(resp.data) as SoapRecord;
 
     /* — finn <return>-noden — */
-    const body =
-      (parsed["soap:Envelope"] as any)?.["soap:Body"] ??
-      (parsed.Envelope as any)?.Body ??
-      (parsed["soapenv:Envelope"] as any)?.["soapenv:Body"];
+    const body = extractSoapBody(parsed);
 
     if (!body) throw new Error("SOAP-body mangler");
 
     const respKey = Object.keys(body).find((k) =>
       k.endsWith("findAlleBygningstypeKoderResponse")
     );
-    const retBlock = respKey ? (body as any)[respKey] : undefined;
-    const ret = retBlock?.return ?? retBlock?.["ns2:return"];
+    const retBlock = respKey ? valueAsRecord(body[respKey]) : undefined;
+    const ret = retBlock?.["return"] ?? retBlock?.["ns2:return"];
 
     if (!ret) return []; // ingen koder funnet
 
     /* — <item>-liste → BygningstypeKode[] — */
-    const rawItems = Array.isArray(ret.item)
-      ? ret.item
-      : ret.item
-      ? [ret.item]
-      : [];
+    const items =
+      (typeof ret === "object" && ret !== null ? (ret as { item?: unknown }) : undefined)
+        ?.item;
+    const rawItems = Array.isArray(items) ? items : items ? [items] : [];
 
-    const extractKode = (item: any): BygningstypeKode | undefined => {
+    const extractKode = (item: unknown): BygningstypeKode | undefined => {
       if (!item || typeof item !== "object") return;
+      const record = item as Record<string, unknown>;
       
       // Prøv å finne id, kodeverdi og beskrivelse
-      const id = item.id?.value || item.id || item["dom:id"]?.["dom:value"] || item["dom:id"];
-      const kodeverdi = item.kodeverdi || item.kode || item["dom:kodeverdi"] || item["dom:kode"];
-      const beskrivelse = item.beskrivelse || item["dom:beskrivelse"] || "";
+      const id =
+        (record.id as { value?: unknown } | undefined)?.value ??
+        record.id ??
+        (record["dom:id"] as { [key: string]: unknown } | undefined)?.["dom:value"] ??
+        record["dom:id"];
+      const kodeverdi =
+        record.kodeverdi ??
+        record.kode ??
+        (record["dom:kodeverdi"] as unknown) ??
+        record["dom:kode"];
+      const beskrivelse =
+        (record.beskrivelse as unknown) ??
+        record["dom:beskrivelse"] ??
+        "";
       
       if (id && kodeverdi) {
         return {
@@ -286,18 +307,14 @@ export class BygningClient {
 
     return rawItems
       .map(extractKode)
-      .filter((k): k is BygningstypeKode => k !== undefined);
+      .filter(
+        (kode: BygningstypeKode | undefined): kode is BygningstypeKode =>
+          kode !== undefined
+      );
   }
 
   /* ---------- private helper: bygg SOAP-request -------------- */
   private renderRequest(id: number, ctx: MatrikkelContext): string {
-    const koordinatXml = ctx.koordinatsystemKodeId
-      ? `
-        <dom:koordinatsystemKodeId>
-          <dom:value>${ctx.koordinatsystemKodeId}</dom:value>
-        </dom:koordinatsystemKodeId>`
-      : "";
-
     return `<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
                   xmlns:sto="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/bygning"
@@ -309,17 +326,17 @@ export class BygningClient {
       </sto:matrikkelenhetId>
 
       <sto:matrikkelContext>
-      <dom:locale>no_NO_B</dom:locale>
-      <dom:brukOriginaleKoordinater>true</dom:brukOriginaleKoordinater>   
-      <dom:koordinatsystemKodeId>
-        <dom:value>25833</dom:value>                                     
-      </dom:koordinatsystemKodeId>
-      <dom:systemVersion>trunk</dom:systemVersion>
-      <dom:klientIdentifikasjon>building-info-service</dom:klientIdentifikasjon>
-      <dom:snapshotVersion>
-        <dom:timestamp>9999-01-01T00:00:00+01:00</dom:timestamp>
-      </dom:snapshotVersion>
-    </sto:matrikkelContext>
+        <dom:locale>${ctx.locale}</dom:locale>
+        <dom:brukOriginaleKoordinater>${ctx.brukOriginaleKoordinater}</dom:brukOriginaleKoordinater>
+        <dom:koordinatsystemKodeId>
+          <dom:value>${ctx.koordinatsystemKodeId ?? 25833}</dom:value>
+        </dom:koordinatsystemKodeId>
+        <dom:systemVersion>${ctx.systemVersion}</dom:systemVersion>
+        <dom:klientIdentifikasjon>${ctx.klientIdentifikasjon}</dom:klientIdentifikasjon>
+        <dom:snapshotVersion>
+          <dom:timestamp>${ctx.snapshotVersion.timestamp}</dom:timestamp>
+        </dom:snapshotVersion>
+      </sto:matrikkelContext>
     </sto:findByggForMatrikkelenhet>
   </soapenv:Body>
 </soapenv:Envelope>`;

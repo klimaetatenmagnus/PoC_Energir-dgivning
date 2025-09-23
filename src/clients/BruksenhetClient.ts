@@ -1,4 +1,4 @@
-import { MatrikkelContext } from "./common.ts";
+import type { MatrikkelContext } from "./MatrikkelClient.ts";
 import axios from "axios";
 
 export class BruksenhetClient {
@@ -90,6 +90,7 @@ export class BruksenhetClient {
       koordinatsystemKodeId: 25833,
       systemVersion: "trunk",
       klientIdentifikasjon: "bruksenhet-client",
+      snapshotVersion: { timestamp: "9999-01-01T00:00:00+01:00" }
     };
   }
 
@@ -130,7 +131,7 @@ export class BruksenhetClient {
     const bruksenheter: BruksenhetInfo[] = [];
     
     // Find all bruksenhet elements using regex
-    const bruksenhetMatches = xml.matchAll(/<(?:ns\d+:)?bruksenhet[^>]*>([\s\S]*?)<\/(?:ns\d+:)?bruksenhet>/g);
+    const bruksenhetMatches = xml.matchAll(/<(?:ns[0-9]+:)?bruksenhet[^>]*>([\s\S]*?)<\/(?:ns[0-9]+:)?bruksenhet>/g);
     
     for (const match of bruksenhetMatches) {
       const bruksenhetXml = match[1];
@@ -140,6 +141,11 @@ export class BruksenhetClient {
       const etasjenummer = this.extractValue(bruksenhetXml, "etasjenummer");
       const etasjer = this.extractValue(bruksenhetXml, "etasjer");
       const leilighetnummer = this.extractValue(bruksenhetXml, "leilighetnummer");
+      const seksjonsnummer = this.extractValue(bruksenhetXml, "seksjonsnummer");
+      const bruksenhetstypeNavn = this.extractValue(
+        bruksenhetXml,
+        "bruksenhetstypeNavn"
+      );
       const matrikkelenhetId = this.extractValue(bruksenhetXml, "matrikkelenhetId");
       const byggId = this.extractValue(bruksenhetXml, "byggId");
       
@@ -150,6 +156,8 @@ export class BruksenhetClient {
           etasjenummer: etasjenummer || undefined,
           etasjer: etasjer || undefined,
           leilighetnummer: leilighetnummer || undefined,
+          seksjonsnummer: seksjonsnummer ? parseInt(seksjonsnummer) : undefined,
+          bruksenhetstypeNavn: bruksenhetstypeNavn || undefined,
           matrikkelenhetId: matrikkelenhetId ? parseInt(matrikkelenhetId) : undefined,
           byggId: byggId ? parseInt(byggId) : undefined,
         });
@@ -161,13 +169,20 @@ export class BruksenhetClient {
 
   private extractValue(xml: string, tagName: string): string | null {
     // Try with value element first
-    const valueMatch = xml.match(new RegExp(`<(?:ns\\d+:)?${tagName}[^>]*>.*?<(?:ns\\d+:)?value>(.*?)<\/(?:ns\\d+:)?value>.*?<\/(?:ns\\d+:)?${tagName}>`, 's'));
+    const valueMatch = xml.match(
+      new RegExp(
+        `<(?:ns[0-9]+:)?${tagName}[^>]*>.*?<(?:ns[0-9]+:)?value>(.*?)</(?:ns[0-9]+:)?value>.*?</(?:ns[0-9]+:)?${tagName}>`,
+        's'
+      )
+    );
     if (valueMatch) {
       return valueMatch[1];
     }
     
     // Try direct content
-    const directMatch = xml.match(new RegExp(`<(?:ns\\d+:)?${tagName}[^>]*>([^<]*)<\/(?:ns\\d+:)?${tagName}>`));
+    const directMatch = xml.match(
+      new RegExp(`<(?:ns[0-9]+:)?${tagName}[^>]*>([^<]*)</(?:ns[0-9]+:)?${tagName}>`)
+    );
     if (directMatch) {
       return directMatch[1].trim();
     }
@@ -182,6 +197,8 @@ export interface BruksenhetInfo {
   etasjenummer?: string;
   etasjer?: string;
   leilighetnummer?: string;
+  seksjonsnummer?: number;
+  bruksenhetstypeNavn?: string;
   matrikkelenhetId?: number;
   byggId?: number;
 }

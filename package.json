@@ -14,10 +14,13 @@
     "start:prod": "cross-env API_ENV=prod ts-node server/index.ts",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "verify": "npm run typecheck && npm run lint && npm run test:contract",
     "start:solar-service": "node services/solar-service/index.js",
     "test:matrikkel": "node scripts/testMatrikkel.cjs",
-    "test:e2e:live": "cross-env LIVE=1 LOG_SOAP=1 node --loader ts-node/esm scripts/test-e2e-building.ts"
+    "test:e2e:live": "cross-env LIVE=1 LOG_SOAP=1 node --loader ts-node/esm scripts/test-e2e-building.ts",
+    "test:contract": "TS_NODE_PROJECT=tsconfig.contract.json node --loader ts-node/esm scripts/test-contract-matrikkel.ts && node --import tsx scripts/test-contract-resultAssembler.ts"
   },
   "dependencies": {
     "@oslokommune/punkt-assets": "^12.42.11",
@@ -35,6 +38,7 @@
     "node-cache": "5.1.2",
     "node-fetch": "^3.3.2",
     "proj4": "^2.16.2",
+    "prom-client": "^15.1.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "soap": "^1.1.11",
@@ -64,6 +68,7 @@
     "sass": "^1.89.2",
     "tailwindcss": "3.4.16",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.5",
     "typescript": "^5.7.2",
     "vite": "^6.0.3",
     "xml2js": "^0.6.2"
