@@ -3,6 +3,7 @@ import '../loadEnv.js';
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
+import path from 'node:path';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
 import { energyRatingService } from './services/energyRatingService.js';
 import { execFile } from 'child_process';
@@ -10,6 +11,8 @@ import type { ExecFileOptions } from 'child_process';
 import { promisify } from 'util';
 
 const execFileAsync = promisify(execFile);
+
+const pythonScriptsDir = path.join(process.cwd(), 'scripts', 'python');
 
 const app = express();
 const PORT = process.env.API_PORT || 3001;
@@ -116,7 +119,9 @@ async function runPythonScript(script: string, args: string[] = [], options: Exe
     env: mergedEnv
   };
 
-  return execFileAsync(pythonBinary, [script, ...args], { ...execOptions, encoding: 'utf8' }) as Promise<{ stdout: string; stderr: string }>;
+  const scriptPath = path.join(pythonScriptsDir, script);
+
+  return execFileAsync(pythonBinary, [scriptPath, ...args], { ...execOptions, encoding: 'utf8' }) as Promise<{ stdout: string; stderr: string }>;
 }
 
 // Middleware

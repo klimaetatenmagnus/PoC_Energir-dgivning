@@ -15,7 +15,7 @@ Denne mappen samler eksempelmanifest for GitOps-teamet. Tilpass navn, namespace 
 
 ## Python-avhengighet
 
-`api-server.mjs` kjører Python-script (`stotteordning_cache.py`). Imagen forventer at `python3` finnes i PATH. Hvis Marvin-miljøet mangler Python, legg til egen base (multi-stage med `apt-get install python3`) eller en initContainer som monterer internen Python-runtime. Miljøvariabelen `PYTHON_BINARY` kan peke på alternativ sti.
+`api-server.mjs` kjører Python-script (`scripts/python/stotteordning_cache.py`). Imagen forventer at `python3` finnes i PATH. Hvis Marvin-miljøet mangler Python, legg til egen base (multi-stage med `apt-get install python3`) eller en initContainer som monterer internen Python-runtime. Miljøvariabelen `PYTHON_BINARY` kan peke på alternativ sti.
 
 ## Røyktest av Dockerimage
 

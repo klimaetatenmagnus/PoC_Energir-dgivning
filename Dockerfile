@@ -20,9 +20,8 @@ WORKDIR /app
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY --from=build ["/app/Matrikkel 2023.csv", "./Matrikkel 2023.csv"]
-COPY --from=build ["/app/stotteordninger_data.json", "./stotteordninger_data.json"]
-COPY --from=build ["/app/stotteordning_cache.py", "./stotteordning_cache.py"]
+COPY --from=build /app/data ./data
+COPY --from=build /app/scripts/python ./scripts/python
 
 # Optional static artefacts (frontend, metrics docs, etc.)
 COPY --from=build /app/public ./public

@@ -71,7 +71,7 @@ export class CSVService {
 
   private loadCSV() {
     try {
-      const csvPath = path.join(process.cwd(), 'Matrikkel 2023.csv');
+      const csvPath = path.join(process.cwd(), 'data', 'raw', 'Matrikkel 2023.csv');
       const fileContent = fs.readFileSync(csvPath, 'utf-8');
       
       // Parse CSV with semicolon delimiter

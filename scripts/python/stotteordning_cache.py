@@ -1,13 +1,18 @@
 import openpyxl
 import json
 from typing import Dict, List, Any
-import os
 from datetime import datetime
+from pathlib import Path
+
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+DATA_RAW_DIR = ROOT_DIR / "data" / "raw"
+DATA_GENERATED_DIR = ROOT_DIR / "data" / "generated"
 
 class StotteordningCache:
-    def __init__(self, excel_path: str):
-        self.excel_path = excel_path
-        self.cache_file = "stotteordninger_data.json"
+    def __init__(self, excel_path: str | Path):
+        self.excel_path = Path(excel_path)
+        self.cache_file = DATA_GENERATED_DIR / "stotteordninger_data.json"
         self.wb = None
         self.sheet = None
         self.data = {}
@@ -52,6 +57,7 @@ class StotteordningCache:
         }
         
         # Lagre til JSON-fil
+        DATA_GENERATED_DIR.mkdir(parents=True, exist_ok=True)
         with open(self.cache_file, 'w', encoding='utf-8') as f:
             json.dump(self.data, f, ensure_ascii=False, indent=2)
         
@@ -138,7 +144,7 @@ class StotteordningCache:
     def hent_stotteordninger(self, gulliste: bool, tiltak: str, bygningstype: str) -> List[Dict[str, Any]]:
         """Henter støtteordninger fra cache"""
         # Last cache fra fil hvis den finnes
-        if os.path.exists(self.cache_file):
+        if self.cache_file.exists():
             with open(self.cache_file, 'r', encoding='utf-8') as f:
                 self.data = json.load(f)
         else:
@@ -176,8 +182,8 @@ export function getStotteordninger(gulliste, tiltak, bygningstype) {{
 """
         
         # Generer filen direkte i src/data/ mappen
-        js_file = "src/data/stotteordningData.js"
-        os.makedirs(os.path.dirname(js_file), exist_ok=True)
+        js_file = ROOT_DIR / "src" / "data" / "stotteordningData.js"
+        js_file.parent.mkdir(parents=True, exist_ok=True)
         with open(js_file, 'w', encoding='utf-8') as f:
             f.write(js_content)
         
@@ -187,7 +193,7 @@ export function getStotteordninger(gulliste, tiltak, bygningstype) {{
 
 def main():
     # Test cache-funksjonen
-    cache = StotteordningCache("(2) Matrise_Energitiltak og relevante støtteordninger.xlsx")
+    cache = StotteordningCache(DATA_RAW_DIR / "(2) Matrise_Energitiltak og relevante støtteordninger.xlsx")
     
     # Oppdater cache
     cache.oppdater_cache()
