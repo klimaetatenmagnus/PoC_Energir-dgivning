@@ -9,7 +9,7 @@ async function checkCSVvsAPILogic() {
   
   // First, let's check the CSV format
   console.log("📄 Checking CSV address format:");
-  const csvPath = path.join(process.cwd(), 'Matrikkel 2023.csv');
+  const csvPath = path.join(process.cwd(), 'data', 'raw', 'Matrikkel 2023.csv');
   const csvContent = fs.readFileSync(csvPath, 'utf-8');
   const lines = csvContent.split('\n');
   const headers = lines[0].split(';').map(h => h.trim().replace(/"/g, ''));

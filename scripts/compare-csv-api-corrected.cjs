@@ -38,7 +38,7 @@ async function compareCorrected() {
   }
   
   // Load CSV
-  const csvPath = path.join(process.cwd(), 'Matrikkel 2023.csv');
+  const csvPath = path.join(process.cwd(), 'data', 'raw', 'Matrikkel 2023.csv');
   const csvContent = fs.readFileSync(csvPath, 'utf-8');
   const allRecords = parseCSV(csvContent);
   

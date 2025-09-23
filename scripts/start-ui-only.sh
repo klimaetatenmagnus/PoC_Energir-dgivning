@@ -1,6 +1,13 @@
 #!/bin/bash
 # Start only the UI with required backend services
 
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+cd "${ROOT_DIR}"
+
 echo "🚀 Starting Adresseoppslag UI with backend services..."
 echo ""
 
@@ -12,11 +19,16 @@ pkill -f "node.*solar-service" 2>/dev/null || true
 pkill -f "vite" 2>/dev/null || true
 sleep 1
 
-# Load environment variables
-export $(grep -v '^#' .env | xargs)
+# Load environment variables if present
+if [ -f "${ROOT_DIR}/.env" ]; then
+  # shellcheck disable=SC1090
+  set -a
+  source "${ROOT_DIR}/.env"
+  set +a
+fi
 
 # Check if Python is available
-if ! command -v python &> /dev/null; then
+if ! command -v python &> /dev/null && ! command -v python3 &> /dev/null; then
     echo "❌ Python is not installed or not in PATH!"
     echo "   Støtteordninger API will not work properly."
     echo ""

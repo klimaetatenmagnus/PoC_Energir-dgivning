@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Read and parse CSV file
-const csvPath = path.join(__dirname, '..', 'Matrikkel 2023.csv');
+const csvPath = path.join(__dirname, '..', 'data', 'raw', 'Matrikkel 2023.csv');
 const csvContent = fs.readFileSync(csvPath, 'utf-8');
 
 // Split into lines and parse

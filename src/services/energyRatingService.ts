@@ -11,7 +11,7 @@ export interface EnergyRatingThreshold {
 // Load thresholds from JSON file
 function loadThresholds(): EnergyRatingThreshold[] {
   try {
-    const filePath = path.join(process.cwd(), 'energimerke-grenser.json');
+    const filePath = path.join(process.cwd(), 'data', 'raw', 'energimerke-grenser.json');
     const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
     return data.thresholds;
   } catch (error) {

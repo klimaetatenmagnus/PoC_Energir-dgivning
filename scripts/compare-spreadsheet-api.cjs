@@ -190,7 +190,7 @@ async function main() {
     await testSpecificAddresses();
     
     // Load CSV
-    const csvPath = path.join(process.cwd(), 'Matrikkel 2023.csv');
+    const csvPath = path.join(process.cwd(), 'data', 'raw', 'Matrikkel 2023.csv');
     console.log(`\nLoading spreadsheet: ${csvPath}`);
     
     const csvContent = fs.readFileSync(csvPath, 'utf-8');
@@ -263,8 +263,8 @@ async function main() {
   } catch (error) {
     console.error("\n❌ Error:", error.message);
     console.error("\nMake sure:");
-    console.error("1. API server is running (npm run start:api or ./start-ui-only.sh)");
-    console.error("2. 'Matrikkel 2023.csv' exists in project root");
+    console.error("1. API server is running (npm run start:api or ./scripts/start-ui-only.sh)");
+    console.error("2. 'Matrikkel 2023.csv' exists in data/raw/");
   }
 }
 
