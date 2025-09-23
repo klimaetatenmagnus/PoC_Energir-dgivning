@@ -1,8 +1,5 @@
-/**
- * React-komponent for å vise Gul Liste status
- */
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useGulListeStatus } from '../hooks/useGulListeStatus';
 
 interface GulListeStatusProps {
   adresse?: string;
@@ -11,75 +8,18 @@ interface GulListeStatusProps {
   onStatusChange?: (erPaaGulListe: boolean) => void;
 }
 
-interface GulListeResult {
-  erPaaGulListe: boolean;
-  teigid?: string;
-  gnr?: number;
-  bnr?: number;
-  navn?: string;
-  kategori?: string;
-  vernestatus?: string;
-  adresse?: string;
-  error?: string;
-}
-
 export const GulListeStatus: React.FC<GulListeStatusProps> = ({
   adresse,
   gnr,
   bnr,
-  onStatusChange
+  onStatusChange,
 }) => {
-  const [status, setStatus] = useState<GulListeResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (adresse || (gnr && bnr)) {
-      sjekkGulListe();
-    }
-  }, [adresse, gnr, bnr]);
-
-  const sjekkGulListe = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      let response;
-      
-      if (adresse) {
-        // Sjekk med adresse
-        response = await fetch('/api/gul-liste/sjekk-adresse', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ adresse })
-        });
-      } else if (gnr && bnr) {
-        // Sjekk med GNR/BNR
-        response = await fetch('/api/gul-liste/sjekk-gnr-bnr', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ gnr, bnr })
-        });
-      } else {
-        throw new Error('Enten adresse eller GNR/BNR må oppgis');
-      }
-
-      if (!response.ok) {
-        throw new Error('Feil ved henting av gul liste-status');
-      }
-
-      const result: GulListeResult = await response.json();
-      setStatus(result);
-      
-      if (onStatusChange) {
-        onStatusChange(result.erPaaGulListe);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ukjent feil');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { status, loading, error } = useGulListeStatus({
+    adresse,
+    gnr,
+    bnr,
+    onStatusChange,
+  });
 
   if (loading) {
     return (
@@ -142,69 +82,3 @@ export const GulListeStatus: React.FC<GulListeStatusProps> = ({
   );
 };
 
-// CSS som kan legges til i din stilfil
-const styles = `
-.gul-liste-status {
-  padding: 12px;
-  border-radius: 8px;
-  margin: 10px 0;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-}
-
-.gul-liste-status.paa-liste {
-  background: #fff3cd;
-  border-color: #ffc107;
-}
-
-.gul-liste-status.ikke-paa-liste {
-  background: #d4edda;
-  border-color: #28a745;
-}
-
-.gul-liste-status.error {
-  background: #f8d7da;
-  border-color: #dc3545;
-  color: #721c24;
-}
-
-.gul-liste-status.loading {
-  background: #e9ecef;
-  border-color: #6c757d;
-  color: #495057;
-  text-align: center;
-}
-
-.status-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: 16px;
-}
-
-.gul-liste-info .detail {
-  margin: 4px 0;
-  padding-left: 28px;
-}
-
-.gul-liste-info .label {
-  font-weight: 600;
-  margin-right: 4px;
-}
-
-.gul-liste-info .small {
-  font-size: 12px;
-  color: #666;
-}
-
-.spinner {
-  display: inline-block;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-`;

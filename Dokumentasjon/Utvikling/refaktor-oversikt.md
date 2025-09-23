@@ -146,6 +146,12 @@ Anbefalinger: sentraliser URL-er i config; støtt proxy (`HTTP_PROXY` etc.); log
 | 2025-09-27 | Eksponerte Prometheus-metrikker (`/metrics`), instrumenterte matrikkel-/solkall og resultAssembler-kilder, og la til kontraktstester for begge modulene. `npm run test:contract`, `npx tsc --noEmit` kjørt | `services/building-info-service/{index.ts,metrics.ts,matrikkel.ts,resultAssembler.ts}`, `scripts/test-contract-{matrikkel,resultAssembler}.ts`, `package.json`, `tsconfig.contract.json` |
 | 2025-09-28 | Standardiserte verifikasjonsløpet med `npm run typecheck`/`npm run verify`, opprettet GitHub Actions-workflow og beskrev forslag til dashboards/alerts for GitOps-handover. | `package.json`, `.github/workflows/verify.yml`, `Dokumentasjon/Utvikling/prometheus-metrikker.md` |
 | 2025-09-28 | Ryddet console-logging og `any`-bruk i backend-klientene og API-serveren; la inn delt debug-logger, typed Bruksenhet-respons og oppdaterte håndover-dokumenter. | `services/building-info-service/{logging.ts,resultAssembler.ts,matrikkel.ts}`, `src/clients/{BygningClient.ts,BruksenhetClient.ts,MatrikkelClient.ts,StoreClient.ts}`, `src/api-server.ts`, `README.md` |
+| 2025-09-28 | Typet forbedret building-selection (v1/v2), fjernet `console.log` og brukte felles helper for byggnummer. `npx eslint services/building-info-service/improved-building-selection*.ts` kjørt. | `services/building-info-service/improved-building-selection.ts`, `services/building-info-service/improved-building-selection-v2.ts` |
+| 2025-09-28 | Ryddet legacy i proxy/server og backend-tjenester (`buildingApi`, `csvService`, gul liste-integration); erstattet `any`, la til typer for rå CSV-logger og fjernet `console.log`. `npx eslint server/index.ts src/services/{buildingApi,csvService,gul-liste-integration}.ts` kjørt. | `server/index.ts`, `src/services/{buildingApi.ts,csvService.ts,gul-liste-integration.ts}` |
+| 2025-09-28 | Oppdaterte dokumentasjonen for adresseoppslag: README beskriver modulstruktur/observability og `Overlevering/README.md` peker på samme innhold. | `Dokumentasjon/Utvikling/README.md`, `Overlevering/README.md` |
+| 2025-09-28 | Flyttet frontendlogikk til typed hooks: Figma-adressesøk (`useFigmaAddressSearch`), energimerke-beregning (`useEnergyRatingEstimator`) og gul liste-status (`useGulListeStatus`). Utrensket lokale `console.log` og sentralisert BuildingApi-oppgaver. | `src/App.tsx`, `src/hooks/useFigmaAddressSearch.ts`, `src/hooks/useEnergyRatingEstimator.ts`, `src/hooks/useGulListeStatus.ts`, `src/components/{EnergyRatingEstimator,GulListeStatus}.tsx`, `src/services/buildingApi.ts` |
+| 2025-09-28 | Standardiserte legacy-logger (scripts/utils), flyttet SOAP-debug til `debugLog` og rettet TEK-switch slik at `npm run lint` går grønt igjen. `npm run lint` kjørt | `api-server.js`, `korrekt-teigid.js`, `services/solar-service/index.js`, `services/subsidy-service/index.js`, `src/clients/adresseClient.ts`, `src/components/{AddressSearch.tsx,ErrorDisplay.tsx}`, `src/utils/{bygningstypeMapping.ts,soapDump.ts,tekEnergyCalculations.ts}` |
+| 2025-09-28 | `npm run verify` grønn (typecheck, lint, kontrakttester). Forsøk på `npm run test:full-chain` feilet fordi script mangler i `package.json`; må gjenopprettes før neste løp. | `npm run verify`, `npm run test:full-chain` |
 
 ### Umiddelbare handlinger
 
@@ -153,22 +159,21 @@ Anbefalinger: sentraliser URL-er i config; støtt proxy (`HTTP_PROXY` etc.); log
 - ✅ Flat `eslint.config.js` er etablert og brukes av `npm run lint`, så lint-kontrollen er tilbake i Fase A-løpet.
 - ✅ TypeScript-bruddene er håndtert – Figma-moduler/samples er ryddet eller ekskludert i `tsconfig`, og `npx tsc --noEmit` kjører grønt.
 - ✅ Prometheus-metrikker for building-info-service er etablert (`/metrics`), og kontrakttestene dokumenterer navn/labels. Observability-handover (ServiceMonitor-utkast, dashboardidéer, alert-prinsipper) er beskrevet i dokumentasjonen til bruk for GitOps-teamet.
-- ✅ `npm run verify` samler typecheck, lint og kontraktstester; GitHub Actions-workflow `Verify` kjører samme løp på push/PR (per nå feiler lint-trinnet på legacy-filer til de er ryddet eller ekskludert).
+- ✅ `npm run verify` samler typecheck, lint og kontraktstester; GitHub Actions-workflow `Verify` kjører samme løp på push/PR (frontend-legacy gjenstår i lint-trinnet).
 
-### Status (sist oppdatert 2025-09-27)
+### Status (sist oppdatert 2025-09-28)
 
 - building-info-service er splittet i tydelige moduler (`context`, `matrikkel`, `resultAssembler`) og `index.ts` eksponerer kun Express-skallet. Klientene bruker felles `MatrikkelContext` og `runPythonScript` erstatter hardkodet `python` i API-serveren.
-- End-to-end typekontroll (`npx tsc --noEmit`) er grønn etter oppsplittingen; lint-status er uendret (frontend-legacy gjenstår) og må følges opp senere.
-- Python-miljøet er dokumentert og verifisert (`python3 -m pip install requests openpyxl`); støtteordningsscriptet kjører igjen lokalt.
+- Frontend-adresseoppslag, energimerke-estimator og gul liste-status drives nå av typed hooks (`useFigmaAddressSearch`, `useEnergyRatingEstimator`, `useGulListeStatus`), med felles byggkategorier/TEK-data og oppdatert `BuildingApiService` for forslag.
+- End-to-end typekontroll (`npx tsc --noEmit`) og `npm run lint` er grønne etter opprydding i legacy-scripts, utils og `tekEnergyCalculations`.
 - Observability-krav fra Marvin er gjennomgått; applikasjonen leverer Prometheus-metrikker og dokumentasjon på navn/labels, mens GitOps-/driftsteamet følger opp ServiceMonitor, dashboards og alarmer når de etablerer Marvin-miljøet.
-- `npm run verify` binder sammen `tsc --noEmit`, lint og kontraktstester lokalt; lint-trinnet slår fortsatt ut på legacy-filer, så GitHub Actions-workflowen blir rød til de er håndtert.
+- `npm run verify` binder sammen `tsc --noEmit`, lint og kontraktstester lokalt; lint-blokkeringen fra gamle loggere er fjernet, og verify-løpet er klart når frontend-hookdokumentasjon er på plass.
 - `/metrics` eksponeres nå med Prometheus-metrikker for cache, lookup, eksterne kall og resultAssembler-kilder (`building_info_service_*`), og `npm run test:contract` kjører nye kontraktstester for matrikkel-lookup og resultAssembler.
 - `Dokumentasjon/Utvikling/prometheus-metrikker.md` beskriver alle custom metrics, labels, ServiceMonitor-mal og kontrakttestene; oppdater filen ved endringer i observability-laget.
 
 ### Neste delmål
 
-- Dokumentere ny `npm run verify`-rutine i overlevering/README slik at teamet kjenner CI-løpet.
-- Planlagt lint-opprydding i fase C/D: rydde backend-klienter og building-info-moduler når de først endres, og ta frontend-komponentene samtidig som vi flytter data til hooks. Legacy-scripts som ikke er del av planen merkes med midlertidige ESLint-overrides inntil de kan fjernes.
+- Planlegg full verify-håndtering: gjenopprett `npm run test:full-chain`-scriptet (mangler i `package.json`) og logg nytt testrun når scriptet er på plass.
 
 ### Fast testsekvens
 
@@ -196,13 +201,13 @@ _Disse punktene ble notert i forrige forsøk og må bekreftes før de aktiveres 
    - Legg til `npm run build:backend` og CI-jobb for `tsc`, `lint`, `build`
 3. **Dokumentasjon & observability**
 
-   - Oppdater `Overlevering/Adresseoppslag-rapport.md`, README, GitOps-notater
+   - Oppdater `Overlevering/README.md`, README, GitOps-notater
     - Beskriv prom/alerting-oppsett + tracing-plan
 
 ### Legacy lint-opprydding
 
-- **Backend (fase C):** Når vi videreutvikler `services/building-info-service`, `src/api-server.ts` og klientene i `src/clients`, fjern `console.log`, erstat `any` med domene-typer og slett ubrukte `eslint-disable`. Lint må gå grønt for disse modulene før deloppgaven regnes som ferdig.
-- **Frontend (fase D):** Samtidig som data flyttes til hooks rydder vi `App.tsx`, `EnergyRatingEstimator.tsx`, `GulListeStatus.tsx` m.fl. for hook-brudd og logging. Legg typarbeidet inn i oppgaven for å unngå dobbelrefaktorering.
+- **Backend (fase C):** ✅ Ferdig: building-info-moduler, proxy/server og tilhørende tjenester er ryddet for `console.log`, `any` og ubrukte `eslint-disable`.
+- **Frontend (fase D):** Kjør lint/type-opprydding i `App.tsx`, `EnergyRatingEstimator.tsx`, `GulListeStatus.tsx` m.fl. parallelt med hook/tiltak-refaktor. Legg typarbeidet inn i oppgaven for å unngå dobbelrefaktorering.
 - **Scripts/øvrige filer:** Legg midlertidige ESLint-overrides i `eslint.config.js` for frittstående scripts og dokumenter unntakene. Fjern override når fila enten er slettet eller ryddet.
 - `npm run verify` brukes som eneste samlede sjekk – når lint er grønn for et område skal verify løpe uten ekstra lokale script.
 
@@ -235,7 +240,7 @@ _Disse punktene ble notert i forrige forsøk og må bekreftes før de aktiveres 
 3. CI / bygg
    - `npm run build:backend` (dist artefakt) + CI-jobb for type/lint/build
 4. Dokumentasjon
-   - Oppdater `Overlevering/Adresseoppslag-rapport.md` + README med ny backend-struktur og observability
+   - Oppdater `Overlevering/README.md` + README med ny backend-struktur og observability
 5. Frontend/øvrig
    - Fortsett planlagt frontend-refaktor; isolér mock-data, flytt API-kall til hooks
 

@@ -5,6 +5,9 @@ import path from "node:path";
 /** mappe der alle dump-filer havner  */
 const DIR = path.resolve("soap-dumps");
 
+const infoLog = (...args: unknown[]) => console.warn("[soap-dump]", ...args);
+const errorLog = (...args: unknown[]) => console.error("[soap-dump:error]", ...args);
+
 // lag mappen én gang ved oppstart
 await fs.mkdir(DIR, { recursive: true });
 
@@ -40,10 +43,10 @@ async function cleanupOldDumps(): Promise<void> {
     }
     
     if (filesToDelete.length > 0) {
-      console.log(`🧹 Slettet ${filesToDelete.length} gamle SOAP-dump filer (beholder ${MAX_FILES} nyeste)`);
+      infoLog(`🧹 Slettet ${filesToDelete.length} gamle SOAP-dump filer (beholder ${MAX_FILES} nyeste)`);
     }
   } catch (err) {
-    console.error("⚠️  Feil ved opprydding av SOAP-dump filer:", err);
+    errorLog("⚠️  Feil ved opprydding av SOAP-dump filer", err);
   }
 }
 
@@ -71,7 +74,7 @@ export async function dumpSoap(
     // Dette sikrer at vi aldri får for mange filer
     await cleanupOldDumps();
   } catch (err) {
-    console.error("⚠️  Klarte ikke å skrive SOAP-dump-fil:", err);
+    errorLog("⚠️  Klarte ikke å skrive SOAP-dump-fil", err);
   }
 }
 

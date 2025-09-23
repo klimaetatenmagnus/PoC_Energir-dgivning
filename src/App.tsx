@@ -1,246 +1,35 @@
 // src/App.tsx
-import React, { useState, useEffect, useRef } from "react";
-import { buildingApi } from "./services/buildingApi";
-import type { AddressLookupResponse } from "./services/buildingApi";
+import React from "react";
 import { FigmaMainScript } from "./components/FigmaMainScript";
-import { LYSEVEIEN_3_DATA } from "./testData/lyseveien3";
-import { THERESES_11A_DATA } from "./testData/theresegate11a";
-import { THERESES_44A_DATA } from "./testData/theresegate44a";
+import { useFigmaAddressSearch } from "./hooks/useFigmaAddressSearch";
 
 export default function App() {
-  const [mode, setMode] = useState<"figma" | "figma-blokk">("figma");
-
-  // Close suggestions when clicking outside (Figma mode)
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (figmaWrapperRef.current && !figmaWrapperRef.current.contains(event.target as Node)) {
-        setShowFigmaSuggestions(false);
-      }
-    };
-
-    if (mode === "figma" || mode === "figma-blokk") {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [mode]);
-
-  /* Figma mode state */
-  const [figmaSearchValue, setFigmaSearchValue] = useState("");
-  const [figmaLoading, setFigmaLoading] = useState(false);
-  const [figmaError, setFigmaError] = useState<Error | null>(null);
-  type AddressSuggestion = {
-    adresse?: string;
-    adressetekst?: string;
-  };
-
-  const [figmaResult, setFigmaResult] = useState<AddressLookupResponse | null>(null);
-  const [figmaSuggestions, setFigmaSuggestions] = useState<AddressSuggestion[]>([]);
-  const [showFigmaSuggestions, setShowFigmaSuggestions] = useState(false);
-  const [figmaSelectedIndex, setFigmaSelectedIndex] = useState(-1);
-  const [isLoadingFigmaSuggestions, setIsLoadingFigmaSuggestions] = useState(false);
-  const figmaDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const figmaWrapperRef = useRef<HTMLDivElement>(null);
-  
-  /* Skyline fade animation state */
-  const [skylineFadeOpacity, setSkylineFadeOpacity] = useState(1);
-  
-  /* Header fade animation state */
-  const [headerFadeOpacity, setHeaderFadeOpacity] = useState(1);
-  
-  /* Helper function to determine if building is Enebolig */
-  const isEnebolig = React.useMemo(() => {
-    if (!figmaResult) return false;
-    
-    // First check CSV/Excel data
-    const csvBuildingType = figmaResult.csvData?.bygningstypeNavn?.toLowerCase();
-    if (csvBuildingType) {
-      return csvBuildingType.includes('enebolig') || 
-             csvBuildingType.includes('tomannsbolig') || 
-             csvBuildingType.includes('rekkehus');
-    }
-    
-    // Fallback to API data
-    const buildingTypeCode = figmaResult.bygningstypeKode;
-    const buildingTypeId = figmaResult.bygningstypeKodeId;
-    
-    if (buildingTypeCode) {
-      const code = parseInt(buildingTypeCode);
-      // Enebolig (11x codes) or Tomannsbolig/rekkehus (12x-13x codes)
-      return code >= 110 && code < 140;
-    } else if (buildingTypeId) {
-      // Handle internal IDs for enebolig types
-      return buildingTypeId === 1 || buildingTypeId === 4 || buildingTypeId === 5 || buildingTypeId === 8;
-    }
-    return false;
-  }, [figmaResult]);
-
-  const handleFigmaSearch = async () => {
-    if (!figmaSearchValue.trim()) return;
-    
-    setFigmaLoading(true);
-    setFigmaError(null);
-    
-    try {
-      const result = await buildingApi.lookupAddress(figmaSearchValue);
-      setFigmaResult(result);
-      console.log('[Figma] Lookup successful:', result);
-      
-      // Debug Herslebs gate 11
-      if (figmaSearchValue.includes('Herslebs gate 11')) {
-        console.log('🔍 DEBUG Herslebs gate 11 frontend:');
-        console.log('  bruksarealM2:', result.bruksarealM2);
-        console.log('  byggeaar:', result.byggeaar);
-        console.log('  csvData:', result.csvData);
-      }
-      
-      // Start fade animation first
-      setSkylineFadeOpacity(0);
-      setHeaderFadeOpacity(0);
-      
-      // Then switch to FigmaMainScript after fade completes
-      setTimeout(() => {
-        setMode('figma-blokk');
-      }, 2000);
-    } catch (error) {
-      console.error('[Figma] Lookup failed:', error);
-      setFigmaError(error instanceof Error ? error : new Error('Ukjent feil'));
-      setFigmaResult(null);
-    } finally {
-      setFigmaLoading(false);
-    }
-  };
-
-  // Fetch address suggestions for Figma mode
-  const fetchFigmaSuggestions = async (query: string) => {
-    if (query.length < 3) {
-      setFigmaSuggestions([]);
-      return;
-    }
-
-    setIsLoadingFigmaSuggestions(true);
-    try {
-      const response = await fetch(`http://localhost:3001/api/address-suggestions?query=${encodeURIComponent(query)}`);
-      if (response.ok) {
-        const data = (await response.json()) as { suggestions?: AddressSuggestion[] };
-        const suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
-        setFigmaSuggestions(suggestions);
-        setShowFigmaSuggestions(suggestions.length > 0);
-      } else {
-        console.error('Failed to fetch suggestions:', response.status);
-        setFigmaSuggestions([]);
-      }
-    } catch (error) {
-      console.error('Error fetching suggestions:', error);
-      setFigmaSuggestions([]);
-    } finally {
-      setIsLoadingFigmaSuggestions(false);
-    }
-  };
-
-  // Handle input change with debouncing for Figma mode
-  const handleFigmaInputChange = (value: string) => {
-    setFigmaSearchValue(value);
-    if (figmaError) setFigmaError(null);
-    setFigmaSelectedIndex(-1);
-
-    // TEST MODE: Handle test triggers
-    if (value === "1") {
-      console.log('[TEST MODE] Loading Lyseveien 3 data (Enebolig)');
-      setFigmaSearchValue("Lyseveien 3, 0362 OSLO");
-      setFigmaResult(LYSEVEIEN_3_DATA.buildingData as AddressLookupResponse);
-      // Start fade animation immediately
-      setSkylineFadeOpacity(0);
-      setHeaderFadeOpacity(0);
-      // Switch to figma-blokk mode after fade
-      setTimeout(() => {
-        setMode('figma-blokk');
-      }, 2000);
-      return;
-    } else if (value === "2") {
-      console.log('[TEST MODE] Loading Thereses gate 11A data (Blokkleilighet)');
-      setFigmaSearchValue("Thereses gate 11A, 0358 OSLO");
-      setFigmaResult(THERESES_11A_DATA.buildingData as AddressLookupResponse);
-      // Start fade animation immediately
-      setSkylineFadeOpacity(0);
-      setHeaderFadeOpacity(0);
-      // Switch to figma-blokk mode after fade
-      setTimeout(() => {
-        setMode('figma-blokk');
-      }, 2000);
-      return;
-    } else if (value === "3") {
-      console.log('[TEST MODE] Loading Thereses gate 44A data (Bygård)');
-      setFigmaSearchValue("Thereses gate 44A, 0168 OSLO");
-      setFigmaResult(THERESES_44A_DATA.buildingData as AddressLookupResponse);
-      // Start fade animation immediately
-      setSkylineFadeOpacity(0);
-      setHeaderFadeOpacity(0);
-      // Switch to figma-blokk mode after fade
-      setTimeout(() => {
-        setMode('figma-blokk');
-      }, 2000);
-      return;
-    }
-
-    // Clear existing timer
-    if (figmaDebounceTimerRef.current) {
-      clearTimeout(figmaDebounceTimerRef.current);
-    }
-
-    // Set new timer for debouncing (300ms delay)
-    figmaDebounceTimerRef.current = setTimeout(() => {
-      fetchFigmaSuggestions(value);
-    }, 300);
-  };
-
-  // Handle keyboard navigation for Figma mode
-  const handleFigmaKeyDown = (e: React.KeyboardEvent) => {
-    if (!showFigmaSuggestions || figmaSuggestions.length === 0) {
-      if (e.key === 'Enter') {
-        handleFigmaSearch();
-      }
-      return;
-    }
-
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setFigmaSelectedIndex(prev => 
-          prev < figmaSuggestions.length - 1 ? prev + 1 : prev
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setFigmaSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
-        break;
-      case 'Enter':
-        if (figmaSelectedIndex >= 0) {
-          e.preventDefault();
-          handleFigmaSuggestionSelect(figmaSuggestions[figmaSelectedIndex]);
-        } else {
-          handleFigmaSearch();
-        }
-        break;
-      case 'Escape':
-        setShowFigmaSuggestions(false);
-        setFigmaSelectedIndex(-1);
-        break;
-    }
-  };
-
-  // Handle suggestion selection for Figma mode
-  const handleFigmaSuggestionSelect = (suggestion: AddressSuggestion) => {
-    setFigmaSearchValue(suggestion.adresse);
-    setFigmaSuggestions([]);
-    setShowFigmaSuggestions(false);
-    setFigmaSelectedIndex(-1);
-    setFigmaError(null);
-  };
+  const {
+    mode,
+    searchValue,
+    loading,
+    error,
+    result,
+    suggestions,
+    showSuggestions,
+    selectedSuggestionIndex,
+    suggestionsLoading,
+    skylineFadeOpacity,
+    headerFadeOpacity,
+    wrapperRef,
+    isEnebolig,
+    handleSearch,
+    handleInputChange,
+    handleKeyDown,
+    handleSuggestionSelect,
+    openSuggestions,
+    handleBack,
+    highlightSuggestion,
+    clearHighlightedSuggestion,
+  } = useFigmaAddressSearch();
 
   // Special rendering for Figma blokk mode (handles both enebolig and blokk)
-  if (mode === "figma-blokk" && figmaResult) {
+  if (mode === "figma-blokk" && result) {
     return (
       <div style={{ 
         position: 'fixed', 
@@ -255,16 +44,9 @@ export default function App() {
         alignItems: 'center'
       }}>
         <FigmaMainScript
-          searchAddress={figmaSearchValue}
-          buildingData={figmaResult}
-          onBack={() => {
-            setMode("figma");
-            setFigmaResult(null);
-            setFigmaSearchValue("");
-            setFigmaError(null);
-            setSkylineFadeOpacity(1); // Reset skyline opacity
-            setHeaderFadeOpacity(1); // Reset header opacity
-          }}
+          searchAddress={searchValue}
+          buildingData={result}
+          onBack={handleBack}
         />
       </div>
     );
@@ -272,8 +54,6 @@ export default function App() {
 
   // Special rendering for Figma mode - completely separate page
   if (mode === "figma") {
-    console.log('[Figma Mode] Rendering Figma design');
-
     return (
       <div className="figma-design-container" style={{ 
         background: '#034B45', 
@@ -320,7 +100,7 @@ export default function App() {
             <h1 className="energiportalen-title">Energinøkkelen</h1>
             
             {/* Søkefelt wrapper */}
-            <div className="figma-search-wrapper" ref={figmaWrapperRef}>
+            <div className="figma-search-wrapper" ref={wrapperRef}>
               {/* Label */}
               <label className="figma-search-label">
                 Søk etter adresse
@@ -334,21 +114,21 @@ export default function App() {
                     type="text"
                     placeholder="Skriv inn adresse..."
                     className="figma-search-input"
-                    value={figmaSearchValue}
-                    onChange={(e) => handleFigmaInputChange(e.target.value)}
-                    onKeyDown={handleFigmaKeyDown}
-                    onFocus={() => figmaSuggestions.length > 0 && setShowFigmaSuggestions(true)}
-                    disabled={figmaLoading}
+                    value={searchValue}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onFocus={openSuggestions}
+                    disabled={loading}
                     autoComplete="off"
                   />
                   
                   {/* Søkeknapp */}
                   <button 
                     className="figma-search-button"
-                    onClick={handleFigmaSearch}
-                    disabled={figmaLoading}
+                    onClick={handleSearch}
+                    disabled={loading}
                   >
-                    {figmaLoading ? (
+                    {loading ? (
                       <span className="loading-spinner-small">⟳</span>
                     ) : (
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -365,21 +145,21 @@ export default function App() {
                 </div>
                 
                 {/* Suggestions dropdown */}
-                {showFigmaSuggestions && figmaSuggestions.length > 0 && (
-                  <ul className="figma-search-suggestions">
-                    {isLoadingFigmaSuggestions ? (
+                {showSuggestions && suggestions.length > 0 && (
+                  <ul className="figma-search-suggestions" onMouseLeave={clearHighlightedSuggestion}>
+                    {suggestionsLoading ? (
                       <li className="figma-search-suggestion figma-search-suggestion--loading">
                         Søker...
                       </li>
                     ) : (
-                      figmaSuggestions.map((suggestion, index) => (
+                      suggestions.map((suggestion, index) => (
                         <li
-                          key={index}
+                          key={suggestion.adresse ?? suggestion.adressetekst ?? `suggestion-${index}`}
                           className={`figma-search-suggestion ${
-                            index === figmaSelectedIndex ? 'figma-search-suggestion--selected' : ''
+                            index === selectedSuggestionIndex ? 'figma-search-suggestion--selected' : ''
                           }`}
-                          onClick={() => handleFigmaSuggestionSelect(suggestion)}
-                          onMouseEnter={() => setFigmaSelectedIndex(index)}
+                          onClick={() => handleSuggestionSelect(suggestion)}
+                          onMouseEnter={() => highlightSuggestion(index)}
                         >
                           {suggestion.adressetekst || suggestion.adresse}
                         </li>
@@ -390,9 +170,9 @@ export default function App() {
               </div>
               
               {/* Error message */}
-              {figmaError && (
+              {error && (
                 <div className="figma-error-message">
-                  {figmaError.message}
+                  {error.message}
                 </div>
               )}
             </div>
@@ -581,7 +361,7 @@ export default function App() {
           </g>
           
           {/* Enebolig1 - visible only when isEnebolig is true */}
-          <g style={{ opacity: isEnebolig || !figmaResult ? 1 : 0, transition: 'opacity 1.5s ease-in-out' }}>
+          <g style={{ opacity: isEnebolig || !result ? 1 : 0, transition: 'opacity 1.5s ease-in-out' }}>
             <path d="M320.018 271.883L350.789 302.697V352H320.018H289.248V302.697L320.018 271.883Z" fill="#D0BFAE"/>
             <path d="M350.783 302.697H381.554V352H350.783V302.697Z" fill="#F8F0DD"/>
             <path d="M350.783 302.697H381.554L350.783 271.883H320.013L350.783 302.697Z" fill="#2A2859"/>
@@ -589,7 +369,7 @@ export default function App() {
           </g>
           
           {/* Blokk - visible only when isEnebolig is false */}
-          <g style={{ opacity: !isEnebolig && figmaResult ? 1 : 0, transition: 'opacity 1.5s ease-in-out' }}>
+          <g style={{ opacity: !isEnebolig && result ? 1 : 0, transition: 'opacity 1.5s ease-in-out' }}>
             <path d="M1137.48 148.625L1149.78 160.951H1162.09V173.277H1174.4V185.602H1186.71V197.928H1174.4H1137.48V185.602H1100.55V148.625H1137.48Z" fill="#2A2859"/>
             <path d="M1149.78 197.927H1186.71V351.999H1149.78V197.927Z" fill="#F8F0DD"/>
             <path d="M1063.63 185.602V173.276H1075.93V160.951H1088.24L1100.55 148.625L1112.86 160.951H1125.17V173.276H1137.48V185.602H1149.78V197.928V351.999H1051.32V197.928V185.602H1063.63Z" fill="#D0BFAE"/>

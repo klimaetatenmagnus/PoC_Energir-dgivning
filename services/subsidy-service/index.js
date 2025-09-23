@@ -6,6 +6,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const infoLog = (...args) => console.warn('[subsidy-service]', ...args);
+
 // For demo/PoC: stub som returnerer Enova-støtte basert på tiltak-navn
 // Senere bytter vi ut stub med kall til ekte Enova-API
 app.get("/subsidy", (req, res) => {
@@ -23,5 +25,5 @@ app.get("/subsidy", (req, res) => {
 
 const port = process.env.PORT || 4001;
 app.listen(port, () =>
-  console.log(`subsidy-service kjører på http://localhost:${port}`)
+  infoLog(`Kjører på http://localhost:${port}`)
 );

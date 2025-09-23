@@ -54,9 +54,9 @@ function ensureContext(xml: string, service: string): string {
         <dom:systemVersion>trunk</dom:systemVersion>
         <dom:klientIdentifikasjon>proxy</dom:klientIdentifikasjon>
       </kod:matrikkelContext>`;
-    if (/<kod:getKodelister[^>]*\/\>/.test(xml)) {
+    if (/<kod:getKodelister[^>]*\/>/.test(xml)) {
       return xml.replace(
-        /<kod:getKodelister[^>]*\/\>/,
+        /<kod:getKodelister[^>]*\/>/,
         `<kod:getKodelister>${inner}</kod:getKodelister>`
       );
     }
@@ -166,7 +166,7 @@ app.post("/api/matrikkel/:service", async (req, res) => {
 });
 
 // ────── 4. Oppstart-logg ────────────────────────────────────────────────
-console.log(
+console.warn(
   `env=${env}`,
   "\nBASE_URL =",
   BASE_URL || "(undefined)",
@@ -175,7 +175,7 @@ console.log(
 );
 
 app.listen(3000, () =>
-  console.log(`Proxy listening on http://localhost:3000  (env=${env})`)
+  console.warn(`Proxy listening on http://localhost:3000  (env=${env})`)
 );
 
 // HACK: hold prosessen i live i ts-node-ESM-miljøet

@@ -1,8 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const { exec } = require('child_process');
+
 const app = express();
 const port = 3002;
+
+const infoLog = (...args) => console.warn('[legacy-api]', ...args);
+const errorLog = (...args) => console.error('[legacy-api:error]', ...args);
 
 app.use(cors());
 app.use(express.json());
@@ -19,19 +23,19 @@ app.get('/api/stotteordninger', (req, res) => {
   
   exec(`python hent_stotteordninger_api_google.py ${gullisteParam} ${tiltak} ${bygningstype}`, (error, stdout, stderr) => {
     if (error) {
-      console.error(`Error: ${error}`);
+      errorLog('Python script feilet', error);
       return res.status(500).json({ error: error.message });
     }
-    
+
     if (stderr) {
-      console.error(`Stderr: ${stderr}`);
+      errorLog('Python script stderr', stderr);
     }
-    
+
     try {
       const result = JSON.parse(stdout);
       res.json(result);
     } catch (parseError) {
-      console.error(`Parse error: ${parseError}`);
+      errorLog('Kunne ikke parse Python-output', parseError);
       res.status(500).json({ error: 'Failed to parse Python output' });
     }
   });
@@ -47,24 +51,24 @@ app.get('/api/alle-stotteordninger', (req, res) => {
   
   exec(`python hent_alle_stotteordninger_api_google.py ${bygningstype}`, (error, stdout, stderr) => {
     if (error) {
-      console.error(`Error: ${error}`);
+      errorLog('Python script feilet', error);
       return res.status(500).json({ error: error.message });
     }
-    
+
     if (stderr) {
-      console.error(`Stderr: ${stderr}`);
+      errorLog('Python script stderr', stderr);
     }
-    
+
     try {
       const result = JSON.parse(stdout);
       res.json(result);
     } catch (parseError) {
-      console.error(`Parse error: ${parseError}`);
+      errorLog('Kunne ikke parse Python-output', parseError);
       res.status(500).json({ error: 'Failed to parse Python output' });
     }
   });
 });
 
 app.listen(port, () => {
-  console.log(`API server listening at http://localhost:${port}`);
+  infoLog(`API server lytter på http://localhost:${port}`);
 });

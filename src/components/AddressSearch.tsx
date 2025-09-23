@@ -152,7 +152,6 @@ export const AddressSearch: React.FC<AddressSearchProps> = ({ onSearch, isLoadin
     e.preventDefault();
     
     if (validateAddress(address)) {
-      console.log('[AddressSearch] Søker etter adresse:', address);
       onSearch(address.trim());
       setShowSuggestions(false);
     }

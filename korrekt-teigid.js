@@ -1,5 +1,9 @@
 // KORREKT generering av Oslo teigid fra gårds- og bruksnummer
 
+const infoLog = (...args) => console.warn('[korrekt-teigid]', ...args);
+const successLog = (...args) => console.warn('[korrekt-teigid:success]', ...args);
+const errorLog = (...args) => console.error('[korrekt-teigid:error]', ...args);
+
 function genererOsloTeigid(gardsnummer, bruksnummer, festenummer = 0) {
   // Oslo bruker 9-sifret format: GGG-BBBB-FF
   // GGG = 3 siffer gårdsnummer
@@ -16,8 +20,8 @@ function genererOsloTeigid(gardsnummer, bruksnummer, festenummer = 0) {
 async function sjekkGulListe(gardsnummer, bruksnummer, festenummer = 0) {
   const teigid = genererOsloTeigid(gardsnummer, bruksnummer, festenummer);
   
-  console.log(`\nSjekker: Gård ${gardsnummer}, Bruk ${bruksnummer}, Feste ${festenummer}`);
-  console.log(`Generert teigid: ${teigid}`);
+  infoLog(`\nSjekker: Gård ${gardsnummer}, Bruk ${bruksnummer}, Feste ${festenummer}`);
+  infoLog(`Generert teigid: ${teigid}`);
   
   const url = `https://od2.pbe.oslo.kommune.no/cgi-bin/wms?` +
     `map=EIENDOM_TABELL&tabell=kart.gulliste_spatial&` +
@@ -29,21 +33,21 @@ async function sjekkGulListe(gardsnummer, bruksnummer, festenummer = 0) {
     const xml = await response.text();
     
     if (xml.includes("<gml:featureMember>")) {
-      console.log("✅ PÅ GUL LISTE!");
+      successLog('✅ PÅ GUL LISTE!');
       return true;
     } else {
-      console.log("❌ Ikke på gul liste");
+      infoLog('❌ Ikke på gul liste');
       return false;
     }
   } catch (error) {
-    console.error("Feil:", error.message);
+    errorLog('Feil ved henting av gul liste', error);
     return null;
   }
 }
 
 // Test med korrekt format
 async function test() {
-  console.log("=== KORREKT TEIGID GENERERING ===");
+  infoLog('=== KORREKT TEIGID GENERERING ===');
   
   // Test med kjent eksempel: 291199441 = gård 291, bruk 1994, feste 41
   await sjekkGulListe(291, 1994, 41);
@@ -51,8 +55,8 @@ async function test() {
   // Eller hvis det er gård 291, bruk 199, feste 441 (overflow til 3 siffer)
   // Men siden feste normalt er 2 siffer, prøv andre tolkninger
   
-  console.log("\n" + "=".repeat(50));
-  console.log("Andre mulige tolkninger av 291199441:");
+  infoLog("\n" + "=".repeat(50));
+  infoLog('Andre mulige tolkninger av 291199441:');
   
   // Test forskjellige kombinasjoner
   const tolkninger = [
@@ -65,9 +69,9 @@ async function test() {
     await sjekkGulListe(t.gnr, t.bnr, t.fnr);
   }
   
-  console.log("\n" + "=".repeat(50));
-  console.log("INTEGRASJONSKODE FOR DERES APP:\n");
-  console.log(`
+  infoLog("\n" + "=".repeat(50));
+  infoLog('INTEGRASJONSKODE FOR DERES APP:\n');
+  infoLog(`
 // Bruk denne funksjonen med deres eksisterende gnr/bnr data:
 
 function genererTeigid(gnr, bnr, fnr = 0) {
@@ -93,7 +97,7 @@ const gulListe = await erPaaGulListe(291, 1994, 41);
 console.log(gulListe ? "På gul liste!" : "Ikke på gul liste");
   `);
   
-  console.log("\n⚠️ VIKTIG: Hvis dere ikke har festenummer, bruk 0 eller prøv verdier 00-99");
+  infoLog('\n⚠️ VIKTIG: Hvis dere ikke har festenummer, bruk 0 eller prøv verdier 00-99');
 }
 
 test();
