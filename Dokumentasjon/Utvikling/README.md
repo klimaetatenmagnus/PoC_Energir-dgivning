@@ -11,12 +11,14 @@ Denne katalogen samler underlag, beslutninger og logg som trengs for å gjøre k
   - Secrets og Key Vault (`Hvordan bruke secrets i applikasjonen.docx`, `Hvordan opprette Resource groups og Key Vaults.docx`, `Om Secrets.docx`).
   - Drift/sikkerhet (`Kontinuerlig Deployment.docx`, `Om nettverk.docx`, `Sjekkliste for å vurdere sikkerhetsnivå.docx`, `Tilgang fra ArgoCD.docx`).
   - Observability (`Om Grafana.docx`, `Om metrikker.docx`).
+- `prometheus-metrikker.md` – beskriver alle custom metrics, labels, ServiceMonitor-eksempel og kontrakttestar.
 - Øvrige hjelpefiler (for eksempel kontaktpunkter og plattformsbeskrivelser) legges her slik at alt Marvin-relatert ligger ett sted.
 
 ## Arbeidsform
 - Oppdater `refaktor-oversikt.md` før og etter større deloppgaver (f.eks. nye faser, beslutninger, testresultater).
 - Hold docx-ressursene som referanse – de beskriver hvordan Argo CD, External Secrets, nettverk og observability skal fungere i Marvin.
 - Når strategi eller mål endres, speil det både i `refaktor-oversikt.md` og her slik at andre raskt ser status.
+- Kjør `npm run verify` (typecheck + lint + kontraktstester) før du avslutter deloppgaver. Kommandoen samsvarer med GitHub Actions-workflowen `Verify`; se refaktor-oversikten for planlagte unntak.
 
 ## Konvertering av docx-vedlegg
 Filene er lagret i Office-format for å kunne deles bredt. Ved behov for rask lesing fra terminal kan de konverteres on-the-fly, for eksempel:

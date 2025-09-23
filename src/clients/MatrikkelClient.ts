@@ -6,6 +6,39 @@ import { parseStringPromise } from "xml2js";
 import { randomUUID } from "crypto";
 import { dumpSoap } from "../utils/soapDump.ts";
 import type { SoapPhase } from "../utils/soapDump.ts";
+import { debugLog } from "../../services/building-info-service/logging.ts";
+
+type SoapRecord = Record<string, unknown>;
+
+function asRecord(value: unknown): SoapRecord | undefined {
+  return typeof value === "object" && value !== null
+    ? (value as SoapRecord)
+    : undefined;
+}
+
+function extractNumber(value: unknown): number | undefined {
+  if (value == null) return undefined;
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : undefined;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  if (typeof value === "object") {
+    const record = value as SoapRecord;
+    if ("value" in record) {
+      return extractNumber(record.value);
+    }
+    for (const candidate of Object.values(record)) {
+      const found = extractNumber(candidate);
+      if (found !== undefined) {
+        return found;
+      }
+    }
+  }
+  return undefined;
+}
 
 /* ─────────────────────────── Miljø ─────────────────────────── */
 const LOG = process.env.LOG_SOAP === "1";
@@ -67,9 +100,9 @@ export class MatrikkelClient {
     const url = this.serviceUrl(svc);
 
     if (LOG) {
-      console.log(`\n===== SOAP Request » ${action} (${corr}) =====`);
-      console.log(`URL: ${url}`);
-      console.log(envelope);
+      debugLog(`\n===== SOAP Request » ${action} (${corr}) =====`);
+      debugLog(`URL: ${url}`);
+      debugLog(envelope);
     }
     if (LIVE) await dumpSoap(corr, "request", envelope);
 
@@ -93,12 +126,12 @@ export class MatrikkelClient {
         : "response";
 
     if (LOG) {
-      console.log(
+      debugLog(
         `\n===== SOAP ${
           phase === "fault" ? "Fault" : "Response"
         } (${corr}) HTTP ${status} =====\n`
       );
-      console.log(
+      debugLog(
         typeof data === "string" ? data.slice(0, 900) : data,
         typeof data === "string" && data.length > 900 ? " …" : ""
       );
@@ -222,15 +255,6 @@ export class MatrikkelClient {
     },
     ctx: MatrikkelContext
   ): Promise<number[]> {
-    const extra = `
-      ${
-        q.adressekode
-          ? `<mid:adressekode>${q.adressekode}</mid:adressekode>`
-          : ""
-      }
-      ${q.husnummer ? `<mid:husnummer>${q.husnummer}</mid:husnummer>` : ""}
-      ${q.bokstav ? `<mid:bokstav>${q.bokstav}</mid:bokstav>` : ""}`;
-
     const env = this.wrapEnv(`
       <mat:findMatrikkelenheter
            xmlns:mat="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/service/matrikkelenhet"
@@ -266,41 +290,39 @@ export class MatrikkelClient {
     // Fallback til xml2js parsing hvis regex feiler
     const js = await parseStringPromise(xml, { explicitArray: false });
 
-    const bodyAny =
-      js["soap:Envelope"]?.["soap:Body"] ??
-      js.Envelope?.Body ??
-      js["SOAP-ENV:Envelope"]?.["SOAP-ENV:Body"];
-    if (!bodyAny) return [];
+    const body =
+      asRecord(js["soap:Envelope"]?.["soap:Body"]) ??
+      asRecord(js.Envelope?.Body) ??
+      asRecord(js["SOAP-ENV:Envelope"]?.["SOAP-ENV:Body"]);
+    if (!body) return [];
 
-    const body = bodyAny as Record<string, any>;
-    const respKey = (Object.keys(body) as string[]).find((k) =>
+    const respKey = Object.keys(body).find((k) =>
       k.endsWith("Response")
     );
     if (!respKey) return [];
 
-    const retBlock = body[respKey];
-    const retKey = (Object.keys(retBlock) as string[]).find(
+    const retBlock = asRecord(body[respKey]);
+    if (!retBlock) return [];
+
+    const retKey = Object.keys(retBlock).find(
       (k) => k === "return" || k.endsWith(":return")
     );
     const ret = retKey ? retBlock[retKey] : undefined;
     if (!ret) return [];
 
-    const items = Array.isArray(ret.item)
-      ? ret.item
-      : ret.item
-      ? [ret.item]
-      : Array.isArray(ret["ns4:item"])
-      ? ret["ns4:item"]
-      : ret["ns4:item"]
-      ? [ret["ns4:item"]]
+    const retRecord = asRecord(ret);
+    const rawItems = retRecord
+      ? retRecord["item"] ?? retRecord["ns4:item"] ?? retRecord["ns2:item"]
+      : undefined;
+    const items = Array.isArray(rawItems)
+      ? rawItems
+      : rawItems !== undefined
+      ? [rawItems]
       : [];
 
-    return (
-      items
-        .map((it: any) => Number(it?.value ?? it))
-        //     ▼─────────────── type-annotasjon
-        .filter((n: number): n is number => Number.isFinite(n) && n > 0)
-    );
+    return items
+      .map(extractNumber)
+      .filter((n): n is number => typeof n === "number" && Number.isFinite(n));
   }
 
   /* ================ 4. getMatrikkelenhet (detaljer) =========== */

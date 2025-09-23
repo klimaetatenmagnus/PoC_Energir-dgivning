@@ -11,6 +11,7 @@ import { randomUUID } from "crypto";
 import { mapBygningstypeId, getBygningstypeBeskrivelse } from "../utils/bygningstypeMapping.ts";
 import type { BruksenhetInfo } from "./BruksenhetClient.ts";
 import "../../loadEnv.ts"; 
+import { debugLog, warnLog } from "../../services/building-info-service/logging.ts";
 
 /* ─────────────────────────── Miljøflagg ─────────────────────────── */
 const LOG_SOAP = process.env.LOG_SOAP === "1";
@@ -21,6 +22,14 @@ proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
 proj4.defs("EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs");
 export const PBE_EPSG = "EPSG:32632" as const;
 export type EpsgCode = "EPSG:32632" | "EPSG:4326";
+
+type UnknownRecord = Record<string, unknown>;
+
+function toRecord(value: unknown): UnknownRecord | undefined {
+  return typeof value === "object" && value !== null
+    ? (value as UnknownRecord)
+    : undefined;
+}
 
 /* ───────────────────── Typedefinisjoner ─────────────────────────── */
 export interface RepPoint {
@@ -74,12 +83,12 @@ function numDeepStrict(node: unknown): number | undefined {
   if (typeof node === "object") {
     // typisk wrapper: { 'dom:value': '162', '@_unitCode': 'm2' }
     // prøv kjente feltnavn først, så alle verdier
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const o = node as Record<string, unknown>;
+    const record = toRecord(node);
+    if (!record) return undefined;
     return (
-      numDeepStrict(o["dom:value"]) ||
-      numDeepStrict(o.value) ||
-      Object.values(o).map(numDeepStrict).find(Number.isFinite)
+      numDeepStrict(record["dom:value"]) ||
+      numDeepStrict(record.value) ||
+      Object.values(record).map(numDeepStrict).find(Number.isFinite)
     );
   }
   return undefined;
@@ -88,8 +97,8 @@ function numDeepStrict(node: unknown): number | undefined {
 /** Gå rekursivt i XML-treet og finn første forekomst av *localName* */
 function find(node: unknown, local: string): unknown {
   if (node == null || typeof node !== "object") return undefined;
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-  const obj = node as Record<string, unknown>;
+  const obj = toRecord(node);
+  if (!obj) return undefined;
   for (const [key, val] of Object.entries(obj)) {
     if (key.split(":").pop() === local) return val;
     const hit = find(val, local);
@@ -142,19 +151,17 @@ function extractByggeaar(tree: unknown): number | undefined {
   const historikker = find(tree, "bygningsstatusHistorikker") ?? find(tree, "bygningstatusHistorikker");
   
   if (historikker && typeof historikker === "object") {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const hist = historikker as Record<string, unknown>;
-    const items = hist.item ?? Object.values(hist);
+    const hist = toRecord(historikker);
+    const items = hist?.item ?? (hist ? Object.values(hist) : []);
     
     if (Array.isArray(items)) {
       for (const item of items) {
         const dato = find(item, "dato");
         if (dato && typeof dato === "object") {
-          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-          const datoObj = dato as Record<string, unknown>;
-          const dateStr = datoObj.date;
-          if (typeof dateStr === "string") {
-            const year = parseInt(dateStr.substring(0, 4), 10);
+          const datoRecord = toRecord(dato);
+          const dateValue = datoRecord?.date;
+          if (typeof dateValue === "string") {
+            const year = parseInt(dateValue.substring(0, 4), 10);
             if (year > 1800 && year < 2100) return year;
           }
         }
@@ -167,7 +174,7 @@ function extractByggeaar(tree: unknown): number | undefined {
   
   // 1901 ser ut til å være en default-verdi i Matrikkelen
   if (fallbackYear === 1901) {
-    console.log("⚠️  Byggeår 1901 kan være en default-verdi i Matrikkelen");
+    warnLog("⚠️  Byggeår 1901 kan være en default-verdi i Matrikkelen");
   }
   
   return fallbackYear;
@@ -178,9 +185,8 @@ function extractBygningstypeKodeId(tree: unknown): number | undefined {
   // Søk spesifikt etter bygningstypeKodeId (som har nested value-struktur)
   const bygningstypeKodeId = find(tree, "bygningstypeKodeId");
   if (bygningstypeKodeId && typeof bygningstypeKodeId === "object") {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const kodeObj = bygningstypeKodeId as Record<string, unknown>;
-    const value = kodeObj.value || kodeObj["dom:value"];
+    const kodeObj = toRecord(bygningstypeKodeId);
+    const value = kodeObj?.value || kodeObj?.["dom:value"];
     if (value) {
       const num = Number(value);
       if (Number.isFinite(num)) {
@@ -234,36 +240,35 @@ function extractBruksenhetIds(tree: unknown): number[] {
   // Søk etter bruksenhetIds element
   const bruksenhetIdsElement = find(tree, "bruksenhetIds");
   if (!bruksenhetIdsElement) {
-    if (LOG_SOAP) console.log("❌ Fant ikke bruksenhetIds element i XML");
+    if (LOG_SOAP) debugLog("❌ Fant ikke bruksenhetIds element i XML");
     return bruksenhetIds;
   }
   
-  if (LOG_SOAP) console.log("🔍 Fant bruksenhetIds element:", JSON.stringify(bruksenhetIdsElement, null, 2));
+  if (LOG_SOAP) debugLog("🔍 Fant bruksenhetIds element:", JSON.stringify(bruksenhetIdsElement, null, 2));
   
   // Kan være array eller objekt med item(s)
-  let items: any[] = [];
+  let items: unknown[] = [];
   if (Array.isArray(bruksenhetIdsElement)) {
     items = bruksenhetIdsElement;
   } else if (typeof bruksenhetIdsElement === 'object' && bruksenhetIdsElement !== null) {
-    const element = bruksenhetIdsElement as any;
+    const element = toRecord(bruksenhetIdsElement);
     // Sjekk både item og ns10:item (namespace prefix)
-    const itemElement = element.item || element["ns10:item"] || element["ns2:item"];
+    const itemElement = element?.item || element?.["ns10:item"] || element?.["ns2:item"];
     items = itemElement ? (Array.isArray(itemElement) ? itemElement : [itemElement]) : [];
   }
-  
-  const itemsArray = items;
-  
-  for (const item of itemsArray) {
-    const value = item?.value || item?.["dom:value"] || item;
+
+  for (const item of items) {
+    const itemRecord = toRecord(item);
+    const value = itemRecord?.value || itemRecord?.["dom:value"] || item;
     const num = typeof value === "number" ? value : Number(value);
     if (Number.isFinite(num) && num > 0) {
       bruksenhetIds.push(num);
-      if (LOG_SOAP) console.log(`✅ Lagt til bruksenhet-ID: ${num}`);
+      if (LOG_SOAP) debugLog(`✅ Lagt til bruksenhet-ID: ${num}`);
     }
   }
   
   if (LOG_SOAP && bruksenhetIds.length > 0) {
-    console.log(`🏢 Totalt ${bruksenhetIds.length} bruksenhet-IDer funnet: ${bruksenhetIds.join(", ")}`);
+    debugLog(`🏢 Totalt ${bruksenhetIds.length} bruksenhet-IDer funnet: ${bruksenhetIds.join(", ")}`);
   }
   
   return bruksenhetIds;
@@ -274,7 +279,7 @@ function extractBruksareal(tree: unknown): number | undefined {
   // Debug: sjekk om vi har ufullstendigAreal flagg
   const ufullstendig = find(tree, "ufullstendigAreal");
   if (ufullstendig === "true" || ufullstendig === true) {
-    console.log("⚠️  Bygning har ufullstendigAreal=true");
+    warnLog("⚠️  Bygning har ufullstendigAreal=true");
   }
   
   // Prøv først etasjedata (summert fra alle etasjer)
@@ -282,7 +287,7 @@ function extractBruksareal(tree: unknown): number | undefined {
   if (etasjedata) {
     const totalt = extractNumber(etasjedata, "bruksarealTotalt");
     if (Number.isFinite(totalt) && totalt! > 0) {
-      console.log(`✅ Fant bruksareal i etasjedata: ${totalt} m²`);
+      debugLog(`✅ Fant bruksareal i etasjedata: ${totalt} m²`);
       return totalt;
     }
   }
@@ -290,9 +295,8 @@ function extractBruksareal(tree: unknown): number | undefined {
   // Prøv så individuelle etasjer og summer dem
   const etasjer = find(tree, "etasjer");
   if (etasjer && typeof etasjer === "object") {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const etasjerObj = etasjer as Record<string, unknown>;
-    const items = etasjerObj.item ?? Object.values(etasjerObj);
+    const etasjerObj = toRecord(etasjer);
+    const items = etasjerObj?.item ?? (etasjerObj ? Object.values(etasjerObj) : []);
     
     if (Array.isArray(items)) {
       let totalSum = 0;
@@ -301,7 +305,7 @@ function extractBruksareal(tree: unknown): number | undefined {
         if (Number.isFinite(areal)) totalSum += areal!;
       }
       if (totalSum > 0) {
-        console.log(`✅ Summert bruksareal fra ${items.length} etasjer: ${totalSum} m²`);
+        debugLog(`✅ Summert bruksareal fra ${items.length} etasjer: ${totalSum} m²`);
         return totalSum;
       }
     }
@@ -312,7 +316,7 @@ function extractBruksareal(tree: unknown): number | undefined {
   if (kommunalDel) {
     const altAreal = extractNumber(kommunalDel, "alternativtArealBygning");
     if (Number.isFinite(altAreal) && altAreal! > 0) {
-      console.log(`✅ Bruker alternativtArealBygning: ${altAreal} m²`);
+      debugLog(`✅ Bruker alternativtArealBygning: ${altAreal} m²`);
       return altAreal;
     }
   }
@@ -327,9 +331,9 @@ function extractBruksareal(tree: unknown): number | undefined {
   );
   
   if (Number.isFinite(fallback) && fallback! > 0) {
-    console.log(`✅ Fant bruksareal via fallback: ${fallback} m²`);
+    debugLog(`✅ Fant bruksareal via fallback: ${fallback} m²`);
   } else {
-    console.log("❌ Ingen bruksareal funnet i bygningsdata");
+    debugLog("❌ Ingen bruksareal funnet i bygningsdata");
   }
   
   return fallback;
@@ -367,35 +371,35 @@ export class StoreClient {
 
     // Debug: logg XML-struktur for å finne bygningstype
     if (process.env.DEBUG_BYGNINGSTYPE === "1") {
-      console.log("\n=== DEBUG: Søker etter bygningstype i XML-struktur ===");
-      console.log("Bygg ID:", id);
+      debugLog("\n=== DEBUG: Søker etter bygningstype i XML-struktur ===");
+      debugLog("Bygg ID:", id);
       
       // Søk etter mulige bygningstype-felt
       const muligeFelt = ["bygningstype", "bygningstypeKode", "bygningstypenummer", "bygningskode"];
       for (const felt of muligeFelt) {
         const funnet = find(tree, felt);
         if (funnet) {
-          console.log(`Fant '${felt}':`, JSON.stringify(funnet, null, 2));
+          debugLog(`Fant '${felt}':`, JSON.stringify(funnet, null, 2));
         }
       }
       
       // Sjekk også koder-struktur
       const koder = find(tree, "koder");
       if (koder) {
-        console.log("Fant 'koder':", JSON.stringify(koder, null, 2));
+        debugLog("Fant 'koder':", JSON.stringify(koder, null, 2));
       }
       
       // Vis første del av rå XML for analyse
       if (process.env.DEBUG_BYGNINGSTYPE_FULL === "1") {
-        console.log("\nRå XML (første 2000 tegn):");
-        console.log(raw.substring(0, 2000));
+        debugLog("\nRå XML (første 2000 tegn):");
+        debugLog(raw.substring(0, 2000));
       }
       
       // Lagre XML til fil for første bygg for analyse
       if (process.env.SAVE_XML === "1" && id === 286115596) {
         const fs = await import("fs/promises");
         await fs.writeFile(`/tmp/bygg_${id}.xml`, raw);
-        console.log(`XML lagret til /tmp/bygg_${id}.xml`);
+        debugLog(`XML lagret til /tmp/bygg_${id}.xml`);
       }
     }
 
@@ -481,8 +485,9 @@ export class StoreClient {
       const etasjerElement = find(tree, "etasjer");
       let etasjer = "0";
       if (etasjerElement && typeof etasjerElement === 'object') {
-        const items = (etasjerElement as any).item;
-        const antall = Array.isArray(items) ? items.length : 1;
+        const etasjerRecord = toRecord(etasjerElement);
+        const etasjeItems = etasjerRecord?.item;
+        const antall = Array.isArray(etasjeItems) ? etasjeItems.length : 1;
         etasjer = String(antall);
       }
       
@@ -521,7 +526,7 @@ export class StoreClient {
     };
 
     if (LOG_SOAP)
-      console.log(
+      debugLog(
         `\n===== SOAP Request » ${action} (${corrId}) =====\n${xml}\n`
       );
     if (IS_LIVE) await dumpSoap(corrId, "request", xml);
@@ -541,7 +546,7 @@ export class StoreClient {
         typeof data === "string" ? data : JSON.stringify(data)
       );
     if (LOG_SOAP)
-      console.log(
+      debugLog(
         `===== ${
           phase === "fault" ? "SOAP Fault" : `SOAP Response (HTTP ${status})`
         } (${corrId}) =====\n`
