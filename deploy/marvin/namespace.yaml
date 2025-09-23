@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: energiveiledning
+  labels:
+    app.kubernetes.io/name: energiveiledning
+    app.kubernetes.io/created-by: ok-uke

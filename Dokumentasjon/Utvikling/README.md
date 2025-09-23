@@ -66,12 +66,47 @@ Oppdatert: 2025-09-28 (refaktor runde 2)
 | CSV-filer (`stotteordninger_data.json`, `public`-data) | Fil | Fallback for historiske takflater/støtteordninger |
 | Geonorge adresse-API | REST | Adresseforslag i `/api/address-suggestions` |
 
+### Marvin egress- og proxykrav
+
+| Avhengighet | Endpoint/host | Protokoll | Tilgang i Marvin |
+| --- | --- | --- | --- |
+| Matrikkel SOAP | `https://{env}.matrikkel.no/matrikkelapi/wsapi/v1/service/*` | HTTPS/SOAP over 443 | Krever egress-allowlist; vurder Squid-proxy for dynamiske hoster. 
+| Geonorge adresse-API | `https://ws.geonorge.no/adresser/v1/*` | HTTPS/REST | Tillat outbound 443 (kan gå direkte via egress). |
+| Enova Energiattest | `https://api.data.enova.no/.../Energiattest` | HTTPS/REST | Tillat outbound 443; API-key via Key Vault/ExternalSecret. |
+| PBE Solkart | `https://od2.pbe.oslo.kommune.no/cgi-bin/wms` | HTTPS/WMS/WFS | Tillat outbound 443; kan kreve proxy hvis ikke åpnet i egress. |
+| OpenStreetMap (kartfliser) | `https://tile.openstreetmap.org/*` | HTTPS | Kun nødvendig i demo; vurder å blokkere i prod. |
+
+- For sikkerhetsnivå *Zero-Trust* må egress-regler uttrykkelig whiteliste hostene over. Se `Dokumentasjon/Utvikling/Om nettverk.pdf` for detaljer om Egress Firewall og Squid.
+- HTTP-proxy: sett `HTTPS_PROXY`/`HTTP_PROXY`/`NO_PROXY` i Deployment dersom namespace bruker Squid. Pass på at SOAP-klientene (axios) arver proxy-config fra env.
+- Ingress: denne applikasjonen eksponeres internt; ekstern ingress må konfigureres separat (ikke dekket her).
+
 ## Konfigurasjon og secrets
 
 - All runtime-konfigurasjon hentes via `packages/config/src/runtime.ts`.
 - Nødvendige variabler (prod/test) inkluderer `MATRIKKEL_USERNAME`, `MATRIKKEL_PASSWORD`, `MATRIKKEL_API_BASE_URL_*`, `ENOVA_API_KEY`, `API_PORT`, `PORT`, `LIVE`, `LOG_SOAP`.
 - I Marvin injiseres verdier via External Secrets Operator/Key Vault. Lokalt brukes `.env.local`/`.env` (lastes automatisk). Sett `DOTENV_CONFIG_PATH` dersom filen ligger et annet sted.
 - Diagnoseflagg (`LIVE`, `LOG_SOAP`, `DEBUG_BUILDING_INFO`, `API_DEBUG`) skal være av i prod og kun brukes midlertidig ved feilsøking.
+
+## Containerisering
+
+- `npm run build:backend` (esbuild) lager ferdigkompilerte ESM-artefakter i `dist/backend` for `building-info-service` og `api-server` slik at vi slipper `ts-node` i produksjon.
+- `npm run build:prod` kjører både frontend-build (`vite build`) og backend-builden over. Kommandoen brukes i Docker-builden.
+- `Dockerfile` (rot) er en multi-stage bygg som:
+  - installerer avhengigheter (`npm ci`),
+  - kjører `npm run build:prod`,
+  - pruner devDependencies før runtime-laget settes opp.
+- Runtime-laget kopierer med nødvendige ressursfiler (`Matrikkel 2023.csv`, `stotteordninger_data.json`, `stotteordning_cache.py`) og eksponerer portene `3001` (API) og `4000` (building-info-service).
+- Default `CMD` starter `building-info-service`. Sett `CMD ["node", "./dist/backend/api-server.mjs"]` (eller overstyr i Marvin-manifestet) dersom API-serveren skal være hovedprosessen.
+- Eksempel: `docker build -t energiveiledning:latest .` og `docker run --rm -p 4000:4000 --env-file .env.local energiveiledning:latest`.
+
+## GitOps / Marvin-maler
+
+- `deploy/marvin/` inneholder eksempler på namespace, SecretStore/ExternalSecret, ConfigMap, Deployment (med både `building-info-service` og `api-server`-container), Service og ServiceMonitor.
+- `kustomization.yaml` samler ressursene slik at Argo CD kan synke hele pakken.
+- `argocd-application.yaml` og `applicationset.yaml` viser hvordan repositoriet kan kobles inn i Marvin via Argo CD (enkeltmiljø og multi-miljø).
+- Oppdater `repoURL`, `targetRevision`, Key Vault-navn, namespace og image-tag (`{TAG}`) når manifestene kopieres over i GitOps-repoet.
+- Python-runtime: imagen bruker `python3` for `stotteordning_cache.py`. Sørg for at base layer har Python (ev. legg til install-steg) eller sett `PYTHON_BINARY` i env.
+- Røyktest (lokal): `docker build -t energiveiledning:local .`, `docker run --rm -p 14000:4000 -p 13001:3001 --env-file .env.local energiveiledning:local`, `curl http://localhost:14000/health` og `curl http://localhost:13001/health`.
 
 ## Observability
 
@@ -91,7 +126,10 @@ Oppdatert: 2025-09-28 (refaktor runde 2)
 
 ### Øvrige tester
 - `npm run test:contract` – kontrakttester for Matrikkel/resultAssembler/metrics. Brukes når integrasjoner eller observability-laget endres.
-- `npm run test:full-chain` – spinner opp solar-, building-info- og API-tjenestene og kjører ende-til-ende med adressen `Grenseveien 99, 0663 Oslo`. Krever tilgang til eksterne tjenester (kjør uten sandbox eller med mock).
+- `npm run test:full-chain` – starter `services/solar-service`, building-info-service og API-server via `scripts/test-full-chain.ts` (tsx). End-to-end lookup mot `Grenseveien 99, 0663 Oslo` bekrefter hele flyten.
+  - Bruk `--mock` eller sett `SOLAR_SERVICE_MOCK=1` for å bruke den innebygde solkart-stuben (unngår utgående trafikk). Uten flagg rutes mot PBE Solkart.
+  - Skriptet avslutter tjenestene når testen er ferdig; forvent exit code 0 i loggen for hver tjeneste.
+  - Krever lokal kjøring uten MacosSeatbelt-sandbox for at `http://localhost`-trafikk skal fungere.
 - `LIVE=1 node --loader ts-node/esm scripts/test-known-addresses.ts` – sjekker kjente adresser mot levende tjenester; nyttig etter endringer i byggvalg eller fallbacklogikk.
 - `npm run dev` – lokal integrasjonstest (frontend + backend + solar). Krever ferdig satt `.env`.
 
