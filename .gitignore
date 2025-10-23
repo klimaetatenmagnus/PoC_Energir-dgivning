@@ -3,3 +3,37 @@ node_modules
 soap-dumps/
 dist/
 workspace-archive/
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.eggs/
+.build/
+dist/
+.buildozer/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Virtuelle miljøer / secrets
+.venv/
+venv/
+.env
+.env.*
+
+# Node (hvis aktuelt)
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+.next/
+coverage/
+
+# Editor/OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/settings.json
