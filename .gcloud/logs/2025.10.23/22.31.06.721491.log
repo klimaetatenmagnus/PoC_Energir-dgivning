@@ -1,0 +1,32 @@
+2025-10-23 22:31:06,729 DEBUG    root            Loaded Command Group: ['gcloud', 'projects']
+2025-10-23 22:31:06,734 DEBUG    root            Loaded Command Group: ['gcloud', 'projects', 'get_iam_policy']
+2025-10-23 22:31:06,735 DEBUG    root            Running [gcloud.projects.get-iam-policy] with arguments: [--filter: "bindings.members:cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com", --flatten: "['bindings[].members']", --format: "table(bindings.role)", PROJECT_ID_OR_NUMBER: "energiverktoy-poc-1234"]
+2025-10-23 22:31:06,759 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): cloudresourcemanager.googleapis.com:443
+2025-10-23 22:31:07,690 DEBUG    urllib3.connectionpool https://cloudresourcemanager.googleapis.com:443 "POST /v1/projects/energiverktoy-poc-1234:getIamPolicy?alt=json HTTP/1.1" 200 None
+2025-10-23 22:31:07,693 DEBUG    root            Chosen display Format:default table(bindings.role)
+2025-10-23 22:31:07,695 INFO     root            Display format: "default table(bindings.role)"
+2025-10-23 22:31:07,725 INFO     ___FILE_ONLY___ ROLE
+2025-10-23 22:31:07,725 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:31:07,726 INFO     ___FILE_ONLY___ roles/artifactregistry.writer
+2025-10-23 22:31:07,726 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:31:07,726 INFO     ___FILE_ONLY___ roles/cloudbuild.builds.editor
+2025-10-23 22:31:07,726 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:31:07,726 INFO     ___FILE_ONLY___ roles/iam.serviceAccountUser
+2025-10-23 22:31:07,726 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:31:07,726 INFO     ___FILE_ONLY___ roles/logging.logWriter
+2025-10-23 22:31:07,726 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:31:07,726 INFO     ___FILE_ONLY___ roles/run.admin
+2025-10-23 22:31:07,726 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:31:07,726 INFO     ___FILE_ONLY___ roles/secretmanager.secretAccessor
+2025-10-23 22:31:07,726 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:31:07,726 INFO     ___FILE_ONLY___ roles/storage.objectAdmin
+2025-10-23 22:31:07,726 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:31:07,734 DEBUG    root            Metrics reporting process started...

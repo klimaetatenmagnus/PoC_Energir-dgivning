@@ -1,0 +1,8 @@
+2025-10-24 00:04:20,074 DEBUG    root            Loaded Command Group: ['gcloud', 'config']
+2025-10-24 00:04:20,076 DEBUG    root            Loaded Command Group: ['gcloud', 'config', 'list']
+2025-10-24 00:04:20,077 DEBUG    root            Running [gcloud.config.list] with arguments: [--format: "value(core.project)", SECTION/PROPERTY: "core/project"]
+2025-10-24 00:04:20,077 DEBUG    root            Chosen display Format:config value(core.project)
+2025-10-24 00:04:20,078 INFO     root            Display format: "config value(core.project)"
+2025-10-24 00:04:20,094 INFO     ___FILE_ONLY___ energiverktoy-poc-1234
+
+2025-10-24 00:04:20,101 DEBUG    root            Metrics reporting process started...

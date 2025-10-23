@@ -1,0 +1,55 @@
+2025-10-23 22:40:11,346 DEBUG    root            Loaded Command Group: ['gcloud', 'builds']
+2025-10-23 22:40:11,370 DEBUG    root            Loaded Command Group: ['gcloud', 'builds', 'submit']
+2025-10-23 22:40:11,377 DEBUG    root            Running [gcloud.builds.submit] with arguments: [--config: "deploy/gcp/cloudbuild.yaml", --substitutions: "OrderedDict({'_DEPLOY': 'false', '_TAG': 'manual-test'})"]
+2025-10-23 22:40:11,382 DEBUG    root            (gcloud.builds.submit) interpreting deploy/gcp/cloudbuild.yaml as build config: .options.logging: unused
+Traceback (most recent call last):
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/cloudbuild/cloudbuild_util.py", line 340, in _CheckForUnusedFields
+    _CheckForUnusedFields(field)
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/cloudbuild/cloudbuild_util.py", line 336, in _CheckForUnusedFields
+    raise ValueError('.%s: unused' % unused_msg)
+ValueError: .logging: unused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/cloudbuild/cloudbuild_util.py", line 461, in _YamlToMessage
+    msg = _UnpackCheckUnused(structured_data, msg_type)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/cloudbuild/cloudbuild_util.py", line 350, in _UnpackCheckUnused
+    _CheckForUnusedFields(msg)
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/cloudbuild/cloudbuild_util.py", line 342, in _CheckForUnusedFields
+    raise ValueError('.%s%s' % (used_field.name, e))
+ValueError: .options.logging: unused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/calliope/cli.py", line 944, in Execute
+    resources = calliope_command.Run(cli=self, args=args)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/calliope/backend.py", line 955, in Run
+    resources = command_instance.Run(args)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/surface/builds/submit.py", line 223, in Run
+    build_config = submit_util.CreateBuildConfig(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/builds/submit_util.py", line 659, in CreateBuildConfig
+    build_config = _SetBuildSteps(
+                   ^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/builds/submit_util.py", line 301, in _SetBuildSteps
+    build_config = config.LoadCloudbuildConfigFromPath(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/cloudbuild/config.py", line 169, in LoadCloudbuildConfigFromPath
+    build = cloudbuild_util.LoadMessageFromPath(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/cloudbuild/cloudbuild_util.py", line 496, in LoadMessageFromPath
+    return LoadMessageFromStream(f, msg_type, msg_friendly_name,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/cloudbuild/cloudbuild_util.py", line 390, in LoadMessageFromStream
+    return _YamlToMessage(structured_data, msg_type, msg_friendly_name,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/cloudbuild/cloudbuild_util.py", line 466, in _YamlToMessage
+    raise cloudbuild_exceptions.ParseProtoException(path, msg_friendly_name,
+googlecloudsdk.api_lib.cloudbuild.cloudbuild_exceptions.ParseProtoException: interpreting deploy/gcp/cloudbuild.yaml as build config: .options.logging: unused
+2025-10-23 22:40:11,386 ERROR    root            (gcloud.builds.submit) interpreting deploy/gcp/cloudbuild.yaml as build config: .options.logging: unused
+2025-10-23 22:40:11,393 DEBUG    root            Metrics reporting process started...

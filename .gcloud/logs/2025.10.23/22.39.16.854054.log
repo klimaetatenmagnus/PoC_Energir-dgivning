@@ -1,0 +1,28 @@
+2025-10-23 22:39:16,890 DEBUG    root            Loaded Command Group: ['gcloud', 'beta', 'builds']
+2025-10-23 22:39:16,901 DEBUG    root            Loaded Command Group: ['gcloud', 'beta', 'builds', 'log']
+2025-10-23 22:39:16,901 DEBUG    root            Running [gcloud.beta.builds.log] with arguments: [--stream: "True", BUILD: "27b67b47-ce3d-4f1e-af64-154fab385f22"]
+2025-10-23 22:39:16,919 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): cloudbuild.googleapis.com:443
+2025-10-23 22:39:17,176 DEBUG    urllib3.connectionpool https://cloudbuild.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/locations/global/builds/27b67b47-ce3d-4f1e-af64-154fab385f22?alt=json HTTP/1.1" 200 None
+2025-10-23 22:39:17,181 INFO     root            Streaming logs from GCL: requested logging mode is CLOUD_LOGGING_ONLY.
+2025-10-23 22:39:17,494 INFO     ___FILE_ONLY___ Waiting for build to complete. Polling interval: 1 second(s).
+
+2025-10-23 22:39:17,494 INFO     ___FILE_ONLY___ --------------------------------------- REMOTE BUILD OUTPUT ---------------------------------------
+
+2025-10-23 22:39:19,501 DEBUG    google.api_core.bidi Cleanly exiting request generator.
+2025-10-23 22:39:19,502 DEBUG    google.api_core.bidi Call to retryable <bound method ResumableBidiRpc._recv of <googlecloudsdk.core.gapic_util_internal.BidiRpc object at 0x111c8bf50>> caused <_MultiThreadedRendezvous of RPC that terminated with:
+	status = StatusCode.CANCELLED
+	details = "Locally cancelled by application!"
+	debug_error_string = "None"
+>.
+2025-10-23 22:39:19,502 DEBUG    google.api_core.bidi Not retrying <bound method ResumableBidiRpc._recv of <googlecloudsdk.core.gapic_util_internal.BidiRpc object at 0x111c8bf50>> due to <_MultiThreadedRendezvous of RPC that terminated with:
+	status = StatusCode.CANCELLED
+	details = "Locally cancelled by application!"
+	debug_error_string = "None"
+>.
+2025-10-23 22:39:19,503 INFO     ___FILE_ONLY___ ------------------------------ BUILD FINISHED; TRUNCATING OUTPUT LOGS -----------------------------
+
+2025-10-23 22:39:19,503 INFO     ___FILE_ONLY___ Logs are available at [https://console.cloud.google.com/cloud-build/builds/27b67b47-ce3d-4f1e-af64-154fab385f22?project=168751968131].
+
+2025-10-23 22:39:19,503 DEBUG    root            Chosen display Format:default
+2025-10-23 22:39:19,504 INFO     root            Display format: "default"
+2025-10-23 22:39:19,521 DEBUG    root            Metrics reporting process started...

@@ -1,0 +1,46 @@
+2025-10-23 22:31:38,488 DEBUG    root            Loaded Command Group: ['gcloud', 'secrets']
+2025-10-23 22:31:38,498 DEBUG    root            Loaded Command Group: ['gcloud', 'secrets', 'add_iam_policy_binding']
+2025-10-23 22:31:38,502 DEBUG    root            Running [gcloud.secrets.add-iam-policy-binding] with arguments: [--member: "serviceAccount:cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com", --role: "roles/secretmanager.secretAccessor", SECRET: "MATRIKKEL_USERNAME"]
+2025-10-23 22:31:38,516 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): secretmanager.googleapis.com:443
+2025-10-23 22:31:39,098 DEBUG    urllib3.connectionpool https://secretmanager.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/secrets/MATRIKKEL_USERNAME:getIamPolicy?alt=json&options.requestedPolicyVersion=3 HTTP/1.1" 200 None
+2025-10-23 22:31:39,897 DEBUG    urllib3.connectionpool https://secretmanager.googleapis.com:443 "POST /v1/projects/energiverktoy-poc-1234/secrets/MATRIKKEL_USERNAME:setIamPolicy?alt=json HTTP/1.1" 200 None
+2025-10-23 22:31:39,898 INFO     ___FILE_ONLY___ Updated IAM policy for secret [MATRIKKEL_USERNAME].
+
+2025-10-23 22:31:39,898 DEBUG    root            Chosen display Format:default
+2025-10-23 22:31:39,899 INFO     root            Display format: "default"
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ bindings
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ :
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ -
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___  
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ members
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ :
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___   
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ -
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___  
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ serviceAccount:cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___   
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ role
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ :
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___  
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ roles/secretmanager.secretAccessor
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ etag
+2025-10-23 22:31:39,924 INFO     ___FILE_ONLY___ :
+2025-10-23 22:31:39,925 INFO     ___FILE_ONLY___  
+2025-10-23 22:31:39,925 INFO     ___FILE_ONLY___ BwZB2VIBg7E=
+2025-10-23 22:31:39,925 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:31:39,925 INFO     ___FILE_ONLY___ version
+2025-10-23 22:31:39,925 INFO     ___FILE_ONLY___ :
+2025-10-23 22:31:39,925 INFO     ___FILE_ONLY___  
+2025-10-23 22:31:39,925 INFO     ___FILE_ONLY___ 1
+2025-10-23 22:31:39,925 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:31:39,937 DEBUG    root            Metrics reporting process started...

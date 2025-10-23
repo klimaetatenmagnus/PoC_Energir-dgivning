@@ -1,0 +1,46 @@
+2025-10-23 22:32:51,888 DEBUG    root            Loaded Command Group: ['gcloud', 'secrets']
+2025-10-23 22:32:51,898 DEBUG    root            Loaded Command Group: ['gcloud', 'secrets', 'add_iam_policy_binding']
+2025-10-23 22:32:51,903 DEBUG    root            Running [gcloud.secrets.add-iam-policy-binding] with arguments: [--member: "serviceAccount:cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com", --role: "roles/secretmanager.secretAccessor", SECRET: "MATRIKKEL_SNAPSHOT_VERSION"]
+2025-10-23 22:32:51,915 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): secretmanager.googleapis.com:443
+2025-10-23 22:32:52,395 DEBUG    urllib3.connectionpool https://secretmanager.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/secrets/MATRIKKEL_SNAPSHOT_VERSION:getIamPolicy?alt=json&options.requestedPolicyVersion=3 HTTP/1.1" 200 None
+2025-10-23 22:32:53,198 DEBUG    urllib3.connectionpool https://secretmanager.googleapis.com:443 "POST /v1/projects/energiverktoy-poc-1234/secrets/MATRIKKEL_SNAPSHOT_VERSION:setIamPolicy?alt=json HTTP/1.1" 200 None
+2025-10-23 22:32:53,198 INFO     ___FILE_ONLY___ Updated IAM policy for secret [MATRIKKEL_SNAPSHOT_VERSION].
+
+2025-10-23 22:32:53,199 DEBUG    root            Chosen display Format:default
+2025-10-23 22:32:53,199 INFO     root            Display format: "default"
+2025-10-23 22:32:53,222 INFO     ___FILE_ONLY___ bindings
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ :
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ -
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___  
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ members
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ :
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___   
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ -
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___  
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ serviceAccount:cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___   
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ role
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ :
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___  
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ roles/secretmanager.secretAccessor
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ etag
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ :
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___  
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ BwZB2VZgKTg=
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:32:53,223 INFO     ___FILE_ONLY___ version
+2025-10-23 22:32:53,224 INFO     ___FILE_ONLY___ :
+2025-10-23 22:32:53,224 INFO     ___FILE_ONLY___  
+2025-10-23 22:32:53,224 INFO     ___FILE_ONLY___ 1
+2025-10-23 22:32:53,224 INFO     ___FILE_ONLY___ 
+
+2025-10-23 22:32:53,234 DEBUG    root            Metrics reporting process started...

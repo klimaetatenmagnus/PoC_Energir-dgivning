@@ -1,0 +1,125 @@
+2025-10-23 23:10:52,118 DEBUG    root            Loaded Command Group: ['gcloud', 'storage']
+2025-10-23 23:10:52,274 DEBUG    root            Loaded Command Group: ['gcloud', 'storage', 'cat']
+2025-10-23 23:10:52,276 DEBUG    root            Running [gcloud.storage.cat] with arguments: [URL:1: "['gs://energinokkelen-build-logs/log-77eba3d5-7e74-4a53-85c9-5b397fbf2fdb.txt']"]
+2025-10-23 23:10:52,279 INFO     root            Using high CPU count, single-file workload config.
+2025-10-23 23:10:52,279 DEBUG    root            (gcloud.storage.cat) You do not currently have an active account selected.
+Please run:
+
+  $ gcloud auth login
+
+to obtain new credentials.
+
+If you have already logged in with a different account, run:
+
+  $ gcloud config set account ACCOUNT
+
+to select an already authenticated account to use.
+Traceback (most recent call last):
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/calliope/cli.py", line 944, in Execute
+    resources = calliope_command.Run(cli=self, args=args)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/calliope/backend.py", line 955, in Run
+    resources = command_instance.Run(args)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/surface/storage/cat.py", line 150, in Run
+    self.exit_code = task_executor.execute_tasks(task_iterator=task_iterator)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/tasks/task_executor.py", line 137, in execute_tasks
+    exit_code, _ = _execute_tasks_sequential(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/tasks/task_executor.py", line 55, in _execute_tasks_sequential
+    for task in task_iterator:
+                ^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/plurality_checkable_iterator.py", line 70, in __next__
+    return _get_item_or_raise_exception(self._buffer.pop(0))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/plurality_checkable_iterator.py", line 36, in _get_item_or_raise_exception
+    exceptions.reraise(item.exception, tb=item.stack_trace)
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/core/exceptions.py", line 149, in reraise
+    six.reraise(type(exc_value), exc_value, tb)
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/third_party/six/__init__.py", line 719, in reraise
+    raise value
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/plurality_checkable_iterator.py", line 96, in _populate_buffer
+    self._buffer.append(next(self._iterator))
+                        ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/tasks/cat/cat_task_iterator.py", line 71, in get_cat_task_iterator
+    for item in source_iterator:
+                ^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/name_expansion.py", line 286, in __iter__
+    for input_url, name_expansion_result in self._top_level_iterator:
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/plurality_checkable_iterator.py", line 70, in __next__
+    return _get_item_or_raise_exception(self._buffer.pop(0))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/plurality_checkable_iterator.py", line 36, in _get_item_or_raise_exception
+    exceptions.reraise(item.exception, tb=item.stack_trace)
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/core/exceptions.py", line 149, in reraise
+    six.reraise(type(exc_value), exc_value, tb)
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/third_party/six/__init__.py", line 719, in reraise
+    raise value
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/plurality_checkable_iterator.py", line 96, in _populate_buffer
+    self._buffer.append(next(self._iterator))
+                        ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/name_expansion.py", line 211, in _get_top_level_iterator
+    for resource in self._get_wildcard_iterator(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/name_expansion.py", line 140, in _get_wildcard_iterator
+    return wildcard_iterator.get_wildcard_iterator(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/wildcard_iterator.py", line 132, in get_wildcard_iterator
+    return CloudWildcardIterator(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/wildcard_iterator.py", line 399, in __init__
+    self._client = api_factory.get_api(self._url.scheme)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/storage/api_factory.py", line 159, in get_api
+    api_client = api_class()
+                 ^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/storage/gcs_json/client.py", line 305, in __init__
+    self.client = core_apis.GetClientInstance('storage', 'v1')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/util/apis.py", line 278, in GetClientInstance
+    return apis_internal._GetClientInstance(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/util/apis_internal.py", line 169, in _GetClientInstance
+    http_client = transports.GetApitoolsTransport(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/core/credentials/transports.py", line 80, in GetApitoolsTransport
+    session = requests.GetSession(
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/core/credentials/requests.py", line 85, in GetSession
+    credentials = store.LoadIfEnabled(
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/core/credentials/store.py", line 636, in LoadIfEnabled
+    return Load(
+           ^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/core/credentials/store.py", line 876, in Load
+    cred = _Load(
+           ^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/core/credentials/store.py", line 1058, in _Load
+    raise creds_exceptions.NoActiveAccountException(
+googlecloudsdk.core.credentials.exceptions.NoActiveAccountException: You do not currently have an active account selected.
+Please run:
+
+  $ gcloud auth login
+
+to obtain new credentials.
+
+If you have already logged in with a different account, run:
+
+  $ gcloud config set account ACCOUNT
+
+to select an already authenticated account to use.
+2025-10-23 23:10:52,289 ERROR    root            (gcloud.storage.cat) You do not currently have an active account selected.
+Please run:
+
+  $ gcloud auth login
+
+to obtain new credentials.
+
+If you have already logged in with a different account, run:
+
+  $ gcloud config set account ACCOUNT
+
+to select an already authenticated account to use.
+2025-10-23 23:10:52,300 DEBUG    root            Metrics reporting process started...

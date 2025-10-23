@@ -14,10 +14,10 @@ spec:
         autoscaling.knative.dev/minScale: "0"
         autoscaling.knative.dev/maxScale: "4"
     spec:
-      serviceAccountName: run-energinokkelen@${PROJECT_ID}.iam.gserviceaccount.com
+      serviceAccountName: run-energinokkelen@__PROJECT_ID__.iam.gserviceaccount.com
       containers:
         - name: building-info-service
-          image: ${IMAGE_URI}
+          image: __IMAGE_URI__
           command: ["node", "./dist/backend/building-info-service.mjs"]
           ports:
             - name: http1
@@ -30,56 +30,56 @@ spec:
             - name: NODE_ENV
               value: production
             - name: API_ENV
-              value: ${API_ENV}
+              value: __API_ENV__
             - name: PORT
               value: "4000"
             - name: MATRIKKEL_USERNAME
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: MATRIKKEL_USERNAME
                   key: latest
             - name: MATRIKKEL_PASSWORD
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: MATRIKKEL_PASSWORD
                   key: latest
             - name: MATRIKKEL_API_BASE_URL_PROD
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: MATRIKKEL_API_BASE_URL_PROD
                   key: latest
             - name: MATRIKKEL_API_BASE_URL_TEST
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: MATRIKKEL_API_BASE_URL_TEST
                   key: latest
             - name: MATRIKKEL_USERNAME_TEST
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: MATRIKKEL_USERNAME_TEST
                   key: latest
             - name: MATRIKKEL_SNAPSHOT_VERSION
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: MATRIKKEL_SNAPSHOT_VERSION
                   key: latest
             - name: MATRIKKEL_SYSTEM_VERSION
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: MATRIKKEL_SYSTEM_VERSION
                   key: latest
             - name: ENOVA_API_KEY
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: ENOVA_API_KEY
                   key: latest
             - name: LIVE
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: LIVE
                   key: latest
         - name: api-server
-          image: ${IMAGE_URI}
+          image: __IMAGE_URI__
           command: ["node", "./dist/backend/api-server.mjs"]
           ports:
             - name: http1
@@ -92,7 +92,7 @@ spec:
             - name: NODE_ENV
               value: production
             - name: API_ENV
-              value: ${API_ENV}
+              value: __API_ENV__
             - name: API_PORT
               value: "8080"
             - name: PORT
@@ -104,72 +104,72 @@ spec:
             - name: CONTENT_BUCKET
               value: energinokkelen-content
             - name: MATRIKKEL_USERNAME
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: MATRIKKEL_USERNAME
                   key: latest
             - name: MATRIKKEL_PASSWORD
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: MATRIKKEL_PASSWORD
                   key: latest
             - name: MATRIKKEL_API_BASE_URL_PROD
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: MATRIKKEL_API_BASE_URL_PROD
                   key: latest
             - name: MATRIKKEL_API_BASE_URL_TEST
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: MATRIKKEL_API_BASE_URL_TEST
                   key: latest
             - name: MATRIKKEL_USERNAME_TEST
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: MATRIKKEL_USERNAME_TEST
                   key: latest
             - name: MATRIKKEL_SNAPSHOT_VERSION
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: MATRIKKEL_SNAPSHOT_VERSION
                   key: latest
             - name: MATRIKKEL_SYSTEM_VERSION
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: MATRIKKEL_SYSTEM_VERSION
                   key: latest
             - name: ENOVA_API_KEY
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: ENOVA_API_KEY
                   key: latest
             - name: LIVE
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: LIVE
                   key: latest
             - name: PBE_MAP_BASE_URL
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: PBE_MAP_BASE_URL
                   key: latest
             - name: PBE_IDENTIFY_TOLERANCE
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: PBE_IDENTIFY_TOLERANCE
                   key: latest
             - name: VITE_API_PROXY_URL
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: VITE_API_PROXY_URL
                   key: latest
             - name: VITE_BIS_BASE
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: VITE_BIS_BASE
                   key: latest
         - name: solar-service
-          image: ${IMAGE_URI}
+          image: __IMAGE_URI__
           command: ["node", "./services/solar-service/index.js"]
           ports:
             - name: http1
@@ -186,12 +186,12 @@ spec:
             - name: SOLAR_SERVICE_HOST
               value: "0.0.0.0"
             - name: PBE_MAP_BASE_URL
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: PBE_MAP_BASE_URL
                   key: latest
             - name: PBE_IDENTIFY_TOLERANCE
-              valueSource:
+              valueFrom:
                 secretKeyRef:
                   name: PBE_IDENTIFY_TOLERANCE
                   key: latest

@@ -1,0 +1,11 @@
+2025-10-23 22:49:10,626 DEBUG    root            Loaded Command Group: ['gcloud', 'storage']
+2025-10-23 22:49:10,627 DEBUG    root            Loaded Command Group: ['gcloud', 'storage', 'buckets']
+2025-10-23 22:49:10,778 DEBUG    root            Loaded Command Group: ['gcloud', 'storage', 'buckets', 'create']
+2025-10-23 22:49:10,780 DEBUG    root            Running [gcloud.storage.buckets.create] with arguments: [--location: "europe-north1", --uniform-bucket-level-access: "True", URL:1: "['gs://energinokkelen-build-logs']"]
+2025-10-23 22:49:10,780 INFO     ___FILE_ONLY___ Creating gs://energinokkelen-build-logs/...
+
+2025-10-23 22:49:10,789 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): storage.googleapis.com:443
+2025-10-23 22:49:11,690 DEBUG    urllib3.connectionpool https://storage.googleapis.com:443 "POST /storage/v1/b?alt=json&enableObjectRetention=False&project=energiverktoy-poc-1234&projection=noAcl HTTP/1.1" 200 910
+2025-10-23 22:49:11,692 DEBUG    root            Chosen display Format:default
+2025-10-23 22:49:11,693 INFO     root            Display format: "default"
+2025-10-23 22:49:11,697 DEBUG    root            Metrics reporting process started...

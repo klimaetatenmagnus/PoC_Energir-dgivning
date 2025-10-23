@@ -1,0 +1,74 @@
+2025-10-24 00:03:21,334 DEBUG    root            Loaded Command Group: ['gcloud', 'builds']
+2025-10-24 00:03:21,335 DEBUG    root            Loaded Command Group: ['gcloud', 'builds', 'triggers']
+2025-10-24 00:03:21,336 DEBUG    root            Loaded Command Group: ['gcloud', 'builds', 'triggers', 'list']
+2025-10-24 00:03:21,337 DEBUG    root            Running [gcloud.builds.triggers.list] with arguments: [--format: "json"]
+2025-10-24 00:03:21,341 DEBUG    root            (gcloud.builds.triggers.list) You do not currently have an active account selected.
+Please run:
+
+  $ gcloud auth login
+
+to obtain new credentials.
+
+If you have already logged in with a different account, run:
+
+  $ gcloud config set account ACCOUNT
+
+to select an already authenticated account to use.
+Traceback (most recent call last):
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/calliope/cli.py", line 944, in Execute
+    resources = calliope_command.Run(cli=self, args=args)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/calliope/backend.py", line 955, in Run
+    resources = command_instance.Run(args)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/surface/builds/triggers/list.py", line 56, in Run
+    client = cloudbuild_util.GetClientInstance()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/cloudbuild/cloudbuild_util.py", line 108, in GetClientInstance
+    return apis.GetClientInstance(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/util/apis.py", line 278, in GetClientInstance
+    return apis_internal._GetClientInstance(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/util/apis_internal.py", line 169, in _GetClientInstance
+    http_client = transports.GetApitoolsTransport(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/core/credentials/transports.py", line 80, in GetApitoolsTransport
+    session = requests.GetSession(
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/core/credentials/requests.py", line 85, in GetSession
+    credentials = store.LoadIfEnabled(
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/core/credentials/store.py", line 636, in LoadIfEnabled
+    return Load(
+           ^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/core/credentials/store.py", line 876, in Load
+    cred = _Load(
+           ^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/core/credentials/store.py", line 1058, in _Load
+    raise creds_exceptions.NoActiveAccountException(
+googlecloudsdk.core.credentials.exceptions.NoActiveAccountException: You do not currently have an active account selected.
+Please run:
+
+  $ gcloud auth login
+
+to obtain new credentials.
+
+If you have already logged in with a different account, run:
+
+  $ gcloud config set account ACCOUNT
+
+to select an already authenticated account to use.
+2025-10-24 00:03:21,342 ERROR    root            (gcloud.builds.triggers.list) You do not currently have an active account selected.
+Please run:
+
+  $ gcloud auth login
+
+to obtain new credentials.
+
+If you have already logged in with a different account, run:
+
+  $ gcloud config set account ACCOUNT
+
+to select an already authenticated account to use.
+2025-10-24 00:03:21,349 DEBUG    root            Metrics reporting process started...

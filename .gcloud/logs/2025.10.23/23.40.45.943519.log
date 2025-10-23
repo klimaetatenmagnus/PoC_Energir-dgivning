@@ -1,0 +1,10 @@
+2025-10-23 23:40:45,980 DEBUG    root            Loaded Command Group: ['gcloud', 'builds']
+2025-10-23 23:40:45,981 DEBUG    root            Loaded Command Group: ['gcloud', 'builds', 'describe']
+2025-10-23 23:40:45,982 DEBUG    root            Running [gcloud.builds.describe] with arguments: [--format: "value(status)", BUILD: "4500b1d5-bc7e-4543-89fb-0d401a39dcdb"]
+2025-10-23 23:40:46,001 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): cloudbuild.googleapis.com:443
+2025-10-23 23:40:46,866 DEBUG    urllib3.connectionpool https://cloudbuild.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/locations/global/builds/4500b1d5-bc7e-4543-89fb-0d401a39dcdb?alt=json HTTP/1.1" 200 None
+2025-10-23 23:40:46,869 DEBUG    root            Chosen display Format:default value(status)
+2025-10-23 23:40:46,869 INFO     root            Display format: "default value(status)"
+2025-10-23 23:40:46,896 INFO     ___FILE_ONLY___ WORKING
+
+2025-10-23 23:40:46,906 DEBUG    root            Metrics reporting process started...

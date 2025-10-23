@@ -1,0 +1,259 @@
+2025-10-23 23:22:45,404 DEBUG    root            Loaded Command Group: ['gcloud', 'builds']
+2025-10-23 23:22:45,405 DEBUG    root            Loaded Command Group: ['gcloud', 'builds', 'describe']
+2025-10-23 23:22:45,406 DEBUG    root            Running [gcloud.builds.describe] with arguments: [--format: "json", BUILD: "77eba3d5-7e74-4a53-85c9-5b397fbf2fdb"]
+2025-10-23 23:22:45,429 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): cloudbuild.googleapis.com:443
+2025-10-23 23:22:45,856 DEBUG    urllib3.connectionpool https://cloudbuild.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/locations/global/builds/77eba3d5-7e74-4a53-85c9-5b397fbf2fdb?alt=json HTTP/1.1" 200 None
+2025-10-23 23:22:45,863 DEBUG    root            Chosen display Format:default json
+2025-10-23 23:22:45,864 INFO     root            Display format: "default json"
+2025-10-23 23:22:45,894 INFO     ___FILE_ONLY___ {
+  "artifacts": {
+    "images": [
+      "europe-north1-docker.pkg.dev/energiverktoy-poc-1234/energinokkelen/app:manual-test"
+    ]
+  },
+  "availableSecrets": {
+    "secretManager": [
+      {
+        "env": "MATRIKKEL_USERNAME",
+        "versionName": "projects/energiverktoy-poc-1234/secrets/MATRIKKEL_USERNAME/versions/latest"
+      },
+      {
+        "env": "MATRIKKEL_PASSWORD",
+        "versionName": "projects/energiverktoy-poc-1234/secrets/MATRIKKEL_PASSWORD/versions/latest"
+      },
+      {
+        "env": "MATRIKKEL_USERNAME_TEST",
+        "versionName": "projects/energiverktoy-poc-1234/secrets/MATRIKKEL_USERNAME_TEST/versions/latest"
+      },
+      {
+        "env": "MATRIKKEL_API_BASE_URL_TEST",
+        "versionName": "projects/energiverktoy-poc-1234/secrets/MATRIKKEL_API_BASE_URL_TEST/versions/latest"
+      },
+      {
+        "env": "MATRIKKEL_API_BASE_URL_PROD",
+        "versionName": "projects/energiverktoy-poc-1234/secrets/MATRIKKEL_API_BASE_URL_PROD/versions/latest"
+      },
+      {
+        "env": "MATRIKKEL_SNAPSHOT_VERSION",
+        "versionName": "projects/energiverktoy-poc-1234/secrets/MATRIKKEL_SNAPSHOT_VERSION/versions/latest"
+      },
+      {
+        "env": "MATRIKKEL_SYSTEM_VERSION",
+        "versionName": "projects/energiverktoy-poc-1234/secrets/MATRIKKEL_SYSTEM_VERSION/versions/latest"
+      },
+      {
+        "env": "ENOVA_API_KEY",
+        "versionName": "projects/energiverktoy-poc-1234/secrets/ENOVA_API_KEY/versions/latest"
+      },
+      {
+        "env": "LIVE",
+        "versionName": "projects/energiverktoy-poc-1234/secrets/LIVE/versions/latest"
+      }
+    ]
+  },
+  "createTime": "2025-10-23T21:03:35.205707552Z",
+  "failureInfo": {
+    "detail": "Build step failure: build step 1 \"gcr.io/cloud-builders/npm\" failed: step exited with non-zero status: 1",
+    "type": "USER_BUILD_STEP"
+  },
+  "finishTime": "2025-10-23T21:04:52.270694527Z",
+  "id": "77eba3d5-7e74-4a53-85c9-5b397fbf2fdb",
+  "images": [
+    "europe-north1-docker.pkg.dev/energiverktoy-poc-1234/energinokkelen/app:manual-test"
+  ],
+  "logUrl": "https://console.cloud.google.com/cloud-build/builds/77eba3d5-7e74-4a53-85c9-5b397fbf2fdb?project=168751968131",
+  "logsBucket": "gs://energinokkelen-build-logs",
+  "name": "projects/168751968131/locations/global/builds/77eba3d5-7e74-4a53-85c9-5b397fbf2fdb",
+  "options": {
+    "logging": "LEGACY",
+    "pool": {}
+  },
+  "projectId": "energiverktoy-poc-1234",
+  "queueTtl": "3600s",
+  "results": {
+    "buildStepImages": [
+      "sha256:c4a5b2fe136a8d5a9950594a3df578e2fbaf8a69d1fb0101cbdf857f314cfa26",
+      "sha256:c4a5b2fe136a8d5a9950594a3df578e2fbaf8a69d1fb0101cbdf857f314cfa26",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "buildStepOutputs": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ]
+  },
+  "serviceAccount": "projects/energiverktoy-poc-1234/serviceAccounts/cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com",
+  "source": {
+    "storageSource": {
+      "bucket": "energiverktoy-poc-1234_cloudbuild",
+      "generation": "1761253414040682",
+      "object": "source/1761253340.439842-6f9f243394ae4ca196883c9d07b597d7.tgz"
+    }
+  },
+  "sourceProvenance": {
+    "fileHashes": {
+      "gs://energiverktoy-poc-1234_cloudbuild/source/1761253340.439842-6f9f243394ae4ca196883c9d07b597d7.tgz#1761253414040682": {
+        "fileHash": [
+          {
+            "type": "MD5",
+            "value": "YIEta_p506XQlcn6MHhE5g=="
+          }
+        ]
+      }
+    },
+    "resolvedStorageSource": {
+      "bucket": "energiverktoy-poc-1234_cloudbuild",
+      "generation": "1761253414040682",
+      "object": "source/1761253340.439842-6f9f243394ae4ca196883c9d07b597d7.tgz"
+    }
+  },
+  "startTime": "2025-10-23T21:03:36.573042269Z",
+  "status": "FAILURE",
+  "steps": [
+    {
+      "args": [
+        "ci"
+      ],
+      "id": "Install dependencies",
+      "name": "gcr.io/cloud-builders/npm",
+      "pullTiming": {
+        "endTime": "2025-10-23T21:03:47.071248001Z",
+        "startTime": "2025-10-23T21:03:47.059103114Z"
+      },
+      "status": "SUCCESS",
+      "timing": {
+        "endTime": "2025-10-23T21:04:17.572846169Z",
+        "startTime": "2025-10-23T21:03:47.059103114Z"
+      }
+    },
+    {
+      "args": [
+        "run",
+        "verify:ci"
+      ],
+      "env": [
+        "API_ENV=test"
+      ],
+      "exitCode": 1,
+      "id": "Verify (CI)",
+      "name": "gcr.io/cloud-builders/npm",
+      "pullTiming": {
+        "endTime": "2025-10-23T21:04:17.575217219Z",
+        "startTime": "2025-10-23T21:04:17.572947673Z"
+      },
+      "secretEnv": [
+        "MATRIKKEL_USERNAME",
+        "MATRIKKEL_PASSWORD",
+        "MATRIKKEL_USERNAME_TEST",
+        "MATRIKKEL_API_BASE_URL_TEST",
+        "MATRIKKEL_API_BASE_URL_PROD",
+        "MATRIKKEL_SNAPSHOT_VERSION",
+        "MATRIKKEL_SYSTEM_VERSION",
+        "ENOVA_API_KEY",
+        "LIVE"
+      ],
+      "status": "FAILURE",
+      "timing": {
+        "endTime": "2025-10-23T21:04:51.269594134Z",
+        "startTime": "2025-10-23T21:04:17.572947673Z"
+      }
+    },
+    {
+      "args": [
+        "run",
+        "build:prod"
+      ],
+      "id": "Build production bundle",
+      "name": "gcr.io/cloud-builders/npm",
+      "status": "QUEUED"
+    },
+    {
+      "args": [
+        "-c",
+        "set -eo pipefail\nimage_uri=\"europe-north1-docker.pkg.dev/energiverktoy-poc-1234/energinokkelen/app:manual-test\"\necho \"$image_uri\" > /workspace/image-uri.txt\ndocker build --file Dockerfile --tag \"$image_uri\" .\n"
+      ],
+      "entrypoint": "bash",
+      "id": "Build container image",
+      "name": "gcr.io/cloud-builders/docker",
+      "status": "QUEUED"
+    },
+    {
+      "args": [
+        "-c",
+        "set -eo pipefail\nimage_uri=$(cat /workspace/image-uri.txt)\ndocker push \"$image_uri\"\n"
+      ],
+      "entrypoint": "bash",
+      "id": "Push container image",
+      "name": "gcr.io/cloud-builders/docker",
+      "status": "QUEUED"
+    },
+    {
+      "args": [
+        "-c",
+        "set -eo pipefail\nfrontend_bucket=\"gs://energinokkelen-frontend\"\ncontent_bucket=\"gs://energinokkelen-content\"\ngsutil -m rsync -d -r dist \"${frontend_bucket}\"\ngsutil -m rsync -d -r content \"${content_bucket}\"\n"
+      ],
+      "entrypoint": "bash",
+      "id": "Sync frontend & content buckets",
+      "name": "gcr.io/google.com/cloudsdktool/cloud-sdk",
+      "status": "QUEUED"
+    },
+    {
+      "args": [
+        "-c",
+        "set -eo pipefail\nimage_uri=$(cat /workspace/image-uri.txt)\nCLOUD_RUN_CONFIG=\"deploy/gcp/cloudrun.yaml\"\nexport IMAGE_URI=\"$image_uri\"\nexport PROJECT_ID=\"energiverktoy-poc-1234\"\nexport API_ENV=\"test\"\nexport CLOUD_RUN_CONFIG\npython - <<'PY'\n  import os, pathlib\n  config_path = pathlib.Path(os.environ[\"CLOUD_RUN_CONFIG\"])\n  content = config_path.read_text()\n  for placeholder, value in {\n      \"__IMAGE_URI__\": os.environ[\"IMAGE_URI\"],\n      \"__PROJECT_ID__\": os.environ[\"PROJECT_ID\"],\n      \"__API_ENV__\": os.environ[\"API_ENV\"],\n  }.items():\n      content = content.replace(placeholder, value)\n  out_path = pathlib.Path(\"/workspace/cloudrun-rendered.yaml\")\n  out_path.write_text(content)\n  print(content)\nPY\n"
+      ],
+      "entrypoint": "bash",
+      "id": "Render Cloud Run config",
+      "name": "gcr.io/google.com/cloudsdktool/cloud-sdk",
+      "status": "QUEUED"
+    },
+    {
+      "args": [
+        "-c",
+        "set -eo pipefail\nif [[ \"false\" != \"true\" ]]; then\n  echo \"Skipping Cloud Run deploy (DEPLOY=false).\"\n  exit 0\nfi\ngcloud run services replace /workspace/cloudrun-rendered.yaml --region \"europe-north1\" --project \"energiverktoy-poc-1234\"\n"
+      ],
+      "entrypoint": "bash",
+      "id": "Deploy Cloud Run (conditional)",
+      "name": "gcr.io/google.com/cloudsdktool/cloud-sdk",
+      "status": "QUEUED"
+    }
+  ],
+  "substitutions": {
+    "_API_ENV": "test",
+    "_CLOUD_RUN_CONFIG": "deploy/gcp/cloudrun.yaml",
+    "_CONTENT_BUCKET": "gs://energinokkelen-content",
+    "_DEPLOY": "false",
+    "_FRONTEND_BUCKET": "gs://energinokkelen-frontend",
+    "_REGION": "europe-north1",
+    "_REPOSITORY": "energinokkelen",
+    "_TAG": "manual-test"
+  },
+  "timeout": "3600s",
+  "timing": {
+    "BUILD": {
+      "endTime": "2025-10-23T21:04:51.269674873Z",
+      "startTime": "2025-10-23T21:03:46.384366961Z"
+    },
+    "FETCHSOURCE": {
+      "endTime": "2025-10-23T21:03:46.384287771Z",
+      "startTime": "2025-10-23T21:03:39.429597665Z"
+    },
+    "STORAGE_SOURCE": {
+      "endTime": "2025-10-23T21:03:46.384287771Z",
+      "startTime": "2025-10-23T21:03:39.429597665Z"
+    }
+  }
+}
+2025-10-23 23:22:45,894 INFO     ___FILE_ONLY___ 
+
+2025-10-23 23:22:45,905 DEBUG    root            Metrics reporting process started...

@@ -1,0 +1,15 @@
+2025-10-23 22:25:33,894 DEBUG    root            Loaded Command Group: ['gcloud', 'builds']
+2025-10-23 22:25:33,905 DEBUG    root            Loaded Command Group: ['gcloud', 'builds', 'log']
+2025-10-23 22:25:33,906 DEBUG    root            Running [gcloud.builds.log] with arguments: [BUILD: "03d0909b-721b-4aff-8281-9a3a824c0d1b"]
+2025-10-23 22:25:33,925 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): cloudbuild.googleapis.com:443
+2025-10-23 22:25:35,172 DEBUG    urllib3.connectionpool https://cloudbuild.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/locations/global/builds/03d0909b-721b-4aff-8281-9a3a824c0d1b?alt=json HTTP/1.1" 200 None
+2025-10-23 22:25:35,174 INFO     root            Printing logs from GCL: requested logging mode is CLOUD_LOGGING_ONLY.
+2025-10-23 22:25:35,483 INFO     ___FILE_ONLY___ --------------------------------------- REMOTE BUILD OUTPUT ---------------------------------------
+
+2025-10-23 22:25:35,484 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): logging.googleapis.com:443
+2025-10-23 22:25:36,571 DEBUG    urllib3.connectionpool https://logging.googleapis.com:443 "POST /v2/entries:list?alt=json HTTP/1.1" 200 None
+2025-10-23 22:25:36,572 INFO     ___FILE_ONLY___ ---------------------------------------------------------------------------------------------------
+
+2025-10-23 22:25:36,574 DEBUG    root            Chosen display Format:default
+2025-10-23 22:25:36,575 INFO     root            Display format: "default"
+2025-10-23 22:25:36,591 DEBUG    root            Metrics reporting process started...
