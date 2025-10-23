@@ -13,8 +13,8 @@
 | 1 | Revisjon og klargjøring av kode | Gjennomfør endringene beskrevet i «Kode- og container-tilpasninger» (env-konfig, runtime-content, proxyer). | `npm run verify`, manuelle funksjonelle tester lokalt (`npm run dev`, sjekk `/metrics`, `/api/gul-liste/*`). |
 | 2 | Infrastrukturgrunnlag | Sett opp Artifact Registry, Secret Manager, service accounts, buckets, Cloud CDN-skjelett. | `gcloud`-kommandoer med `--dry-run` der mulig, verifiser IAM via `gcloud projects get-iam-policy`. |
 | 3 | CI/CD-pipeline | Opprett/oppdater `cloudbuild.yaml`, definer GitHub-trigger, legg inn approval-trinn. | Test Cloud Build manuelt: `gcloud builds submit` (dry-run), verifiser artifacts i registry og GCS. |
-| 4 | Cloud Run deploy (staging) | Lag `cloudrun.yaml` med tre containere, deploy til staging-prosjekt. | Smoke-test: `curl` mot `/health`, `/metrics`, `/api/address-lookup`, `/api/gul-liste/sjekk-adresse`. Kjør `npm run test:full-chain` mot staging-URL (LIVE=1). |
-| 5 | Frontend/CDN utrulling | Publiser `dist/` og content til staging-buckets, konfigurer CDN og runtime-config (`app.json`). | Åpne staging-URL i nettleser, kjør synthetic test (f.eks. `npx playwright` smoke). |
+| 4 | Cloud Run deploy (staging) | Lag `cloudrun.yaml` med tre containere, deploy til staging-prosjekt, verifiser at backend henter secrets via Secret Manager. | Smoke-test: `curl` mot `/health`, `/metrics`, `/api/address-lookup`, `/api/gul-liste/sjekk-adresse`. Kjør `npm run test:full-chain` mot staging-URL (LIVE=1). |
+| 5 | Frontend/CDN utrulling | Publiser `dist/` til `energinokkelen-frontend` og runtime-content til `energinokkelen-content`, sett opp Cloud CDN med SSL og SPA rewrite, bekreft at frontend laster `app.json`/content uten rebuild. | Åpne staging-URL i nettleser, kjør synthetic test (f.eks. `npx playwright` smoke), invalidér CDN-cache ved oppdatering. |
 | 6 | Produksjonsklarering | Gjennomgå logg/målinger, avklar åpne punkter (fast IP, auth). | Dokumentert sjekkliste, sign-off. |
 | 7 | Produksjonsdeploy | Kjør Cloud Build med prod-substitusjoner, oppdater Cloud Run prod, sync GCS prod, invalider CDN. | Post-deploy monitoring 24h, `curl`-smoke, dashboards. |
 | 8 | Etterarbeid og rutiner | Etabler planlagte jobber (Scheduler), dokumenter driftsrutiner og rollback. | Test Scheduler-jobb (manual trigger), verifiser backup-script. |
@@ -88,24 +88,19 @@
    - `cloud-build-sa`: `roles/cloudbuild.builds.editor`, `roles/run.admin`, `roles/iam.serviceAccountUser`, `roles/secretmanager.secretAccessor`.
    - `run-energinokkelen`: `roles/run.invoker`, `roles/logging.logWriter`, `roles/monitoring.metricWriter`, `roles/secretmanager.secretAccessor`.
 5. **Cloud Build trigger**:
-   - Opprett `cloudbuild.yaml` med steg:
+   - `deploy/gcp/cloudbuild.yaml` er utgangspunktet. Pipeline-steg:
      1. `npm ci`
      2. `npm run verify`
      3. `npm run build:prod`
-     4. `docker build` + `docker push`
-     5. Publiser frontend/content:
-        - `gsutil -m rsync -d -r dist gs://energinokkelen-frontend`
-        - `gsutil -m rsync -d -r content gs://energinokkelen-content`
-     6. `gcloud run deploy` for test/prod (med substitutions).
+     4. Bygg/push container-image til Artifact Registry (`${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/app:${SHORT_SHA}`)
+     5. `gsutil -m rsync` av `dist/` og `content/` til `energinokkelen-{frontend,content}`
+     6. Render `cloudrun.yaml` (envsubst) og `gcloud run services replace` (kan toggles med `_DEPLOY`).
+   - Substitusjoner (staging default): `_REGION`, `_REPOSITORY`, `_API_ENV`, `_FRONTEND_BUCKET`, `_CONTENT_BUCKET`, `_DEPLOY`.
    - Legg til manuelt Approval-trinn før prod.
    - Sett GitHub trigger (main) og evt. tag-trigger for prod.
 6. **Cloud Run deploy**:
-   - `gcloud run deploy energinokkelen-api --image=europe-north1-docker.pkg.dev/.../app:latest --region=europe-north1 --platform=managed --allow-unauthenticated --port=8080 --service-account=run-energinokkelen`.
-   - Legg til sidecars via `--container` flagg eller YAML revisjon:
-     ```
-     gcloud run services replace cloudrun.yaml
-     ```
-     der `cloudrun.yaml` definerer begge containerne og environment.
+   - `deploy/gcp/cloudrun.yaml` definerer tre containere (api-server, building-info-service, solar-service) med Secret Manager mapping og container-dependencies.
+   - Deploy via `gcloud run services replace` (Cloud Build gjør dette når `_DEPLOY=true`).
 7. **Frontend/CDN**:
    - Sett opp Cloud Storage bucket med public access via Cloud CDN (bruk signed URL/bucket policy only).
    - Konfigurer Load Balancer + CDN endpoint med SSL (Managed cert).
@@ -211,6 +206,49 @@ gcloud projects get-iam-policy "${PROJECT_ID}" \
 
 Status 2025-10-23: Kommandoene er kjørt mot `energiverktoy-poc-1234`. Artifact Registry `energinokkelen`, servicekontoene `cloud-build` og `run-energinokkelen`, bøttene `energinokkelen-{frontend,content,data}` og hemmelighetene i Secret Manager er på plass. Secrets følger nå `.env`-navn (f.eks. `MATRIKKEL_USERNAME`, `MATRIKKEL_PASSWORD`, `ENOVA_API_KEY`) og har første versjon lagret.
 
+#### Secret Manager → miljøvariabler
+| Secret-navn | Bruk i kode | Notat |
+| --- | --- | --- |
+| `MATRIKKEL_USERNAME`, `MATRIKKEL_PASSWORD` | services/building-info-service (`packages/config`) | Prod-kredentialer; lastes inn som standard |
+| `MATRIKKEL_USERNAME_TEST`, `MATRIKKEL_API_BASE_URL_TEST` | Test-miljøer (`API_ENV=test`) | Brukes når `API_ENV=test` |
+| `MATRIKKEL_API_BASE_URL_PROD` | Prod-endepunkt | Overskriver default URL dersom nødvendig |
+| `MATRIKKEL_SNAPSHOT_VERSION`, `MATRIKKEL_SYSTEM_VERSION` | Dokumentasjon/diagnostikk (eksponeres i metrics/logg) | Oppdateres ved ny Matrikkel-kilde |
+| `ENOVA_API_KEY` | `services/building-info-service/enova.ts` via `packages/config` | HTTP header for Enova API |
+| `PBE_MAP_BASE_URL`, `PBE_IDENTIFY_TOLERANCE` | `services/solar-service` / gul liste-kall | Holder API URL og søketoleranse |
+| `VITE_API_PROXY_URL`, `VITE_BIS_BASE`, `LIVE` | Frontend runtime (`app.json`, SPA bootstrap) | Eksponeres via `/config/app.json` |
+
+Cloud Run må knytte secrets til miljøvariabler ved deploy, eksempel:
+
+```bash
+gcloud run services update cloudrun-energinokkelen \
+  --add-cloudsql-instances=... \
+  --set-secrets=MATRIKKEL_USERNAME=MATRIKKEL_USERNAME:latest,MATRIKKEL_PASSWORD=MATRIKKEL_PASSWORD:latest \
+  --set-secrets=ENOVA_API_KEY=ENOVA_API_KEY:latest \
+  --set-env-vars=CONTENT_BUCKET=energinokkelen-content,VITE_API_PROXY_URL=projects/-/secrets/VITE_API_PROXY_URL/versions/latest
+```
+
+> For `VITE_*` secrets: Cloud Build leser verdiene fra Secret Manager under build, mens frontend ved runtime henter `app.json` fra `energinokkelen-content`. Hold `app.json` oppdatert med nye verdier ved å oppdatere `content/` og kjøre `gsutil rsync`.
+
+#### Bucketer og Cloud CDN
+- `energinokkelen-frontend`: byggartefakter (`dist/`). Frontes av Cloud CDN og invaliders ved hver deploy.
+- `energinokkelen-content`: runtime-konfig, tekster, energidata. API-server må kunne lese filene (GCS REST eller signed URL). Oppdateringer kan pushes uten rebuild.
+- `energinokkelen-data`: rådata/større filer (CSV/Excel). Beskyttet; API-server leser ved behov.
+
+Cloud Build må `gsutil rsync` både `dist/` og `content/` til respektive bøtter etter vellykket build.
+
+### Cloud Build-mal (`deploy/gcp/cloudbuild.yaml`)
+- Bruker standard Node + Docker build-steg, og gjenbruker substitutions for region, repository, buckets og API-miljø.
+- Lagrer beregnet image-URI i `/workspace/image-uri.txt` og gjenbruker i push/Cloud Run-steg.
+- `_DEPLOY=false` kan benyttes i test-trigger for å hoppe over produksjonsdeploy (kun bygg + artefakter).
+- Pipeline rendrer `deploy/gcp/cloudrun.yaml` med `envsubst`, slik at `${IMAGE_URI}`, `${PROJECT_ID}` og `${API_ENV}` fylles automatisk før `gcloud run services replace`.
+
+### Cloud Run-konfig (`deploy/gcp/cloudrun.yaml`)
+- Multi-container Service (`api-server`, `building-info-service`, `solar-service`) som peker til samme image med ulike `command`.
+- Secrets mappes via `valueSource.secretKeyRef` til miljøvariabler (MATRIKKEL_*, ENOVA_API_KEY, LIVE, VITE_*, PBE_*).
+- `run.googleapis.com/container-dependencies` sørger for at api-server venter på sidecar-tjenestene.
+- Containerne bruker interne porter 8080/4000/4003, og API-server eksponeres eksternt via Cloud Run.
+- Default ressursgrenser: 1 CPU / 1Gi for backend-containerne, 0.5 CPU / 512Mi for solar-service. Juster ved behov.
+
 ## Oppdateringsflyt
 1. Utvikler lager branch, kjører lokalt `npm run verify`.
 2. Pull request → merge til main.
@@ -258,8 +296,10 @@ Status 2025-10-23: Kommandoene er kjørt mot `energiverktoy-poc-1234`. Artifact 
 | 2025-10-23 | Trinn 2 – Infrastruktur | Codex | Dokumenterte gcloud-kommandoer for Artifact Registry, servicekontoer, buckets og secrets. Avklarte rolleoppsett og bucket-tilganger, satte prosjekt-id til `energiverktoy-poc-1234`. | Ikke kjørt (kommandoer forberedt) |
 | 2025-10-23 | Trinn 2 – Infrastruktur | Codex | Aktiverte API-er, opprettet Artifact Registry `energinokkelen`, servicekontoer m/roller, GCS-bøtter og tomme secrets (`energinokkelen-*`). Bekreftet IAM-tilganger. | `gcloud services enable`, `gcloud artifacts repositories create`, `gcloud iam ...`, `gcloud storage buckets ...`, `gcloud secrets ...` |
 | 2025-10-23 | Trinn 2 – Infrastruktur | Magnus | Opprettet Secret Manager secrets iht. `.env`-navn (`MATRIKKEL_*`, `ENOVA_API_KEY`, `VITE_*`, m.fl.) og la inn første versjon for hver. Slettet midlertidige `energinokkelen-*` secrets. | GCP Console (manuell), `gcloud secrets list` |
+| 2025-10-23 | Trinn 2 – Infrastruktur | Codex | Dokumenterte secret-mapping og bucket-strategi (Cloud Run/Cloud Build) i SSOT. | Dokumentasjon oppdatert |
+| 2025-10-23 | Trinn 3 – CI/CD | Codex | La til `deploy/gcp/cloudbuild.yaml` og `deploy/gcp/cloudrun.yaml`, beskrev pipeline, multi-container og deploy-logikk. | Ikke kjørt (yaml-utkast) |
 
 ## Neste steg
 > Etter hver oppdatering av loggen skal dette avsnittet beskrive hva som gjenstår før neste loggførte trinn, hvem som eier oppgaven og eventuelle blokkere. Oppdateres i takt med fremdriftsloggen og planen over.
 
-- Trinn 2 videreføring: sett opp `cloudbuild.yaml` + Git-trigger og klargjør Cloud Run multi-container-konfig (Magnus/Codex).
+- Trinn 3 oppfølging: opprett GitHub-trigger(e), test pipeline (`gcloud builds submit --config deploy/gcp/cloudbuild.yaml .`), og finpuss secret/config-substitusjoner før første staging-deploy (Magnus/Codex).
