@@ -90,7 +90,7 @@
 5. **Cloud Build trigger**:
    - `deploy/gcp/cloudbuild.yaml` er utgangspunktet. Pipeline-steg:
      1. `npm ci`
-     2. `npm run verify`
+     2. `npm run verify:ci` (typecheck + lint + kontrakttester uten smoke fordi Cloud Build ikke kan åpne porter)
      3. `npm run build:prod`
      4. Bygg/push container-image til Artifact Registry (`${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/app:${SHORT_SHA}`)
      5. `gsutil -m rsync` av `dist/` og `content/` til `energinokkelen-{frontend,content}`
@@ -238,6 +238,7 @@ Cloud Build må `gsutil rsync` både `dist/` og `content/` til respektive bøtte
 
 ### Cloud Build-mal (`deploy/gcp/cloudbuild.yaml`)
 - Bruker standard Node + Docker build-steg, og gjenbruker substitutions for region, repository, buckets og API-miljø.
+- npm-stegene kjører på `node:20`-image slik at `node --import tsx` støttes i kontrakttestene.
 - Lagrer beregnet image-URI i `/workspace/image-uri.txt` og gjenbruker i push/Cloud Run-steg.
 - `_DEPLOY=false` kan benyttes i test-trigger for å hoppe over produksjonsdeploy (kun bygg + artefakter).
 - Pipeline rendrer `deploy/gcp/cloudrun.yaml` med `envsubst`, slik at `${IMAGE_URI}`, `${PROJECT_ID}` og `${API_ENV}` fylles automatisk før `gcloud run services replace`.
@@ -298,8 +299,12 @@ Cloud Build må `gsutil rsync` både `dist/` og `content/` til respektive bøtte
 | 2025-10-23 | Trinn 2 – Infrastruktur | Magnus | Opprettet Secret Manager secrets iht. `.env`-navn (`MATRIKKEL_*`, `ENOVA_API_KEY`, `VITE_*`, m.fl.) og la inn første versjon for hver. Slettet midlertidige `energinokkelen-*` secrets. | GCP Console (manuell), `gcloud secrets list` |
 | 2025-10-23 | Trinn 2 – Infrastruktur | Codex | Dokumenterte secret-mapping og bucket-strategi (Cloud Run/Cloud Build) i SSOT. | Dokumentasjon oppdatert |
 | 2025-10-23 | Trinn 3 – CI/CD | Codex | La til `deploy/gcp/cloudbuild.yaml` og `deploy/gcp/cloudrun.yaml`, beskrev pipeline, multi-container og deploy-logikk. | Ikke kjørt (yaml-utkast) |
+| 2025-10-23 | Trinn 3 – CI/CD | Codex | Opprettet `npm run verify:ci` (skip smoke) og justerte Cloud Build til å bruke denne, samt ga Cloud Build-SA tilgang til secrets/lagring/logging. Foreløpig bygg feiler fordi smoketesten er flyttet ut og logs må hentes via Cloud Logging. | `gcloud builds submit --config deploy/gcp/cloudbuild.yaml --substitutions _DEPLOY=false,_TAG=manual-test` |
+| 2025-10-23 | Trinn 3 – CI/CD | Codex | Byttet npm-steg til `node:20` image, erstattet Python med `sed`, og kjørte vellykket Cloud Build (build-id `a3bc9367-1191-4560-b036-2fe41de50b97`) som bygger, pusher og synker artefakter (DEPLOY=false). | `gcloud builds submit --config deploy/gcp/cloudbuild.yaml --substitutions _DEPLOY=false,_TAG=manual-test` |
 
 ## Neste steg
 > Etter hver oppdatering av loggen skal dette avsnittet beskrive hva som gjenstår før neste loggførte trinn, hvem som eier oppgaven og eventuelle blokkere. Oppdateres i takt med fremdriftsloggen og planen over.
 
-- Trinn 3 oppfølging: opprett GitHub-trigger(e), test pipeline (`gcloud builds submit --config deploy/gcp/cloudbuild.yaml .`), og finpuss secret/config-substitusjoner før første staging-deploy (Magnus/Codex).
+- Opprett Cloud Build-trigger(e) i GCP: en for staging (`_TAG=staging-<shortSHA>`, `_DEPLOY=true`) og evt. egen prod-trigger med approvals. Dokumenter navn, substitutions og repository-tilkobling (Magnus).
+- Kjør første staging-build manuelt: `gcloud builds submit --config deploy/gcp/cloudbuild.yaml --substitutions _TAG=staging-test,_DEPLOY=true,_API_ENV=test` og verifiser at Cloud Run-tjenesten starter, at frontend/content er synket til GCS og at `/health` svarer (Codex).
+- Etter staging-verifisering: legg inn sedvanlige kvalitetsjekker (npm run test:smoke mot staging, manuell UI-test) og forbered prodkonfigurasjon (Secrets/ENV, trigger med approval) før Trinn 4 (Magnus/Codex).

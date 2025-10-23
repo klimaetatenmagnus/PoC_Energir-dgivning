@@ -1,0 +1,14 @@
+# CLI metadata
+.gcloud/
+.git/
+.github/
+
+# Local artefacts
+node_modules/
+dist/
+.pnpm-store/
+.cache/
+
+# OS junk
+.DS_Store
+*.log
