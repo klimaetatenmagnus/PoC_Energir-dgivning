@@ -1,6 +1,8 @@
 // Mock API service for adresseoppslag
 // I produksjon vil dette kalle backend API som wrapper resolveBuildingData
 
+import { getAppConfig } from "../runtimeConfig.ts";
+
 export interface AddressLookupRequest {
   address: string;
   useImprovedSelection?: boolean;
@@ -161,7 +163,7 @@ export class BuildingApiService {
   private baseUrl: string;
   private useMockData: boolean;
 
-  constructor(baseUrl: string = 'http://localhost:3001/api', useMockData: boolean = false) {
+  constructor(baseUrl: string = getAppConfig().apiBaseUrl, useMockData: boolean = false) {
     this.baseUrl = baseUrl;
     this.useMockData = useMockData;
   }

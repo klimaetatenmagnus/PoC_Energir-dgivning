@@ -53,7 +53,8 @@
     "src/services/gul-liste-integration.ts",
     "src/components/FigmaMainScript.tsx",
     "src/components/FigmaBlokk/**/*",
-    "src/types/**/*"
+    "src/types/**/*",
+    "src/runtimeConfig.ts"
   ],
   "exclude": [
     "src/components/FigmaBlokk/components/Tiltak/fordelsbokser.tsx",

@@ -4,6 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import path from 'node:path';
+import fs from 'node:fs/promises';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
 import { energyRatingService } from './services/energyRatingService.js';
 import { execFile } from 'child_process';
@@ -13,9 +14,11 @@ import { promisify } from 'util';
 const execFileAsync = promisify(execFile);
 
 const pythonScriptsDir = path.join(process.cwd(), 'scripts', 'python');
+const configDirectory = process.env.APP_CONFIG_DIR ?? path.join(process.cwd(), 'content');
+const buildingInfoBaseUrl = (process.env.BUILDING_INFO_BASE_URL ?? 'http://localhost:4000').replace(/\/$/, '');
 
 const app = express();
-const PORT = process.env.API_PORT || 3001;
+const PORT = Number(process.env.API_PORT ?? process.env.PORT ?? 3001);
 
 const pythonCandidates = [
   process.env.PYTHON_BINARY,
@@ -58,6 +61,65 @@ interface GeonorgeResponse {
 
 let pythonDetectionPromise: Promise<string> | null = null;
 let cachedPythonBinary: string | null = null;
+let cachedAppConfig: AppConfigResponse | null = null;
+let cachedConfigMtime: number | null = null;
+
+type AppConfigResponse = {
+  apiBaseUrl: string;
+  solarProxyBaseUrl: string;
+  contentTimestamp?: string;
+};
+
+async function loadAppConfigFromDisk(): Promise<AppConfigResponse> {
+  const defaultApiBase = normaliseBaseUrl(process.env.PUBLIC_API_BASE_URL ?? '/api');
+  const defaults: AppConfigResponse = {
+    apiBaseUrl: defaultApiBase,
+    solarProxyBaseUrl: normaliseBaseUrl(
+      process.env.PUBLIC_SOLAR_BASE_URL ?? `${defaultApiBase}/solar`
+    ),
+    contentTimestamp: undefined,
+  };
+
+  try {
+    const configPath = path.join(configDirectory, 'app.json');
+    const stat = await fs.stat(configPath);
+
+    if (!cachedAppConfig || cachedConfigMtime !== stat.mtimeMs) {
+      const raw = await fs.readFile(configPath, 'utf-8');
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      cachedAppConfig = {
+        apiBaseUrl: normaliseBaseUrl(
+          (process.env.PUBLIC_API_BASE_URL as string | undefined) ??
+            (typeof parsed.apiBaseUrl === 'string' ? parsed.apiBaseUrl : defaults.apiBaseUrl)
+        ),
+        solarProxyBaseUrl: normaliseBaseUrl(
+          (process.env.PUBLIC_SOLAR_BASE_URL as string | undefined) ??
+            (typeof parsed.solarProxyBaseUrl === 'string' ? parsed.solarProxyBaseUrl : defaults.solarProxyBaseUrl)
+        ),
+        contentTimestamp:
+          typeof parsed.contentTimestamp === 'string' ? parsed.contentTimestamp : defaults.contentTimestamp,
+      };
+      cachedConfigMtime = stat.mtimeMs;
+    }
+
+    return cachedAppConfig!;
+  } catch (error) {
+    if (!cachedAppConfig) {
+      cachedAppConfig = defaults;
+    }
+    debugLog('⚠️  Failed to read app config from disk, using defaults', error);
+    return cachedAppConfig;
+  }
+}
+
+function normaliseBaseUrl(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+  }
+  const ensuredLeading = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return ensuredLeading.endsWith('/') ? ensuredLeading.slice(0, -1) : ensuredLeading;
+}
 
 async function detectPythonBinary(): Promise<string> {
   const attempted: string[] = [];
@@ -130,6 +192,31 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+app.get('/config/app.json', async (_req, res) => {
+  try {
+    const cfg = await loadAppConfigFromDisk();
+    res.json(cfg);
+  } catch (error) {
+    console.error('[api-server] Failed to load app config', error);
+    res.status(500).json({ error: 'Failed to load app config' });
+  }
+});
+
+app.get('/metrics', async (_req, res) => {
+  try {
+    const response = await fetch(`${buildingInfoBaseUrl}/metrics`);
+    const body = await response.text();
+    const contentType = response.headers.get('content-type');
+    if (contentType) {
+      res.set('Content-Type', contentType);
+    }
+    res.status(response.status).send(body);
+  } catch (error) {
+    console.error('[api-server] Failed to proxy metrics', error);
+    res.status(502).json({ error: 'Failed to proxy metrics' });
+  }
+});
 
 // Health check
 app.get('/health', (req, res) => {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PktButton, PktInput, PktAlert } from '@oslokommune/punkt-react';
 import '../styles/components.css';
+import { resolveApiUrl } from '../runtimeConfig.ts';
 
 interface EnergyRatingCalculatorProps {
   address: string;
@@ -34,7 +35,7 @@ export const EnergyRatingCalculator: React.FC<EnergyRatingCalculatorProps> = ({ 
     setResult(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/energy-rating', {
+      const response = await fetch(`${resolveApiUrl('energy-rating')}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

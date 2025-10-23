@@ -1,3 +1,5 @@
+import { resolveApiUrl } from '../runtimeConfig.ts';
+
 export interface Stotteordning {
   ordning: string;
   lenke: string | null;
@@ -24,8 +26,14 @@ export class StotteordningService {
     bygningstype: string
   ): Promise<Stotteordning[]> {
     try {
+      const params = new URLSearchParams({
+        gulliste: String(gulliste),
+        tiltak,
+        bygningstype,
+      });
+
       const response = await fetch(
-        `http://localhost:3001/api/stotteordninger-live?gulliste=${gulliste}&tiltak=${tiltak}&bygningstype=${bygningstype}`
+        `${resolveApiUrl('stotteordninger-live')}?${params.toString()}`
       );
       
       if (!response.ok) {
