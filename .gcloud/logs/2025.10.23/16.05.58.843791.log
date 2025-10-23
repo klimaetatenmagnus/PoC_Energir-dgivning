@@ -1,0 +1,133 @@
+2025-10-23 16:05:58,844 DEBUG    root            Loaded Command Group: ['gcloud', 'services']
+2025-10-23 16:05:58,846 DEBUG    root            Loaded Command Group: ['gcloud', 'services', 'list']
+2025-10-23 16:05:58,847 DEBUG    root            Running [gcloud.services.list] with arguments: [--enabled: "True"]
+2025-10-23 16:05:58,860 DEBUG    root            Chosen display Format:
+          table(
+            config.name:label=NAME:sort=1,
+            config.title
+          )
+        
+2025-10-23 16:05:58,861 INFO     root            Display format: "
+          table(
+            config.name:label=NAME:sort=1,
+            config.title
+          )
+        "
+2025-10-23 16:05:58,866 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): serviceusage.googleapis.com:443
+2025-10-23 16:05:59,893 DEBUG    urllib3.connectionpool https://serviceusage.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/services?alt=json&filter=state%3AENABLED&pageSize=200 HTTP/1.1" 200 None
+2025-10-23 16:05:59,926 INFO     ___FILE_ONLY___ NAME
+2025-10-23 16:05:59,926 INFO     ___FILE_ONLY___                                  
+2025-10-23 16:05:59,926 INFO     ___FILE_ONLY___ TITLE
+2025-10-23 16:05:59,926 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,926 INFO     ___FILE_ONLY___ analyticshub.googleapis.com
+2025-10-23 16:05:59,926 INFO     ___FILE_ONLY___           
+2025-10-23 16:05:59,926 INFO     ___FILE_ONLY___ Analytics Hub API
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ bigquery.googleapis.com
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___               
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ BigQuery API
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ bigqueryconnection.googleapis.com
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___     
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ BigQuery Connection API
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ bigquerydatapolicy.googleapis.com
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___     
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ BigQuery Data Policy API
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ bigquerydatatransfer.googleapis.com
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___   
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ BigQuery Data Transfer API
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ bigquerymigration.googleapis.com
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___      
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ BigQuery Migration API
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ bigqueryreservation.googleapis.com
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___    
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ BigQuery Reservation API
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ bigquerystorage.googleapis.com
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___        
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ BigQuery Storage API
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ cloudapis.googleapis.com
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___              
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ Google Cloud APIs
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ cloudbilling.googleapis.com
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___           
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ Cloud Billing API
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ cloudtrace.googleapis.com
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___             
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ Cloud Trace API
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ dataform.googleapis.com
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___               
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ Dataform API
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ dataplex.googleapis.com
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___               
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ Cloud Dataplex API
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ datastore.googleapis.com
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___              
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ Cloud Datastore API
+2025-10-23 16:05:59,927 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ logging.googleapis.com
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___                
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ Cloud Logging API
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ monitoring.googleapis.com
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___             
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ Cloud Monitoring API
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ servicemanagement.googleapis.com
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___      
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ Service Management API
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ serviceusage.googleapis.com
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___           
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ Service Usage API
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ sql-component.googleapis.com
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___          
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ Cloud SQL
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ storage-api.googleapis.com
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___            
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ Google Cloud Storage JSON API
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ storage-component.googleapis.com
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___      
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ Cloud Storage
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ storage.googleapis.com
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___                
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ Cloud Storage API
+2025-10-23 16:05:59,928 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:05:59,937 DEBUG    root            Metrics reporting process started...

@@ -1,0 +1,84 @@
+2025-10-23 12:55:04,608 DEBUG    root            Loaded Command Group: ['gcloud', 'storage']
+2025-10-23 12:55:04,609 DEBUG    root            Loaded Command Group: ['gcloud', 'storage', 'buckets']
+2025-10-23 12:55:04,728 DEBUG    root            Loaded Command Group: ['gcloud', 'storage', 'buckets', 'create']
+2025-10-23 12:55:04,730 DEBUG    root            Running [gcloud.storage.buckets.create] with arguments: [--location: "europe-north1", --project: "energiverktoy-poc-1234", URL:1: "['gs://energinokkelen-poc-20251023']"]
+2025-10-23 12:55:04,730 INFO     ___FILE_ONLY___ Creating gs://energinokkelen-poc-20251023/...
+
+2025-10-23 12:55:04,738 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): storage.googleapis.com:443
+2025-10-23 12:55:04,924 DEBUG    urllib3.connectionpool https://storage.googleapis.com:443 "POST /storage/v1/b?alt=json&enableObjectRetention=False&project=energiverktoy-poc-1234&projection=noAcl HTTP/1.1" 403 393
+2025-10-23 12:55:04,926 DEBUG    root            (gcloud.storage.buckets.create) HTTPError 403: The billing account for the owning project is disabled in state absent. This command is authenticated as magnus.lundstein@kli.oslo.kommune.no which is the active account specified by the [core/account] property
+Traceback (most recent call last):
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/storage/errors.py", line 327, in wrapper
+    return function(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/storage/gcs_json/client.py", line 520, in create_bucket
+    created_bucket_metadata = self.client.buckets.Insert(request)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/generated_clients/apis/storage/v1/storage_v1_client.py", line 539, in Insert
+    return self._RunMethod(
+           ^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/third_party/apitools/base/py/base_api.py", line 747, in _RunMethod
+    return self.ProcessHttpResponse(method_config, http_response, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/third_party/apitools/base/py/base_api.py", line 753, in ProcessHttpResponse
+    self.__ProcessHttpResponse(method_config, http_response, request))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/third_party/apitools/base/py/base_api.py", line 612, in __ProcessHttpResponse
+    raise exceptions.HttpError.FromResponse(
+apitools.base.py.exceptions.HttpForbiddenError: HttpError accessing <https://storage.googleapis.com/storage/v1/b?alt=json&enableObjectRetention=False&project=energiverktoy-poc-1234&projection=noAcl>: response: <{'content-type': 'application/json; charset=UTF-8', 'x-guploader-uploadid': 'AAwnv3IFEyktU5PWxYr_u0O9arqRM6M2gOu24CGfgaO56qsGXTnEl3FkCyNDnldAu4X0DvmvaxfCOsK0z2Vt', 'date': 'Thu, 23 Oct 2025 10:55:04 GMT', 'vary': 'Origin, X-Origin', 'cache-control': 'no-cache, no-store, max-age=0, must-revalidate', 'expires': 'Mon, 01 Jan 1990 00:00:00 GMT', 'pragma': 'no-cache', 'content-length': '393', 'server': 'UploadServer', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'status': 403}>, content <{
+  "error": {
+    "code": 403,
+    "message": "The billing account for the owning project is disabled in state absent",
+    "errors": [
+      {
+        "message": "The billing account for the owning project is disabled in state absent",
+        "domain": "global",
+        "reason": "accountDisabled",
+        "locationType": "header",
+        "location": "Authorization"
+      }
+    ]
+  }
+}
+>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/calliope/cli.py", line 944, in Execute
+    resources = calliope_command.Run(cli=self, args=args)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/calliope/backend.py", line 955, in Run
+    resources = command_instance.Run(args)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/surface/storage/buckets/create.py", line 191, in Run
+    ).execute()
+      ^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/command_lib/storage/tasks/buckets/create_bucket_task.py", line 48, in execute
+    api_factory.get_api(provider).create_bucket(
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/storage/errors.py", line 331, in wrapper
+    core_exceptions.reraise(
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/core/exceptions.py", line 149, in reraise
+    six.reraise(type(exc_value), exc_value, tb)
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/third_party/six/__init__.py", line 718, in reraise
+    raise value.with_traceback(tb)
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/storage/errors.py", line 327, in wrapper
+    return function(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/api_lib/storage/gcs_json/client.py", line 520, in create_bucket
+    created_bucket_metadata = self.client.buckets.Insert(request)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/googlecloudsdk/generated_clients/apis/storage/v1/storage_v1_client.py", line 539, in Insert
+    return self._RunMethod(
+           ^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/third_party/apitools/base/py/base_api.py", line 747, in _RunMethod
+    return self.ProcessHttpResponse(method_config, http_response, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/third_party/apitools/base/py/base_api.py", line 753, in ProcessHttpResponse
+    self.__ProcessHttpResponse(method_config, http_response, request))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/third_party/apitools/base/py/base_api.py", line 612, in __ProcessHttpResponse
+    raise exceptions.HttpError.FromResponse(
+googlecloudsdk.api_lib.storage.errors.GcsApiError: HTTPError 403: The billing account for the owning project is disabled in state absent. This command is authenticated as magnus.lundstein@kli.oslo.kommune.no which is the active account specified by the [core/account] property
+2025-10-23 12:55:04,930 ERROR    root            (gcloud.storage.buckets.create) HTTPError 403: The billing account for the owning project is disabled in state absent. This command is authenticated as magnus.lundstein@kli.oslo.kommune.no which is the active account specified by the [core/account] property
+2025-10-23 12:55:04,938 DEBUG    root            Metrics reporting process started...

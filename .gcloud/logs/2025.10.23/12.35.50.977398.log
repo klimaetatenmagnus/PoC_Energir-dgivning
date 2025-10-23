@@ -1,0 +1,141 @@
+2025-10-23 12:35:50,989 INFO     ___FILE_ONLY___ You do not currently have this command group installed.  Using it 
+requires the installation of components: [beta]
+
+2025-10-23 12:35:50,997 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): dl.google.com:443
+2025-10-23 12:35:51,122 DEBUG    urllib3.connectionpool https://dl.google.com:443 "GET /dl/cloudsdk/channels/rapid/components-v544.0.0.json HTTP/1.1" 200 233157
+2025-10-23 12:35:51,206 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:35:51,207 INFO     ___FILE_ONLY___ 
+Your current Google Cloud CLI version is: 544.0.0
+
+2025-10-23 12:35:51,207 INFO     ___FILE_ONLY___ Installing components from version: 544.0.0
+
+2025-10-23 12:35:51,207 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:35:51,208 DEBUG    root            Chosen display Format:table[box,title="These components will be removed."](details.display_name:label=Name:align=left,version.version_string:label=Version:align=right,data.size.size(zero="",min=1048576):label=Size:align=right)
+2025-10-23 12:35:51,208 DEBUG    root            Chosen display Format:table[box,title="These components will be updated."](details.display_name:label=Name:align=left,version.version_string:label=Version:align=right,data.size.size(zero="",min=1048576):label=Size:align=right)
+2025-10-23 12:35:51,208 DEBUG    root            Chosen display Format:table[box,title="These components will be installed."](details.display_name:label=Name:align=left,version.version_string:label=Version:align=right,data.size.size(zero="",min=1048576):label=Size:align=right)
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ ┌────────────────────────────────────────────────────────────────────┐
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ │                These components will be installed.                 │
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ ├─────────────────────────────────────────────┬────────────┬─────────┤
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ │                     Name                    │  Version   │   Size  │
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ ├─────────────────────────────────────────────┼────────────┼─────────┤
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ │ 
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ gcloud Beta Commands                       
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___  
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ │ 
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ 2025.10.17
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___  
+2025-10-23 12:35:51,222 INFO     ___FILE_ONLY___ │ 
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___ < 1 MiB
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___  
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___ │
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___ │ 
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___ gcloud cli dependencies (Platform Specific)
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___  
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___ │ 
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___ 2021.04.16
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___  
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___ │ 
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___ < 1 MiB
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___  
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___ │
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___ └─────────────────────────────────────────────┴────────────┴─────────┘
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:35:51,223 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:35:51,225 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): dl.google.com:443
+2025-10-23 12:35:51,371 DEBUG    urllib3.connectionpool https://dl.google.com:443 "GET /dl/cloudsdk/channels/rapid/RELEASE_NOTES HTTP/1.1" 200 1506053
+2025-10-23 12:35:51,806 INFO     ___FILE_ONLY___ For the latest full release notes, please visit:
+  https://cloud.google.com/sdk/release_notes
+
+
+2025-10-23 12:36:19,624 INFO     ___FILE_ONLY___ Performing in place update...
+
+
+2025-10-23 12:36:19,625 INFO     ___FILE_ONLY___ ╔════════════════════════════════════════════════════════════╗
+
+2025-10-23 12:36:19,625 INFO     ___FILE_ONLY___ ╠═ Downloading: gcloud Beta Commands                        ═╣
+
+2025-10-23 12:36:19,625 INFO     ___FILE_ONLY___ ╚
+2025-10-23 12:36:19,633 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): dl.google.com:443
+2025-10-23 12:36:19,709 DEBUG    urllib3.connectionpool https://dl.google.com:443 "GET /dl/cloudsdk/channels/rapid/components/google-cloud-sdk-beta-20251017124533.tar.gz HTTP/1.1" 200 797
+2025-10-23 12:36:19,710 INFO     ___FILE_ONLY___ ════════════════════════════════════════════════════════════
+2025-10-23 12:36:19,710 INFO     ___FILE_ONLY___ ╝
+2025-10-23 12:36:19,711 INFO     ___FILE_ONLY___ ╠════════════════════════════════════════════════════════════╣
+
+2025-10-23 12:36:19,711 INFO     ___FILE_ONLY___ ╠═ Downloading: gcloud cli dependencies (Platform Specific) ═╣
+
+2025-10-23 12:36:19,711 INFO     ___FILE_ONLY___ ╚
+2025-10-23 12:36:19,715 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): dl.google.com:443
+2025-10-23 12:36:19,783 DEBUG    urllib3.connectionpool https://dl.google.com:443 "GET /dl/cloudsdk/channels/rapid/components/google-cloud-sdk-gcloud-deps-darwin-x86_64-20210416153011.tar.gz HTTP/1.1" 200 105
+2025-10-23 12:36:19,785 INFO     ___FILE_ONLY___ ════════════════════════════════════════════════════════════
+2025-10-23 12:36:19,785 INFO     ___FILE_ONLY___ ╝
+2025-10-23 12:36:19,786 INFO     ___FILE_ONLY___ ╠════════════════════════════════════════════════════════════╣
+
+2025-10-23 12:36:19,786 INFO     ___FILE_ONLY___ ╠═ Installing: gcloud Beta Commands                         ═╣
+
+2025-10-23 12:36:19,786 INFO     ___FILE_ONLY___ ╚
+2025-10-23 12:36:19,787 INFO     ___FILE_ONLY___ ════════════════════════════════════════════════════════════
+2025-10-23 12:36:19,787 INFO     ___FILE_ONLY___ ╝
+2025-10-23 12:36:19,792 INFO     ___FILE_ONLY___ ╠════════════════════════════════════════════════════════════╣
+
+2025-10-23 12:36:19,792 INFO     ___FILE_ONLY___ ╠═ Installing: gcloud cli dependencies (Platform Specific)  ═╣
+
+2025-10-23 12:36:19,792 INFO     ___FILE_ONLY___ ╚
+2025-10-23 12:36:19,792 INFO     ___FILE_ONLY___ ════════════════════════════════════════════════════════════
+2025-10-23 12:36:19,792 INFO     ___FILE_ONLY___ ╝
+
+2025-10-23 12:36:19,798 DEBUG    root            Updating notification cache...
+2025-10-23 12:36:19,798 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:36:19,798 INFO     ___FILE_ONLY___ Performing post processing steps...
+2025-10-23 12:36:19,799 DEBUG    root            Executing command: ['/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/bin/gcloud', 'components', 'post-process']
+2025-10-23 12:36:25,522 DEBUG    ___FILE_ONLY___ 
+2025-10-23 12:36:25,522 DEBUG    ___FILE_ONLY___ 
+2025-10-23 12:36:25,611 INFO     root            descriptor_list: [{'universeDomain': 'googleapis.com', 'universeShortName': '', 'authenticationDomain': 'auth.cloud.google.com', 'projectPrefix': '', 'cloudWebDomain': 'cloud.google.com', 'documentationDomain': 'cloud.google.com', 'version': '1.0.0', 'state': 'primary', 'artifactRegistryDomain': 'pkg.dev'}]
+2025-10-23 12:36:32,838 DEBUG    root            Loaded Command Group: ['gcloud']
+2025-10-23 12:36:32,848 DEBUG    root            Loaded Command Group: ['gcloud', 'beta']
+2025-10-23 12:36:32,850 DEBUG    root            Loaded Command Group: ['gcloud', 'config']
+2025-10-23 12:36:32,851 DEBUG    root            Loaded Command Group: ['gcloud', 'config', 'virtualenv']
+2025-10-23 12:36:32,863 DEBUG    root            Loaded Command Group: ['gcloud', 'config', 'virtualenv', 'update']
+2025-10-23 12:36:32,865 DEBUG    root            Running [gcloud.config.virtualenv.update] with arguments: []
+2025-10-23 12:36:32,865 INFO     ___FILE_ONLY___ Updating modules...
+
+2025-10-23 12:36:32,865 DEBUG    root            Executing command: ['/Users/magnuslundstein/.config/gcloud/virtenv/bin/pip3', 'install', '--log', '/Users/magnuslundstein/.config/gcloud/virtenv/update_module.log', '-q', '--disable-pip-version-check', 'crcmod', 'grpcio', 'pyopenssl==24.2.1', 'google_crc32c', 'certifi', 'https://github.com/googleapis/enterprise-certificate-proxy/releases/download/v0.3.6/cryptography-42.0.7-cp39-abi3-macosx_10_12_universal2.whl', 'setuptools']
+2025-10-23 12:36:33,958 INFO     ___FILE_ONLY___ Modules updated.
+
+2025-10-23 12:36:33,958 DEBUG    root            Chosen display Format:default
+2025-10-23 12:36:33,959 INFO     root            Display format: "default"
+2025-10-23 12:36:33,962 DEBUG    root            Loaded Command Group: ['gcloud', 'config', 'virtualenv', 'enable']
+2025-10-23 12:36:33,962 DEBUG    root            Running [gcloud.config.virtualenv.enable] with arguments: []
+2025-10-23 12:36:33,962 INFO     ___FILE_ONLY___ Virtual env enabled.
+
+2025-10-23 12:36:33,962 DEBUG    root            Chosen display Format:default
+2025-10-23 12:36:33,963 INFO     root            Display format: "default"
+2025-10-23 12:36:33,965 INFO     ___FILE_ONLY___ 
+Update done!
+
+
+2025-10-23 12:36:33,965 INFO     ___FILE_ONLY___ Restarting command:
+  $ gcloud beta billing accounts list
+
+
+2025-10-23 12:36:33,965 DEBUG    root            Restarting command: /Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/gcloud.py ['/Library/Frameworks/Python.framework/Versions/3.12/bin/python3', '/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/gcloud.py', 'beta', 'billing', 'accounts', 'list']
+2025-10-23 12:36:33,965 DEBUG    root            Executing command: ['/Library/Frameworks/Python.framework/Versions/3.12/bin/python3', '/Users/magnuslundstein/Desktop/Innholdsproduksjon/Tjenester/Google Cloud/google-cloud-sdk/lib/gcloud.py', 'beta', 'billing', 'accounts', 'list']
+2025-10-23 12:37:18,299 DEBUG    root            Metrics reporting process started...

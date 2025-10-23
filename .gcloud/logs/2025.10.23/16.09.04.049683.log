@@ -1,0 +1,281 @@
+2025-10-23 16:09:04,057 DEBUG    root            Loaded Command Group: ['gcloud', 'projects']
+2025-10-23 16:09:04,066 DEBUG    root            Loaded Command Group: ['gcloud', 'projects', 'add_iam_policy_binding']
+2025-10-23 16:09:04,070 DEBUG    root            Running [gcloud.projects.add-iam-policy-binding] with arguments: [--condition: "OrderedDict({'None': None})", --member: "serviceAccount:cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com", --role: "roles/secretmanager.secretAccessor", PROJECT_ID: "energiverktoy-poc-1234"]
+2025-10-23 16:09:04,085 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): cloudresourcemanager.googleapis.com:443
+2025-10-23 16:09:04,891 DEBUG    urllib3.connectionpool https://cloudresourcemanager.googleapis.com:443 "POST /v1/projects/energiverktoy-poc-1234:getIamPolicy?alt=json HTTP/1.1" 200 None
+2025-10-23 16:09:04,902 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): cloudresourcemanager.googleapis.com:443
+2025-10-23 16:09:06,468 DEBUG    urllib3.connectionpool https://cloudresourcemanager.googleapis.com:443 "POST /v1/projects/energiverktoy-poc-1234:setIamPolicy?alt=json HTTP/1.1" 200 None
+2025-10-23 16:09:06,470 INFO     ___FILE_ONLY___ Updated IAM policy for project [energiverktoy-poc-1234].
+
+2025-10-23 16:09:06,471 DEBUG    root            Chosen display Format:default
+2025-10-23 16:09:06,471 INFO     root            Display format: "default"
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ bindings
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ members
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ serviceAccount:service-168751968131@gcp-sa-artifactregistry.iam.gserviceaccount.com
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ role
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ roles/artifactregistry.serviceAgent
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ members
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ serviceAccount:cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ role
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ roles/artifactregistry.writer
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,498 INFO     ___FILE_ONLY___ members
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ serviceAccount:168751968131@cloudbuild.gserviceaccount.com
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ role
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ roles/cloudbuild.builds.builder
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ members
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ serviceAccount:cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ role
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ roles/cloudbuild.builds.editor
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ members
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ serviceAccount:service-168751968131@gcp-sa-cloudbuild.iam.gserviceaccount.com
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ role
+2025-10-23 16:09:06,499 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ roles/cloudbuild.serviceAgent
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ members
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ serviceAccount:service-168751968131@compute-system.iam.gserviceaccount.com
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ role
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ roles/compute.serviceAgent
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ members
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ serviceAccount:service-168751968131@containerregistry.iam.gserviceaccount.com
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ role
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ roles/containerregistry.ServiceAgent
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,500 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ members
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ serviceAccount:168751968131-compute@developer.gserviceaccount.com
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ serviceAccount:168751968131@cloudservices.gserviceaccount.com
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ role
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ roles/editor
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ members
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ user:magnus.lundstein@kli.oslo.kommune.no
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ role
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,501 INFO     ___FILE_ONLY___ roles/owner
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ members
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ serviceAccount:service-168751968131@gcp-sa-pubsub.iam.gserviceaccount.com
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ role
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ roles/pubsub.serviceAgent
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ members
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ serviceAccount:cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ role
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ roles/run.admin
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,502 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ members
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ serviceAccount:service-168751968131@serverless-robot-prod.iam.gserviceaccount.com
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ role
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ roles/run.serviceAgent
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ members
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ serviceAccount:cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ role
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ roles/secretmanager.secretAccessor
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ etag
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ BwZB0_ngS70=
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ version
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ 1
+2025-10-23 16:09:06,503 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:06,512 DEBUG    root            Metrics reporting process started...

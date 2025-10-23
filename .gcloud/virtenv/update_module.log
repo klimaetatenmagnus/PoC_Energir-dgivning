@@ -1,0 +1,36 @@
+2025-10-23T12:36:33,168 Using pip 24.3.1 from /Users/magnuslundstein/.config/gcloud/virtenv/lib/python3.12/site-packages/pip (python 3.12)
+2025-10-23T12:36:33,168 Non-user install because user site-packages disabled
+2025-10-23T12:36:33,199 Created temporary directory: /private/var/folders/fd/pyhx78hn4wjbzcmyhc3d9w080000gn/T/pip-build-tracker-jlx1jez4
+2025-10-23T12:36:33,199 Initialized build tracking at /private/var/folders/fd/pyhx78hn4wjbzcmyhc3d9w080000gn/T/pip-build-tracker-jlx1jez4
+2025-10-23T12:36:33,199 Created build tracker: /private/var/folders/fd/pyhx78hn4wjbzcmyhc3d9w080000gn/T/pip-build-tracker-jlx1jez4
+2025-10-23T12:36:33,199 Entered build tracker: /private/var/folders/fd/pyhx78hn4wjbzcmyhc3d9w080000gn/T/pip-build-tracker-jlx1jez4
+2025-10-23T12:36:33,199 Created temporary directory: /private/var/folders/fd/pyhx78hn4wjbzcmyhc3d9w080000gn/T/pip-install-rbjey65g
+2025-10-23T12:36:33,200 Created temporary directory: /private/var/folders/fd/pyhx78hn4wjbzcmyhc3d9w080000gn/T/pip-ephem-wheel-cache-cff1o9ed
+2025-10-23T12:36:33,209 Collecting cryptography==42.0.7
+2025-10-23T12:36:33,209   Created temporary directory: /private/var/folders/fd/pyhx78hn4wjbzcmyhc3d9w080000gn/T/pip-unpack-8akwn3pc
+2025-10-23T12:36:33,213   Looking up "https://github.com/googleapis/enterprise-certificate-proxy/releases/download/v0.3.6/cryptography-42.0.7-cp39-abi3-macosx_10_12_universal2.whl" in the cache
+2025-10-23T12:36:33,213   No cache entry available
+2025-10-23T12:36:33,213   No cache entry available
+2025-10-23T12:36:33,213   Starting new HTTPS connection (1): github.com:443
+2025-10-23T12:36:33,337   https://github.com:443 "GET /googleapis/enterprise-certificate-proxy/releases/download/v0.3.6/cryptography-42.0.7-cp39-abi3-macosx_10_12_universal2.whl HTTP/1.1" 302 0
+2025-10-23T12:36:33,338   Status code 302 not in (200, 203, 300, 301, 308)
+2025-10-23T12:36:33,339   Looking up "https://release-assets.githubusercontent.com/github-production-release-asset/469915778/44a23908-75f1-460d-b835-3aacc8ee5dac?sp=r&sv=2018-11-09&sr=b&spr=https&se=2025-10-23T11%3A30%3A36Z&rscd=attachment%3B+filename%3Dcryptography-42.0.7-cp39-abi3-macosx_10_12_universal2.whl&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2025-10-23T10%3A30%3A28Z&ske=2025-10-23T11%3A30%3A36Z&sks=b&skv=2018-11-09&sig=ko5CK3NV7yCNAKSirFHB1as9OGHx5Ds%2FQEtmzeX9p38%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc2MTIxNTk4MiwibmJmIjoxNzYxMjE1NjgyLCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.R7x5HXemFLpBm3DbPq4fsyuYl4LrogIXcro5zds4H20&response-content-disposition=attachment%3B%20filename%3Dcryptography-42.0.7-cp39-abi3-macosx_10_12_universal2.whl&response-content-type=application%2Foctet-stream" in the cache
+2025-10-23T12:36:33,340   No cache entry available
+2025-10-23T12:36:33,340   No cache entry available
+2025-10-23T12:36:33,340   Starting new HTTPS connection (1): release-assets.githubusercontent.com:443
+2025-10-23T12:36:33,407   https://release-assets.githubusercontent.com:443 "GET /github-production-release-asset/469915778/44a23908-75f1-460d-b835-3aacc8ee5dac?sp=r&sv=2018-11-09&sr=b&spr=https&se=2025-10-23T11%3A30%3A36Z&rscd=attachment%3B+filename%3Dcryptography-42.0.7-cp39-abi3-macosx_10_12_universal2.whl&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2025-10-23T10%3A30%3A28Z&ske=2025-10-23T11%3A30%3A36Z&sks=b&skv=2018-11-09&sig=ko5CK3NV7yCNAKSirFHB1as9OGHx5Ds%2FQEtmzeX9p38%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc2MTIxNTk4MiwibmJmIjoxNzYxMjE1NjgyLCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.R7x5HXemFLpBm3DbPq4fsyuYl4LrogIXcro5zds4H20&response-content-disposition=attachment%3B%20filename%3Dcryptography-42.0.7-cp39-abi3-macosx_10_12_universal2.whl&response-content-type=application%2Foctet-stream HTTP/1.1" 200 5644525
+2025-10-23T12:36:33,407   Downloading https://github.com/googleapis/enterprise-certificate-proxy/releases/download/v0.3.6/cryptography-42.0.7-cp39-abi3-macosx_10_12_universal2.whl (5.6 MB)
+2025-10-23T12:36:33,881   Updating cache with response from "https://release-assets.githubusercontent.com/github-production-release-asset/469915778/44a23908-75f1-460d-b835-3aacc8ee5dac?sp=r&sv=2018-11-09&sr=b&spr=https&se=2025-10-23T11%3A30%3A36Z&rscd=attachment%3B+filename%3Dcryptography-42.0.7-cp39-abi3-macosx_10_12_universal2.whl&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2025-10-23T10%3A30%3A28Z&ske=2025-10-23T11%3A30%3A36Z&sks=b&skv=2018-11-09&sig=ko5CK3NV7yCNAKSirFHB1as9OGHx5Ds%2FQEtmzeX9p38%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc2MTIxNTk4MiwibmJmIjoxNzYxMjE1NjgyLCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.R7x5HXemFLpBm3DbPq4fsyuYl4LrogIXcro5zds4H20&response-content-disposition=attachment%3B%20filename%3Dcryptography-42.0.7-cp39-abi3-macosx_10_12_universal2.whl&response-content-type=application%2Foctet-stream"
+2025-10-23T12:36:33,881   etag object cached for 1209600 seconds
+2025-10-23T12:36:33,881   Caching due to etag
+2025-10-23T12:36:33,908 Requirement already satisfied: crcmod in /Users/magnuslundstein/.config/gcloud/virtenv/lib/python3.12/site-packages (1.7)
+2025-10-23T12:36:33,909 Requirement already satisfied: grpcio in /Users/magnuslundstein/.config/gcloud/virtenv/lib/python3.12/site-packages (1.76.0)
+2025-10-23T12:36:33,909 Requirement already satisfied: pyopenssl==24.2.1 in /Users/magnuslundstein/.config/gcloud/virtenv/lib/python3.12/site-packages (24.2.1)
+2025-10-23T12:36:33,909 Requirement already satisfied: google_crc32c in /Users/magnuslundstein/.config/gcloud/virtenv/lib/python3.12/site-packages (1.7.1)
+2025-10-23T12:36:33,909 Requirement already satisfied: certifi in /Users/magnuslundstein/.config/gcloud/virtenv/lib/python3.12/site-packages (2025.10.5)
+2025-10-23T12:36:33,910 Requirement already satisfied: setuptools in /Users/magnuslundstein/.config/gcloud/virtenv/lib/python3.12/site-packages (80.9.0)
+2025-10-23T12:36:33,913 Requirement already satisfied: typing-extensions~=4.12 in /Users/magnuslundstein/.config/gcloud/virtenv/lib/python3.12/site-packages (from grpcio) (4.15.0)
+2025-10-23T12:36:33,915 Requirement already satisfied: cffi>=1.12 in /Users/magnuslundstein/.config/gcloud/virtenv/lib/python3.12/site-packages (from cryptography==42.0.7) (2.0.0)
+2025-10-23T12:36:33,920 Requirement already satisfied: pycparser in /Users/magnuslundstein/.config/gcloud/virtenv/lib/python3.12/site-packages (from cffi>=1.12->cryptography==42.0.7) (2.23)
+2025-10-23T12:36:33,922 Created temporary directory: /private/var/folders/fd/pyhx78hn4wjbzcmyhc3d9w080000gn/T/pip-unpack-yntwk7jd
+2025-10-23T12:36:33,927 Removed build tracker: '/private/var/folders/fd/pyhx78hn4wjbzcmyhc3d9w080000gn/T/pip-build-tracker-jlx1jez4'

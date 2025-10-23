@@ -10,6 +10,19 @@
  */
 
 import axios from 'axios';
+import { getAppConfig } from '../runtimeConfig.ts';
+
+const runtimeEnv = typeof process !== 'undefined' && process.env ? process.env : {};
+
+const PBE_WFS_URL =
+  runtimeEnv.GUL_LISTE_WFS_URL ?? 'https://od2.pbe.oslo.kommune.no/cgi-bin/wms';
+const PBE_WFS_SEARCH_MAP = runtimeEnv.GUL_LISTE_WFS_SEARCH_MAP ?? 'WFS_SOK';
+const PBE_WFS_TABLE_MAP = runtimeEnv.GUL_LISTE_TABLE_MAP ?? 'EIENDOM_TABELL';
+const PBE_GUL_LISTE_TABLE = runtimeEnv.GUL_LISTE_TABLE ?? 'kart.gulliste_spatial';
+
+const defaultGeonorgeBase = (runtimeEnv.GEONORGE_API_BASE ?? 'https://ws.geonorge.no/adresser/v1').replace(/\/$/, '');
+const GEONORGE_USER_AGENT = runtimeEnv.GEONORGE_API_USER_AGENT ?? 'Energitiltak/1.0';
+const GEONORGE_DEFAULT_MUNICIPALITY = runtimeEnv.GEONORGE_DEFAULT_MUNICIPALITY ?? '0301';
 
 interface GulListeResult {
   erPaaGulListe: boolean;
@@ -37,9 +50,9 @@ interface MatrikkelData {
  */
 async function finnTeigidFraGnrBnr(gnr: number, bnr: number): Promise<string | null> {
   try {
-    const url = 'https://od2.pbe.oslo.kommune.no/cgi-bin/wms';
+    const url = PBE_WFS_URL;
     const params = {
-      map: 'WFS_SOK',
+      map: PBE_WFS_SEARCH_MAP,
       VERSION: '1.1.0',
       SERVICE: 'WFS',
       REQUEST: 'GetFeature',
@@ -83,10 +96,10 @@ async function finnTeigidFraGnrBnr(gnr: number, bnr: number): Promise<string | n
  */
 async function sjekkGulListeForTeigid(teigid: string): Promise<GulListeResult> {
   try {
-    const url = 'https://od2.pbe.oslo.kommune.no/cgi-bin/wms';
+    const url = PBE_WFS_URL;
     const params = {
-      map: 'EIENDOM_TABELL',
-      tabell: 'kart.gulliste_spatial',
+      map: PBE_WFS_TABLE_MAP,
+      tabell: PBE_GUL_LISTE_TABLE,
       service: 'WFS',
       version: '1.1.0',
       request: 'GetFeature',
@@ -132,15 +145,21 @@ async function sjekkGulListeForTeigid(teigid: string): Promise<GulListeResult> {
  */
 async function hentMatrikkelDataFraAdresse(adresse: string): Promise<MatrikkelData | null> {
   try {
-    const url = 'https://ws.geonorge.no/adresser/v1/sok';
+    const config = getAppConfig();
+    const geonorgeBase =
+      (config.raw?.geonorgeApiBase as string | undefined) ?? defaultGeonorgeBase;
+    const url = `${geonorgeBase}/sok`;
     const params = {
       sok: adresse,
-      kommunenummer: '0301', // Oslo
+      kommunenummer: GEONORGE_DEFAULT_MUNICIPALITY,
       fuzzy: 'true',
       treffPerSide: '1'
     };
 
-    const response = await axios.get(url, { params });
+    const response = await axios.get(url, {
+      params,
+      headers: { 'User-Agent': GEONORGE_USER_AGENT },
+    });
     
     if (response.data.adresser && response.data.adresser.length > 0) {
       const adresseData = response.data.adresser[0];
@@ -159,8 +178,10 @@ async function hentMatrikkelDataFraAdresse(adresse: string): Promise<MatrikkelDa
       
       // Hvis ikke, prøv å hente detaljer via adressekode
       if (adresseData.adressekode) {
-        const detaljerUrl = `https://ws.geonorge.no/adresser/v1/adresser/${adresseData.adressekode}`;
-        const detaljerResponse = await axios.get(detaljerUrl);
+        const detaljerUrl = `${geonorgeBase}/adresser/${adresseData.adressekode}`;
+        const detaljerResponse = await axios.get(detaljerUrl, {
+          headers: { 'User-Agent': GEONORGE_USER_AGENT },
+        });
         
         if (detaljerResponse.data.matrikkelenhet) {
           return {

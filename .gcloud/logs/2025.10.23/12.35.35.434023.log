@@ -1,0 +1,13 @@
+2025-10-23 12:35:35,435 DEBUG    root            Loaded Command Group: ['gcloud', 'config']
+2025-10-23 12:35:35,537 DEBUG    root            Loaded Command Group: ['gcloud', 'config', 'set']
+2025-10-23 12:35:35,538 DEBUG    root            Running [gcloud.config.set] with arguments: [SECTION/PROPERTY: "project", VALUE: "energiverktoy-poc-1234"]
+2025-10-23 12:35:35,540 WARNING  root            Your active project does not match the quota project in your local Application Default Credentials file. This might result in unexpected quota issues.
+
+To update your Application Default Credentials quota project, use the `gcloud auth application-default set-quota-project` command.
+2025-10-23 12:35:35,551 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): cloudresourcemanager.googleapis.com:443
+2025-10-23 12:35:36,118 DEBUG    urllib3.connectionpool https://cloudresourcemanager.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234?alt=json HTTP/1.1" 200 None
+2025-10-23 12:35:36,121 INFO     ___FILE_ONLY___ Updated property [core/project].
+
+2025-10-23 12:35:36,122 DEBUG    root            Chosen display Format:default
+2025-10-23 12:35:36,123 INFO     root            Display format: "default"
+2025-10-23 12:35:36,138 DEBUG    root            Metrics reporting process started...

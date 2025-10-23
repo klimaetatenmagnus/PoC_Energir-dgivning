@@ -1,0 +1,30 @@
+2025-10-23 12:46:38,685 DEBUG    root            Running [gcloud] with arguments: [-v: "None"]
+2025-10-23 12:46:38,698 DEBUG    root            Loaded Command Group: ['gcloud', 'version']
+2025-10-23 12:46:38,698 DEBUG    root            Running [gcloud.version] with arguments: []
+2025-10-23 12:46:38,705 DEBUG    root            Chosen display Format:flattened[no-pad,separator=" "]
+2025-10-23 12:46:38,705 INFO     root            Display format: "flattened[no-pad,separator=" "]"
+2025-10-23 12:46:38,711 INFO     ___FILE_ONLY___ Google Cloud SDK
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___  
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___ 544.0.0
+
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___ beta
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___  
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___ 2025.10.17
+
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___ bq
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___  
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___ 2.1.24
+
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___ core
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___  
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___ 2025.10.17
+
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___ gcloud-crc32c
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___  
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___ 1.0.0
+
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___ gsutil
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___  
+2025-10-23 12:46:38,712 INFO     ___FILE_ONLY___ 5.35
+
+2025-10-23 12:46:38,718 DEBUG    root            Metrics reporting process started...

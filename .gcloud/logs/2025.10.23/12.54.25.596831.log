@@ -1,0 +1,11 @@
+2025-10-23 12:54:25,600 DEBUG    root            Loaded Command Group: ['gcloud', 'storage']
+2025-10-23 12:54:25,600 DEBUG    root            Loaded Command Group: ['gcloud', 'storage', 'buckets']
+2025-10-23 12:54:27,034 DEBUG    root            Loaded Command Group: ['gcloud', 'storage', 'buckets', 'list']
+2025-10-23 12:54:27,036 DEBUG    root            Running [gcloud.storage.buckets.list] with arguments: [--project: "energiverktoy-poc-1234"]
+2025-10-23 12:54:27,036 DEBUG    root            Chosen display Format:default
+2025-10-23 12:54:27,037 INFO     root            Display format: "default"
+2025-10-23 12:54:27,045 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): storage.googleapis.com:443
+2025-10-23 12:54:27,530 DEBUG    urllib3.connectionpool https://storage.googleapis.com:443 "GET /storage/v1/b?alt=json&maxResults=1000&project=energiverktoy-poc-1234&projection=full HTTP/1.1" 200 32
+2025-10-23 12:54:27,532 INFO     ___FILE_ONLY___ Listed 0 items.
+
+2025-10-23 12:54:27,544 DEBUG    root            Metrics reporting process started...

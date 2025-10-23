@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/components.css';
 import { PktButton } from '@oslokommune/punkt-react';
+import { resolveApiUrl } from '../runtimeConfig.ts';
 
 interface AddressSearchProps {
   onSearch: (address: string) => void;
@@ -51,7 +52,9 @@ export const AddressSearch: React.FC<AddressSearchProps> = ({ onSearch, isLoadin
 
     setIsLoadingSuggestions(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/address-suggestions?query=${encodeURIComponent(query)}`);
+      const response = await fetch(
+        `${resolveApiUrl('address-suggestions')}?query=${encodeURIComponent(query)}`
+      );
       if (response.ok) {
         const data = await response.json();
         setSuggestions(data.suggestions || []);

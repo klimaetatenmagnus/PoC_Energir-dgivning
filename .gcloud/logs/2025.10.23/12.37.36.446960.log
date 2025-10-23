@@ -1,0 +1,30 @@
+2025-10-23 12:37:36,447 DEBUG    root            Loaded Command Group: ['gcloud', 'auth']
+2025-10-23 12:37:36,447 DEBUG    root            Loaded Command Group: ['gcloud', 'auth', 'list']
+2025-10-23 12:37:36,448 DEBUG    root            Running [gcloud.auth.list] with arguments: []
+2025-10-23 12:37:36,449 DEBUG    root            Chosen display Format:    table[title='Credentialed Accounts'](
+        status.yesno(yes='*', no=''):label=ACTIVE,
+        account
+    )
+2025-10-23 12:37:36,449 INFO     root            Display format: "    table[title='Credentialed Accounts'](
+        status.yesno(yes='*', no=''):label=ACTIVE,
+        account
+    )"
+2025-10-23 12:37:36,463 INFO     ___FILE_ONLY___            Credentialed Accounts
+2025-10-23 12:37:36,463 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:37:36,463 INFO     ___FILE_ONLY___ ACTIVE
+2025-10-23 12:37:36,463 INFO     ___FILE_ONLY___   
+2025-10-23 12:37:36,463 INFO     ___FILE_ONLY___ ACCOUNT
+2025-10-23 12:37:36,463 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:37:36,463 INFO     ___FILE_ONLY___ *
+2025-10-23 12:37:36,463 INFO     ___FILE_ONLY___        
+2025-10-23 12:37:36,463 INFO     ___FILE_ONLY___ magnus.lundstein@kli.oslo.kommune.no
+2025-10-23 12:37:36,463 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:37:36,463 INFO     ___FILE_ONLY___ 
+To set the active account, run:
+    $ gcloud config set account `ACCOUNT`
+
+
+2025-10-23 12:37:36,470 DEBUG    root            Metrics reporting process started...

@@ -1,0 +1,11 @@
+2025-10-23 13:03:43,644 DEBUG    root            Loaded Command Group: ['gcloud', 'beta', 'billing']
+2025-10-23 13:03:43,645 DEBUG    root            Loaded Command Group: ['gcloud', 'beta', 'billing', 'projects']
+2025-10-23 13:03:43,646 DEBUG    root            Loaded Command Group: ['gcloud', 'beta', 'billing', 'projects', 'describe']
+2025-10-23 13:03:43,646 DEBUG    root            Running [gcloud.beta.billing.projects.describe] with arguments: [--format: "value(billingEnabled)", PROJECT_ID: "energiverktoy-poc-1234"]
+2025-10-23 13:03:43,660 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): cloudbilling.googleapis.com:443
+2025-10-23 13:03:44,515 DEBUG    urllib3.connectionpool https://cloudbilling.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/billingInfo?alt=json HTTP/1.1" 200 None
+2025-10-23 13:03:44,516 DEBUG    root            Chosen display Format:default value(billingEnabled)
+2025-10-23 13:03:44,517 INFO     root            Display format: "default value(billingEnabled)"
+2025-10-23 13:03:44,543 INFO     ___FILE_ONLY___ True
+
+2025-10-23 13:03:44,558 DEBUG    root            Metrics reporting process started...

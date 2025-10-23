@@ -19,11 +19,22 @@ proj4.defs("EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs"); // ★
 
 /* ───────── Konstanter ────────────────────────────────────────────────── */
 const app = express();
-const CACHE = new NodeCache({ stdTTL: 3_600, checkperiod: 120 }); // 1 t
-const REF_OSLO = 1005; // kWh/m²·år
-const WFS_URL = "https://od2.pbe.oslo.kommune.no/cgi-bin/wms";
-const MAP_FILE = "d:/data_mapserver/kartfiler/solkart.map";
-const LAYER = "takflater2024";
+const REF_OSLO = Number(process.env.SOLAR_REFERENCE_KWH ?? "1005"); // kWh/m²·år
+const SOLAR_CACHE_TTL = Number(process.env.SOLAR_CACHE_TTL ?? "3600");
+const CACHE = new NodeCache({
+  stdTTL: SOLAR_CACHE_TTL,
+  checkperiod: Math.max(60, Math.floor(SOLAR_CACHE_TTL / 3)),
+}); // cache TTL
+const WFS_URL =
+  process.env.SOLAR_WFS_URL ?? "https://od2.pbe.oslo.kommune.no/cgi-bin/wms";
+const MAP_FILE =
+  process.env.SOLAR_MAP_FILE ?? "d:/data_mapserver/kartfiler/solkart.map";
+const LAYER = process.env.SOLAR_LAYER ?? "takflater2024";
+const DEFAULT_POINT_DELTA = Number(process.env.SOLAR_POINT_DELTA ?? "10");
+const MIN_RADIATION = Number(process.env.SOLAR_MIN_RADIATION ?? "800");
+const SOLAR_PANEL_EFFICIENCY = Number(
+  process.env.SOLAR_PANEL_EFFICIENCY ?? "0.2"
+);
 
 const infoLog = (...args) => console.warn('[solar-service]', ...args);
 const errorLog = (...args) => console.error('[solar-service:error]', ...args);
@@ -132,7 +143,7 @@ async function takflaterForMatrikkel(gnr, bnr, snr) {
 }
 
 /* ───────── 4) Punkt-query (lat/lon → 32632) ──────────────────────────── */
-async function takflaterFromPoint(lat, lon, delta = 10) {
+async function takflaterFromPoint(lat, lon, delta = DEFAULT_POINT_DELTA) {
   // ★ +delta
   const [east, north] = proj4("EPSG:4326", "EPSG:32632", [
     parseFloat(lon),
@@ -202,6 +213,7 @@ app.get("/solinnstraling", async (req, res) => {
         takAreal_m2: mockSumArea,
         sol_kwh_m2_yr: mockAvgIrr,
         sol_kwh_bygg_tot: mockSumPot,
+        filteredSolarEnergy: mockSumPot * SOLAR_PANEL_EFFICIENCY,
         category: mockAvgIrr ? categorize(mockAvgIrr) : "Ukjent",
       });
     }
@@ -224,8 +236,8 @@ app.get("/solinnstraling", async (req, res) => {
         snr
       );
     } else if (lat && lon) {
-      const d = delta ? Number(delta) || 10 : 10; // ★ delta
-      const initial = await takflaterFromPoint(lat, lon, d);
+      const parsedDelta = delta ? Number(delta) || DEFAULT_POINT_DELTA : DEFAULT_POINT_DELTA;
+      const initial = await takflaterFromPoint(lat, lon, parsedDelta);
 
       if (initial.length && initial[0].bygg_id) {
         // ★ full BYGG
@@ -249,6 +261,13 @@ app.get("/solinnstraling", async (req, res) => {
     const sumPot = takflater.reduce((s, t) => s + t.kWh_tot, 0);
     const sumArea = takflater.reduce((s, t) => s + t.area_m2, 0);
     const avgIrr = sumArea ? sumPot / sumArea : null;
+    const filteredSolarEnergy = takflater
+      .filter((tak) => (tak.irr_kwh_m2_yr ?? 0) > MIN_RADIATION)
+      .reduce((sum, tak) => {
+        const irr = tak.irr_kwh_m2_yr ?? 0;
+        const area = tak.area_m2 ?? 0;
+        return sum + irr * area * SOLAR_PANEL_EFFICIENCY;
+      }, 0);
 
     const result = {
       reference: REF_OSLO,
@@ -256,6 +275,7 @@ app.get("/solinnstraling", async (req, res) => {
       takAreal_m2: sumArea || null,
       sol_kwh_m2_yr: avgIrr,
       sol_kwh_bygg_tot: sumPot,
+      filteredSolarEnergy,
       category: avgIrr ? categorize(avgIrr) : "Ukjent",
     };
 
@@ -268,9 +288,10 @@ app.get("/solinnstraling", async (req, res) => {
 });
 
 /* ───────── Start server ──────────────────────────────────────────────── */
-const PORT = process.env.PORT || 4003;
-app.listen(PORT, "0.0.0.0", () =>
-  infoLog(`Lytter på port ${PORT}`)
+const PORT = Number(process.env.SOLAR_SERVICE_PORT ?? process.env.PORT ?? 4003);
+const HOST = process.env.SOLAR_SERVICE_HOST ?? "0.0.0.0";
+app.listen(PORT, HOST, () =>
+  infoLog(`Lytter på port ${HOST}:${PORT}`)
 );
 
 /* ---------------- helper for trygg BYGG_ID ----------------------------- */

@@ -1,0 +1,48 @@
+2025-10-23 16:09:56,760 DEBUG    root            Loaded Command Group: ['gcloud', 'iam']
+2025-10-23 16:09:56,760 DEBUG    root            Loaded Command Group: ['gcloud', 'iam', 'service_accounts']
+2025-10-23 16:09:56,791 DEBUG    root            Loaded Command Group: ['gcloud', 'iam', 'service-accounts', 'add_iam_policy_binding']
+2025-10-23 16:09:56,800 DEBUG    root            Running [gcloud.iam.service-accounts.add-iam-policy-binding] with arguments: [--member: "serviceAccount:cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com", --role: "roles/iam.serviceAccountUser", SERVICE_ACCOUNT: "run-energinokkelen@energiverktoy-poc-1234.iam.gserviceaccount.com"]
+2025-10-23 16:09:56,817 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): iam.googleapis.com:443
+2025-10-23 16:09:57,675 DEBUG    urllib3.connectionpool https://iam.googleapis.com:443 "POST /v1/projects/energiverktoy-poc-1234/serviceAccounts/run-energinokkelen@energiverktoy-poc-1234.iam.gserviceaccount.com:getIamPolicy?alt=json&options.requestedPolicyVersion=3 HTTP/1.1" 200 None
+2025-10-23 16:09:57,684 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): iam.googleapis.com:443
+2025-10-23 16:09:58,853 DEBUG    urllib3.connectionpool https://iam.googleapis.com:443 "POST /v1/projects/energiverktoy-poc-1234/serviceAccounts/run-energinokkelen@energiverktoy-poc-1234.iam.gserviceaccount.com:setIamPolicy?alt=json HTTP/1.1" 200 None
+2025-10-23 16:09:58,854 INFO     ___FILE_ONLY___ Updated IAM policy for serviceAccount [run-energinokkelen@energiverktoy-poc-1234.iam.gserviceaccount.com].
+
+2025-10-23 16:09:58,854 DEBUG    root            Chosen display Format:default
+2025-10-23 16:09:58,855 INFO     root            Display format: "default"
+2025-10-23 16:09:58,878 INFO     ___FILE_ONLY___ bindings
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ members
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ -
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ serviceAccount:cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___   
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ role
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ roles/iam.serviceAccountUser
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ etag
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:58,879 INFO     ___FILE_ONLY___ BwZB0_z_u5E=
+2025-10-23 16:09:58,880 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:58,880 INFO     ___FILE_ONLY___ version
+2025-10-23 16:09:58,880 INFO     ___FILE_ONLY___ :
+2025-10-23 16:09:58,880 INFO     ___FILE_ONLY___  
+2025-10-23 16:09:58,880 INFO     ___FILE_ONLY___ 1
+2025-10-23 16:09:58,880 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:09:58,889 DEBUG    root            Metrics reporting process started...

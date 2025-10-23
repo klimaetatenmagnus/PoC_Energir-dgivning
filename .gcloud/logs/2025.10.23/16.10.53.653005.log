@@ -1,0 +1,145 @@
+2025-10-23 16:10:53,656 DEBUG    root            Loaded Command Group: ['gcloud', 'storage']
+2025-10-23 16:10:53,656 DEBUG    root            Loaded Command Group: ['gcloud', 'storage', 'buckets']
+2025-10-23 16:10:53,786 DEBUG    root            Loaded Command Group: ['gcloud', 'storage', 'buckets', 'add_iam_policy_binding']
+2025-10-23 16:10:53,787 DEBUG    root            Running [gcloud.storage.buckets.add-iam-policy-binding] with arguments: [--member: "serviceAccount:cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com", --role: "roles/storage.objectAdmin", URL: "gs://energinokkelen-content"]
+2025-10-23 16:10:53,796 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): storage.googleapis.com:443
+2025-10-23 16:10:54,101 DEBUG    urllib3.connectionpool https://storage.googleapis.com:443 "GET /storage/v1/b/energinokkelen-content/iam?alt=json&fields=bindings%2Cetag&optionsRequestedPolicyVersion=3 HTTP/1.1" 200 681
+2025-10-23 16:10:54,529 DEBUG    urllib3.connectionpool https://storage.googleapis.com:443 "PUT /storage/v1/b/energinokkelen-content/iam?alt=json HTTP/1.1" 200 953
+2025-10-23 16:10:54,530 DEBUG    root            Chosen display Format:default
+2025-10-23 16:10:54,531 INFO     root            Display format: "default"
+2025-10-23 16:10:54,541 INFO     ___FILE_ONLY___ bindings
+2025-10-23 16:10:54,541 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,541 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,541 INFO     ___FILE_ONLY___ -
+2025-10-23 16:10:54,541 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,541 INFO     ___FILE_ONLY___ members
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___   
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ -
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ projectEditor:energiverktoy-poc-1234
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___   
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ -
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ projectOwner:energiverktoy-poc-1234
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___   
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ role
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ roles/storage.legacyBucketOwner
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ -
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ members
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___   
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ -
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ projectViewer:energiverktoy-poc-1234
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___   
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ role
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ roles/storage.legacyBucketReader
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ -
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ members
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___   
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ -
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ projectEditor:energiverktoy-poc-1234
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___   
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ -
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ projectOwner:energiverktoy-poc-1234
+2025-10-23 16:10:54,542 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___   
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ role
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ roles/storage.legacyObjectOwner
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ -
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ members
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___   
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ -
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ projectViewer:energiverktoy-poc-1234
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___   
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ role
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ roles/storage.legacyObjectReader
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ -
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ members
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___   
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ -
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ serviceAccount:cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___   
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ role
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ roles/storage.objectAdmin
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ etag
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ CAI=
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ kind
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ storage#policy
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ resourceId
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ projects/_/buckets/energinokkelen-content
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,543 INFO     ___FILE_ONLY___ version
+2025-10-23 16:10:54,544 INFO     ___FILE_ONLY___ :
+2025-10-23 16:10:54,544 INFO     ___FILE_ONLY___  
+2025-10-23 16:10:54,544 INFO     ___FILE_ONLY___ 1
+2025-10-23 16:10:54,544 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:10:54,549 DEBUG    root            Metrics reporting process started...

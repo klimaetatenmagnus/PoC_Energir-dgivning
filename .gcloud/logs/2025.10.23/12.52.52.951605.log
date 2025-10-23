@@ -1,0 +1,46 @@
+2025-10-23 12:52:52,958 DEBUG    root            Loaded Command Group: ['gcloud', 'projects']
+2025-10-23 12:52:52,961 DEBUG    root            Loaded Command Group: ['gcloud', 'projects', 'list']
+2025-10-23 12:52:52,961 DEBUG    root            Running [gcloud.projects.list] with arguments: [--format: "table(projectId,name)"]
+2025-10-23 12:52:52,961 INFO     root            client_filter="None" server_filter="None"
+2025-10-23 12:52:52,972 DEBUG    root            Chosen display Format:
+    table(
+      projectId:sort=1,
+      name,
+      projectNumber
+    )
+ table(projectId,name)
+2025-10-23 12:52:52,972 INFO     root            Display format: "
+    table(
+      projectId:sort=1,
+      name,
+      projectNumber
+    )
+ table(projectId,name)"
+2025-10-23 12:52:52,978 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): cloudresourcemanager.googleapis.com:443
+2025-10-23 12:52:53,901 DEBUG    urllib3.connectionpool https://cloudresourcemanager.googleapis.com:443 "GET /v1/projects?alt=json&filter=lifecycleState%3AACTIVE&pageSize=500 HTTP/1.1" 200 None
+2025-10-23 12:52:53,931 INFO     ___FILE_ONLY___ PROJECT_ID
+2025-10-23 12:52:53,931 INFO     ___FILE_ONLY___                
+2025-10-23 12:52:53,931 INFO     ___FILE_ONLY___ NAME
+2025-10-23 12:52:53,931 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:52:53,931 INFO     ___FILE_ONLY___ bruktbutikk-navn
+2025-10-23 12:52:53,931 INFO     ___FILE_ONLY___          
+2025-10-23 12:52:53,931 INFO     ___FILE_ONLY___ Bruktbutikk-navn
+2025-10-23 12:52:53,931 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:52:53,931 INFO     ___FILE_ONLY___ energiverktoy-poc-1234
+2025-10-23 12:52:53,931 INFO     ___FILE_ONLY___    
+2025-10-23 12:52:53,931 INFO     ___FILE_ONLY___ Energinoekkelen
+2025-10-23 12:52:53,931 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:52:53,931 INFO     ___FILE_ONLY___ hente-koordinater
+2025-10-23 12:52:53,931 INFO     ___FILE_ONLY___         
+2025-10-23 12:52:53,932 INFO     ___FILE_ONLY___ Hente koordinater
+2025-10-23 12:52:53,932 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:52:53,932 INFO     ___FILE_ONLY___ steam-habitat-450615-r4
+2025-10-23 12:52:53,932 INFO     ___FILE_ONLY___   
+2025-10-23 12:52:53,932 INFO     ___FILE_ONLY___ My First Project
+2025-10-23 12:52:53,932 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:52:53,944 DEBUG    root            Metrics reporting process started...

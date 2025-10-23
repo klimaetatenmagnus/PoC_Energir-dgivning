@@ -1,0 +1,10 @@
+2025-10-23 16:11:20,899 DEBUG    root            Loaded Command Group: ['gcloud', 'secrets']
+2025-10-23 16:11:20,912 DEBUG    root            Loaded Command Group: ['gcloud', 'secrets', 'create']
+2025-10-23 16:11:20,917 DEBUG    root            Running [gcloud.secrets.create] with arguments: [--replication-policy: "automatic", SECRET: "energinokkelen-matrikkel-prod"]
+2025-10-23 16:11:20,931 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): secretmanager.googleapis.com:443
+2025-10-23 16:11:22,559 DEBUG    urllib3.connectionpool https://secretmanager.googleapis.com:443 "POST /v1/projects/energiverktoy-poc-1234/secrets?alt=json&secretId=energinokkelen-matrikkel-prod HTTP/1.1" 200 None
+2025-10-23 16:11:22,560 INFO     ___FILE_ONLY___ Created secret [energinokkelen-matrikkel-prod].
+
+2025-10-23 16:11:22,560 DEBUG    root            Chosen display Format:none
+2025-10-23 16:11:22,561 INFO     root            Display format: "none"
+2025-10-23 16:11:22,586 DEBUG    root            Metrics reporting process started...

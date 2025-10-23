@@ -1,0 +1,26 @@
+2025-10-23 16:07:46,989 DEBUG    root            Loaded Command Group: ['gcloud', 'artifacts']
+2025-10-23 16:07:46,989 DEBUG    root            Loaded Command Group: ['gcloud', 'artifacts', 'repositories']
+2025-10-23 16:07:47,068 DEBUG    root            Loaded Command Group: ['gcloud', 'artifacts', 'repositories', 'create']
+2025-10-23 16:07:47,076 DEBUG    root            Running [gcloud.artifacts.repositories.create] with arguments: [--description: "Energinokkelen containere", --location: "europe-north1", --repository-format: "docker", REPOSITORY: "energinokkelen"]
+2025-10-23 16:07:47,091 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): artifactregistry.googleapis.com:443
+2025-10-23 16:07:47,236 DEBUG    urllib3.connectionpool https://artifactregistry.googleapis.com:443 "POST /v1/projects/energiverktoy-poc-1234/locations/europe-north1/repositories?alt=json&repositoryId=energinokkelen HTTP/1.1" 200 None
+2025-10-23 16:07:47,237 INFO     ___FILE_ONLY___ Create request issued for: [energinokkelen]
+
+2025-10-23 16:07:47,237 INFO     ___FILE_ONLY___ Waiting for operation [projects/energiverktoy-poc-1234/locations/europe-north1/operations/c4b3acda-b603-412e-b1c8-c1b2fa98d357] to complete...
+2025-10-23 16:07:48,246 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): artifactregistry.googleapis.com:443
+2025-10-23 16:07:48,353 DEBUG    urllib3.connectionpool https://artifactregistry.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/locations/europe-north1/operations/c4b3acda-b603-412e-b1c8-c1b2fa98d357?alt=json HTTP/1.1" 200 None
+2025-10-23 16:07:50,552 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): artifactregistry.googleapis.com:443
+2025-10-23 16:07:50,662 DEBUG    urllib3.connectionpool https://artifactregistry.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/locations/europe-north1/operations/c4b3acda-b603-412e-b1c8-c1b2fa98d357?alt=json HTTP/1.1" 200 None
+2025-10-23 16:07:54,356 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): artifactregistry.googleapis.com:443
+2025-10-23 16:07:54,467 DEBUG    urllib3.connectionpool https://artifactregistry.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/locations/europe-north1/operations/c4b3acda-b603-412e-b1c8-c1b2fa98d357?alt=json HTTP/1.1" 200 None
+2025-10-23 16:07:59,297 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): artifactregistry.googleapis.com:443
+2025-10-23 16:07:59,406 DEBUG    urllib3.connectionpool https://artifactregistry.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/locations/europe-north1/operations/c4b3acda-b603-412e-b1c8-c1b2fa98d357?alt=json HTTP/1.1" 200 None
+2025-10-23 16:08:05,851 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): artifactregistry.googleapis.com:443
+2025-10-23 16:08:05,932 DEBUG    urllib3.connectionpool https://artifactregistry.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/locations/europe-north1/operations/c4b3acda-b603-412e-b1c8-c1b2fa98d357?alt=json HTTP/1.1" 200 None
+2025-10-23 16:08:06,134 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): artifactregistry.googleapis.com:443
+2025-10-23 16:08:06,266 DEBUG    urllib3.connectionpool https://artifactregistry.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/locations/europe-north1/repositories/energinokkelen?alt=json HTTP/1.1" 200 None
+2025-10-23 16:08:06,267 INFO     ___FILE_ONLY___ Created repository [energinokkelen].
+
+2025-10-23 16:08:06,268 DEBUG    root            Chosen display Format:none
+2025-10-23 16:08:06,268 INFO     root            Display format: "none"
+2025-10-23 16:08:06,287 DEBUG    root            Metrics reporting process started...

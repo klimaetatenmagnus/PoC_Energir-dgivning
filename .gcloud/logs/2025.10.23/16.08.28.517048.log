@@ -1,0 +1,11 @@
+2025-10-23 16:08:28,518 DEBUG    root            Loaded Command Group: ['gcloud', 'iam']
+2025-10-23 16:08:28,518 DEBUG    root            Loaded Command Group: ['gcloud', 'iam', 'service_accounts']
+2025-10-23 16:08:28,526 DEBUG    root            Loaded Command Group: ['gcloud', 'iam', 'service-accounts', 'create']
+2025-10-23 16:08:28,526 DEBUG    root            Running [gcloud.iam.service-accounts.create] with arguments: [--display-name: "Cloud Run runtime (Energinokkelen)", NAME: "run-energinokkelen"]
+2025-10-23 16:08:28,541 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): iam.googleapis.com:443
+2025-10-23 16:08:29,627 DEBUG    urllib3.connectionpool https://iam.googleapis.com:443 "POST /v1/projects/energiverktoy-poc-1234/serviceAccounts?alt=json HTTP/1.1" 200 None
+2025-10-23 16:08:29,629 INFO     ___FILE_ONLY___ Created service account [run-energinokkelen].
+
+2025-10-23 16:08:29,630 DEBUG    root            Chosen display Format:none
+2025-10-23 16:08:29,630 INFO     root            Display format: "none"
+2025-10-23 16:08:29,656 DEBUG    root            Metrics reporting process started...

@@ -1,0 +1,23 @@
+2025-10-23 16:08:15,572 DEBUG    root            Loaded Command Group: ['gcloud', 'iam']
+2025-10-23 16:08:15,573 DEBUG    root            Loaded Command Group: ['gcloud', 'iam', 'service_accounts']
+2025-10-23 16:08:15,580 DEBUG    root            Loaded Command Group: ['gcloud', 'iam', 'service-accounts', 'list']
+2025-10-23 16:08:15,581 DEBUG    root            Running [gcloud.iam.service-accounts.list] with arguments: []
+2025-10-23 16:08:15,581 DEBUG    root            Chosen display Format:table(displayName:label="DISPLAY NAME", email, disabled)
+2025-10-23 16:08:15,581 INFO     root            Display format: "table(displayName:label="DISPLAY NAME", email, disabled)"
+2025-10-23 16:08:15,596 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): iam.googleapis.com:443
+2025-10-23 16:08:16,384 DEBUG    urllib3.connectionpool https://iam.googleapis.com:443 "GET /v1/projects/energiverktoy-poc-1234/serviceAccounts?alt=json&pageSize=100 HTTP/1.1" 200 None
+2025-10-23 16:08:16,408 INFO     ___FILE_ONLY___ DISPLAY NAME
+2025-10-23 16:08:16,408 INFO     ___FILE_ONLY___                      
+2025-10-23 16:08:16,408 INFO     ___FILE_ONLY___ EMAIL
+2025-10-23 16:08:16,408 INFO     ___FILE_ONLY___                                                
+2025-10-23 16:08:16,408 INFO     ___FILE_ONLY___ DISABLED
+2025-10-23 16:08:16,408 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:08:16,408 INFO     ___FILE_ONLY___ Default compute service account
+2025-10-23 16:08:16,408 INFO     ___FILE_ONLY___   
+2025-10-23 16:08:16,408 INFO     ___FILE_ONLY___ 168751968131-compute@developer.gserviceaccount.com
+2025-10-23 16:08:16,408 INFO     ___FILE_ONLY___   
+2025-10-23 16:08:16,408 INFO     ___FILE_ONLY___ False
+2025-10-23 16:08:16,408 INFO     ___FILE_ONLY___ 
+
+2025-10-23 16:08:16,417 DEBUG    root            Metrics reporting process started...

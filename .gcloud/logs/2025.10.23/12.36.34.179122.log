@@ -1,0 +1,61 @@
+2025-10-23 12:36:34,179 DEBUG    root            Loaded Command Group: ['gcloud', 'beta', 'billing']
+2025-10-23 12:36:34,179 DEBUG    root            Loaded Command Group: ['gcloud', 'beta', 'billing', 'accounts']
+2025-10-23 12:36:34,180 DEBUG    root            Loaded Command Group: ['gcloud', 'beta', 'billing', 'accounts', 'list']
+2025-10-23 12:36:34,181 DEBUG    root            Running [gcloud.beta.billing.accounts.list] with arguments: []
+2025-10-23 12:36:34,189 DEBUG    root            Chosen display Format:
+          table(
+            name.basename():label=ACCOUNT_ID,
+            displayName:label=NAME,
+            open,
+            masterBillingAccount.basename():label=MASTER_ACCOUNT_ID
+          )
+    
+2025-10-23 12:36:34,189 INFO     root            Display format: "
+          table(
+            name.basename():label=ACCOUNT_ID,
+            displayName:label=NAME,
+            open,
+            masterBillingAccount.basename():label=MASTER_ACCOUNT_ID
+          )
+    "
+2025-10-23 12:36:34,194 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): cloudbilling.googleapis.com:443
+2025-10-23 12:36:35,054 DEBUG    urllib3.connectionpool https://cloudbilling.googleapis.com:443 "GET /v1/billingAccounts?alt=json&pageSize=100 HTTP/1.1" 403 None
+2025-10-23 12:37:09,010 INFO     ___FILE_ONLY___ Enabling service [cloudbilling.googleapis.com] on project [energiverktoy-poc-1234]...
+
+2025-10-23 12:37:09,029 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): serviceusage.googleapis.com:443
+2025-10-23 12:37:10,300 DEBUG    urllib3.connectionpool https://serviceusage.googleapis.com:443 "POST /v1/projects/energiverktoy-poc-1234/services/cloudbilling.googleapis.com:enable?alt=json HTTP/1.1" 200 None
+2025-10-23 12:37:10,311 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): serviceusage.googleapis.com:443
+2025-10-23 12:37:11,124 DEBUG    urllib3.connectionpool https://serviceusage.googleapis.com:443 "GET /v1/operations/acat.p2-168751968131-5a6da2ab-835d-4e27-8fc9-557363d6d285?alt=json HTTP/1.1" 200 None
+2025-10-23 12:37:14,078 DEBUG    urllib3.connectionpool Starting new HTTPS connection (1): serviceusage.googleapis.com:443
+2025-10-23 12:37:14,882 DEBUG    urllib3.connectionpool https://serviceusage.googleapis.com:443 "GET /v1/operations/acat.p2-168751968131-5a6da2ab-835d-4e27-8fc9-557363d6d285?alt=json HTTP/1.1" 200 None
+2025-10-23 12:37:14,886 INFO     ___FILE_ONLY___ Operation "operations/acat.p2-168751968131-5a6da2ab-835d-4e27-8fc9-557363d6d285" finished successfully.
+
+2025-10-23 12:37:14,886 DEBUG    root            Request returned no response, retrying
+2025-10-23 12:37:14,886 DEBUG    root            Retrying request to url https://cloudbilling.googleapis.com/v1/billingAccounts?alt=json&pageSize=100 after exception Retry
+2025-10-23 12:37:18,193 DEBUG    urllib3.connectionpool https://cloudbilling.googleapis.com:443 "GET /v1/billingAccounts?alt=json&pageSize=100 HTTP/1.1" 200 None
+2025-10-23 12:37:18,228 INFO     ___FILE_ONLY___ ACCOUNT_ID
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___             
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___ NAME
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___                                   
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___ OPEN
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___   
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___ MASTER_ACCOUNT_ID
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___ 01C458-6FDA36-DE8B4A
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___   
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___ Oslo kommune Klimaetaten - Crayon AS
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___   
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___ True
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___   
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___ 01DD59-EA37AE-2B93C5
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___ 01E397-3A88F4-3ECE92
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___   
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___ My Billing Account
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___                     
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___ True
+2025-10-23 12:37:18,229 INFO     ___FILE_ONLY___ 
+
+2025-10-23 12:37:18,240 DEBUG    root            Metrics reporting process started...
