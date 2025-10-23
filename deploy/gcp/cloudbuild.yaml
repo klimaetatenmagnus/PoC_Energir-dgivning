@@ -1,0 +1,98 @@
+substitutions:
+  _REGION: europe-north1
+  _REPOSITORY: energinokkelen
+  _CLOUD_RUN_CONFIG: deploy/gcp/cloudrun.yaml
+  _FRONTEND_BUCKET: gs://energinokkelen-frontend
+  _CONTENT_BUCKET: gs://energinokkelen-content
+  _API_ENV: test
+  _DEPLOY: "true" # set to "false" to skip Cloud Run deploy step
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  - name: gcr.io/cloud-builders/npm
+    id: Install dependencies
+    args: ["ci"]
+
+  - name: gcr.io/cloud-builders/npm
+    id: Verify
+    args: ["run", "verify"]
+
+  - name: gcr.io/cloud-builders/npm
+    id: Build production bundle
+    args: ["run", "build:prod"]
+
+  - name: gcr.io/cloud-builders/docker
+    id: Build container image
+    entrypoint: bash
+    env:
+      - REGION=${_REGION}
+      - REPOSITORY=${_REPOSITORY}
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/app:${SHORT_SHA}"
+        echo "${IMAGE_URI}" > /workspace/image-uri.txt
+        docker build --file Dockerfile --tag "${IMAGE_URI}" .
+
+  - name: gcr.io/cloud-builders/docker
+    id: Push container image
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        IMAGE_URI=$(cat /workspace/image-uri.txt)
+        docker push "${IMAGE_URI}"
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: Sync frontend & content buckets
+    entrypoint: bash
+    env:
+      - FRONTEND_BUCKET=${_FRONTEND_BUCKET}
+      - CONTENT_BUCKET=${_CONTENT_BUCKET}
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        gsutil -m rsync -d -r dist "${FRONTEND_BUCKET}"
+        gsutil -m rsync -d -r content "${CONTENT_BUCKET}"
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: Render Cloud Run config
+    entrypoint: bash
+    env:
+      - REGION=${_REGION}
+      - CLOUD_RUN_CONFIG=${_CLOUD_RUN_CONFIG}
+      - PROJECT_ID=$PROJECT_ID
+      - API_ENV=${_API_ENV}
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        IMAGE_URI=$(cat /workspace/image-uri.txt)
+        export IMAGE_URI
+        envsubst < "${CLOUD_RUN_CONFIG}" > /workspace/cloudrun-rendered.yaml
+        cat /workspace/cloudrun-rendered.yaml
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: Deploy Cloud Run (conditional)
+    entrypoint: bash
+    env:
+      - REGION=${_REGION}
+      - DEPLOY=${_DEPLOY}
+      - PROJECT_ID=$PROJECT_ID
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        if [[ "${DEPLOY}" != "true" ]]; then
+          echo "Skipping Cloud Run deploy (DEPLOY=${DEPLOY})."
+          exit 0
+        fi
+        gcloud run services replace /workspace/cloudrun-rendered.yaml --region "${REGION}" --project "${PROJECT_ID}"
+
+images:
+  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/app:${SHORT_SHA}"
