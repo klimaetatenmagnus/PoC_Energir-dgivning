@@ -40,8 +40,10 @@
 
 ## Kode- og container-tilpasninger
 1. **Dockerfile**:
-   - Installer Python 3 + `openpyxl` i runtime-laget.
-   - Legg `scripts/python` i PATH og sørg for `LC_ALL`, `LANG`, `PYTHONIOENCODING` satt til UTF-8.
+   - Installer Python 3 i runtime-laget (f.eks. `apt-get install -y --no-install-recommends python3 python3-pip`).
+   - Legg alle Python-avhengigheter i `python/requirements.txt` (minst `requests`, `openpyxl`). Installer med `python3 -m pip install --no-cache-dir --requirement python/requirements.txt --target /opt/python`.
+   - Sett `ENV PYTHONPATH=/opt/python` og `ENV PYTHON_BINARY=/usr/bin/python3` for å sikre at `api-server` finner tolken uten symlink.
+   - Sørg for at `scripts/python` fortsatt kopieres inn i imagen. `LC_ALL`, `LANG`, `PYTHONIOENCODING` settes til UTF-8.
    - Behold multi-stage; Cloud Run multi-container defineres i YAML (ingen prosess-manager nødvendig).
 2. **API-port og server**:
    - Les `API_PORT` fra env og default til `process.env.PORT || 8080`.
@@ -63,8 +65,9 @@
      - `api-server` leser denne JSON-en fra GCS ved oppstart (cache i minne med TTL) og eksponerer CRUD-endepunkt for manuell regenerering.
      - Vurder et enkelt CMS (f.eks. Headless via Google Sheets/Firestore) hvis Excel må fases ut.
 5. **Solar-service og gul liste**:
-   - Konfigurer `SOLAR_SERVICE_URL=http://localhost:4003` i `api-server`.
-   - Sørg for at `api-server` eksponerer sol-endepunkt via eget proxy-endepunkt (f.eks. `/api/solar/*`) slik at frontend aldri kaller `solar-service` direkte.
+   - Konfigurer `SOLAR_SERVICE_BASE_URL=http://127.0.0.1:4003` og `SOLAR_SERVICE_PORT=4003` i Cloud Run (ligger allerede i `cloudrun.yaml` for `api-server` og `solar-service`).
+   - Opprett dedikert proxy i `api-server` (GET `/api/solar/*`) som videresender til `SOLAR_SERVICE_BASE_URL`. Proxyen må beholde querystring, statuskode og `Content-Type`.
+   - Frontend må lese `solarProxyBaseUrl` fra runtime-konfig (`loadAppConfig`) i stedet for hardkodet `http://localhost:4003`. Default i `content/app.json` er `/api/solar`, slik at CDN → Cloud Run → solar fungerer uten ekstra oppsett.
    - Legg til readiness-/liveness-prober på `solar-service` container (`/health`).
    - Sikre at gul liste-endepunktene (`/api/gul-liste/*`) forblir tilgjengelige. `api-server` må kunne nå PBE WFS (`https://od2.pbe.oslo.kommune.no/`) og Geonorge API; vurder tidsouts og retry-logikk.
    - Vurder caching av gul liste-svar i Redis/Memorystore eller in-memory med TTL for å redusere trykk mot eksterne tjenester.
@@ -313,6 +316,9 @@ Cloud Build må `gsutil rsync` både `dist/` og `content/` til respektive bøtte
 ## Neste steg
 > Etter hver oppdatering av loggen skal dette avsnittet beskrive hva som gjenstår før neste loggførte trinn, hvem som eier oppgaven og eventuelle blokkere. Oppdateres i takt med fremdriftsloggen og planen over.
 
-- Juster URL map for SPA-rewrite (default 200-respons på `/*`) og etabler HTTPS (Managed cert) når staging-domene peker til `34.111.174.210`. Legg også inn rutiner for CDN-invalidering etter deploy. (Neste agent)
-- Pek staging DNS (f.eks. `staging.energinokkelen.no`) til `34.111.174.210`, test frontend end-to-end via CDN og bekreft at `app.json` lastes via Cloud Run-proxy. (Neste agent)
+- Oppdater Dockerfile med python3 + pip install til `/opt/python`, sett `PYTHONPATH`/`PYTHON_BINARY`, og kjør ny staging-deploy via Cloud Build. (Neste agent)
+- Implementer `/api/solar/*`-proxy i `api-server`, juster frontend-kode til å bruke `solarProxyBaseUrl`, og synk `content/` til staging-bucket. Bekreft solinnstråling via CDN (curl og UI). (Neste agent)
+- Kjør full smoke etter endringene (`npm run verify`, `npm run test:smoke -- --baseUrl=https://energinokkelen-168751968131.europe-north1.run.app`). (Neste agent)
+- Legg inn SPA rewrite i URL map og etabler HTTPS (Managed SSL) når staging-domene peker til `34.111.174.210`; invalidér CDN-cache etter deploy. (Neste agent)
+- Pek staging DNS (f.eks. `staging.energinokkelen.no`) til `34.111.174.210` og gjennomfør ende-til-ende test (adresse, støtteordninger, sol). (Magnus)
 - Planlegg prod-konfig etter staging sign-off: prod-hemmeligheter, Cloud Build trigger med approval, CDN-domene. Fjern midlertidig `allUsers`-tilgang når ferdig testet. (Magnus)
