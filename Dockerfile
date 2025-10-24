@@ -17,6 +17,19 @@ FROM base AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 
+# Install Python runtime and dependencies for support scripts
+COPY --from=build /app/python/requirements.txt ./python/requirements.txt
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 python3-pip \
+  && python3 -m pip install --no-cache-dir --requirement python/requirements.txt --target /opt/python \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV PYTHONPATH=/opt/python \
+    PYTHON_BINARY=/usr/bin/python3 \
+    LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8 \
+    PYTHONIOENCODING=utf-8
+
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist

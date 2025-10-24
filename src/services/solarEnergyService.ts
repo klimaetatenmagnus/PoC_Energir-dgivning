@@ -1,5 +1,6 @@
 // Service for fetching and calculating solar energy data
 import proj4 from 'proj4';
+import { getAppConfig } from '../runtimeConfig.ts';
 
 // Define EPSG:32632 (UTM zone 32N) projection
 proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
@@ -77,7 +78,9 @@ export async function fetchSolarData(params: {
   try {
     // console.log('☀️ fetchSolarData called with params:', params);
     
-    let url = "http://localhost:4003/solinnstraling?";
+    const { solarProxyBaseUrl } = getAppConfig();
+    const baseUrl = solarProxyBaseUrl.replace(/\/$/, '');
+    const searchParams = new URLSearchParams();
     
     // Convert UTM coordinates to lat/lon if provided
     let lat = params.lat;
@@ -100,15 +103,17 @@ export async function fetchSolarData(params: {
     
     // Prioritize coordinates over building ID
     if (lat && lon) {
-      url += `lat=${lat}&lon=${lon}`;
+      searchParams.set('lat', String(lat));
+      searchParams.set('lon', String(lon));
       // console.log(`☀️ Fetching solar data for coordinates: ${lat}, ${lon}`);
     } else if (params.byggId) {
-      url += `bygg_id=${params.byggId}`;
+      searchParams.set('bygg_id', String(params.byggId));
       // console.log(`☀️ Fetching solar data for bygg_id=${params.byggId}`);
     } else if (params.gnr && params.bnr) {
-      url += `gnr=${params.gnr}&bnr=${params.bnr}`;
+      searchParams.set('gnr', String(params.gnr));
+      searchParams.set('bnr', String(params.bnr));
       if (params.seksjonsnummer) {
-        url += `&snr=${params.seksjonsnummer}`;
+        searchParams.set('snr', String(params.seksjonsnummer));
       }
       // console.log(`☀️ Fetching solar data for gnr=${params.gnr}, bnr=${params.bnr}${params.seksjonsnummer ? `, snr=${params.seksjonsnummer}` : ''}`);
     } else {
@@ -117,6 +122,8 @@ export async function fetchSolarData(params: {
     }
     
     // console.log(`☀️ Full URL: ${url}`);
+    const query = searchParams.toString();
+    const url = `${baseUrl}/solinnstraling${query ? `?${query}` : ''}`;
     const response = await fetch(url);
     // console.log(`☀️ Response status: ${response.status}`);
     
