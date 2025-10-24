@@ -129,6 +129,11 @@ export function getRuntimeConfig(): RuntimeConfig {
     password: requireEnv("MATRIKKEL_PASSWORD"),
   };
 
+  const buildingInfoPort =
+    process.env.BUILDING_INFO_PORT !== undefined
+      ? optionalNumber("BUILDING_INFO_PORT", 4000)
+      : optionalNumber("PORT", 4000);
+
   const config: RuntimeConfig = {
     environment,
     matrikkel: {
@@ -141,7 +146,7 @@ export function getRuntimeConfig(): RuntimeConfig {
     },
     ports: {
       api: optionalNumber("API_PORT", 3001),
-      buildingInfo: optionalNumber("PORT", 4000),
+      buildingInfo: buildingInfoPort,
     },
     flags: {
       liveMode: parseBoolean("LIVE"),

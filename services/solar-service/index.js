@@ -44,6 +44,10 @@ const MOCK_MODE =
 
 app.use(cors());
 
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
 /* ───────── Mini-helper for WFS-kall ───────────────────────────────────── */
 async function wfsCall(params) {
   const res = await fetch(`${WFS_URL}?${params.toString()}`);

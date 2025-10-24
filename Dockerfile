@@ -23,6 +23,7 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/data ./data
 COPY --from=build /app/scripts/python ./scripts/python
 COPY --from=build /app/content ./content
+COPY --from=build /app/services ./services
 
 # Optional static artefacts (frontend, metrics docs, etc.)
 COPY --from=build /app/public ./public

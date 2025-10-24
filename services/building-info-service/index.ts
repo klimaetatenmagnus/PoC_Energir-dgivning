@@ -75,7 +75,12 @@ app.get('/metrics', async (_req, res) => {
   res.send(await metricsRegistry.metrics());
 });
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const entryScript = process.argv[1] ?? '';
+const isStandaloneExecution =
+  process.env.BUILDING_INFO_SERVICE_STANDALONE === '1' ||
+  entryScript.includes('building-info-service');
+
+if (isStandaloneExecution) {
   app.listen(PORT, () => {
     infoLog(`✓ building-info-service på http://localhost:${PORT}`);
   });
