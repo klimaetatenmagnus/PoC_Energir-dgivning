@@ -1,9 +1,0 @@
-2025-10-23 13:06:46,008 DEBUG    root            Loaded Command Group: ['gcloud', 'storage']
-2025-10-23 13:06:46,008 DEBUG    root            Loaded Command Group: ['gcloud', 'storage', 'buckets']
-2025-10-23 13:06:46,124 DEBUG    root            Loaded Command Group: ['gcloud', 'storage', 'buckets', 'delete']
-2025-10-23 13:06:46,126 DEBUG    root            Running [gcloud.storage.buckets.delete] with arguments: [--quiet: "True", URLS:1: "['gs://energinokkelen-poc-20251023']"]
-2025-10-23 13:06:46,137 INFO     root            Using high CPU count, single-file workload config.
-2025-10-23 13:06:46,191 INFO     ___FILE_ONLY___   Completed 0/1
-2025-10-23 13:06:47,621 DEBUG    root            Chosen display Format:default
-2025-10-23 13:06:47,622 INFO     root            Display format: "default"
-2025-10-23 13:06:47,628 DEBUG    root            Metrics reporting process started...
