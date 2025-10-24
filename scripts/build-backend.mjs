@@ -18,6 +18,10 @@ await build({
       "services/building-info-service/index.ts"
     ),
     "api-server": resolve(projectRoot, "src/api-server.ts"),
+    "solar-service": resolve(
+      projectRoot,
+      "services/solar-service/index.js"
+    ),
   },
   bundle: true,
   platform: "node",
