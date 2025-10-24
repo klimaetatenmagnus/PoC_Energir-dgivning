@@ -16,6 +16,7 @@ const execFileAsync = promisify(execFile);
 const pythonScriptsDir = path.join(process.cwd(), 'scripts', 'python');
 const configDirectory = process.env.APP_CONFIG_DIR ?? path.join(process.cwd(), 'content');
 const buildingInfoBaseUrl = (process.env.BUILDING_INFO_BASE_URL ?? 'http://localhost:4000').replace(/\/$/, '');
+const solarServiceBaseUrl = (process.env.SOLAR_SERVICE_BASE_URL ?? 'http://localhost:4003').replace(/\/$/, '');
 
 const app = express();
 const PORT = Number(process.env.API_PORT ?? process.env.PORT ?? 3001);
@@ -203,6 +204,13 @@ app.get('/config/app.json', async (_req, res) => {
   }
 });
 
+app.get('/', (_req, res) => {
+  res.json({
+    status: 'Energinokkelen API',
+    message: 'Backend er oppe. Bruk /health for helse, /api/* for tjenester, og frontend via CDN-url.',
+  });
+});
+
 app.get('/metrics', async (_req, res) => {
   try {
     const response = await fetch(`${buildingInfoBaseUrl}/metrics`);
@@ -216,6 +224,48 @@ app.get('/metrics', async (_req, res) => {
     console.error('[api-server] Failed to proxy metrics', error);
     res.status(502).json({ error: 'Failed to proxy metrics' });
   }
+});
+
+async function handleSolarProxy(req: express.Request, res: express.Response): Promise<void> {
+  const originalUrl = req.originalUrl ?? '';
+  const queryIndex = originalUrl.indexOf('?');
+  const pathWithoutQuery = queryIndex >= 0 ? originalUrl.slice(0, queryIndex) : originalUrl;
+  const suffix = pathWithoutQuery.slice('/api/solar'.length);
+  const normalisedSuffix = suffix ? (suffix.startsWith('/') ? suffix : `/${suffix}`) : '';
+  const query = queryIndex >= 0 ? originalUrl.slice(queryIndex) : '';
+  const targetUrl = `${solarServiceBaseUrl}${normalisedSuffix}${query}`;
+
+  try {
+    const response = await fetch(targetUrl, {
+      headers: {
+        accept: req.headers.accept ?? '*/*',
+      },
+    });
+
+    response.headers.forEach((value, key) => {
+      const lowerKey = key.toLowerCase();
+      if (lowerKey === 'transfer-encoding' || lowerKey === 'content-length' || lowerKey === 'connection') {
+        return;
+      }
+      res.setHeader(key, value);
+    });
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    res.status(response.status).send(buffer);
+  } catch (error) {
+    console.error('[api-server] Failed to proxy solar request', { targetUrl, error });
+    res.status(502).json({ error: 'Failed to proxy solar service' });
+  }
+}
+
+app.use('/api/solar', (req, res, next) => {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  handleSolarProxy(req, res).catch(next);
 });
 
 // Health check
