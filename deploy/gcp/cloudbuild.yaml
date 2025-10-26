@@ -7,6 +7,10 @@ substitutions:
   _API_ENV: test
   _DEPLOY: "true" # set to "false" to skip Cloud Run deploy step
   _TAG: latest
+  _SERVICE_NAME: energinokkelen
+  _URL_MAP: staging-frontend-map
+  _CDN_PATHS: ""
+  _CDN_DRY_RUN: "false"
 
 serviceAccount: projects/$PROJECT_ID/serviceAccounts/cloud-build@$PROJECT_ID.iam.gserviceaccount.com
 logsBucket: gs://energinokkelen-build-logs
@@ -96,10 +100,26 @@ steps:
       - "-c"
       - |
         set -eo pipefail
-        frontend_bucket="$_FRONTEND_BUCKET"
-        content_bucket="$_CONTENT_BUCKET"
+        frontend_bucket="${_FRONTEND_BUCKET}"
+        content_bucket="${_CONTENT_BUCKET}"
         gsutil -m rsync -d -r dist "${frontend_bucket}"
         gsutil -m rsync -d -r content "${content_bucket}"
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: Invalidate CDN cache
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        if [[ "${_DEPLOY}" != "true" ]]; then
+          echo "Skipping CDN invalidation (DEPLOY=${_DEPLOY})."
+          exit 0
+        fi
+        export PROJECT_ID="${PROJECT_ID}"
+        export CDN_PATHS="${_CDN_PATHS}"
+        export CDN_DRY_RUN="${_CDN_DRY_RUN}"
+        ./deploy/gcp/invalidate-cdn-cache.sh "${_URL_MAP}"
 
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     id: Render Cloud Run config
@@ -113,6 +133,7 @@ steps:
         sed -e "s|__IMAGE_URI__|$image_uri|g" \
             -e "s|__PROJECT_ID__|$PROJECT_ID|g" \
             -e "s|__API_ENV__|$_API_ENV|g" \
+            -e "s|__SERVICE_NAME__|$_SERVICE_NAME|g" \
             "$config_template" > /workspace/cloudrun-rendered.yaml
         cat /workspace/cloudrun-rendered.yaml
 

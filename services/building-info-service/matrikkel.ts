@@ -285,6 +285,8 @@ async function fetchEnergiattest(params: {
 interface SolarSurface {
   area_m2?: number;
   irr_kwh_m2_yr?: number;
+  bygg_id?: number | null;
+  bygg_nr?: string | null;
   [key: string]: unknown;
 }
 
@@ -308,6 +310,7 @@ export interface SolarData {
 
 async function fetchSolarData(params: {
   byggId?: number;
+  byggNr?: string;
   lat?: number;
   lon?: number;
   gnr?: number;
@@ -333,7 +336,10 @@ async function fetchSolarData(params: {
       async () => {
         let url = 'http://localhost:4003/solinnstraling?';
 
-        if (params.lat && params.lon) {
+        if (params.byggNr) {
+          url += `bygg_nr=${encodeURIComponent(params.byggNr)}`;
+          debugLog(`☀️ Henter solenergi-data for byggNr=${params.byggNr}`);
+        } else if (params.lat && params.lon) {
           url += `lat=${params.lat}&lon=${params.lon}`;
           debugLog(
             `☀️ Henter solenergi-data for koordinater: ${params.lat}, ${params.lon}`
@@ -1016,6 +1022,7 @@ export async function resolveBuildingData(
 
   const solarData = await fetchSolarData({
     byggId,
+    byggNr: bygg.bygningsnummer ?? undefined,
     lat,
     lon,
     gnr: adr.gnr,

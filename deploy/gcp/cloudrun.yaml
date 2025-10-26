@@ -1,7 +1,7 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: energinokkelen
+  name: __SERVICE_NAME__
   annotations:
     run.googleapis.com/ingress: all
     run.googleapis.com/default-container: api-server
