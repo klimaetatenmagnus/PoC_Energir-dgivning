@@ -270,7 +270,11 @@ app.use('/api/solar', (req, res, next) => {
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    message: 'Energinokkelen API-health (øvelse 26.10)',
+  });
 });
 
 // Address lookup endpoint
