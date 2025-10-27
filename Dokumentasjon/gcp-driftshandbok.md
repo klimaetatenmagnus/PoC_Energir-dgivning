@@ -148,6 +148,7 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 - Oppdater JSON/YAML lokalt og synk til GCS (`gsutil -m rsync content gs://energinokkelen-content` for staging, `...-content-prod` for prod). API-serveren leser direkte fra bøtten; redeploy trengs ikke.  
 - For større innholdsendringer kan Cloud Build brukes (kjør staging/prod trigger eller `gcloud builds submit --substitutions _DEPLOY=false` for kun artefakter).  
 - Husk eventuelt å invalidere CDN dersom frontend skal lese nye filer direkte (`deploy/gcp/invalidate-cdn-cache.sh`).
+- Tiltakstekster og lignende innhold ligger i `content/tiltak/*.json` og hentes via `/config/content/<sti>.json`. Filer leses først fra GCS-bøtten og faller tilbake til lokale filer.
 
 ### 5.3 CDN-invalidator
 - Scriptet kjøres automatisk når `_DEPLOY=true`.  

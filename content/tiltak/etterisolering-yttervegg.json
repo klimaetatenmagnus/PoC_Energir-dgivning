@@ -1,0 +1,13 @@
+{
+  "title": "Etterisolering av yttervegg",
+  "introParagraphs": [
+    "Etterisolering av fasaden er svært effektivt for å spare strømutgifter, skape bedre inneklima med mindre trekk, og få mer kontroll over temperaturen inne.",
+    "Hvis du uansett må skifte kledning, altså fasadematerialet, lønner det seg å etterisolere samtidig."
+  ],
+  "buildingTypeParagraphs": {
+    "enebolig": "Har huset ditt en enkel fasade uten mye detaljer, er det som regel uproblematisk å etterisolere utvendig og kle med nytt materiale i ønsket stil. Skal du bevare dagens uttrykk, kan innvendig isolasjon eller forbedret tetting være alternativer.",
+    "rekkehus": "I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader. Det gir et helhetlig resultat og gjør det enklere å gjennomføre.",
+    "tomannsbolig": "I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader. Det gir et helhetlig resultat og gjør det enklere å gjennomføre.",
+    "default": "Blokker med store, flate fasader har godt potensial for etterisolering. Ved å etterisolere hele veggflater eller bare utvalgte partier kan dere redusere energiforbruket og oppgradere byggets uttrykk."
+  }
+}
