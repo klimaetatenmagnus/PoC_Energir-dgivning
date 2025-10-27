@@ -74,7 +74,8 @@ Oppdatert: 2025-09-28 (refaktor runde 2)
 - Kritiske variabler: `MATRIKKEL_USERNAME`, `MATRIKKEL_PASSWORD`, `MATRIKKEL_API_BASE_URL_*`, `ENOVA_API_KEY`, `API_PORT`, `PORT`, `LIVE`, `LOG_SOAP`, `API_DEBUG`.
 - Runtime-/deploy-variabler:
   - `PUBLIC_API_BASE_URL`, `PUBLIC_SOLAR_BASE_URL` – base-URL som serveres til SPA (`/config/app.json`).
-  - `APP_CONFIG_DIR` – katalog der `app.json` lastes fra (default `content/`).
+- `APP_CONFIG_DIR` – katalog der `app.json` lastes fra (default `content/`).
+- `CONTENT_BUCKET` – dersom satt, henter `/config/app.json` siste versjon fra denne GCS-bøtten (med cache på objektets generation). Mangler variabelen, brukes filen lokalt i `APP_CONFIG_DIR`.
   - `BUILDING_INFO_BASE_URL` – intern URL for metrics/lookup-proxy (`api-server`).
   - `SOLAR_*` (`SOLAR_WFS_URL`, `SOLAR_MAP_FILE`, `SOLAR_LAYER`, `SOLAR_REFERENCE_KWH`, `SOLAR_CACHE_TTL`, `SOLAR_POINT_DELTA`, `SOLAR_MIN_RADIATION`, `SOLAR_PANEL_EFFICIENCY`, `SOLAR_SERVICE_PORT`, `SOLAR_SERVICE_HOST`).
   - `GUL_LISTE_*` (`GUL_LISTE_WFS_URL`, `GUL_LISTE_WFS_SEARCH_MAP`, `GUL_LISTE_TABLE_MAP`, `GUL_LISTE_TABLE`).

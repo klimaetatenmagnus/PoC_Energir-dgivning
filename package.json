@@ -28,6 +28,7 @@
     "test:contract": "TS_NODE_PROJECT=tsconfig.contract.json node --loader ts-node/esm scripts/test-contract-matrikkel.ts && node --import tsx scripts/test-contract-resultAssembler.ts"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.17.2",
     "@oslokommune/punkt-assets": "^12.42.11",
     "@oslokommune/punkt-css": "^12.42.13",
     "@oslokommune/punkt-react": "^11.16.6",
