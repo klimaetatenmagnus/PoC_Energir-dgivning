@@ -95,6 +95,7 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 | `energinokkelen-data` | Felles | Rådata/CSV/Excel | Cloud Run SA (viewer) |
 | `energinokkelen-build-logs` | Felles | Cloud Build loggbucket | Opprettes automatisk via Cloud Build config |
 
+`api-server` leser `/config/app.json` direkte fra bøtten (via `CONTENT_BUCKET`) og faller tilbake til lokale filer hvis objektet ikke finnes. JSON-en caches per GCS-generation, så oppdatering av filen i bøtten blir synlig uten redeploy.
 `deploy/gcp/invalidate-cdn-cache.sh` brukes til å invalidere LB cache etter deploy (via Cloud Build steg).
 
 ### 4.6 Load balancer, CDN og DNS
@@ -144,8 +145,9 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
    - Etter deploy: verifiser `https://energinøkkelen.no/config/app.json`, `/metrics`, og run `npm run test:smoke -- --baseUrl=https://xn--energinkkelen-hnb.no`.
 
 ### 5.2 Innholdsoppdateringer uten kodeendring
-- Oppdater filer i `content/`, kjør staging/prod Cloud Build (evt. med `_DEPLOY=false` hvis backend ikke skal redeployes).  
-- Alternativt: `gsutil -m rsync content gs://energinokkelen-content` (staging) eller `...-content-prod` (prod) + `gcloud compute url-maps invalidate-cdn-cache ...`.
+- Oppdater JSON/YAML lokalt og synk til GCS (`gsutil -m rsync content gs://energinokkelen-content` for staging, `...-content-prod` for prod). API-serveren leser direkte fra bøtten; redeploy trengs ikke.  
+- For større innholdsendringer kan Cloud Build brukes (kjør staging/prod trigger eller `gcloud builds submit --substitutions _DEPLOY=false` for kun artefakter).  
+- Husk eventuelt å invalidere CDN dersom frontend skal lese nye filer direkte (`deploy/gcp/invalidate-cdn-cache.sh`).
 
 ### 5.3 CDN-invalidator
 - Scriptet kjøres automatisk når `_DEPLOY=true`.  
@@ -245,4 +247,3 @@ gcloud monitoring uptime describe projects/energiverktoy-poc-1234/uptimeCheckCon
 ---
 
 **Vedlikehold:** Oppdater dokumentet etter hver endring i GCP-infrastruktur, pipelines, sikkerhet eller rutiner. Husk å justere “Oppdatert”-linjen og endringslogg.
-

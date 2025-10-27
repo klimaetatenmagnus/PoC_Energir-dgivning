@@ -1,6 +1,5 @@
 {
   "apiBaseUrl": "/api",
   "solarProxyBaseUrl": "/api/solar",
-  "contentTimestamp": "2025-10-26T15:00:00Z",
-  "bannerMessage": "Dette er en testtekst for innholdsoppdatering via GCS. Fjern når øvelsen er ferdig."
+  "contentTimestamp": "2025-10-26T15:00:00Z"
 }

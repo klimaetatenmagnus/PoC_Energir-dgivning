@@ -5,6 +5,7 @@ import cors from 'cors';
 import fetch from 'node-fetch';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { Storage } from '@google-cloud/storage';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
 import { energyRatingService } from './services/energyRatingService.js';
 import { execFile } from 'child_process';
@@ -17,6 +18,9 @@ const pythonScriptsDir = path.join(process.cwd(), 'scripts', 'python');
 const configDirectory = process.env.APP_CONFIG_DIR ?? path.join(process.cwd(), 'content');
 const buildingInfoBaseUrl = (process.env.BUILDING_INFO_BASE_URL ?? 'http://localhost:4000').replace(/\/$/, '');
 const solarServiceBaseUrl = (process.env.SOLAR_SERVICE_BASE_URL ?? 'http://localhost:4003').replace(/\/$/, '');
+const contentBucketName = process.env.CONTENT_BUCKET;
+
+const storage = contentBucketName ? new Storage() : null;
 
 const app = express();
 const PORT = Number(process.env.API_PORT ?? process.env.PORT ?? 3001);
@@ -62,8 +66,10 @@ interface GeonorgeResponse {
 
 let pythonDetectionPromise: Promise<string> | null = null;
 let cachedPythonBinary: string | null = null;
-let cachedAppConfig: AppConfigResponse | null = null;
-let cachedConfigMtime: number | null = null;
+let cachedLocalAppConfig: AppConfigResponse | null = null;
+let cachedLocalConfigMtime: number | null = null;
+let cachedBucketAppConfig: AppConfigResponse | null = null;
+let cachedBucketGeneration: string | null = null;
 
 type AppConfigResponse = {
   apiBaseUrl: string;
@@ -71,46 +77,99 @@ type AppConfigResponse = {
   contentTimestamp?: string;
 };
 
-async function loadAppConfigFromDisk(): Promise<AppConfigResponse> {
+function getDefaultAppConfig(): AppConfigResponse {
   const defaultApiBase = normaliseBaseUrl(process.env.PUBLIC_API_BASE_URL ?? '/api');
-  const defaults: AppConfigResponse = {
+  return {
     apiBaseUrl: defaultApiBase,
     solarProxyBaseUrl: normaliseBaseUrl(
       process.env.PUBLIC_SOLAR_BASE_URL ?? `${defaultApiBase}/solar`
     ),
     contentTimestamp: undefined,
   };
+}
+
+function createConfigFromSource(
+  parsed: Record<string, unknown> | null,
+  defaults: AppConfigResponse
+): AppConfigResponse {
+  const fallbackApi =
+    parsed && typeof parsed.apiBaseUrl === 'string' ? parsed.apiBaseUrl : defaults.apiBaseUrl;
+  const fallbackSolar =
+    parsed && typeof parsed.solarProxyBaseUrl === 'string'
+      ? parsed.solarProxyBaseUrl
+      : defaults.solarProxyBaseUrl;
+  const timestamp =
+    parsed && typeof parsed.contentTimestamp === 'string'
+      ? parsed.contentTimestamp
+      : defaults.contentTimestamp;
+
+  return {
+    apiBaseUrl: normaliseBaseUrl(
+      (process.env.PUBLIC_API_BASE_URL as string | undefined) ?? fallbackApi
+    ),
+    solarProxyBaseUrl: normaliseBaseUrl(
+      (process.env.PUBLIC_SOLAR_BASE_URL as string | undefined) ?? fallbackSolar
+    ),
+    contentTimestamp: timestamp,
+  };
+}
+
+async function loadAppConfigFromDisk(): Promise<AppConfigResponse> {
+  const defaults = getDefaultAppConfig();
 
   try {
     const configPath = path.join(configDirectory, 'app.json');
     const stat = await fs.stat(configPath);
 
-    if (!cachedAppConfig || cachedConfigMtime !== stat.mtimeMs) {
+    if (!cachedLocalAppConfig || cachedLocalConfigMtime !== stat.mtimeMs) {
       const raw = await fs.readFile(configPath, 'utf-8');
       const parsed = JSON.parse(raw) as Record<string, unknown>;
-      cachedAppConfig = {
-        apiBaseUrl: normaliseBaseUrl(
-          (process.env.PUBLIC_API_BASE_URL as string | undefined) ??
-            (typeof parsed.apiBaseUrl === 'string' ? parsed.apiBaseUrl : defaults.apiBaseUrl)
-        ),
-        solarProxyBaseUrl: normaliseBaseUrl(
-          (process.env.PUBLIC_SOLAR_BASE_URL as string | undefined) ??
-            (typeof parsed.solarProxyBaseUrl === 'string' ? parsed.solarProxyBaseUrl : defaults.solarProxyBaseUrl)
-        ),
-        contentTimestamp:
-          typeof parsed.contentTimestamp === 'string' ? parsed.contentTimestamp : defaults.contentTimestamp,
-      };
-      cachedConfigMtime = stat.mtimeMs;
+      cachedLocalAppConfig = createConfigFromSource(parsed, defaults);
+      cachedLocalConfigMtime = stat.mtimeMs;
     }
 
-    return cachedAppConfig!;
+    return cachedLocalAppConfig!;
   } catch (error) {
-    if (!cachedAppConfig) {
-      cachedAppConfig = defaults;
+    if (!cachedLocalAppConfig) {
+      cachedLocalAppConfig = defaults;
     }
     debugLog('⚠️  Failed to read app config from disk, using defaults', error);
-    return cachedAppConfig;
+    return cachedLocalAppConfig;
   }
+}
+
+async function loadAppConfigFromBucket(): Promise<AppConfigResponse> {
+  if (!storage || !contentBucketName) {
+    return loadAppConfigFromDisk();
+  }
+
+  const defaults = getDefaultAppConfig();
+  const file = storage.bucket(contentBucketName).file('app.json');
+
+  const [metadata] = await file.getMetadata();
+  const generation = metadata.generation ?? null;
+
+  if (cachedBucketAppConfig && cachedBucketGeneration === generation) {
+    return cachedBucketAppConfig;
+  }
+
+  const [buffer] = await file.download();
+  const parsed = JSON.parse(buffer.toString('utf-8')) as Record<string, unknown>;
+  cachedBucketAppConfig = createConfigFromSource(parsed, defaults);
+  cachedBucketGeneration = generation;
+  return cachedBucketAppConfig;
+}
+
+async function loadAppConfig(): Promise<AppConfigResponse> {
+  if (storage && contentBucketName) {
+    try {
+      return await loadAppConfigFromBucket();
+    } catch (error) {
+      console.error('[api-server] Failed to load app config from bucket, falling back to disk', error);
+    }
+  }
+
+  return loadAppConfigFromDisk();
 }
 
 function normaliseBaseUrl(value: string): string {
@@ -196,7 +255,7 @@ app.use(express.json());
 
 app.get('/config/app.json', async (_req, res) => {
   try {
-    const cfg = await loadAppConfigFromDisk();
+    const cfg = await loadAppConfig();
     res.json(cfg);
   } catch (error) {
     console.error('[api-server] Failed to load app config', error);
@@ -273,7 +332,6 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    message: 'Energinokkelen API-health (øvelse 26.10)',
   });
 });
 
