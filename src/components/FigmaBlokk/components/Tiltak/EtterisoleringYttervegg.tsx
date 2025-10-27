@@ -9,8 +9,33 @@ import {
   resolveEnergyCategory,
   useStotteordninger
 } from './shared';
+import { useRuntimeJson } from '../../../../runtimeContent';
 
 type EtterisoleringYtterveggProps = TiltakComponentProps;
+
+type EtterisoleringYtterveggContent = {
+  title: string;
+  introParagraphs: string[];
+  buildingTypeParagraphs: Record<string, string>;
+};
+
+const defaultEtterisoleringContent: EtterisoleringYtterveggContent = {
+  title: 'Etterisolering av yttervegg',
+  introParagraphs: [
+    'Etterisolering av fasaden er svært effektivt for å spare strømutgifter, skape bedre inneklima med mindre trekk, og få mer kontroll over temperaturen inne.',
+    'Hvis du uansett må skifte kledning, altså fasadematerialet, lønner det seg å etterisolere samtidig.'
+  ],
+  buildingTypeParagraphs: {
+    enebolig:
+      'Har huset ditt en enkel fasade uten mye detaljer, er det som regel uproblematisk å etterisolere utvendig og kle med nytt materiale i ønsket stil. Skal du bevare dagens uttrykk, kan innvendig isolasjon eller forbedret tetting være alternativer.',
+    rekkehus:
+      'I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader. Det gir et helhetlig resultat og gjør det enklere å gjennomføre.',
+    tomannsbolig:
+      'I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader. Det gir et helhetlig resultat og gjør det enklere å gjennomføre.',
+    default:
+      'Blokker med store, flate fasader har godt potensial for etterisolering. Ved å etterisolere hele veggflater eller bare utvalgte partier kan dere redusere energiforbruket og oppgradere byggets uttrykk.'
+  }
+};
 
 export const EtterisoleringYttervegg: React.FC<EtterisoleringYtterveggProps> = ({ onBack, buildingType, buildingData }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
@@ -23,6 +48,15 @@ export const EtterisoleringYttervegg: React.FC<EtterisoleringYtterveggProps> = (
   });
 
   const needsScroll = stotteordninger.length > 4;
+  const { data: content } = useRuntimeJson<EtterisoleringYtterveggContent>(
+    'tiltak/etterisolering-yttervegg.json',
+    defaultEtterisoleringContent
+  );
+
+  const normalisedBuildingType = buildingType?.toLowerCase();
+  const buildingTypeParagraph =
+    (normalisedBuildingType && content.buildingTypeParagraphs[normalisedBuildingType]) ??
+    content.buildingTypeParagraphs.default;
 
   return (
     <div style={{ 
@@ -57,7 +91,7 @@ export const EtterisoleringYttervegg: React.FC<EtterisoleringYtterveggProps> = (
           fill="#2A2859"
           dominantBaseline="hanging"
         >
-          Etterisolering av yttervegg
+          {content.title}
         </text>
         
         {/* Main text content with scroll if needed */}
@@ -93,24 +127,15 @@ export const EtterisoleringYttervegg: React.FC<EtterisoleringYtterveggProps> = (
                 background: #AAAAAA;
               }
             `}</style>
-            <p style={{ marginBottom: '16px' }}>
-              Etterisolering av fasaden er svært effektivt for å spare strømutgifter, skape bedre inneklima med mindre trekk, og få mer kontroll over temperaturen inne.
-            </p>
-            <p style={{ marginBottom: '16px' }}>
-              Hvis du uansett må skifte kledning, altså fasadematerialet, lønner det seg å etterisolere samtidig.
-            </p>
+            {content.introParagraphs.map((paragraph, index) => (
+              <p key={`intro-${index}`} style={{ marginBottom: '16px' }}>
+                {paragraph}
+              </p>
+            ))}
 
-            {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
+            {buildingTypeParagraph && (
               <p style={{ marginBottom: '20px' }}>
-                Har huset ditt en enkel fasade uten mye detaljer, er det som regel uproblematisk å etterisolere utvendig og kle med nytt materiale i ønsket stil. Skal du bevare dagens uttrykk, kan innvendig isolasjon eller forbedret tetting være alternativer.
-              </p>
-            ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
-              <p style={{ marginBottom: '20px' }}>
-                I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader. Det gir et helhetlig resultat og gjør det enklere å gjennomføre.
-              </p>
-            ) : (
-              <p style={{ marginBottom: '20px' }}>
-                Blokker med store, flate fasader har godt potensial for etterisolering. Ved å etterisolere hele veggflater eller bare utvalgte partier kan dere redusere energiforbruket og oppgradere byggets uttrykk.
+                {buildingTypeParagraph}
               </p>
             )}
           </div>

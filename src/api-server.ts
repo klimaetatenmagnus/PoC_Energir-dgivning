@@ -66,10 +66,20 @@ interface GeonorgeResponse {
 
 let pythonDetectionPromise: Promise<string> | null = null;
 let cachedPythonBinary: string | null = null;
-let cachedLocalAppConfig: AppConfigResponse | null = null;
-let cachedLocalConfigMtime: number | null = null;
-let cachedBucketAppConfig: AppConfigResponse | null = null;
-let cachedBucketGeneration: string | null = null;
+type JsonObject = Record<string, unknown>;
+
+type BucketJsonCacheEntry = {
+  generation: string | null;
+  data: JsonObject;
+};
+
+type LocalJsonCacheEntry = {
+  mtime: number;
+  data: JsonObject;
+};
+
+const bucketJsonCache = new Map<string, BucketJsonCacheEntry>();
+const localJsonCache = new Map<string, LocalJsonCacheEntry>();
 
 type AppConfigResponse = {
   apiBaseUrl: string;
@@ -114,62 +124,114 @@ function createConfigFromSource(
   };
 }
 
-async function loadAppConfigFromDisk(): Promise<AppConfigResponse> {
-  const defaults = getDefaultAppConfig();
+const configRootPath = path.resolve(configDirectory);
 
-  try {
-    const configPath = path.join(configDirectory, 'app.json');
-    const stat = await fs.stat(configPath);
-
-    if (!cachedLocalAppConfig || cachedLocalConfigMtime !== stat.mtimeMs) {
-      const raw = await fs.readFile(configPath, 'utf-8');
-      const parsed = JSON.parse(raw) as Record<string, unknown>;
-      cachedLocalAppConfig = createConfigFromSource(parsed, defaults);
-      cachedLocalConfigMtime = stat.mtimeMs;
-    }
-
-    return cachedLocalAppConfig!;
-  } catch (error) {
-    if (!cachedLocalAppConfig) {
-      cachedLocalAppConfig = defaults;
-    }
-    debugLog('⚠️  Failed to read app config from disk, using defaults', error);
-    return cachedLocalAppConfig;
+function isSafeRelativePath(relativePath: string): boolean {
+  if (!relativePath) {
+    return false;
   }
+
+  const normalised = relativePath.replace(/\\/g, '/');
+  if (normalised.startsWith('/')) {
+    return false;
+  }
+
+  if (normalised.includes('..')) {
+    return false;
+  }
+
+  return true;
 }
 
-async function loadAppConfigFromBucket(): Promise<AppConfigResponse> {
-  if (!storage || !contentBucketName) {
-    return loadAppConfigFromDisk();
+async function loadJsonFromDisk(relativePath: string): Promise<JsonObject> {
+  if (!isSafeRelativePath(relativePath)) {
+    throw new Error(`Unsafe content path: ${relativePath}`);
   }
 
-  const defaults = getDefaultAppConfig();
-  const file = storage.bucket(contentBucketName).file('app.json');
+  const resolvedPath = path.resolve(configRootPath, relativePath);
+  if (!resolvedPath.startsWith(configRootPath)) {
+    throw new Error(`Resolved content path escapes root: ${relativePath}`);
+  }
 
+  const stat = await fs.stat(resolvedPath);
+  const cached = localJsonCache.get(relativePath);
+  if (cached && cached.mtime === stat.mtimeMs) {
+    debugLog(`Serving cached local content: ${relativePath}`);
+    return cached.data;
+  }
+
+  const raw = await fs.readFile(resolvedPath, 'utf-8');
+  const parsed = JSON.parse(raw) as JsonObject;
+  localJsonCache.set(relativePath, { mtime: stat.mtimeMs, data: parsed });
+  debugLog(`Loaded local content file: ${relativePath}`);
+  return parsed;
+}
+
+async function loadJsonFromBucket(relativePath: string): Promise<JsonObject> {
+  if (!storage || !contentBucketName) {
+    throw new Error('Content bucket is not configured');
+  }
+
+  if (!isSafeRelativePath(relativePath)) {
+    throw new Error(`Unsafe bucket content path: ${relativePath}`);
+  }
+
+  const file = storage.bucket(contentBucketName).file(relativePath);
   const [metadata] = await file.getMetadata();
   const generation = metadata.generation ?? null;
 
-  if (cachedBucketAppConfig && cachedBucketGeneration === generation) {
-    return cachedBucketAppConfig;
+  const cached = bucketJsonCache.get(relativePath);
+  if (cached && cached.generation === generation) {
+    debugLog(`Serving cached bucket content: ${relativePath} (generation ${generation ?? 'unknown'})`);
+    return cached.data;
   }
 
   const [buffer] = await file.download();
-  const parsed = JSON.parse(buffer.toString('utf-8')) as Record<string, unknown>;
-  cachedBucketAppConfig = createConfigFromSource(parsed, defaults);
-  cachedBucketGeneration = generation;
-  return cachedBucketAppConfig;
+  const parsed = JSON.parse(buffer.toString('utf-8')) as JsonObject;
+  bucketJsonCache.set(relativePath, { generation, data: parsed });
+  debugLog(`Loaded bucket content file: ${relativePath} (generation ${generation ?? 'unknown'})`);
+  return parsed;
 }
 
-async function loadAppConfig(): Promise<AppConfigResponse> {
+async function loadJsonFile(relativePath: string): Promise<JsonObject> {
   if (storage && contentBucketName) {
     try {
-      return await loadAppConfigFromBucket();
+      return await loadJsonFromBucket(relativePath);
     } catch (error) {
-      console.error('[api-server] Failed to load app config from bucket, falling back to disk', error);
+      console.error(`[api-server] Failed to load ${relativePath} from bucket, falling back to disk`, error);
     }
   }
 
-  return loadAppConfigFromDisk();
+  return loadJsonFromDisk(relativePath);
+}
+
+async function loadAppConfig(): Promise<AppConfigResponse> {
+  const defaults = getDefaultAppConfig();
+
+  try {
+    const parsed = await loadJsonFile('app.json');
+    return createConfigFromSource(parsed, defaults);
+  } catch (error) {
+    console.error('[api-server] Failed to load app config, using defaults', error);
+    return defaults;
+  }
+}
+
+function sanitiseContentRequestPath(rawPath: string | undefined): string | null {
+  if (!rawPath) {
+    return null;
+  }
+
+  const normalised = rawPath.replace(/\\/g, '/');
+  if (!isSafeRelativePath(normalised)) {
+    return null;
+  }
+
+  if (!normalised.endsWith('.json')) {
+    return null;
+  }
+
+  return normalised;
 }
 
 function normaliseBaseUrl(value: string): string {
@@ -260,6 +322,30 @@ app.get('/config/app.json', async (_req, res) => {
   } catch (error) {
     console.error('[api-server] Failed to load app config', error);
     res.status(500).json({ error: 'Failed to load app config' });
+  }
+});
+
+app.get(/^\/config\/content\/(.+)$/, async (req, res) => {
+  const params = req.params as unknown as Record<number, string>;
+  const requestedPath = params ? params[0] : undefined;
+  const safePath = sanitiseContentRequestPath(requestedPath);
+
+  if (!safePath) {
+    res.status(400).json({ error: 'Invalid content path' });
+    return;
+  }
+
+  try {
+    const data = await loadJsonFile(safePath);
+    res.json(data);
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+    if (err && (err.code === 'ENOENT' || err.code === 'ENOTDIR')) {
+      res.status(404).json({ error: 'Content not found' });
+    } else {
+      console.error(`[api-server] Failed to load content file ${safePath}`, error);
+      res.status(500).json({ error: 'Failed to load content file' });
+    }
   }
 });
 
