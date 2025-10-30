@@ -1,0 +1,25 @@
+{
+  "displayName": "Energinøkkelen – Building info prod lookup error rate",
+  "userLabels": {
+    "environment": "prod",
+    "service": "energinokkelen"
+  },
+  "enabled": true,
+  "combiner": "OR",
+  "notificationChannels": [
+    "projects/energiverktoy-poc-1234/notificationChannels/2903429056188648583"
+  ],
+  "conditions": [
+    {
+      "displayName": "Building info lookup error rate >5% (prod)",
+      "conditionPrometheusQueryLanguage": {
+        "query": "sum(rate({__name__=\"prometheus.googleapis.com/building_info_service_lookup_requests_total/counter\",cluster=\"cloud-run-energinokkelen-prod\",result=\"error\"}[10m])) / sum(rate({__name__=\"prometheus.googleapis.com/building_info_service_lookup_requests_total/counter\",cluster=\"cloud-run-energinokkelen-prod\"}[10m])) > 0.05",
+        "duration": "600s",
+        "evaluationInterval": "60s",
+        "labels": {
+          "severity": "warning"
+        }
+      }
+    }
+  ]
+}
