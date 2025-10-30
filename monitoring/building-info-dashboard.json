@@ -1,0 +1,281 @@
+{
+  "displayName": "Energinøkkelen – Building Info Observability",
+  "etag": "b057ad7f94855e0febc94eec85560cfa",
+  "mosaicLayout": {
+    "columns": 12,
+    "tiles": [
+      {
+        "xPos": 0,
+        "yPos": 0,
+        "width": 4,
+        "height": 3,
+        "widget": {
+          "title": "Lookup suksessrate (%)",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "prometheusQuery": "100 * sum(rate({__name__=\"prometheus.googleapis.com/building_info_service_lookup_requests_total/counter\",cluster=~\"cloud-run-energinokkelen(-prod)?\",result=\"success\"}[5m])) / clamp_min(sum(rate({__name__=\"prometheus.googleapis.com/building_info_service_lookup_requests_total/counter\",cluster=~\"cloud-run-energinokkelen(-prod)?\"}[5m])), 0.001)"
+            },
+            "gaugeView": {
+              "lowerBound": 0,
+              "upperBound": 100
+            },
+            "thresholds": [
+              {
+                "label": "Warning",
+                "value": 95,
+                "color": "YELLOW",
+                "direction": "BELOW"
+              },
+              {
+                "label": "Critical",
+                "value": 90,
+                "color": "RED",
+                "direction": "BELOW"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "xPos": 4,
+        "yPos": 0,
+        "width": 4,
+        "height": 3,
+        "widget": {
+          "title": "Lookup feilrate (%)",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "prometheusQuery": "100 * sum(rate({__name__=\"prometheus.googleapis.com/building_info_service_lookup_requests_total/counter\",cluster=~\"cloud-run-energinokkelen(-prod)?\",result=\"error\"}[5m])) / clamp_min(sum(rate({__name__=\"prometheus.googleapis.com/building_info_service_lookup_requests_total/counter\",cluster=~\"cloud-run-energinokkelen(-prod)?\"}[5m])), 0.001)"
+            },
+            "gaugeView": {
+              "lowerBound": 0,
+              "upperBound": 20
+            },
+            "thresholds": [
+              {
+                "label": "Warning",
+                "value": 5,
+                "color": "YELLOW",
+                "direction": "ABOVE"
+              },
+              {
+                "label": "Critical",
+                "value": 10,
+                "color": "RED",
+                "direction": "ABOVE"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "xPos": 8,
+        "yPos": 0,
+        "width": 4,
+        "height": 4,
+        "widget": {
+          "title": "Lookup p95 latenstid (s)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "prometheusQuery": "histogram_quantile(0.95, sum by (cluster, le)(rate({__name__=\"prometheus.googleapis.com/building_info_service_lookup_duration_seconds_bucket/counter\",cluster=~\"cloud-run-energinokkelen(-prod)?\"}[5m])))"
+                },
+                "plotType": "LINE"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "Sekunder",
+              "scale": "LINEAR"
+            },
+            "chartOptions": {
+              "mode": "COLOR",
+              "showLegend": true
+            }
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 4,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Feilrate per ekstern tjeneste (%)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "prometheusQuery": "100 * sum(rate({__name__=\"prometheus.googleapis.com/building_info_service_external_requests_total/counter\",cluster=~\"cloud-run-energinokkelen(-prod)?\",result!=\"success\"}[5m])) by (cluster, service) / clamp_min(sum(rate({__name__=\"prometheus.googleapis.com/building_info_service_external_requests_total/counter\",cluster=~\"cloud-run-energinokkelen(-prod)?\"}[5m])) by (cluster, service), 0.001)"
+                },
+                "plotType": "LINE",
+                "legendTemplate": "{{cluster}} – {{service}}"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "Prosent",
+              "scale": "LINEAR"
+            },
+            "chartOptions": {
+              "mode": "COLOR",
+              "showLegend": true
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 4,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Eksterne tjenesters p95-varighet (s)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "prometheusQuery": "histogram_quantile(0.95, sum by (cluster, service, le)(rate({__name__=\"prometheus.googleapis.com/building_info_service_external_request_duration_seconds_bucket/counter\",cluster=~\"cloud-run-energinokkelen(-prod)?\"}[5m])))"
+                },
+                "plotType": "LINE",
+                "legendTemplate": "{{cluster}} – {{service}}"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "Sekunder",
+              "scale": "LINEAR"
+            },
+            "chartOptions": {
+              "mode": "COLOR",
+              "showLegend": true
+            }
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 9,
+        "width": 4,
+        "height": 3,
+        "widget": {
+          "title": "Cache treffrate (%)",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "prometheusQuery": "100 * sum(rate({__name__=\"prometheus.googleapis.com/building_info_service_cache_operations_total/counter\",cluster=~\"cloud-run-energinokkelen(-prod)?\",state=\"hit\"}[5m])) / clamp_min(sum(rate({__name__=\"prometheus.googleapis.com/building_info_service_cache_operations_total/counter\",cluster=~\"cloud-run-energinokkelen(-prod)?\"}[5m])), 0.001)"
+            },
+            "gaugeView": {
+              "lowerBound": 0,
+              "upperBound": 100
+            },
+            "thresholds": [
+              {
+                "label": "Warning",
+                "value": 70,
+                "color": "YELLOW",
+                "direction": "BELOW"
+              },
+              {
+                "label": "Critical",
+                "value": 60,
+                "color": "RED",
+                "direction": "BELOW"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "xPos": 4,
+        "yPos": 9,
+        "width": 4,
+        "height": 4,
+        "widget": {
+          "title": "Bruksareal-kilder siste 24 t",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "prometheusQuery": "sum(increase({__name__=\"prometheus.googleapis.com/building_info_service_resultassembler_bruksareal_source_total/counter\",cluster=~\"cloud-run-energinokkelen(-prod)?\"}[24h])) by (cluster, source)"
+                },
+                "plotType": "LINE",
+                "legendTemplate": "{{cluster}} – {{source}}"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "Antall",
+              "scale": "LINEAR"
+            },
+            "chartOptions": {
+              "mode": "COLOR",
+              "showLegend": true
+            }
+          }
+        }
+      },
+      {
+        "xPos": 8,
+        "yPos": 9,
+        "width": 4,
+        "height": 4,
+        "widget": {
+          "title": "Byggeår-kilder siste 24 t",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "prometheusQuery": "sum(increase({__name__=\"prometheus.googleapis.com/building_info_service_resultassembler_byggeaar_source_total/counter\",cluster=~\"cloud-run-energinokkelen(-prod)?\"}[24h])) by (cluster, source)"
+                },
+                "plotType": "LINE",
+                "legendTemplate": "{{cluster}} – {{source}}"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "Antall",
+              "scale": "LINEAR"
+            },
+            "chartOptions": {
+              "mode": "COLOR",
+              "showLegend": true
+            }
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 14,
+        "width": 4,
+        "height": 3,
+        "widget": {
+          "title": "Dekning av sol-data (%)",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "prometheusQuery": "100 * sum(rate({__name__=\"prometheus.googleapis.com/building_info_service_resultassembler_solar_presence_total/counter\",cluster=~\"cloud-run-energinokkelen(-prod)?\",state=\"present\"}[1h])) / clamp_min(sum(rate({__name__=\"prometheus.googleapis.com/building_info_service_resultassembler_solar_presence_total/counter\",cluster=~\"cloud-run-energinokkelen(-prod)?\"}[1h])), 0.001)"
+            },
+            "gaugeView": {
+              "lowerBound": 0,
+              "upperBound": 100
+            },
+            "thresholds": [
+              {
+                "label": "Warning",
+                "value": 70,
+                "color": "YELLOW",
+                "direction": "BELOW"
+              },
+              {
+                "label": "Critical",
+                "value": 60,
+                "color": "RED",
+                "direction": "BELOW"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

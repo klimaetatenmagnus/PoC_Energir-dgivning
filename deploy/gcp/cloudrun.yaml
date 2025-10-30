@@ -13,6 +13,8 @@ spec:
         run.googleapis.com/cpu-throttling: "true"
         autoscaling.knative.dev/minScale: "0"
         autoscaling.knative.dev/maxScale: "4"
+        run.googleapis.com/container-dependencies: '{"gmp-collector":["building-info-service"]}'
+        run.googleapis.com/secrets: "run-gmp-config:projects/__PROJECT_ID__/secrets/run-gmp-config"
     spec:
       serviceAccountName: run-energinokkelen@__PROJECT_ID__.iam.gserviceaccount.com
       containers:
@@ -38,7 +40,7 @@ spec:
             - name: SOLAR_SERVICE_BASE_URL
               value: http://127.0.0.1:4003
             - name: CONTENT_BUCKET
-              value: energinokkelen-content
+              value: "__CONTENT_BUCKET__"
             - name: MATRIKKEL_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -201,6 +203,41 @@ spec:
                 secretKeyRef:
                   name: PBE_IDENTIFY_TOLERANCE
                   key: latest
+        - name: gmp-collector
+          image: otel/opentelemetry-collector-contrib:0.94.0
+          args:
+            - "--config=/etc/rungmp/config.yaml"
+          env:
+            - name: GMP_PROJECT
+              value: "__PROJECT_ID__"
+            - name: GMP_LOCATION
+              value: "__GMP_LOCATION__"
+            - name: GMP_CLUSTER
+              value: "__GMP_CLUSTER__"
+            - name: GMP_CONFIG_VERSION
+              value: "__GMP_CONFIG_VERSION__"
+          resources:
+            limits:
+              cpu: "0.25"
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 13133
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          volumeMounts:
+            - name: run-gmp-config
+              mountPath: /etc/rungmp
+              readOnly: true
+      volumes:
+        - name: run-gmp-config
+          secret:
+            secretName: run-gmp-config
+            items:
+              - key: latest
+                path: config.yaml
   traffic:
     - percent: 100
       latestRevision: true

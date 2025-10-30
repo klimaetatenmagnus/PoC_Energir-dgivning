@@ -1,0 +1,25 @@
+{
+  "displayName": "Energinøkkelen – Building info prod ekstern feilrate",
+  "userLabels": {
+    "environment": "prod",
+    "service": "energinokkelen"
+  },
+  "enabled": true,
+  "combiner": "OR",
+  "notificationChannels": [
+    "projects/energiverktoy-poc-1234/notificationChannels/2903429056188648583"
+  ],
+  "conditions": [
+    {
+      "displayName": "Ekstern avhengighet feilrate >10% (prod)",
+      "conditionPrometheusQueryLanguage": {
+        "query": "sum(rate({__name__=\"prometheus.googleapis.com/building_info_service_external_requests_total/counter\",cluster=\"cloud-run-energinokkelen-prod\",result!=\"success\"}[10m])) by (service) / sum(rate({__name__=\"prometheus.googleapis.com/building_info_service_external_requests_total/counter\",cluster=\"cloud-run-energinokkelen-prod\"}[10m])) by (service) > 0.10",
+        "duration": "300s",
+        "evaluationInterval": "60s",
+        "labels": {
+          "severity": "warning"
+        }
+      }
+    }
+  ]
+}

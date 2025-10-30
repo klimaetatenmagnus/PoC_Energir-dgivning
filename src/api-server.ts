@@ -7,6 +7,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { Storage } from '@google-cloud/storage';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
+import { metricsRegistry } from '../services/building-info-service/metrics.js';
 import { energyRatingService } from './services/energyRatingService.js';
 import { execFile } from 'child_process';
 import type { ExecFileOptions } from 'child_process';
@@ -16,7 +17,6 @@ const execFileAsync = promisify(execFile);
 
 const pythonScriptsDir = path.join(process.cwd(), 'scripts', 'python');
 const configDirectory = process.env.APP_CONFIG_DIR ?? path.join(process.cwd(), 'content');
-const buildingInfoBaseUrl = (process.env.BUILDING_INFO_BASE_URL ?? 'http://localhost:4000').replace(/\/$/, '');
 const solarServiceBaseUrl = (process.env.SOLAR_SERVICE_BASE_URL ?? 'http://localhost:4003').replace(/\/$/, '');
 const contentBucketName = process.env.CONTENT_BUCKET;
 
@@ -358,16 +358,11 @@ app.get('/', (_req, res) => {
 
 app.get('/metrics', async (_req, res) => {
   try {
-    const response = await fetch(`${buildingInfoBaseUrl}/metrics`);
-    const body = await response.text();
-    const contentType = response.headers.get('content-type');
-    if (contentType) {
-      res.set('Content-Type', contentType);
-    }
-    res.status(response.status).send(body);
+    res.set('Content-Type', metricsRegistry.contentType);
+    res.send(await metricsRegistry.metrics());
   } catch (error) {
-    console.error('[api-server] Failed to proxy metrics', error);
-    res.status(502).json({ error: 'Failed to proxy metrics' });
+    console.error('[api-server] Failed to render metrics', error);
+    res.status(500).json({ error: 'Failed to render metrics' });
   }
 });
 

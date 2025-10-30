@@ -1,0 +1,25 @@
+{
+  "displayName": "Energinøkkelen – Building info staging lookup latency",
+  "userLabels": {
+    "environment": "staging",
+    "service": "energinokkelen"
+  },
+  "enabled": true,
+  "combiner": "OR",
+  "notificationChannels": [
+    "projects/energiverktoy-poc-1234/notificationChannels/2903429056188648583"
+  ],
+  "conditions": [
+    {
+      "displayName": "Building info lookup p95 latency >2s (staging)",
+      "conditionPrometheusQueryLanguage": {
+        "query": "histogram_quantile(0.95, sum by (le) (rate({__name__=\"prometheus.googleapis.com/building_info_service_lookup_duration_seconds_bucket/counter\",cluster=\"cloud-run-energinokkelen\"}[10m]))) > 2",
+        "duration": "600s",
+        "evaluationInterval": "60s",
+        "labels": {
+          "severity": "critical"
+        }
+      }
+    }
+  ]
+}
