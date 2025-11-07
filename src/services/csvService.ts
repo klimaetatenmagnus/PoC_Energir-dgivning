@@ -138,12 +138,41 @@ export class CSVService {
     
     // Normalize address for comparison
     const normalizedSearch = this.normalizeAddress(address);
+    if (!normalizedSearch) {
+      return [];
+    }
+    const searchStreet = this.extractStreetName(normalizedSearch);
+    const searchHouse = this.extractHouseIdentifier(normalizedSearch);
+    const candidates: Array<{ record: MatrikkelCSVRecord; score: number }> = [];
     
-    return this.data.filter(record => {
+    this.data.forEach((record) => {
       const normalizedRecord = this.normalizeAddress(record.gateAdresse);
-      return normalizedRecord.includes(normalizedSearch) || 
-             normalizedSearch.includes(normalizedRecord);
+      if (!normalizedRecord) {
+        return;
+      }
+
+      const recordStreet = this.extractStreetName(normalizedRecord);
+      if (searchStreet && recordStreet && searchStreet !== recordStreet) {
+        return;
+      }
+
+      const recordHouse = this.extractHouseIdentifier(normalizedRecord);
+      if (searchHouse && recordHouse && searchHouse !== recordHouse) {
+        return;
+      }
+
+      if (
+        normalizedRecord.includes(normalizedSearch) ||
+        normalizedSearch.includes(normalizedRecord)
+      ) {
+        const score = this.computeMatchScore(normalizedSearch, normalizedRecord);
+        candidates.push({ record, score });
+      }
     });
+
+    return candidates
+      .sort((a, b) => b.score - a.score)
+      .map((entry) => entry.record);
   }
 
   /**
@@ -153,6 +182,9 @@ export class CSVService {
     if (!this.isLoaded) return null;
     
     const normalizedSearch = this.normalizeAddress(address);
+    if (!normalizedSearch) {
+      return null;
+    }
     
     const record = this.data.find(r => 
       this.normalizeAddress(r.gateAdresse) === normalizedSearch
@@ -165,12 +197,63 @@ export class CSVService {
    * Normalize address for comparison
    */
   private normalizeAddress(address: string): string {
-    return address
+    if (!address) {
+      return '';
+    }
+
+    let normalized = address
       .toLowerCase()
       .replace(/\s+/g, ' ')
-      .replace(/,.*$/, '') // Remove everything after comma
-      .replace(/oslo.*$/i, '') // Remove "oslo" and anything after
       .trim();
+
+    if (!normalized) {
+      return '';
+    }
+
+    normalized = normalized
+      .replace(/[,;].*$/, '') // Remove everything after comma/semicolon
+      .trim();
+
+    // Remove trailing postal code + city (e.g. "0173 oslo")
+    normalized = normalized
+      .replace(/\b\d{4}\s+oslo$/, '')
+      .replace(/\b\d{4}\b$/, '')
+      .trim();
+
+    // Remove trailing standalone "oslo" (city), but not street names like "Oslo gate"
+    normalized = normalized.replace(/\s+oslo$/, '').trim();
+
+    // Normalize house numbers with letters: "97 b" -> "97b"
+    normalized = normalized.replace(/(\d+)\s*([a-z])/g, '$1$2');
+
+    return normalized.trim();
+  }
+
+  private extractStreetName(value: string): string {
+    if (!value) {
+      return '';
+    }
+    return value.replace(/\d.*$/, '').trim();
+  }
+
+  private extractHouseIdentifier(value: string): string {
+    if (!value) {
+      return '';
+    }
+    const match = value.match(/(\d+[a-zæøå]?)/i);
+    return match ? match[1] : '';
+  }
+
+  private computeMatchScore(search: string, candidate: string): number {
+    if (candidate === search) {
+      return Number.POSITIVE_INFINITY; // exact matches should always win
+    }
+
+    const startsWith =
+      candidate.startsWith(search) || search.startsWith(candidate) ? 1 : 0;
+    const lengthDelta = Math.abs(candidate.length - search.length);
+    // Higher score is better; penalize large length differences
+    return startsWith * 10 - lengthDelta;
   }
 
   /**
