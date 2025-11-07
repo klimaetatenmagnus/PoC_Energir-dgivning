@@ -67,7 +67,6 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const [solarData, setSolarData] = React.useState<SolarEnergyData | null>(null);
   const [showYellowBox, setShowYellowBox] = React.useState(false);
   const [gulListeLoading, setGulListeLoading] = React.useState(true);
-  const [isYellowBoxExpanded, setIsYellowBoxExpanded] = React.useState(false);
   
   // State for updated building data
   const [updatedBuildingData, setUpdatedBuildingData] = React.useState<AddressLookupResponse>(buildingData);
@@ -110,7 +109,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   // Animation has been removed - Enebolig2 is shown immediately without animation
 
   // Handle building data updates from WhiteInfoBox
-  const handleUpdateBuildingData = (
+  const handleUpdateBuildingData = React.useCallback((
     byggeaar: string,
     areal: string,
     arealLeilighet: string,
@@ -133,7 +132,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       },
     }));
     setEnergiforbruk(energiforbruk);
-  };
+  }, []);
   
   // Track if solar data has been fetched
   const [hasFetchedSolarData, setHasFetchedSolarData] = React.useState(false);
@@ -398,13 +397,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       <EnergySolutionButtons 
         showHeader={showHeader} 
         isExpanded={isExpanded}
-        onExpand={(expanded: boolean) => {
-          setIsExpanded(expanded);
-          // Close yellow box when any "les mer" button is clicked
-          if (expanded && isYellowBoxExpanded) {
-            setIsYellowBoxExpanded(false);
-          }
-        }}
+        onExpand={setIsExpanded}
         onSelectSolution={setSelectedSolution}
         buildingData={{...updatedBuildingData, filteredSolarEnergy: solarData?.filteredSolarEnergy}}
         showYellowBox={showYellowBox}
@@ -552,8 +545,6 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         showYellowBox={showYellowBox}
         gulListeLoading={gulListeLoading}
         onUpdateBuildingData={handleUpdateBuildingData}
-        isYellowBoxExpanded={isYellowBoxExpanded}
-        onYellowBoxExpandedChange={setIsYellowBoxExpanded}
         totalEnergySavings={totalEnergySavings}
       />
     </div>

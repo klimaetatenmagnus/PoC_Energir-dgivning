@@ -2,7 +2,25 @@ import React from 'react';
 import { LocationPin } from './LocationPin';
 import * as EnergySolutions from './Tiltak/index';
 import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../../utils/tekEnergyCalculations';
+import { convertKwhToNok, formatCurrency, formatNumberWithSpaces } from '../../../utils/energy';
 import { AddressLookupResponse } from '../../../services/buildingApi';
+
+const MAP_WIDTH = 336;
+const MAP_HEIGHT = 204;
+const MAP_TOP_Y = 580;
+const SAVINGS_CARD_HEIGHT = 124;
+const SAVINGS_CARD_BOTTOM_GAP = 20;
+
+const roundToNearestThousandValue = (value: number): number => {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.round(value / 1000) * 1000;
+};
+
+const roundToNearestThousand = (value: number): string => {
+  return formatNumberWithSpaces(roundToNearestThousandValue(value));
+};
 
 interface WhiteInfoBoxProps {
   showHeader: boolean;
@@ -16,10 +34,10 @@ interface WhiteInfoBoxProps {
   onExpand?: (expanded: boolean) => void;
   showYellowBox?: boolean;
   onUpdateBuildingData?: (byggeaar: string, areal: string, arealLeilighet: string, energiforbruk: string) => void;
-  isYellowBoxExpanded?: boolean;
-  onYellowBoxExpandedChange?: (expanded: boolean) => void;
   totalEnergySavings?: number;
   gulListeLoading?: boolean;
+  energyPricePerKwh?: number;
+  animateSavings?: boolean;
 }
 
 interface EnergySolutionProps {
@@ -40,43 +58,174 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   onExpand,
   showYellowBox = true,
   onUpdateBuildingData,
-  isYellowBoxExpanded: externalIsYellowBoxExpanded,
-  onYellowBoxExpandedChange,
   totalEnergySavings = 0,
-  gulListeLoading = false
+  gulListeLoading = false,
+  energyPricePerKwh = 1.1,
+  animateSavings = true
 }) => {
   // State for delayed height expansion
   const [expandHeight, setExpandHeight] = React.useState(false);
   
-  // State for yellow box expansion - use external state if provided
-  const [localIsYellowBoxExpanded, setLocalIsYellowBoxExpanded] = React.useState(false);
-  const isYellowBoxExpanded = externalIsYellowBoxExpanded !== undefined ? externalIsYellowBoxExpanded : localIsYellowBoxExpanded;
-  const setIsYellowBoxExpanded = onYellowBoxExpandedChange || setLocalIsYellowBoxExpanded;
-  
-  // State for dropdown expansion
+  const shouldShowYellowBox = showYellowBox && !gulListeLoading;
+  const [isGulListeInfoOpen, setIsGulListeInfoOpen] = React.useState(false);
   const [isDropdownExpanded, setIsDropdownExpanded] = React.useState(false);
   const [showDropdownContent, setShowDropdownContent] = React.useState(false);
-  
-  // ADJUST THIS VALUE TO CHANGE DROPDOWN EXPANSION SIZE
-  // Positive values = expand more upward, Negative values = expand less upward
-  const DROPDOWN_EXPANSION_ADJUSTMENT = 50; // Try values like -20, 0, 20, 40, 60, etc.
-
-  const shouldShowYellowBox = showYellowBox && !gulListeLoading;
-  
-  // State for tooltip visibility
   const [showByantikvarTooltip, setShowByantikvarTooltip] = React.useState(false);
   const [showKommunaltTooltip, setShowKommunaltTooltip] = React.useState(false);
   const [showVernetTooltip, setShowVernetTooltip] = React.useState(false);
   const [showFredetTooltip, setShowFredetTooltip] = React.useState(false);
+  const DROPDOWN_EXPANSION_ADJUSTMENT = 50;
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const [hasShownSavings, setHasShownSavings] = React.useState(false);
+  const [displayedSavings, setDisplayedSavings] = React.useState(0);
+  const savingsAnimationFrame = React.useRef<number>();
+  const previousSavingsRef = React.useRef(0);
   
   // Check if building has Enova energy certificate
   const hasEnovaRating = buildingData?.energiattest?.energikarakter ? true : false;
+  const shouldShowSavingsCard = totalEnergySavings > 0;
+  const roundedSavingsKwh = React.useMemo(
+    () => roundToNearestThousandValue(totalEnergySavings),
+    [totalEnergySavings]
+  );
+  const roundedSavingsNok = React.useMemo(
+    () => roundToNearestThousandValue(convertKwhToNok(totalEnergySavings, energyPricePerKwh)),
+    [totalEnergySavings, energyPricePerKwh]
+  );
+  const formattedSavingsKwh = React.useMemo(
+    () => formatNumberWithSpaces(roundedSavingsKwh),
+    [roundedSavingsKwh]
+  );
+  const formattedSavingsCurrency = React.useMemo(
+    () => formatCurrency(roundedSavingsNok),
+    [roundedSavingsNok]
+  );
   
-  // Helper function to round to nearest thousand
-  const roundToNearestThousand = (value: number): string => {
-    const rounded = Math.round(value / 1000) * 1000;
-    return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  const renderVernestatusRow = (yPosition: number | string) => {
+    const parsedY = typeof yPosition === 'string' ? Number(yPosition) : yPosition;
+    const yValue = Number.isFinite(parsedY) ? parsedY : 0;
+    const top = yValue - 22;
+
+    return (
+      <foreignObject x="30" y={top} width="280" height="32">
+        <div
+          xmlns="http://www.w3.org/1999/xhtml"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5ch',
+            fontFamily: 'Oslo Sans, sans-serif',
+            fontSize: '18px',
+            lineHeight: '28px',
+            letterSpacing: '-0.2px',
+            color: '#2A2859'
+          }}
+        >
+          <span style={{ fontWeight: 300 }}>Vernestatus:</span>
+          <span style={{ fontWeight: 500 }}>Gul liste</span>
+          <button
+            type="button"
+            onClick={() => {
+              setIsGulListeInfoOpen(true);
+              setIsDropdownExpanded(false);
+              setShowDropdownContent(false);
+              setShowByantikvarTooltip(false);
+              setShowKommunaltTooltip(false);
+              setShowVernetTooltip(false);
+              setShowFredetTooltip(false);
+            }}
+            title="Hva betyr Gul liste?"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '22px',
+              height: '22px',
+              borderRadius: '50%',
+              background: '#FFC857',
+              color: '#FFFFFF',
+              fontWeight: 700,
+              fontSize: '16px',
+              lineHeight: '22px',
+              marginLeft: '0.25ch',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer'
+            }}
+          >
+            !
+          </button>
+        </div>
+      </foreignObject>
+    );
   };
+
+  React.useEffect(() => {
+    if (shouldShowSavingsCard && !hasShownSavings) {
+      setHasShownSavings(true);
+    }
+  }, [shouldShowSavingsCard, hasShownSavings]);
+
+  React.useEffect(() => {
+    if (!shouldShowSavingsCard) {
+      return;
+    }
+
+    const target = roundedSavingsNok;
+
+    if (!animateSavings || prefersReducedMotion) {
+      previousSavingsRef.current = target;
+      setDisplayedSavings(target);
+      return;
+    }
+
+    const startValue = previousSavingsRef.current;
+    if (startValue === target) {
+      return;
+    }
+
+    const duration = 900;
+    const startTime = performance.now();
+
+    const tick = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      const nextValue = Math.round(
+        startValue + (target - startValue) * easedProgress
+      );
+      setDisplayedSavings(nextValue);
+
+      if (progress < 1) {
+        savingsAnimationFrame.current = requestAnimationFrame(tick);
+      } else {
+        previousSavingsRef.current = target;
+        savingsAnimationFrame.current = undefined;
+      }
+    };
+
+    savingsAnimationFrame.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (savingsAnimationFrame.current) {
+        cancelAnimationFrame(savingsAnimationFrame.current);
+        savingsAnimationFrame.current = undefined;
+      }
+    };
+  }, [
+    roundedSavingsNok,
+    animateSavings,
+    prefersReducedMotion,
+    shouldShowSavingsCard
+  ]);
+
+  React.useEffect(() => {
+    return () => {
+      if (savingsAnimationFrame.current) {
+        cancelAnimationFrame(savingsAnimationFrame.current);
+      }
+    };
+  }, []);
   
   // State for address text scaling
   const [addressScale, setAddressScale] = React.useState(1);
@@ -108,6 +257,16 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
         100, // Minimum width  
         Math.ceil(calculateTextWidth(displayBuildingTypeName) + 43) // 14 (left padding) + 15 (icon) + 7 (gap) + text + 7 (right padding)
       );
+  const isApartmentBuilding =
+    buildingTypeName === "Store boligbygg" || buildingTypeName.toLowerCase() === 'blokk';
+  const precedingContentBottom = isApartmentBuilding
+    ? (showYellowBox ? 388 : 358)
+    : (showYellowBox ? 330 : 310);
+  const baseSavingsCardY = precedingContentBottom + 16;
+  const maxSavingsCardY = MAP_TOP_Y - SAVINGS_CARD_HEIGHT - SAVINGS_CARD_BOTTOM_GAP;
+  const savingsCardY = Math.min(baseSavingsCardY, maxSavingsCardY);
+  const shouldAnimateSavingsCardIntro =
+    shouldShowSavingsCard && !hasShownSavings && animateSavings && !prefersReducedMotion;
   
   // State for edit mode
   const [isEditMode, setIsEditMode] = React.useState(false);
@@ -241,21 +400,16 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
       setAddressScale(scale);
     }
   }, [addressOnly]);
-  
-  // Handle dropdown content delay
+
   React.useEffect(() => {
     if (isDropdownExpanded) {
-      // Show content after dropdown animation completes
       const timer = setTimeout(() => {
         setShowDropdownContent(true);
-      }, 300); // 300ms delay for smooth animation
+      }, 300);
       return () => clearTimeout(timer);
-    } else {
-      // Hide content immediately when closing
-      setShowDropdownContent(false);
     }
+    setShowDropdownContent(false);
   }, [isDropdownExpanded]);
-  
   
   // Handle sequential animation - expand height after width
   React.useEffect(() => {
@@ -495,45 +649,23 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               <tspan fontWeight="500">{savedAreal || 'Ukjent'} m²</tspan>
             </text>
             {hasEnovaRating && !(buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && (
-              <>
-                <text 
-                  x="30" 
-                  y="288" 
-                  fontFamily="Oslo Sans, sans-serif" 
-                  fontSize="18" 
-                        letterSpacing="-0.2"
-                  fill="#2A2859"
+              <text 
+                x="30" 
+                y="288" 
+                fontFamily="Oslo Sans, sans-serif" 
+                fontSize="18" 
+                letterSpacing="-0.2"
+                fill="#2A2859"
+              >
+                <tspan fontWeight="300">Estimert energiforbruk:</tspan>
+                <tspan
+                  x="30"
+                  dy="22"
+                  fontWeight="500"
                 >
-                  <tspan fontWeight="300">Energiforbruk: </tspan>
-                  <tspan fontWeight="500">{roundToNearestThousand(Number(savedEnergiforbruk || '300000'))} kWh/år</tspan>
-                </text>
-                {totalEnergySavings > 0 && (
-                  <>
-                    <text 
-                      x="30" 
-                      y="320" 
-                      fontFamily="Oslo Sans, sans-serif" 
-                      fontSize="16" 
-                            letterSpacing="-0.2"
-                      fill="#2A2859"
-                      fontWeight="400"
-                    >
-                      Estimerte verdier:
-                    </text>
-                    <text 
-                      x="30" 
-                      y="348" 
-                      fontFamily="Oslo Sans, sans-serif" 
-                      fontSize="18" 
-                            letterSpacing="-0.2"
-                      fill="#2A2859"
-                    >
-                      <tspan fontWeight="300">Mulig besparelse: </tspan>
-                      <tspan fontWeight="500">{roundToNearestThousand(totalEnergySavings)} kWh/år</tspan>
-                    </text>
-                  </>
-                )}
-              </>
+                  {roundToNearestThousand(Number(savedEnergiforbruk || '300000'))} kWh/år
+                </tspan>
+              </text>
             )}
             {buildingTypeName.toLowerCase() === 'blokk' && (
               <text 
@@ -548,32 +680,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 <tspan fontWeight="500">Borettslag</tspan>
               </text>
             )}
-            {showYellowBox && (
-              <text 
-                x="30" 
-                y={buildingTypeName.toLowerCase() === 'blokk' ? "288" : "260"} 
-                fontFamily="Oslo Sans, sans-serif" 
-                fontSize="18" 
-                      letterSpacing="-0.2"
-                fill="#2A2859"
-              >
-                <tspan fontWeight="300">Vernestatus: </tspan>
-                <tspan fontWeight="500">Gul liste</tspan>
-              </text>
-            )}
-            {(!hasEnovaRating || ((buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && buildingData?.energiattest?.energikarakter)) && (
-              <text 
-                x="30" 
-                y="320" 
-                fontFamily="Oslo Sans, sans-serif" 
-                fontSize="16" 
-                      letterSpacing="-0.2"
-                fill="#2A2859"
-                fontWeight="400"
-              >
-                Estimerte verdier:
-              </text>
-            )}
+            {showYellowBox && renderVernestatusRow(buildingTypeName.toLowerCase() === 'blokk' ? 288 : 260)}
             {buildingTypeName.toLowerCase() === 'blokk' && (
               <text 
                 x="30" 
@@ -588,32 +695,23 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               </text>
             )}
             {(!hasEnovaRating || ((buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && buildingData?.energiattest?.energikarakter)) && (
-              <>
-                <text 
-                  x="30" 
-                  y="348" 
-                  fontFamily="Oslo Sans, sans-serif" 
-                  fontSize="18" 
-                        letterSpacing="-0.2"
-                  fill="#2A2859"
+              <text 
+                x="30" 
+                y="348" 
+                fontFamily="Oslo Sans, sans-serif" 
+                fontSize="18" 
+                letterSpacing="-0.2"
+                fill="#2A2859"
+              >
+                <tspan fontWeight="300">Estimert energiforbruk:</tspan>
+                <tspan
+                  x="30"
+                  dy="22"
+                  fontWeight="500"
                 >
-                  <tspan fontWeight="300">Energiforbruk: </tspan>
-                  <tspan fontWeight="500">{Math.round(Number(savedEnergiforbruk || '300000')).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} kWh/år</tspan>
-                </text>
-                {totalEnergySavings > 0 && (
-                  <text 
-                    x="30" 
-                    y="376" 
-                    fontFamily="Oslo Sans, sans-serif" 
-                    fontSize="18" 
-                          letterSpacing="-0.2"
-                    fill="#2A2859"
-                  >
-                    <tspan fontWeight="300">Mulig besparelse: </tspan>
-                    <tspan fontWeight="500">{roundToNearestThousand(totalEnergySavings)} kWh/år</tspan>
-                  </text>
-                )}
-              </>
+                  {Math.round(Number(savedEnergiforbruk || '300000')).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} kWh/år
+                </tspan>
+              </text>
             )}
           </>
         ) : (
@@ -708,7 +806,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                           letterSpacing="-0.2"
                   fill="#2A2859"
                 >
-                  <tspan fontWeight="300">Energiforbruk: </tspan>
+                  <tspan fontWeight="300">Estimert energiforbruk:</tspan>
                 </text>
                 <foreignObject x="155" y="270" width={calculateInputWidth(editedEnergiforbruk)} height="24">
                   <input
@@ -750,32 +848,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 >
                   kWh/år
                 </text>
-                {totalEnergySavings > 0 && (
-                  <>
-                    <text 
-                      x="30" 
-                      y="320" 
-                      fontFamily="Oslo Sans, sans-serif" 
-                      fontSize="16" 
-                            letterSpacing="-0.2"
-                      fill="#2A2859"
-                      fontWeight="400"
-                    >
-                      Estimerte verdier:
-                    </text>
-                    <text 
-                      x="30" 
-                      y="348" 
-                      fontFamily="Oslo Sans, sans-serif" 
-                      fontSize="18" 
-                            letterSpacing="-0.2"
-                      fill="#2A2859"
-                    >
-                      <tspan fontWeight="300">Mulig besparelse: </tspan>
-                      <tspan fontWeight="500">{roundToNearestThousand(totalEnergySavings)} kWh/år</tspan>
-                    </text>
-                  </>
-                )}
               </>
             )}
             
@@ -793,33 +865,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               </text>
             )}
             
-            {showYellowBox && (
-              <text 
-                x="30" 
-                y={hasEnovaRating ? "260" : (buildingTypeName.toLowerCase() === 'blokk' ? "288" : "260")} 
-                fontFamily="Oslo Sans, sans-serif" 
-                fontSize="18" 
-                      letterSpacing="-0.2"
-                fill="#2A2859"
-              >
-                <tspan fontWeight="300">Vernestatus: </tspan>
-                <tspan fontWeight="500">Gul liste</tspan>
-              </text>
-            )}
+            {showYellowBox && renderVernestatusRow(hasEnovaRating ? 260 : (buildingTypeName.toLowerCase() === 'blokk' ? 288 : 260))}
             
-            {(!hasEnovaRating || ((buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && buildingData?.energiattest?.energikarakter)) && (
-              <text 
-                x="30" 
-                y={showYellowBox ? "320" : (buildingTypeName.toLowerCase() === 'blokk' ? "288" : "260")} 
-                fontFamily="Oslo Sans, sans-serif" 
-                fontSize="16" 
-                      letterSpacing="-0.2"
-                fill="#2A2859"
-                fontWeight="400"
-              >
-                Estimerte verdier:
-              </text>
-            )}
             
             {buildingTypeName.toLowerCase() === 'blokk' && (
               <>
@@ -880,7 +927,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                       letterSpacing="-0.2"
                   fill="#2A2859"
                 >
-                  <tspan fontWeight="300">Energiforbruk: </tspan>
+                <tspan fontWeight="300">Estimert energiforbruk:</tspan>
                 </text>
                 <foreignObject x="155" y={buildingTypeName.toLowerCase() === 'blokk' ? "386" : (showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "330" : "358")} width={calculateInputWidth(editedEnergiforbruk)} height="24">
               <input
@@ -921,88 +968,106 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 >
                   kWh/år
                 </text>
-                {totalEnergySavings > 0 && (
-                  <text 
-                    x="30" 
-                    y="376" 
-                    fontFamily="Oslo Sans, sans-serif" 
-                    fontSize="18" 
-                          letterSpacing="-0.2"
-                    fill="#2A2859"
-                  >
-                    <tspan fontWeight="300">Mulig besparelse: </tspan>
-                    <tspan fontWeight="500">{roundToNearestThousand(totalEnergySavings)} kWh/år</tspan>
-                  </text>
-                )}
               </>
             )}
           </>
         )}
-        
-        {/* Yellow box above dark box - conditional rendering */}
-        {showYellowBox && (
-          <>
-            {/* Yellow box button */}
-            <g 
-              style={{ cursor: 'pointer' }}
-              onClick={() => setIsYellowBoxExpanded(true)}
+        {shouldShowSavingsCard && (
+          <foreignObject
+            x="30"
+            y={savingsCardY}
+            width="276"
+            height={SAVINGS_CARD_HEIGHT}
+            aria-label={`Estimert besparelse ${formattedSavingsCurrency}`}
+          >
+            <div
+              xmlns="http://www.w3.org/1999/xhtml"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                width: '100%',
+                height: '100%',
+                padding: '18px 22px',
+                borderRadius: '18px',
+                background: '#C7F6C9',
+                boxShadow: '0px 18px 38px rgba(17, 59, 50, 0.15)',
+                fontFamily: 'Oslo Sans, sans-serif',
+                color: '#113B32',
+                opacity: shouldAnimateSavingsCardIntro ? 0 : 1,
+                transform: shouldAnimateSavingsCardIntro ? 'scale(0.96)' : 'scale(1)',
+                transition: prefersReducedMotion
+                  ? 'opacity 200ms ease-out'
+                  : 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms ease-out',
+                transformOrigin: 'left center',
+                border: '1px solid rgba(17, 59, 50, 0.08)'
+              }}
             >
-              <rect 
-                x="30" 
-                y="432" 
-                width="235" 
-                height="46" 
-                fill="#FFE7BC"
-                style={{ 
-                  transition: 'all 0.3s ease-in-out',
-                  opacity: isYellowBoxExpanded ? 0 : 1,
-                  pointerEvents: isYellowBoxExpanded ? 'none' : 'auto'
-                }}
-              />
-              
-              {/* Text inside yellow box */}
-              <text 
-                x="46" 
-                y="455" 
-                fontFamily="Oslo Sans, sans-serif" 
-                fontWeight="500"
-                fontStyle="normal"
-                fontSize="18" 
-                      letterSpacing="-0.2"
-                fill="#2A2859"
-                dominantBaseline="middle"
-                style={{ 
-                  transition: 'opacity 0.3s ease-in-out',
-                  opacity: isYellowBoxExpanded ? 0 : 1
+              <span
+                style={{
+                  textTransform: 'uppercase',
+                  fontSize: '12px',
+                  letterSpacing: '0.08em',
+                  fontWeight: 600,
+                  color: '#1B5145'
                 }}
               >
-                Hva betyr Gul liste?
-              </text>
-              
-              {/* Arrow icon inside yellow box */}
-              <svg 
-                x="225" 
-                y="441" 
-                width="24" 
-                height="28" 
-                viewBox="0 0 24 28" 
-                fill="none"
-                style={{ 
-                  transition: 'opacity 0.3s ease-in-out',
-                  opacity: isYellowBoxExpanded ? 0 : 1
+                Estimert besparelse
+              </span>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  gap: '8px',
+                  color: '#102C2C',
+                  flexWrap: 'nowrap',
+                  width: '100%'
                 }}
               >
-                <path fillRule="evenodd" clipRule="evenodd" d="M14.56 14L7.5 21.2534L8.47002 22.25L16.5 14L8.47002 5.75L7.5 6.7466L14.56 14Z" fill="#2A2859"/>
-              </svg>
-            </g>
-            
-            {/* Removed expanded overlay from here - moved to end for proper layering */}
-          </>
+                <div
+                  style={{
+                    flex: '1 1 auto',
+                    minWidth: 0,
+                    display: 'flex',
+                    marginRight: '4px'
+                  }}
+                >
+                  <RollingDigitsDisplay
+                    value={displayedSavings}
+                    prefersReducedMotion={prefersReducedMotion}
+                  />
+                </div>
+                <span
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: 600,
+                    lineHeight: '24px',
+                    paddingBottom: '6px',
+                    color: '#164136',
+                    flex: '0 0 auto',
+                    paddingRight: '2px',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  kr/år
+                </span>
+              </div>
+              <div
+                style={{
+                  fontSize: '14px',
+                  lineHeight: '20px'
+                }}
+              >
+                <div style={{ fontWeight: 500, color: '#1E4C43' }}>
+                  ≈ {formattedSavingsKwh} kWh/år
+                </div>
+              </div>
+            </div>
+          </foreignObject>
         )}
-        
-        
+
         {/* Map placeholder rectangle */}
-        <rect x="0" y="496" width="336" height="204" fill="#E5E5E5" stroke="#D0D0D0" strokeWidth="1"/>
+        <rect x="0" y={MAP_TOP_Y} width={MAP_WIDTH} height={MAP_HEIGHT} fill="#E5E5E5" stroke="#D0D0D0" strokeWidth="1"/>
         
         {/* Map image if coordinates are available */}
         {mapCoordinates && (() => {
@@ -1017,8 +1082,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           
           // Calculate how much to offset the map so the location is centered
           // Map is 336x204, we want the location at center (168, 102)
-          const mapOffsetX = 168 - (xOffset * 256);
-          const mapOffsetY = 102 - (yOffset * 256);
+          const mapOffsetX = MAP_WIDTH / 2 - (xOffset * 256);
+          const mapOffsetY = MAP_HEIGHT / 2 - (yOffset * 256);
           
           // Get the center tile coordinates
           const centerTileX = Math.floor(x);
@@ -1032,7 +1097,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 x: centerTileX + dx,
                 y: centerTileY + dy,
                 offsetX: mapOffsetX + (dx * 256),
-                offsetY: 496 + mapOffsetY + (dy * 256)
+                offsetY: MAP_TOP_Y + mapOffsetY + (dy * 256)
               });
             }
           }
@@ -1040,7 +1105,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           return (
             <>
               <clipPath id="mapClip">
-                <rect x="0" y="496" width="336" height="204" />
+                <rect x="0" y={MAP_TOP_Y} width={MAP_WIDTH} height={MAP_HEIGHT} />
               </clipPath>
               <g clipPath="url(#mapClip)">
                 {tiles.map((tile, index) => (
@@ -1056,7 +1121,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 ))}
               </g>
               {/* Location pin centered on map */}
-              <g transform={`translate(${168 - 14} ${598 - 32})`}>
+              <g transform={`translate(${MAP_WIDTH / 2 - 14} ${MAP_TOP_Y + MAP_HEIGHT / 2 - 32})`}>
                 <LocationPin />
               </g>
             </>
@@ -1066,8 +1131,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
         {/* Map loading text */}
         {!mapCoordinates && (
           <text
-            x="168"
-            y="598"
+            x={MAP_WIDTH / 2}
+            y={MAP_TOP_Y + MAP_HEIGHT / 2}
             fontFamily="Oslo Sans, sans-serif"
             fontSize="14"
             fill="#666666"
@@ -1077,9 +1142,9 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           </text>
         )}
         </g>
-        
-        {/* Yellow box expanded overlay - moved to end for proper layering */}
-        {showYellowBox && isYellowBoxExpanded && (
+
+        {/* Gul liste info overlay */}
+        {shouldShowYellowBox && isGulListeInfoOpen && (
           <g
             style={{
               opacity: 1,
@@ -1087,7 +1152,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               pointerEvents: 'auto'
             }}
           >
-            {/* Expanded background */}
             <rect 
               x="0" 
               y="0" 
@@ -1096,12 +1160,18 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               fill="#FFE7BC"
             />
             
-            {/* Close button */}
             <g 
               style={{ cursor: 'pointer' }}
-              onClick={() => setIsYellowBoxExpanded(false)}
+              onClick={() => {
+                setIsGulListeInfoOpen(false);
+                setIsDropdownExpanded(false);
+                setShowDropdownContent(false);
+                setShowByantikvarTooltip(false);
+                setShowKommunaltTooltip(false);
+                setShowVernetTooltip(false);
+                setShowFredetTooltip(false);
+              }}
             >
-              {/* Button background square */}
               <rect 
                 x="274" 
                 y="16" 
@@ -1109,13 +1179,11 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 height="32" 
                 fill="transparent"
               />
-              {/* Close icon */}
               <svg x="274" y="16" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path fillRule="evenodd" clipRule="evenodd" d="M14.5333 16L5 6.46667L6.46667 5L16 14.5333L25.5333 5L27 6.46667L17.4667 16L27 25.5333L25.5333 27L16 17.4667L6.46667 27L5 25.5333L14.5333 16Z" fill="#2A2859"/>
               </svg>
             </g>
             
-            {/* Overskrift */}
             <text 
               x="30" 
               y={80} 
@@ -1123,14 +1191,13 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               fontWeight="500"
               fontStyle="normal"
               fontSize="26" 
-                  letterSpacing="-0.2"
+              letterSpacing="-0.2"
               fill="#000000"
               dominantBaseline="middle"
             >
               Hva er Gul liste?
             </text>
             
-            {/* Beskrivelsestekst */}
             <foreignObject x="30" y={112} width="276" height="250" style={{ overflow: 'visible' }}>
               <div xmlns="http://www.w3.org/1999/xhtml" style={{
                 fontFamily: 'Oslo Sans, sans-serif',
@@ -1207,196 +1274,94 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               </div>
             </foreignObject>
             
-            {/* Render tooltips outside text flow for consistent positioning */}
             {showByantikvarTooltip && (
-              <foreignObject x="30" y="133" width="280" height="250" 
-                onMouseEnter={() => setShowByantikvarTooltip(true)}
-                onMouseLeave={() => setShowByantikvarTooltip(false)}
+              <foreignObject 
+                x="30" 
+                y={160} 
+                width="200" 
+                height="60"
+                style={{ pointerEvents: 'none' }}
               >
-                <div 
-                  xmlns="http://www.w3.org/1999/xhtml"
-                  style={{
-                    padding: '16px',
-                    paddingTop: '24px',
-                    backgroundColor: '#D1F9FF',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    borderRadius: '4px',
-                    width: '280px'
-                  }}
-                >
-                  <h4 style={{
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 500,
-                    fontSize: '16px',
-                    lineHeight: '24px',
-                    letterSpacing: '-0.2px',
-                    color: '#000000',
-                    margin: '0 0 8px 0'
-                  }}>
-                    Ordforklaring
-                  </h4>
-                  <p style={{
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#000000',
-                    margin: 0
-                  }}>
-                    Byantikvaren (BYA) Byantikvaren (BYA) er Oslo kommunes faglige rådgiver i alle spørsmål som gjelder bevaring av arkitektoniske og kulturhistoriske verdifulle bygninger, anlegg og miljøer og arkeologiske kulturminner.
-                    <br/><br/>
-                    <a 
-                      href="https://www.oslo.kommune.no/etater-foretak-og-ombud/byantikvaren/" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      style={{ 
-                        color: '#000000', 
-                        textDecoration: 'underline',
-                        fontFamily: 'Oslo Sans',
-                        fontWeight: 300,
-                        fontSize: '14px',
-                        pointerEvents: 'all'
-                      }}
-                    >
-                      Les mer om Byantikvaren
-                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', display: 'inline-block', verticalAlign: 'middle' }}>
-                        <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#000000"/>
-                        <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#000000"/>
-                      </svg>
-                    </a>
-                  </p>
+                <div xmlns="http://www.w3.org/1999/xhtml" style={{
+                  fontFamily: 'Oslo Sans, sans-serif',
+                  fontSize: '12px',
+                  backgroundColor: 'white',
+                  padding: '8px',
+                  border: '1px solid rgba(0,0,0,0.2)',
+                  borderRadius: '4px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}>
+                  Oslo Byantikvar er kommunens faginstans for kulturminnevern.
                 </div>
               </foreignObject>
             )}
             
             {showKommunaltTooltip && (
-              <foreignObject x="30" y="183" width="280" height="150" 
-                onMouseEnter={() => setShowKommunaltTooltip(true)}
-                onMouseLeave={() => setShowKommunaltTooltip(false)}
+              <foreignObject 
+                x="30" 
+                y={200} 
+                width="200" 
+                height="80"
+                style={{ pointerEvents: 'none' }}
               >
-                <div 
-                  xmlns="http://www.w3.org/1999/xhtml"
-                  style={{
-                    padding: '16px',
-                    paddingTop: '24px',
-                    backgroundColor: '#D1F9FF',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    borderRadius: '4px',
-                    width: '280px'
-                  }}
-                >
-                  <h4 style={{
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 500,
-                    fontSize: '16px',
-                    lineHeight: '24px',
-                    letterSpacing: '-0.2px',
-                    color: '#000000',
-                    margin: '0 0 8px 0'
-                  }}>
-                    Ordforklaring
-                  </h4>
-                  <p style={{
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#000000',
-                    margin: 0
-                  }}>
-                    Bygning eller område som er vurdert som verneverdig, men som ikke har juridisk vern. Endringer krever ofte vurdering fra Byantikvaren.
-                  </p>
+                <div xmlns="http://www.w3.org/1999/xhtml" style={{
+                  fontFamily: 'Oslo Sans, sans-serif',
+                  fontSize: '12px',
+                  backgroundColor: 'white',
+                  padding: '8px',
+                  border: '1px solid rgba(0,0,0,0.2)',
+                  borderRadius: '4px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}>
+                  Kommunalt listeført betyr at bygget er registrert i Gul liste og vurdert som verneverdig av Oslo kommune.
                 </div>
               </foreignObject>
             )}
             
             {showVernetTooltip && (
-              <foreignObject x="30" y="205" width="280" height="150" 
-                onMouseEnter={() => setShowVernetTooltip(true)}
-                onMouseLeave={() => setShowVernetTooltip(false)}
+              <foreignObject 
+                x="30" 
+                y={240} 
+                width="210" 
+                height="80"
+                style={{ pointerEvents: 'none' }}
               >
-                <div 
-                  xmlns="http://www.w3.org/1999/xhtml"
-                  style={{
-                    padding: '16px',
-                    paddingTop: '24px',
-                    backgroundColor: '#D1F9FF',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    borderRadius: '4px',
-                    width: '280px'
-                  }}
-                >
-                  <h4 style={{
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 500,
-                    fontSize: '16px',
-                    lineHeight: '24px',
-                    letterSpacing: '-0.2px',
-                    color: '#000000',
-                    margin: '0 0 8px 0'
-                  }}>
-                    Ordforklaring
-                  </h4>
-                  <p style={{
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#000000',
-                    margin: 0
-                  }}>
-                    Bygning eller område som er bevart gjennom regler bestemt av kommunen. Reglene sier noe om hva som kan gjøres med bygget.
-                  </p>
+                <div xmlns="http://www.w3.org/1999/xhtml" style={{
+                  fontFamily: 'Oslo Sans, sans-serif',
+                  fontSize: '12px',
+                  backgroundColor: 'white',
+                  padding: '8px',
+                  border: '1px solid rgba(0,0,0,0.2)',
+                  borderRadius: '4px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}>
+                  Vernet etter plan- og bygningsloven betyr at bygget er sikret gjennom kommuneplanen eller reguleringsplan.
                 </div>
               </foreignObject>
             )}
             
             {showFredetTooltip && (
-              <foreignObject x="30" y="226" width="280" height="150" 
-                onMouseEnter={() => setShowFredetTooltip(true)}
-                onMouseLeave={() => setShowFredetTooltip(false)}
+              <foreignObject 
+                x="30" 
+                y={280} 
+                width="220" 
+                height="80"
+                style={{ pointerEvents: 'none' }}
               >
-                <div 
-                  xmlns="http://www.w3.org/1999/xhtml"
-                  style={{
-                    padding: '16px',
-                    paddingTop: '24px',
-                    backgroundColor: '#D1F9FF',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    borderRadius: '4px',
-                    width: '280px'
-                  }}
-                >
-                  <h4 style={{
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 500,
-                    fontSize: '16px',
-                    lineHeight: '24px',
-                    letterSpacing: '-0.2px',
-                    color: '#000000',
-                    margin: '0 0 8px 0'
-                  }}>
-                    Ordforklaring
-                  </h4>
-                  <p style={{
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#000000',
-                    margin: 0
-                  }}>
-                    Bygning, område eller anlegg med nasjonal verdi som er fredet etter kulturminneloven. Har strengt vern – ofte både innvendig og utvendig.
-                  </p>
+                <div xmlns="http://www.w3.org/1999/xhtml" style={{
+                  fontFamily: 'Oslo Sans, sans-serif',
+                  fontSize: '12px',
+                  backgroundColor: 'white',
+                  padding: '8px',
+                  border: '1px solid rgba(0,0,0,0.2)',
+                  borderRadius: '4px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}>
+                  Fredet betyr at bygget er vernet av Riksantikvaren eller fylkeskommunen. Endringer må godkjennes av myndighetene.
                 </div>
               </foreignObject>
             )}
             
-            {/* Mørk blå boks med hvit tekst */}
             <rect 
               x="30" 
               y={isDropdownExpanded ? 305 : 425} 
@@ -1406,7 +1371,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               style={{ transition: 'transform 0.3s ease' }}
             />
             
-            {/* Hvit tekst inni boksen */}
             <foreignObject x="46" y={isDropdownExpanded ? 321 : 441} width="244" height="66">
               <div xmlns="http://www.w3.org/1999/xhtml" style={{
                 fontFamily: 'Oslo Sans, sans-serif',
@@ -1420,7 +1384,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               </div>
             </foreignObject>
             
-            {/* Ny boks med dropdown-meny */}
             <g
               onClick={() => setIsDropdownExpanded(!isDropdownExpanded)}
               style={{ cursor: 'pointer' }}
@@ -1434,14 +1397,13 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 style={{ transition: 'all 0.3s ease' }}
               />
             
-              {/* Tekst i ny boks */}
               <text 
                 x="46" 
                 y={isDropdownExpanded ? (191 - DROPDOWN_EXPANSION_ADJUSTMENT) : 575} 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontWeight="400"
                 fontSize="14" 
-                      letterSpacing="-0.2"
+                letterSpacing="-0.2"
                 fill="white"
                 dominantBaseline="middle"
                 style={{ 
@@ -1453,7 +1415,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 Hvorfor ta vare på kulturminner
               </text>
             
-              {/* Dropdown ikon */}
               <svg x="266" y={isDropdownExpanded ? (179 - DROPDOWN_EXPANSION_ADJUSTMENT) : 563} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ 
                 pointerEvents: 'none', 
                 transform: isDropdownExpanded ? 'rotate(180deg)' : 'rotate(0deg)', 
@@ -1465,7 +1426,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               </svg>
             </g>
             
-            {/* Ekspandert innhold for dropdown */}
             {isDropdownExpanded && (
               <foreignObject x="46" y={210 - DROPDOWN_EXPANSION_ADJUSTMENT} width="244" height={365 + DROPDOWN_EXPANSION_ADJUSTMENT}>
                 <div xmlns="http://www.w3.org/1999/xhtml" style={{
@@ -1489,7 +1449,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               </foreignObject>
             )}
             
-            {/* Link under dropdown-boksen */}
             <foreignObject x="30" y="640" width="276" height="30">
               <div xmlns="http://www.w3.org/1999/xhtml" style={{
                 fontFamily: 'Oslo Sans, sans-serif',
@@ -1510,9 +1469,9 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 </a>
               </div>
             </foreignObject>
-            
           </g>
         )}
+        
       </g>
       
       {/* Tiltak content that appears when expanded */}
@@ -1528,7 +1487,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
         
       <defs>
         <clipPath id="clip0_325_12689">
-          <rect width="336" height="760" fill="white"/>
+          <rect width="336" height="820" fill="white"/>
         </clipPath>
       </defs>
     </svg>
@@ -1557,4 +1516,149 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
       </div>
     </div>
   );
+};
+
+const DIGITS = Array.from({ length: 10 }, (_, index) => index);
+const DIGIT_HEIGHT_EM = 1.05;
+
+interface RollingDigitProps {
+  digit: string;
+  prefersReducedMotion: boolean;
+}
+
+const RollingDigit: React.FC<RollingDigitProps> = ({ digit, prefersReducedMotion }) => {
+  const baseStyles: React.CSSProperties = {
+    display: 'inline-flex',
+    width: '0.9ch',
+    minWidth: '0.9ch',
+    justifyContent: 'center',
+    height: `${DIGIT_HEIGHT_EM}em`,
+    overflow: 'hidden',
+    fontVariantNumeric: 'tabular-nums',
+    lineHeight: `${DIGIT_HEIGHT_EM}em`,
+    padding: '0 0.5px'
+  };
+
+  if (!/^\d$/.test(digit) || prefersReducedMotion) {
+    return (
+      <span style={baseStyles}>
+        <span style={{ lineHeight: '1.1em' }}>{digit}</span>
+      </span>
+    );
+  }
+
+  const numericDigit = Number(digit);
+
+  return (
+    <span style={baseStyles}>
+      <span
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          transform: `translateY(calc(-1 * ${numericDigit} * ${DIGIT_HEIGHT_EM}em))`,
+          transition: 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1)'
+        }}
+      >
+        {DIGITS.map((stackDigit) => (
+          <span
+            key={stackDigit}
+            style={{
+              height: `${DIGIT_HEIGHT_EM}em`,
+              lineHeight: `${DIGIT_HEIGHT_EM}em`,
+              textAlign: 'center',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            {stackDigit}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+};
+
+interface RollingDigitsDisplayProps {
+  value: number;
+  prefersReducedMotion: boolean;
+}
+
+const RollingDigitsDisplay: React.FC<RollingDigitsDisplayProps> = ({
+  value,
+  prefersReducedMotion
+}) => {
+  const formattedValue = React.useMemo(
+    () => value.toLocaleString('nb-NO').replace(/\u00A0/g, ' '),
+    [value]
+  );
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'flex-end',
+        gap: '0.2ch',
+        fontSize: '38px',
+        fontWeight: 700,
+        lineHeight: 1,
+        color: '#102C2C',
+        fontVariantNumeric: 'tabular-nums'
+      }}
+    >
+      {formattedValue.split('').map((character, index) => {
+        if (/^\d$/.test(character)) {
+          return (
+            <RollingDigit
+            key={index}
+              digit={character}
+              prefersReducedMotion={prefersReducedMotion}
+            />
+          );
+        }
+
+        return (
+          <span
+            key={`separator-${index}`}
+            style={{ display: 'inline-block', minWidth: '0.5ch', textAlign: 'center' }}
+          >
+            {character}
+          </span>
+        );
+      })}
+    </span>
+  );
+};
+
+const usePrefersReducedMotion = () => {
+  const [prefers, setPrefers] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleChange = (event: MediaQueryListEvent) => {
+      setPrefers(event.matches);
+    };
+
+    setPrefers(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange);
+    } else if (typeof mediaQuery.addListener === 'function') {
+      mediaQuery.addListener(handleChange);
+    }
+
+    return () => {
+      if (typeof mediaQuery.removeEventListener === 'function') {
+        mediaQuery.removeEventListener('change', handleChange);
+      } else if (typeof mediaQuery.removeListener === 'function') {
+        mediaQuery.removeListener(handleChange);
+      }
+    };
+  }, []);
+
+  return prefers;
 };
