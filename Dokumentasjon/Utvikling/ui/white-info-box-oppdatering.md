@@ -13,17 +13,28 @@
 2. **Estimatkort i NOK**
    - ✅ Implementert: Konvertering til NOK via ny util `convertKwhToNok` (default 1,10 kr/kWh) + valutaformattering i grønn kortboks.
    - ✅ Implementert: Ny HTML/`foreignObject`-basert besparelsesboks med oppdatert padding/typografi og `kr/år`-label.
-   - ✅ Ferdig: Copy justert til «Estimert energiforbruk» og alle «Estimerte verdier»-referanser fjernet.
+   - ✅ Ferdig: Copy justert til «Estimert energiforbruk:» (kolon iht. microcopy) og alle «Estimerte verdier»-referanser fjernet.
    - ✅ Ferdig: Fjernet «Basert på 1,10 kr/kWh»-linjen, lot kWh-ekvivalensen stå igjen med samme vekt, og la inn dynamiske marginer slik at kortet aldri kolliderer med kartet (kr/år er låst til høyre uansett tallengde).
+   - ✅ Ferdig: Besparelseskortet har rette hjørner uten border radius, i tråd med designmanualen til Oslo kommune.
 3. **Animasjoner**
    - ✅ Kortet popper/fader inn første gang `totalEnergySavings > 0` (scale 0.96 → 1, opacity 0 → 1) synket med `ANIMATION_TIMINGS`-easing.
    - ✅ Tall «ruller» via egen `RollingDigit`, drevet av `requestAnimationFrame`-ticker og CSS transform.
    - ✅ `prefers-reduced-motion` guard lagt inn (både ticker og digit-animasjon faller tilbake til statisk visning).
    - 🔁 Neste: Vurdere mikrocopy-tooltip direkte på ikon (fra pkt. 1) og evt. tempojustering når flere tiltak toggles raskt.
- 4. **Opprydding**
+4. **Opprydding**
    - ✅ Ferdig: Fjernet «Estimerte verdier»-linjer og oppdatert copy til «Estimert energiforbruk».
    - ✅ Ferdig: Gul liste CTA fjernet; ikon tar over uten å introdusere andre endringer i kortet.
    - 🔁 Neste: Når grønn boks er inne, verifiser at spacing fortsatt er konsekvent mot kart/tiltak.
+
+## Pågående arbeid / tråd som må plukkes opp (oppdatert 7. nov 2025)
+
+- ✅ **Energifelt + besparelsesboks:** `renderEnergyBlock` brukes nå både i visning og redigering, med felles `<foreignObject>` og stabil `kWh/år`-baseline. Energiblokken forankres automatisk 28 px under siste nøkkellinje (vernestatus/areal) – samme avstand som mellom «Nøkkelinformasjon» og «Byggeår».
+- ✅ Besparelseskortet er låst til minimum 40 px klaring fra energiblokken og clampes alltid før kartet slik at verken grønn boks eller kart overlapper. Kartet holder fast `MAP_TOP_Y`, så hele panelet holder seg innenfor rammen også når kortet dukker opp.
+- ✅ Gul liste / blokk-spesifikke felter (Eiertype, Areal leilighet) rendres kun når de har data eller er i redigering, slik at vertikal rytme ikke får ekstra luft.
+- 🔁 Neste:
+  1. Vurder fortsatt mikrocopy-tooltip på gul-ikonet (fremdeles åpen beslutning fra pkt. 1).
+  2. Tempojustering ved hurtig toggling av flere tiltak (ticker-oppdatering).
+  3. QA på små skjermer/mobil for å sikre at nye avstander fungerer mot kart og tiltaksliste.
 
 ## Tekniske grep
 - Opprett util `convertKwhToNok(kwh: number)` i f.eks. `src/utils/energy.ts` for gjenbruk.

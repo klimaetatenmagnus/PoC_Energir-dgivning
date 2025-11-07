@@ -1,8 +1,16 @@
-import requests
 import csv
 from io import StringIO
 from typing import List, Dict, Optional
 import re
+import ssl
+import sys
+from urllib.request import urlopen, Request
+from urllib.error import URLError, HTTPError
+
+try:
+    import certifi
+except ImportError:  # pragma: no cover - certifi er optional
+    certifi = None
 
 # KONFIGURASJON - Endre denne URL-en for å bruke et annet Google Sheets
 # Kopier hele URL-en fra Google Sheets (inkludert /edit eller /view delen)
@@ -63,19 +71,46 @@ class StotteordningFinner:
     def _last_ned_data(self):
         """Laster ned og parser data fra Google Sheets"""
         try:
-            response = requests.get(self.csv_url)
-            response.raise_for_status()
-            
-            # Parse CSV med UTF-8 encoding
-            response.encoding = 'utf-8'
-            csv_reader = csv.reader(StringIO(response.text))
-            self.all_values = list(csv_reader)
-            
-            # Finn dynamisk start- og sluttrad basert på markørene
-            self._finn_rad_grenser()
-            
+            csv_bytes = self._download_csv()
+        except URLError as url_error:
+            reason = getattr(url_error, "reason", None)
+            reason_text = str(reason) if reason else ""
+            error_text = str(url_error)
+            if "CERTIFICATE_VERIFY_FAILED" in reason_text or "CERTIFICATE_VERIFY_FAILED" in error_text:
+                print("Advarsel: SSL-sertifikat kunne ikke verifiseres – prøver uten verifisering (kun for lokal bruk).", file=sys.stderr)
+                csv_bytes = self._download_csv(allow_insecure=True)
+            else:
+                raise Exception(f"Kunne ikke laste data fra Google Sheets: {url_error}") from url_error
+        except HTTPError as http_error:
+            raise Exception(f"Kunne ikke laste data fra Google Sheets: {http_error}") from http_error
         except Exception as e:
-            raise Exception(f"Kunne ikke laste data fra Google Sheets: {e}")
+            raise Exception(f"Kunne ikke parse data fra Google Sheets: {e}") from e
+        
+        csv_text = csv_bytes.decode('utf-8')
+        csv_reader = csv.reader(StringIO(csv_text))
+        self.all_values = list(csv_reader)
+        
+        # Finn dynamisk start- og sluttrad basert på markørene
+        self._finn_rad_grenser()
+
+    def _download_csv(self, allow_insecure: bool = False) -> bytes:
+        """Henter CSV fra Google Sheets, med valgfri SSL-verifisering"""
+        request = Request(
+            self.csv_url,
+            headers={
+                'User-Agent': 'Energinokkelen/1.0 (+https://energinokkelen.no)'
+            }
+        )
+
+        if allow_insecure:
+            context = ssl._create_unverified_context()
+        else:
+            context = ssl.create_default_context()
+            if certifi:
+                context.load_verify_locations(certifi.where())
+
+        with urlopen(request, timeout=15, context=context) as response:
+            return response.read()
     
     def _finn_rad_grenser(self):
         """Finner dynamisk rad-grenser basert på tekstene i sheets"""

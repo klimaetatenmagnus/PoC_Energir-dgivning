@@ -7,9 +7,14 @@ import { AddressLookupResponse } from '../../../services/buildingApi';
 
 const MAP_WIDTH = 336;
 const MAP_HEIGHT = 204;
-const MAP_TOP_Y = 580;
-const SAVINGS_CARD_HEIGHT = 124;
-const SAVINGS_CARD_BOTTOM_GAP = 20;
+const MAP_TOP_Y = 496;
+const SAVINGS_CARD_HEIGHT = 132;
+const SAVINGS_CARD_BOTTOM_GAP = 24;
+const MIN_CONTENT_TO_CARD_GAP = 40;
+const MIN_MAP_CLEARANCE = 6;
+const BASE_INFO_Y = 204;
+const INFO_ROW_GAP = 28;
+const INPUT_BASELINE_OFFSET = 18;
 
 const roundToNearestThousandValue = (value: number): number => {
   if (!Number.isFinite(value)) {
@@ -74,6 +79,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   const [showKommunaltTooltip, setShowKommunaltTooltip] = React.useState(false);
   const [showVernetTooltip, setShowVernetTooltip] = React.useState(false);
   const [showFredetTooltip, setShowFredetTooltip] = React.useState(false);
+  const [isEditMode, setIsEditMode] = React.useState(false);
   const DROPDOWN_EXPANSION_ADJUSTMENT = 50;
   const prefersReducedMotion = usePrefersReducedMotion();
   const [hasShownSavings, setHasShownSavings] = React.useState(false);
@@ -84,6 +90,9 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   // Check if building has Enova energy certificate
   const hasEnovaRating = buildingData?.energiattest?.energikarakter ? true : false;
   const shouldShowSavingsCard = totalEnergySavings > 0;
+  const isApartmentBuilding =
+    buildingTypeName === 'Store boligbygg' || buildingTypeName.toLowerCase() === 'blokk';
+  const isBlockBuilding = buildingTypeName.toLowerCase() === 'blokk';
   const roundedSavingsKwh = React.useMemo(
     () => roundToNearestThousandValue(totalEnergySavings),
     [totalEnergySavings]
@@ -159,6 +168,124 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
       </foreignObject>
     );
   };
+
+  const renderEnergyBlock = (
+    yPosition: number,
+    {
+      displayValue,
+      editableValue,
+      editable,
+      onChange
+    }: {
+      displayValue: string;
+      editable?: boolean;
+      editableValue?: string;
+      onChange?: (nextValue: string) => void;
+    }
+  ) => (
+    <foreignObject x="30" y={yPosition} width="276" height={editable ? 80 : 60}>
+      <div
+        xmlns="http://www.w3.org/1999/xhtml"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+          fontFamily: 'Oslo Sans, sans-serif'
+        }}
+      >
+        <span
+          style={{
+            fontSize: '18px',
+            letterSpacing: '-0.2px',
+            color: '#2A2859'
+          }}
+        >
+          Estimert energiforbruk:
+        </span>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            gap: '8px',
+            flexWrap: 'nowrap'
+          }}
+        >
+          {editable ? (
+            <div
+              style={{
+                flex: '1 1 auto',
+                minWidth: 0,
+                borderBottom: '1px solid #2A2859',
+                display: 'flex',
+                alignItems: 'flex-end',
+                gap: '6px',
+                paddingBottom: '2px'
+              }}
+            >
+              <input
+                type="text"
+                inputMode="numeric"
+                value={editableValue ?? ''}
+                onChange={(event) => {
+                  if (!onChange) {
+                    return;
+                  }
+                  const numericValue = event.target.value.replace(/[^0-9]/g, '');
+                  onChange(numericValue);
+                }}
+                style={{
+                  flex: '1 1 auto',
+                  border: 'none',
+                  fontSize: '18px',
+                  fontWeight: 500,
+                  letterSpacing: '-0.2px',
+                  color: '#2A2859',
+                  background: 'transparent',
+                  padding: 0,
+                  outline: 'none'
+                }}
+              />
+              <span
+                style={{
+                  fontSize: '16px',
+                  fontWeight: 500,
+                  letterSpacing: '-0.2px',
+                  color: '#2A2859',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                kWh/år
+              </span>
+            </div>
+          ) : (
+            <>
+              <span
+                style={{
+                  fontSize: '18px',
+                  fontWeight: 500,
+                  letterSpacing: '-0.2px',
+                  color: '#2A2859'
+                }}
+              >
+                {displayValue}
+              </span>
+              <span
+                style={{
+                  fontSize: '16px',
+                  fontWeight: 500,
+                  letterSpacing: '-0.2px',
+                  color: '#2A2859',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                kWh/år
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+    </foreignObject>
+  );
 
   React.useEffect(() => {
     if (shouldShowSavingsCard && !hasShownSavings) {
@@ -248,28 +375,18 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     100, // Minimum width
     Math.ceil(calculateTextWidth(districtName) + 52) // text width + icon (36px) + padding (16px)
   );
-  
+
   // Use the display text for width calculation
-  const displayBuildingTypeName = buildingTypeName === "Store boligbygg" ? "Blokk" : buildingTypeName;
-  const dynamicBuildingTypeWidth = displayBuildingTypeName === "Blokk" 
-    ? 80 // Manuell bredde for "Blokk" - endre denne verdien
-    : Math.max(
-        100, // Minimum width  
-        Math.ceil(calculateTextWidth(displayBuildingTypeName) + 43) // 14 (left padding) + 15 (icon) + 7 (gap) + text + 7 (right padding)
-      );
-  const isApartmentBuilding =
-    buildingTypeName === "Store boligbygg" || buildingTypeName.toLowerCase() === 'blokk';
-  const precedingContentBottom = isApartmentBuilding
-    ? (showYellowBox ? 388 : 358)
-    : (showYellowBox ? 330 : 310);
-  const baseSavingsCardY = precedingContentBottom + 16;
-  const maxSavingsCardY = MAP_TOP_Y - SAVINGS_CARD_HEIGHT - SAVINGS_CARD_BOTTOM_GAP;
-  const savingsCardY = Math.min(baseSavingsCardY, maxSavingsCardY);
-  const shouldAnimateSavingsCardIntro =
-    shouldShowSavingsCard && !hasShownSavings && animateSavings && !prefersReducedMotion;
-  
-  // State for edit mode
-  const [isEditMode, setIsEditMode] = React.useState(false);
+  const displayBuildingTypeName =
+    buildingTypeName === 'Store boligbygg' ? 'Blokk' : buildingTypeName;
+  const dynamicBuildingTypeWidth =
+    displayBuildingTypeName === 'Blokk'
+      ? 80 // Manuell bredde for "Blokk" - endre denne verdien
+      : Math.max(
+          100, // Minimum width
+          Math.ceil(calculateTextWidth(displayBuildingTypeName) + 43) // 14 (left padding) + 15 (icon) + 7 (gap) + text + 7 (right padding)
+        );
+
   const [savedByggeaar, setSavedByggeaar] = React.useState(
     String(buildingData?.byggeaar || '')
   );
@@ -335,6 +452,16 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   
   // Track if user has manually edited energy consumption
   const [hasUserEditedEnergy, setHasUserEditedEnergy] = React.useState(false);
+  const savedEnergyDisplayValue = React.useMemo(() => {
+    const numeric = Number(savedEnergiforbruk || '0');
+    if (!Number.isFinite(numeric)) {
+      return '0';
+    }
+    if (hasEnovaRating && !isApartmentBuilding) {
+      return roundToNearestThousand(numeric);
+    }
+    return formatNumberWithSpaces(Math.round(numeric));
+  }, [savedEnergiforbruk, hasEnovaRating, isApartmentBuilding]);
   
   // Update saved energy consumption when estimated value changes (only if user hasn't edited it)
   React.useEffect(() => {
@@ -370,7 +497,82 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     const padding = 20; // Extra padding for cursor and breathing room
     return Math.max(minWidth, value.length * charWidth + padding);
   };
-  
+
+  const energyBlockHeight = isEditMode ? 80 : 60;
+  const trimmedApartmentArea = (savedArealLeilighet || '').trim();
+  const hasApartmentAreaValue = trimmedApartmentArea.length > 0;
+  const shouldShowApartmentAreaRow = isBlockBuilding && (isEditMode || hasApartmentAreaValue);
+
+  const infoLayout = React.useMemo(() => {
+    let cursor = BASE_INFO_Y;
+    const byggeaarY = cursor;
+    cursor += INFO_ROW_GAP;
+
+    const arealY = cursor;
+    cursor += INFO_ROW_GAP;
+
+    let eierTypeY: number | null = null;
+    if (isBlockBuilding) {
+      eierTypeY = cursor;
+      cursor += INFO_ROW_GAP;
+    }
+
+    let vernestatusY: number | null = null;
+    if (shouldShowYellowBox) {
+      vernestatusY = cursor;
+      cursor += INFO_ROW_GAP;
+    }
+
+    let apartmentAreaY: number | null = null;
+    if (shouldShowApartmentAreaRow) {
+      apartmentAreaY = cursor;
+      cursor += INFO_ROW_GAP;
+    }
+
+    const lastInfoBaseline =
+      (shouldShowApartmentAreaRow && apartmentAreaY !== null)
+        ? apartmentAreaY
+        : shouldShowYellowBox && vernestatusY !== null
+          ? vernestatusY
+          : isBlockBuilding && eierTypeY !== null
+            ? eierTypeY
+            : arealY;
+
+    return {
+      byggeaarY,
+      arealY,
+      eierTypeY,
+      vernestatusY,
+      apartmentAreaY,
+      lastInfoBaseline
+    };
+  }, [isBlockBuilding, shouldShowYellowBox, shouldShowApartmentAreaRow]);
+
+  const {
+    byggeaarY,
+    arealY,
+    eierTypeY,
+    vernestatusY,
+    apartmentAreaY,
+    lastInfoBaseline
+  } = infoLayout;
+
+  const energyInfoTop = (lastInfoBaseline ?? arealY) + INFO_ROW_GAP;
+  const energyBlockBottom = energyInfoTop + energyBlockHeight;
+  const precedingContentBottom = energyBlockBottom;
+  const anchoredCardTop = MAP_TOP_Y - SAVINGS_CARD_HEIGHT - SAVINGS_CARD_BOTTOM_GAP;
+  const minimumCardTop = precedingContentBottom + MIN_CONTENT_TO_CARD_GAP;
+  const maxCardTopBeforeMap = MAP_TOP_Y - SAVINGS_CARD_HEIGHT - MIN_MAP_CLEARANCE;
+  let savingsCardY: number;
+
+  if (maxCardTopBeforeMap <= minimumCardTop) {
+    savingsCardY = maxCardTopBeforeMap;
+  } else {
+    savingsCardY = Math.min(Math.max(anchoredCardTop, minimumCardTop), maxCardTopBeforeMap);
+  }
+  const shouldAnimateSavingsCardIntro =
+    shouldShowSavingsCard && !hasShownSavings && animateSavings && !prefersReducedMotion;
+
   // Call the callback with initial values when component mounts or when savedEnergiforbruk changes
   React.useEffect(() => {
     if (!onUpdateBuildingData) {
@@ -593,6 +795,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             }
           }}
         >
+          <rect x="218" y="138" width="120" height="32" fill="transparent" />
           <text 
             x="230" 
             y="160" 
@@ -628,7 +831,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           <>
             <text 
               x="30" 
-              y="204" 
+              y={byggeaarY} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
                   letterSpacing="-0.2"
@@ -639,7 +842,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             </text>
             <text 
               x="30" 
-              y="232" 
+              y={arealY} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
                   letterSpacing="-0.2"
@@ -648,29 +851,10 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               <tspan fontWeight="300">Areal: </tspan>
               <tspan fontWeight="500">{savedAreal || 'Ukjent'} m²</tspan>
             </text>
-            {hasEnovaRating && !(buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && (
+            {isBlockBuilding && eierTypeY !== null && (
               <text 
                 x="30" 
-                y="288" 
-                fontFamily="Oslo Sans, sans-serif" 
-                fontSize="18" 
-                letterSpacing="-0.2"
-                fill="#2A2859"
-              >
-                <tspan fontWeight="300">Estimert energiforbruk:</tspan>
-                <tspan
-                  x="30"
-                  dy="22"
-                  fontWeight="500"
-                >
-                  {roundToNearestThousand(Number(savedEnergiforbruk || '300000'))} kWh/år
-                </tspan>
-              </text>
-            )}
-            {buildingTypeName.toLowerCase() === 'blokk' && (
-              <text 
-                x="30" 
-                y={hasEnovaRating ? (totalEnergySavings > 0 ? "316" : "288") : "260"} 
+                y={eierTypeY} 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontSize="18" 
                       letterSpacing="-0.2"
@@ -680,11 +864,11 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 <tspan fontWeight="500">Borettslag</tspan>
               </text>
             )}
-            {showYellowBox && renderVernestatusRow(buildingTypeName.toLowerCase() === 'blokk' ? 288 : 260)}
-            {buildingTypeName.toLowerCase() === 'blokk' && (
+            {shouldShowYellowBox && vernestatusY !== null && renderVernestatusRow(vernestatusY)}
+            {shouldShowApartmentAreaRow && apartmentAreaY !== null && (
               <text 
                 x="30" 
-                y="376" 
+                y={apartmentAreaY} 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontSize="18" 
                       letterSpacing="-0.2"
@@ -694,32 +878,16 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 <tspan fontWeight="500">{savedArealLeilighet || 'Ukjent'} m²</tspan>
               </text>
             )}
-            {(!hasEnovaRating || ((buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && buildingData?.energiattest?.energikarakter)) && (
-              <text 
-                x="30" 
-                y="348" 
-                fontFamily="Oslo Sans, sans-serif" 
-                fontSize="18" 
-                letterSpacing="-0.2"
-                fill="#2A2859"
-              >
-                <tspan fontWeight="300">Estimert energiforbruk:</tspan>
-                <tspan
-                  x="30"
-                  dy="22"
-                  fontWeight="500"
-                >
-                  {Math.round(Number(savedEnergiforbruk || '300000')).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} kWh/år
-                </tspan>
-              </text>
-            )}
+            {renderEnergyBlock(energyInfoTop, {
+              displayValue: savedEnergyDisplayValue
+            })}
           </>
         ) : (
           <>
             {/* Edit mode - show input fields */}
             <text 
               x="30" 
-              y="204" 
+              y={byggeaarY} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
                   letterSpacing="-0.2"
@@ -727,7 +895,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             >
               <tspan fontWeight="300">Byggeår: </tspan>
             </text>
-            <foreignObject x="106" y="186" width={calculateInputWidth(editedByggeaar)} height="24">
+            <foreignObject x="106" y={byggeaarY - INPUT_BASELINE_OFFSET} width={calculateInputWidth(editedByggeaar)} height="24">
               <input
                 xmlns="http://www.w3.org/1999/xhtml"
                 type="text"
@@ -753,7 +921,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             
             <text 
               x="30" 
-              y="232" 
+              y={arealY} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
                   letterSpacing="-0.2"
@@ -761,7 +929,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             >
               <tspan fontWeight="300">Areal: </tspan>
             </text>
-            <foreignObject x="83" y="214" width={calculateInputWidth(editedAreal)} height="24">
+            <foreignObject x="83" y={arealY - INPUT_BASELINE_OFFSET} width={calculateInputWidth(editedAreal)} height="24">
               <input
                 xmlns="http://www.w3.org/1999/xhtml"
                 type="text"
@@ -786,7 +954,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             </foreignObject>
             <text 
               x={83 + calculateInputWidth(editedAreal) + 3}
-              y="232" 
+              y={arealY} 
               fontFamily="Oslo Sans, sans-serif" 
               fontSize="18" 
                   letterSpacing="-0.2"
@@ -796,65 +964,10 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               m²
             </text>
             
-            {hasEnovaRating && !(buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && (
-              <>
-                <text 
-                  x="30" 
-                  y="288" 
-                  fontFamily="Oslo Sans, sans-serif" 
-                  fontSize="18" 
-                          letterSpacing="-0.2"
-                  fill="#2A2859"
-                >
-                  <tspan fontWeight="300">Estimert energiforbruk:</tspan>
-                </text>
-                <foreignObject x="155" y="270" width={calculateInputWidth(editedEnergiforbruk)} height="24">
-                  <input
-                    xmlns="http://www.w3.org/1999/xhtml"
-                    type="text"
-                    value={editedEnergiforbruk}
-                    onChange={(e) => {
-                      // Only allow numbers
-                      const value = e.target.value.replace(/[^0-9]/g, '');
-                      setEditedEnergiforbruk(value);
-                      setHasUserEditedEnergy(true);
-                    }}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      border: 'none',
-                      borderBottom: '1px solid #2A2859',
-                      padding: '0 2px',
-                      fontFamily: 'Oslo Sans, sans-serif',
-                      fontSize: '18px',
-                      lineHeight: '28px',
-                      letterSpacing: '-0.2px',
-                      fontWeight: '500',
-                      color: '#2A2859',
-                      background: 'transparent',
-                      outline: 'none',
-                      textAlign: 'left'
-                    }}
-                  />
-                </foreignObject>
-                <text 
-                  x={155 + calculateInputWidth(editedEnergiforbruk) + 3}
-                  y="288" 
-                  fontFamily="Oslo Sans, sans-serif" 
-                  fontSize="18" 
-                          letterSpacing="-0.2"
-                  fill="#2A2859"
-                  fontWeight="500"
-                >
-                  kWh/år
-                </text>
-              </>
-            )}
-            
-            {buildingTypeName.toLowerCase() === 'blokk' && (
+            {isBlockBuilding && eierTypeY !== null && (
               <text 
                 x="30" 
-                y="260" 
+                y={eierTypeY} 
                 fontFamily="Oslo Sans, sans-serif" 
                 fontSize="18" 
                       letterSpacing="-0.2"
@@ -865,14 +978,14 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               </text>
             )}
             
-            {showYellowBox && renderVernestatusRow(hasEnovaRating ? 260 : (buildingTypeName.toLowerCase() === 'blokk' ? 288 : 260))}
+            {shouldShowYellowBox && vernestatusY !== null && renderVernestatusRow(vernestatusY)}
             
             
-            {buildingTypeName.toLowerCase() === 'blokk' && (
+            {shouldShowApartmentAreaRow && apartmentAreaY !== null && (
               <>
                 <text 
                   x="30" 
-                  y={showYellowBox ? "348" : "288"} 
+                  y={apartmentAreaY} 
                   fontFamily="Oslo Sans, sans-serif" 
                   fontSize="18" 
                           letterSpacing="-0.2"
@@ -880,7 +993,12 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 >
                   <tspan fontWeight="300">Areal Leilighet: </tspan>
                 </text>
-                <foreignObject x="153" y={showYellowBox ? "330" : "270"} width={calculateInputWidth(editedArealLeilighet)} height="24">
+                <foreignObject
+                  x="153"
+                  y={apartmentAreaY - INPUT_BASELINE_OFFSET}
+                  width={calculateInputWidth(editedArealLeilighet)}
+                  height="24"
+                >
                   <input
                     xmlns="http://www.w3.org/1999/xhtml"
                     type="text"
@@ -905,7 +1023,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 </foreignObject>
                 <text 
                   x={153 + calculateInputWidth(editedArealLeilighet) + 3}
-                  y={showYellowBox ? "348" : "288"} 
+                  y={apartmentAreaY} 
                   fontFamily="Oslo Sans, sans-serif" 
                   fontSize="18" 
                           letterSpacing="-0.2"
@@ -917,59 +1035,15 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
               </>
             )}
             
-            {(!hasEnovaRating || ((buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && buildingData?.energiattest?.energikarakter)) && (
-              <>
-                <text 
-                  x="30" 
-                  y="348" 
-                  fontFamily="Oslo Sans, sans-serif" 
-                  fontSize="18" 
-                      letterSpacing="-0.2"
-                  fill="#2A2859"
-                >
-                <tspan fontWeight="300">Estimert energiforbruk:</tspan>
-                </text>
-                <foreignObject x="155" y={buildingTypeName.toLowerCase() === 'blokk' ? "386" : (showYellowBox && buildingTypeName.toLowerCase() !== 'blokk' ? "330" : "358")} width={calculateInputWidth(editedEnergiforbruk)} height="24">
-              <input
-                xmlns="http://www.w3.org/1999/xhtml"
-                type="text"
-                value={editedEnergiforbruk}
-                onChange={(e) => {
-                  // Only allow numbers
-                  const value = e.target.value.replace(/[^0-9]/g, '');
-                  setEditedEnergiforbruk(value);
-                }}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  border: 'none',
-                  borderBottom: '1px solid #2A2859',
-                  padding: '0 2px',
-                  fontFamily: 'Oslo Sans, sans-serif',
-                  fontSize: '18px',
-                  lineHeight: '28px',
-                  letterSpacing: '-0.2px',
-                  fontWeight: '500',
-                  color: '#2A2859',
-                  background: 'transparent',
-                  outline: 'none',
-                  textAlign: 'left'
-                }}
-              />
-            </foreignObject>
-                <text 
-                  x={155 + calculateInputWidth(editedEnergiforbruk) + 3}
-                  y="348" 
-                  fontFamily="Oslo Sans, sans-serif" 
-                  fontSize="18" 
-                      letterSpacing="-0.2"
-                  fill="#2A2859"
-                  fontWeight="500"
-                >
-                  kWh/år
-                </text>
-              </>
-            )}
+            {renderEnergyBlock(energyInfoTop, {
+              displayValue: savedEnergyDisplayValue,
+              editable: true,
+              editableValue: editedEnergiforbruk,
+              onChange: (value) => {
+                setEditedEnergiforbruk(value);
+                setHasUserEditedEnergy(true);
+              }
+            })}
           </>
         )}
         {shouldShowSavingsCard && (
@@ -989,7 +1063,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
                 width: '100%',
                 height: '100%',
                 padding: '18px 22px',
-                borderRadius: '18px',
+                borderRadius: 0,
                 background: '#C7F6C9',
                 boxShadow: '0px 18px 38px rgba(17, 59, 50, 0.15)',
                 fontFamily: 'Oslo Sans, sans-serif',
@@ -1487,7 +1561,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
         
       <defs>
         <clipPath id="clip0_325_12689">
-          <rect width="336" height="820" fill="white"/>
+          <rect width="336" height="760" fill="white"/>
         </clipPath>
       </defs>
     </svg>
