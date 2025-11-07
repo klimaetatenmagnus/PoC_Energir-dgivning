@@ -1,0 +1,162 @@
+substitutions:
+  _REGION: europe-north1
+  _REPOSITORY: energinokkelen
+  _CLOUD_RUN_CONFIG: deploy/gcp/cloudrun.yaml
+  _FRONTEND_BUCKET: gs://energinokkelen-frontend
+  _CONTENT_BUCKET: gs://energinokkelen-content
+  _CONTENT_BUCKET_NAME: energinokkelen-content
+  _API_ENV: test
+  _DEPLOY: "true" # set to "false" to skip Cloud Run deploy step
+  _TAG: latest
+  _SERVICE_NAME: energinokkelen
+  _URL_MAP: staging-frontend-map
+  _CDN_PATHS: ""
+  _CDN_DRY_RUN: "false"
+  _GMP_LOCATION: europe-north1
+  _GMP_CLUSTER: cloud-run-energinokkelen
+  _GMP_CONFIG_VERSION: "5"
+
+serviceAccount: projects/$PROJECT_ID/serviceAccounts/cloud-build@$PROJECT_ID.iam.gserviceaccount.com
+logsBucket: gs://energinokkelen-build-logs
+
+options:
+  logging: LEGACY
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/MATRIKKEL_USERNAME/versions/latest
+      env: MATRIKKEL_USERNAME
+    - versionName: projects/$PROJECT_ID/secrets/MATRIKKEL_PASSWORD/versions/latest
+      env: MATRIKKEL_PASSWORD
+    - versionName: projects/$PROJECT_ID/secrets/MATRIKKEL_USERNAME_TEST/versions/latest
+      env: MATRIKKEL_USERNAME_TEST
+    - versionName: projects/$PROJECT_ID/secrets/MATRIKKEL_API_BASE_URL_TEST/versions/latest
+      env: MATRIKKEL_API_BASE_URL_TEST
+    - versionName: projects/$PROJECT_ID/secrets/MATRIKKEL_API_BASE_URL_PROD/versions/latest
+      env: MATRIKKEL_API_BASE_URL_PROD
+    - versionName: projects/$PROJECT_ID/secrets/MATRIKKEL_SNAPSHOT_VERSION/versions/latest
+      env: MATRIKKEL_SNAPSHOT_VERSION
+    - versionName: projects/$PROJECT_ID/secrets/MATRIKKEL_SYSTEM_VERSION/versions/latest
+      env: MATRIKKEL_SYSTEM_VERSION
+    - versionName: projects/$PROJECT_ID/secrets/ENOVA_API_KEY/versions/latest
+      env: ENOVA_API_KEY
+    - versionName: projects/$PROJECT_ID/secrets/LIVE/versions/latest
+      env: LIVE
+steps:
+  - name: node:20
+    id: Install dependencies
+    entrypoint: bash
+    args:
+      - "-lc"
+      - npm ci
+
+  - name: node:20
+    id: Verify (CI)
+    env:
+      - API_ENV=$_API_ENV
+    secretEnv:
+      - MATRIKKEL_USERNAME
+      - MATRIKKEL_PASSWORD
+      - MATRIKKEL_USERNAME_TEST
+      - MATRIKKEL_API_BASE_URL_TEST
+      - MATRIKKEL_API_BASE_URL_PROD
+      - MATRIKKEL_SNAPSHOT_VERSION
+      - MATRIKKEL_SYSTEM_VERSION
+      - ENOVA_API_KEY
+      - LIVE
+    entrypoint: bash
+    args:
+      - "-lc"
+      - npm run verify:ci
+
+  - name: node:20
+    id: Build production bundle
+    entrypoint: bash
+    args:
+      - "-lc"
+      - npm run build:prod
+
+  - name: gcr.io/cloud-builders/docker
+    id: Build container image
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        image_uri="$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/app:$_TAG"
+        echo "$image_uri" > /workspace/image-uri.txt
+        docker build --file Dockerfile --tag "$image_uri" .
+
+  - name: gcr.io/cloud-builders/docker
+    id: Push container image
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        image_uri=$(cat /workspace/image-uri.txt)
+        docker push "$image_uri"
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: Sync frontend & content buckets
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        frontend_bucket="${_FRONTEND_BUCKET}"
+        content_bucket="${_CONTENT_BUCKET}"
+        gsutil -m rsync -d -r dist "${frontend_bucket}"
+        gsutil -m rsync -d -r content "${content_bucket}"
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: Invalidate CDN cache
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        if [[ "${_DEPLOY}" != "true" ]]; then
+          echo "Skipping CDN invalidation (DEPLOY=${_DEPLOY})."
+          exit 0
+        fi
+        export PROJECT_ID="${PROJECT_ID}"
+        export CDN_PATHS="${_CDN_PATHS}"
+        export CDN_DRY_RUN="${_CDN_DRY_RUN}"
+        ./deploy/gcp/invalidate-cdn-cache.sh "${_URL_MAP}"
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: Render Cloud Run config
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        image_uri=$(cat /workspace/image-uri.txt)
+        config_template="$_CLOUD_RUN_CONFIG"
+        sed -e "s|__IMAGE_URI__|$image_uri|g" \
+            -e "s|__PROJECT_ID__|$PROJECT_ID|g" \
+            -e "s|__API_ENV__|$_API_ENV|g" \
+            -e "s|__SERVICE_NAME__|$_SERVICE_NAME|g" \
+            -e "s|__CONTENT_BUCKET__|$_CONTENT_BUCKET_NAME|g" \
+            -e "s|__GMP_LOCATION__|$_GMP_LOCATION|g" \
+            -e "s|__GMP_CLUSTER__|$_GMP_CLUSTER|g" \
+            -e "s|__GMP_CONFIG_VERSION__|$_GMP_CONFIG_VERSION|g" \
+            "$config_template" > /workspace/cloudrun-rendered.yaml
+        cat /workspace/cloudrun-rendered.yaml
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: Deploy Cloud Run (conditional)
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        if [[ "${_DEPLOY}" != "true" ]]; then
+          echo "Skipping Cloud Run deploy (DEPLOY=${_DEPLOY})."
+          exit 0
+        fi
+        gcloud run services replace /workspace/cloudrun-rendered.yaml --region "${_REGION}" --project "${PROJECT_ID}"
+
+images:
+  - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/app:$_TAG"

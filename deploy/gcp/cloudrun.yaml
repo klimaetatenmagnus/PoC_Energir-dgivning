@@ -1,0 +1,243 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: __SERVICE_NAME__
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/default-container: api-server
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/cpu-throttling: "true"
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "4"
+        run.googleapis.com/container-dependencies: '{"gmp-collector":["building-info-service"]}'
+        run.googleapis.com/secrets: "run-gmp-config:projects/__PROJECT_ID__/secrets/run-gmp-config"
+    spec:
+      serviceAccountName: run-energinokkelen@__PROJECT_ID__.iam.gserviceaccount.com
+      containers:
+        - name: api-server
+          image: __IMAGE_URI__
+          command: ["node", "./dist/backend/api-server.mjs"]
+          ports:
+            - name: http1
+              containerPort: 8080
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: API_ENV
+              value: __API_ENV__
+            - name: API_PORT
+              value: "8080"
+            - name: BUILDING_INFO_BASE_URL
+              value: http://127.0.0.1:4000
+            - name: SOLAR_SERVICE_BASE_URL
+              value: http://127.0.0.1:4003
+            - name: CONTENT_BUCKET
+              value: "__CONTENT_BUCKET__"
+            - name: MATRIKKEL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: MATRIKKEL_USERNAME
+                  key: latest
+            - name: MATRIKKEL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: MATRIKKEL_PASSWORD
+                  key: latest
+            - name: MATRIKKEL_API_BASE_URL_PROD
+              valueFrom:
+                secretKeyRef:
+                  name: MATRIKKEL_API_BASE_URL_PROD
+                  key: latest
+            - name: MATRIKKEL_API_BASE_URL_TEST
+              valueFrom:
+                secretKeyRef:
+                  name: MATRIKKEL_API_BASE_URL_TEST
+                  key: latest
+            - name: MATRIKKEL_USERNAME_TEST
+              valueFrom:
+                secretKeyRef:
+                  name: MATRIKKEL_USERNAME_TEST
+                  key: latest
+            - name: MATRIKKEL_SNAPSHOT_VERSION
+              valueFrom:
+                secretKeyRef:
+                  name: MATRIKKEL_SNAPSHOT_VERSION
+                  key: latest
+            - name: MATRIKKEL_SYSTEM_VERSION
+              valueFrom:
+                secretKeyRef:
+                  name: MATRIKKEL_SYSTEM_VERSION
+                  key: latest
+            - name: ENOVA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ENOVA_API_KEY
+                  key: latest
+            - name: LIVE
+              valueFrom:
+                secretKeyRef:
+                  name: LIVE
+                  key: latest
+            - name: PBE_MAP_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: PBE_MAP_BASE_URL
+                  key: latest
+            - name: PBE_IDENTIFY_TOLERANCE
+              valueFrom:
+                secretKeyRef:
+                  name: PBE_IDENTIFY_TOLERANCE
+                  key: latest
+            - name: VITE_API_PROXY_URL
+              valueFrom:
+                secretKeyRef:
+                  name: VITE_API_PROXY_URL
+                  key: latest
+            - name: VITE_BIS_BASE
+              valueFrom:
+                secretKeyRef:
+                  name: VITE_BIS_BASE
+                  key: latest
+        - name: building-info-service
+          image: __IMAGE_URI__
+          command: ["node", "./dist/backend/building-info-service.mjs"]
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: API_ENV
+              value: __API_ENV__
+            - name: BUILDING_INFO_PORT
+              value: "4000"
+            - name: MATRIKKEL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: MATRIKKEL_USERNAME
+                  key: latest
+            - name: MATRIKKEL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: MATRIKKEL_PASSWORD
+                  key: latest
+            - name: MATRIKKEL_API_BASE_URL_PROD
+              valueFrom:
+                secretKeyRef:
+                  name: MATRIKKEL_API_BASE_URL_PROD
+                  key: latest
+            - name: MATRIKKEL_API_BASE_URL_TEST
+              valueFrom:
+                secretKeyRef:
+                  name: MATRIKKEL_API_BASE_URL_TEST
+                  key: latest
+            - name: MATRIKKEL_USERNAME_TEST
+              valueFrom:
+                secretKeyRef:
+                  name: MATRIKKEL_USERNAME_TEST
+                  key: latest
+            - name: MATRIKKEL_SNAPSHOT_VERSION
+              valueFrom:
+                secretKeyRef:
+                  name: MATRIKKEL_SNAPSHOT_VERSION
+                  key: latest
+            - name: MATRIKKEL_SYSTEM_VERSION
+              valueFrom:
+                secretKeyRef:
+                  name: MATRIKKEL_SYSTEM_VERSION
+                  key: latest
+            - name: ENOVA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ENOVA_API_KEY
+                  key: latest
+            - name: LIVE
+              valueFrom:
+                secretKeyRef:
+                  name: LIVE
+                  key: latest
+        - name: solar-service
+          image: __IMAGE_URI__
+          command: ["node", "./dist/backend/solar-service.mjs"]
+          resources:
+            limits:
+              cpu: "0.5"
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 4003
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: SOLAR_SERVICE_PORT
+              value: "4003"
+            - name: SOLAR_SERVICE_HOST
+              value: "0.0.0.0"
+            - name: PBE_MAP_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: PBE_MAP_BASE_URL
+                  key: latest
+            - name: PBE_IDENTIFY_TOLERANCE
+              valueFrom:
+                secretKeyRef:
+                  name: PBE_IDENTIFY_TOLERANCE
+                  key: latest
+        - name: gmp-collector
+          image: otel/opentelemetry-collector-contrib:0.94.0
+          args:
+            - "--config=/etc/rungmp/config.yaml"
+          env:
+            - name: GMP_PROJECT
+              value: "__PROJECT_ID__"
+            - name: GMP_LOCATION
+              value: "__GMP_LOCATION__"
+            - name: GMP_CLUSTER
+              value: "__GMP_CLUSTER__"
+            - name: GMP_CONFIG_VERSION
+              value: "__GMP_CONFIG_VERSION__"
+          resources:
+            limits:
+              cpu: "0.25"
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 13133
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          volumeMounts:
+            - name: run-gmp-config
+              mountPath: /etc/rungmp
+              readOnly: true
+      volumes:
+        - name: run-gmp-config
+          secret:
+            secretName: run-gmp-config
+            items:
+              - key: latest
+                path: config.yaml
+  traffic:
+    - percent: 100
+      latestRevision: true

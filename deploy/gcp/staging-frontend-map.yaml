@@ -1,0 +1,94 @@
+defaultService: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendBuckets/staging-frontend-bucket
+hostRules:
+  - hosts:
+      - 34.111.174.210
+    pathMatcher: staging-matcher
+  - hosts:
+      - energinokkelen.no
+    pathMatcher: prod-matcher
+  - hosts:
+      - xn--energinkkelen-hnb.no
+    pathMatcher: prod-matcher
+  - hosts:
+      - prod-preview.xn--energinkkelen-hnb.no
+      - energinokkelen-prod-168751968131.europe-north1.run.app
+    pathMatcher: prod-matcher
+name: staging-frontend-map
+pathMatchers:
+  - defaultService: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendBuckets/staging-frontend-bucket
+    name: staging-matcher
+    routeRules:
+      - matchRules:
+          - prefixMatch: /api
+        priority: 100
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendServices/staging-api-backend
+        routeAction:
+          urlRewrite:
+            hostRewrite: energinokkelen-168751968131.europe-north1.run.app
+      - matchRules:
+          - prefixMatch: /config/
+          - fullPathMatch: /config
+        priority: 200
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendServices/staging-api-backend
+        routeAction:
+          urlRewrite:
+            hostRewrite: energinokkelen-168751968131.europe-north1.run.app
+      - matchRules:
+          - fullPathMatch: /metrics
+        priority: 300
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendServices/staging-api-backend
+        routeAction:
+          urlRewrite:
+            hostRewrite: energinokkelen-168751968131.europe-north1.run.app
+      - matchRules:
+          - headerMatches:
+              - headerName: Accept
+                prefixMatch: text/html
+            pathTemplateMatch: /{path=**}
+        priority: 1000
+        routeAction:
+          urlRewrite:
+            pathTemplateRewrite: /index.html
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendBuckets/staging-frontend-bucket
+  - defaultService: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendBuckets/prod-frontend-bucket
+    name: prod-matcher
+    routeRules:
+      - matchRules:
+          - fullPathMatch: /
+        priority: 50
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendBuckets/prod-frontend-bucket
+        routeAction:
+          urlRewrite:
+            pathPrefixRewrite: /index.html
+      - matchRules:
+          - prefixMatch: /api
+        priority: 100
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendServices/prod-api-backend
+        routeAction:
+          urlRewrite:
+            hostRewrite: energinokkelen-prod-168751968131.europe-north1.run.app
+      - matchRules:
+          - prefixMatch: /config/
+          - fullPathMatch: /config
+        priority: 200
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendServices/prod-api-backend
+        routeAction:
+          urlRewrite:
+            hostRewrite: energinokkelen-prod-168751968131.europe-north1.run.app
+      - matchRules:
+          - fullPathMatch: /metrics
+        priority: 300
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendServices/prod-api-backend
+        routeAction:
+          urlRewrite:
+            hostRewrite: energinokkelen-prod-168751968131.europe-north1.run.app
+      - matchRules:
+          - headerMatches:
+              - headerName: Accept
+                prefixMatch: text/html
+            pathTemplateMatch: /{path=**}
+        priority: 1000
+        routeAction:
+          urlRewrite:
+            pathTemplateRewrite: /index.html
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendBuckets/prod-frontend-bucket
