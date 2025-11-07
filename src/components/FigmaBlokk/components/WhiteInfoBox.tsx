@@ -78,7 +78,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   const prefersReducedMotion = usePrefersReducedMotion();
   const [hasShownSavings, setHasShownSavings] = React.useState(false);
   const [displayedSavings, setDisplayedSavings] = React.useState(0);
-  const savingsAnimationFrame = React.useRef<number>();
+  const savingsAnimationFrame = React.useRef<number | null>(null);
   const previousSavingsRef = React.useRef(0);
   
   // Check if building has Enova energy certificate
@@ -200,16 +200,16 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
         savingsAnimationFrame.current = requestAnimationFrame(tick);
       } else {
         previousSavingsRef.current = target;
-        savingsAnimationFrame.current = undefined;
+        savingsAnimationFrame.current = null;
       }
     };
 
     savingsAnimationFrame.current = requestAnimationFrame(tick);
 
     return () => {
-      if (savingsAnimationFrame.current) {
+      if (savingsAnimationFrame.current !== null) {
         cancelAnimationFrame(savingsAnimationFrame.current);
-        savingsAnimationFrame.current = undefined;
+        savingsAnimationFrame.current = null;
       }
     };
   }, [
@@ -221,7 +221,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
 
   React.useEffect(() => {
     return () => {
-      if (savingsAnimationFrame.current) {
+      if (savingsAnimationFrame.current !== null) {
         cancelAnimationFrame(savingsAnimationFrame.current);
       }
     };
