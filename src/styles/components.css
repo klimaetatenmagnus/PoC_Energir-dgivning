@@ -957,8 +957,10 @@
 }
 
 .figma-content {
-  margin-top: 60px;
-  /* Content area for Figma design */
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
 }
 
 /* Oslo skyline positioning - removed absolute positioning since it's now in scaled container */
@@ -979,25 +981,17 @@
 /* Oslo logo container */
 .oslo-logo-container {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 16px;
   width: 100%;
 }
 
 /* Oslo logo */
 .oslo-logo {
-  width: 3.5vw;
-  height: auto;
-  min-width: 40px;
-}
-
-/* Oslo text */
-.oslo-text {
-  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-weight: 400;
-  font-size: 1.5vw;
-  line-height: 1;
-  color: #F1FDFF;
+  display: block;
+  height: clamp(56px, 3.9vw, 76px);
+  width: auto;
+  flex-shrink: 0;
 }
 
 /* Energiportalen title */

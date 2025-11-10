@@ -13,7 +13,7 @@ import { LYSEVEIEN_3_DATA } from '../testData/lyseveien3';
 import { THERESES_11A_DATA } from '../testData/theresegate11a';
 import { calculateAnnualEnergyConsumption, determineBuildingType } from '../utils/tekEnergyCalculations';
 import { THERESES_44A_DATA } from '../testData/theresegate44a';
-import { useFigmaViewportMetrics } from '../hooks/useFigmaViewportMetrics';
+import { useFigmaViewportMetrics } from './FigmaBlokk/hooks/useFigmaViewportMetrics';
 
 interface FigmaBlokkProps {
   searchAddress: string;

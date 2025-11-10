@@ -18,3 +18,5 @@ export const BOX_MIN_WIDTHS = {
 
 export const CHAR_WIDTH_MULTIPLIER = 8.5;
 export const BOX_PADDING = 40;
+
+export const SKYLINE_LIGHTS_ENABLED = true;
