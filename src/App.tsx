@@ -2,6 +2,7 @@
 import React from "react";
 import { FigmaMainScript } from "./components/FigmaMainScript";
 import { useFigmaAddressSearch } from "./hooks/useFigmaAddressSearch";
+import { useFigmaViewportMetrics } from "./hooks/useFigmaViewportMetrics";
 
 export default function App() {
   const {
@@ -27,6 +28,9 @@ export default function App() {
     highlightSuggestion,
     clearHighlightedSuggestion,
   } = useFigmaAddressSearch();
+  const { scaleFactor, verticalOffset } = useFigmaViewportMetrics();
+  const groundFillHeight = Math.max(verticalOffset, 0);
+  const groundFillColor = 'var(--pkt-color-grays-gray-100, #F7F5F0)';
 
   // Special rendering for Figma blokk mode (handles both enebolig and blokk)
   if (mode === "figma-blokk" && result) {
@@ -55,24 +59,33 @@ export default function App() {
   // Special rendering for Figma mode - completely separate page
   if (mode === "figma") {
     return (
-      <div className="figma-design-container" style={{ 
-        background: '#034B45', 
-        minHeight: '100vh', 
-        width: '100vw',
-        height: '100vh',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden'
-      }}>
+      <>
+        <div
+          className="figma-design-container"
+          style={{
+            background: "#034B45",
+          minHeight: "100vh",
+          width: "100vw",
+          height: "100vh",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
         {/* Scaled content container */}
-        <div style={{
-          width: '100vw',
-          height: '100vh',
-          background: '#034B45',
-          boxSizing: 'border-box',
-          position: 'relative'
-        }}>
+        <div
+          style={{
+            width: "1728px",
+            height: "900px",
+            background: "#034B45",
+            boxSizing: "border-box",
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: `translate(-50%, -50%) scale(${scaleFactor})`,
+            transformOrigin: "center",
+            zIndex: 1,
+          }}
+        >
           <div className="figma-content">
             {/* Søkefunksjon container med logo og tekst */}
             <div className="figma-search-container" style={{
@@ -180,18 +193,18 @@ export default function App() {
         </div>
           
           {/* Oslo skyline SVG - positioned in bottom left corner */}
-          <svg 
+          <svg
             className="oslo-skyline"
-            viewBox="0 -10 1728 362" 
-            fill="none" 
+            viewBox="0 -10 1728 362"
+            fill="none"
             xmlns="http://www.w3.org/2000/svg"
             preserveAspectRatio="xMidYMax slice"
             style={{
-              position: 'absolute',
+              position: "absolute",
               bottom: 0,
               left: 0,
-              width: '100%',
-              height: 'auto'
+              width: "100%",
+              height: "auto",
             }}
           >
           {/* Buildings that fade out */}
@@ -386,8 +399,25 @@ export default function App() {
           </g>
         </svg>
         </div>
-        
-      </div>
+        </div>
+        {groundFillHeight > 0 && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: "fixed",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: `${groundFillHeight}px`,
+              backgroundColor: groundFillColor,
+              zIndex: 0,
+              pointerEvents: "none",
+              opacity: skylineFadeOpacity,
+              transition: "opacity 1.5s ease-in-out",
+            }}
+          />
+        )}
+      </>
     );
   }
 

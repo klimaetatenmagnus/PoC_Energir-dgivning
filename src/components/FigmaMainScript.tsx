@@ -13,6 +13,7 @@ import { LYSEVEIEN_3_DATA } from '../testData/lyseveien3';
 import { THERESES_11A_DATA } from '../testData/theresegate11a';
 import { calculateAnnualEnergyConsumption, determineBuildingType } from '../utils/tekEnergyCalculations';
 import { THERESES_44A_DATA } from '../testData/theresegate44a';
+import { useFigmaViewportMetrics } from '../hooks/useFigmaViewportMetrics';
 
 interface FigmaBlokkProps {
   searchAddress: string;
@@ -236,37 +237,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     }
   }, [isEnebolig]);
   
-  // Calculate scale factor for responsive design
-  const [scaleFactor, setScaleFactor] = React.useState(() => {
-    // Calculate initial scale immediately
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const baseWidth = 1728;
-    const baseHeight = 900;
-    const maxWidth = viewportWidth - 10;
-    const maxHeight = viewportHeight - 10;
-    const scaleX = maxWidth / baseWidth;
-    const scaleY = maxHeight / baseHeight;
-    return Math.min(scaleX, scaleY, 1);
-  });
-  
-  React.useEffect(() => {
-    const handleResize = () => {
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const baseWidth = 1728;
-      const baseHeight = 900;
-      const maxWidth = viewportWidth - 10;
-      const maxHeight = viewportHeight - 10;
-      const scaleX = maxWidth / baseWidth;
-      const scaleY = maxHeight / baseHeight;
-      const scale = Math.min(scaleX, scaleY, 1);
-      setScaleFactor(scale);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []); // Empty dependency array - only run once on mount
+  // Shared viewport metrics (keeps layout in sync with landing page skyline)
+  const { scaleFactor } = useFigmaViewportMetrics();
   
   // Calculate dynamic font size based on address length
   const addressOnly = searchAddress.split(',')[0];
