@@ -1,14 +1,43 @@
-import React from 'react';
+import React, { CSSProperties } from 'react';
+import { useSkylineLights } from '../hooks/useSkylineLights';
 
 interface OsloSkylineProps {
   fadeOpacity: number;
-  blockTransform: string;
+  blockTransform?: string;
   isExpanded?: boolean;
   selectedSolution?: string | null;
   hideBlockAnimation?: boolean;
+  className?: string;
+  viewBox?: string;
+  preserveAspectRatio?: string;
+  style?: CSSProperties;
+  enableLights?: boolean;
 }
 
-export const OsloSkyline: React.FC<OsloSkylineProps> = ({ fadeOpacity, blockTransform, isExpanded, selectedSolution, hideBlockAnimation = false }) => {
+const DEFAULT_BLOCK_TRANSFORM = 'translate(0, 0) scale(1)';
+const DEFAULT_VIEW_BOX = '0 -300 1728 652';
+const DEFAULT_PRESERVE_ASPECT_RATIO = 'xMidYMax slice';
+const DEFAULT_STYLE: CSSProperties = {
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  overflow: 'visible',
+};
+
+export const OsloSkyline: React.FC<OsloSkylineProps> = ({
+  fadeOpacity,
+  blockTransform = DEFAULT_BLOCK_TRANSFORM,
+  isExpanded,
+  selectedSolution,
+  hideBlockAnimation = false,
+  className = 'oslo-skyline',
+  viewBox = DEFAULT_VIEW_BOX,
+  preserveAspectRatio = DEFAULT_PRESERVE_ASPECT_RATIO,
+  style,
+  enableLights = false,
+}) => {
   // Check if we should zoom on window for "Tetting"
   const shouldZoomWindow = isExpanded && selectedSolution === 'Tetting';
   
@@ -16,20 +45,20 @@ export const OsloSkyline: React.FC<OsloSkylineProps> = ({ fadeOpacity, blockTran
   const combinedTransform = shouldZoomWindow 
     ? `${blockTransform} scale(3)` // Apply stronger zoom after the existing transform
     : blockTransform;
+
+  const { svgRef } = useSkylineLights({ enabled: enableLights });
+
   return (
     <svg 
-      className="oslo-skyline"
-      viewBox="0 -300 1728 652" 
+      className={className}
+      viewBox={viewBox} 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="xMidYMax slice"
+      preserveAspectRatio={preserveAspectRatio}
+      ref={svgRef}
       style={{ 
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        overflow: 'visible'
+        ...DEFAULT_STYLE,
+        ...style,
       }}
     >
       {/* Buildings that fade out */}

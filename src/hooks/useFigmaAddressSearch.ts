@@ -15,6 +15,7 @@ import {
 import { LYSEVEIEN_3_DATA } from '../testData/lyseveien3';
 import { THERESES_11A_DATA } from '../testData/theresegate11a';
 import { THERESES_44A_DATA } from '../testData/theresegate44a';
+import { useLandingAnimation } from '../components/FigmaBlokk/hooks/useLandingAnimation';
 
 const FADE_DURATION_MS = 2000;
 const DEBOUNCE_DELAY_MS = 300;
@@ -75,39 +76,18 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
-  const [skylineFadeOpacity, setSkylineFadeOpacity] = useState(1);
-  const [headerFadeOpacity, setHeaderFadeOpacity] = useState(1);
-
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
-  const fadeTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const resetFade = useCallback(() => {
-    setSkylineFadeOpacity(1);
-    setHeaderFadeOpacity(1);
-  }, []);
-
-  const startFade = useCallback(() => {
-    setSkylineFadeOpacity(0);
-    setHeaderFadeOpacity(0);
-
-    if (fadeTimer.current) {
-      clearTimeout(fadeTimer.current);
-    }
-
-    fadeTimer.current = setTimeout(() => {
-      setMode('figma-blokk');
-    }, FADE_DURATION_MS);
-  }, []);
+  const { skylineFadeOpacity, headerFadeOpacity, startFade, resetFade } = useLandingAnimation({
+    durationMs: FADE_DURATION_MS,
+    onFadeComplete: () => setMode('figma-blokk'),
+  });
 
   const clearTimers = useCallback(() => {
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
       debounceTimer.current = null;
-    }
-    if (fadeTimer.current) {
-      clearTimeout(fadeTimer.current);
-      fadeTimer.current = null;
     }
   }, []);
 
