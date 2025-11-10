@@ -18,7 +18,6 @@ export default function App() {
     skylineFadeOpacity,
     headerFadeOpacity,
     wrapperRef,
-    isEnebolig,
     handleSearch,
     handleInputChange,
     handleKeyDown,
