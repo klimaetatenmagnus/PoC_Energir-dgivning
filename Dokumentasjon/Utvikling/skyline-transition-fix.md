@@ -32,4 +32,5 @@ Det ble observert et hopp når skylinen fra landingssiden skulle animere over ti
 
 ## Videre oppfølging
 
--
+- Valider i nettleser at skyline og bakken holder seg justert på tvers av ulike skjermstørrelser.
+- Vurder om flere elementer på landingssiden bør bruke `useFigmaViewportMetrics` for å sikre pikselperfekt samsvar med detaljvisningen.
