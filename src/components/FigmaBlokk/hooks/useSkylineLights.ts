@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 const ACTIVE_COLOR = 'var(--pkt-color-brand-yellow-1000, #BB8A1D)';
 const WINDOW_FILL = '#2A2859';
-const INITIAL_ACTIVE_RATIO = 0.1;
+const INITIAL_ACTIVE_RATIO = 0.2;
 const TOGGLE_INTERVAL_MS = 3000;
 const SIZE_TOLERANCE = 1.5;
 const HORIZONTAL_GAP_TOLERANCE = 3;
@@ -195,10 +195,12 @@ const applyActiveState = (groups: WindowGroup[], activeIds: Set<string>) => {
   });
 };
 
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
 export const useSkylineLights = ({ enabled = false }: UseSkylineLightsOptions) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!enabled || typeof window === 'undefined') {
       return;
     }

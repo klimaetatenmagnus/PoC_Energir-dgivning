@@ -18,6 +18,7 @@ export default function App() {
     skylineFadeOpacity,
     headerFadeOpacity,
     wrapperRef,
+    isEnebolig,
     handleSearch,
     handleInputChange,
     handleKeyDown,
@@ -53,30 +54,33 @@ export default function App() {
   }
 
 
-// Special rendering for Figma mode - completely separate page
-if (mode === "figma") {
-  return (
+  // Special rendering for Figma mode - completely separate page
+  if (mode === "figma") {
+    const hasResult = Boolean(result);
+    return (
       <FigmaLanding
         headerFadeOpacity={headerFadeOpacity}
         skylineFadeOpacity={skylineFadeOpacity}
         searchValue={searchValue}
-      loading={loading}
-      error={error}
-      suggestions={suggestions}
-      showSuggestions={showSuggestions}
-      selectedSuggestionIndex={selectedSuggestionIndex}
-      suggestionsLoading={suggestionsLoading}
-      wrapperRef={wrapperRef}
-      handleSearch={handleSearch}
-      handleInputChange={handleInputChange}
-      handleKeyDown={handleKeyDown}
-      handleSuggestionSelect={handleSuggestionSelect}
-      openSuggestions={openSuggestions}
-      highlightSuggestion={highlightSuggestion}
-      clearHighlightedSuggestion={clearHighlightedSuggestion}
-    />
-  );
-}
+        loading={loading}
+        error={error}
+        suggestions={suggestions}
+        showSuggestions={showSuggestions}
+        selectedSuggestionIndex={selectedSuggestionIndex}
+        suggestionsLoading={suggestionsLoading}
+        wrapperRef={wrapperRef}
+        handleSearch={handleSearch}
+        handleInputChange={handleInputChange}
+        handleKeyDown={handleKeyDown}
+        handleSuggestionSelect={handleSuggestionSelect}
+        openSuggestions={openSuggestions}
+        highlightSuggestion={highlightSuggestion}
+        clearHighlightedSuggestion={clearHighlightedSuggestion}
+        isEnebolig={isEnebolig}
+        hasResult={hasResult}
+      />
+    );
+  }
 
   return null;
 }

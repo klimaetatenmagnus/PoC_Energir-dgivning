@@ -24,6 +24,8 @@ interface FigmaLandingProps {
   openSuggestions: () => void;
   highlightSuggestion: (index: number) => void;
   clearHighlightedSuggestion: () => void;
+  isEnebolig: boolean;
+  hasResult: boolean;
 }
 
 export const FigmaLanding: React.FC<FigmaLandingProps> = ({
@@ -44,10 +46,14 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
   openSuggestions,
   highlightSuggestion,
   clearHighlightedSuggestion,
+  isEnebolig,
+  hasResult,
 }) => {
   const { scaleFactor, verticalOffset } = useFigmaViewportMetrics();
   const groundFillHeight = Math.max(verticalOffset, 0);
   const groundFillColor = 'var(--pkt-color-grays-gray-100, #F7F5F0)';
+  const pinnedEnebolig = hasResult ? isEnebolig : undefined;
+  const pinnedBlock = hasResult ? !isEnebolig : undefined;
   const artboardStyle: React.CSSProperties = {
     width: '1728px',
     height: '900px',
@@ -158,6 +164,8 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
             viewBox="0 -10 1728 362"
             preserveAspectRatio="xMidYMax slice"
             enableLights={SKYLINE_LIGHTS_ENABLED}
+            pinEnebolig={pinnedEnebolig}
+            pinBlock={pinnedBlock}
             style={{
               position: 'absolute',
               bottom: 0,

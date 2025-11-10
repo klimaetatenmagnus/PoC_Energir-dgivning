@@ -12,6 +12,8 @@ interface OsloSkylineProps {
   preserveAspectRatio?: string;
   style?: CSSProperties;
   enableLights?: boolean;
+  pinEnebolig?: boolean;
+  pinBlock?: boolean;
 }
 
 const DEFAULT_BLOCK_TRANSFORM = 'translate(0, 0) scale(1)';
@@ -37,6 +39,8 @@ export const OsloSkyline: React.FC<OsloSkylineProps> = ({
   preserveAspectRatio = DEFAULT_PRESERVE_ASPECT_RATIO,
   style,
   enableLights = false,
+  pinEnebolig = false,
+  pinBlock,
 }) => {
   // Check if we should zoom on window for "Tetting"
   const shouldZoomWindow = isExpanded && selectedSolution === 'Tetting';
@@ -47,6 +51,11 @@ export const OsloSkyline: React.FC<OsloSkylineProps> = ({
     : blockTransform;
 
   const { svgRef } = useSkylineLights({ enabled: enableLights });
+  const blockOpacity =
+    pinBlock === undefined ? (hideBlockAnimation ? fadeOpacity : 1) : pinBlock ? 1 : 0;
+  const blockTransition = hideBlockAnimation
+    ? 'opacity 1s ease-in-out'
+    : 'transform 2s ease-in-out, opacity 1s ease-in-out';
 
   return (
     <svg 
@@ -212,15 +221,31 @@ export const OsloSkyline: React.FC<OsloSkylineProps> = ({
         <path d="M971.62 302.698H959.312V315.024H971.62V302.698Z" fill="#2A2859"/>
         <path d="M866.997 231.823C875.494 231.823 882.383 224.925 882.383 216.416C882.383 207.907 875.494 201.009 866.997 201.009C858.5 201.009 851.612 207.907 851.612 216.416C851.612 224.925 858.5 231.823 866.997 231.823Z" fill="#2A2859"/>
       </g>
+
+      {/* Enebolig clone that stays visible when pinEnebolig is true */}
+      <g
+        id="landing-enebolig"
+        style={{
+          opacity: pinEnebolig ? 1 : 0,
+          transition: 'opacity 1.5s ease-in-out',
+          pointerEvents: 'none',
+        }}
+      >
+        <path d="M320.018 271.883L350.789 302.697V352H320.018H289.248V302.697L320.018 271.883Z" fill="#D0BFAE" />
+        <path d="M350.783 302.697H381.554V352H350.783V302.697Z" fill="#F8F0DD" />
+        <path d="M350.783 302.697H381.554L350.783 271.883H320.013L350.783 302.697Z" fill="#2A2859" />
+        <path d="M313.862 339.674H326.17V351.999H313.862V339.674Z" fill="#2A2859" />
+      </g>
       
       {/* Block building that stays visible and animates */}
       <g 
         id="block-building"
         transform={hideBlockAnimation ? '' : combinedTransform}
         style={{ 
-          opacity: hideBlockAnimation ? fadeOpacity : 1,
-          transition: hideBlockAnimation ? 'opacity 1s ease-in-out' : 'transform 2s ease-in-out, opacity 1s ease-in-out',
-          transformOrigin: '1100px 352px' // Base of the block building
+          opacity: blockOpacity,
+          transition: blockTransition,
+          transformOrigin: '1100px 352px', // Base of the block building
+          pointerEvents: 'none',
         }}
       >
         <path d="M1137.48 148.625L1149.78 160.951H1162.09V173.277H1174.4V185.602H1186.71V197.928H1174.4H1137.48V185.602H1100.55V148.625H1137.48Z" fill="#2A2859"/>
