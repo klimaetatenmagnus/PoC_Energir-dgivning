@@ -154,7 +154,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   }, []);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
-  const [showDetails, setShowDetails] = useState<boolean>(false);
   const [gul_liste, setGul_liste] = useState<boolean>(showYellowBox);
   const [hasClickedReadMore, setHasClickedReadMore] = useState<boolean>(false);
   const [showEnergyInfo, setShowEnergyInfo] = useState<boolean>(false);
@@ -586,7 +585,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         </div>
       
       {/* Title text with toggle button */}
-      <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
         <span 
           style={{
             fontFamily: 'Oslo Sans, sans-serif',
@@ -600,102 +599,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         >
           Velg tiltak for din bolig
         </span>
-        <button
-          onClick={() => setShowDetails(!showDetails)}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'white',
-            fontSize: '24px',
-            cursor: 'pointer',
-            padding: '0',
-            lineHeight: '1',
-            transform: showDetails ? 'rotate(45deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s ease'
-          }}
-        >
-          *
-        </button>
       </div>
-      
-      {/* Collapsible details section */}
-      {showDetails && (
-        <div style={{
-          marginBottom: '20px',
-          padding: '16px',
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          borderRadius: '8px',
-          border: '1px solid rgba(255, 255, 255, 0.2)'
-        }}>
-          {/* Toggle button for gul_liste */}
-          <div style={{
-            marginBottom: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
-          }}>
-            <label style={{
-              fontSize: '14px',
-              color: 'white',
-              fontFamily: 'Oslo Sans, sans-serif',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <input
-                type="checkbox"
-                checked={gul_liste}
-                onChange={(e) => {
-                  setGul_liste(e.target.checked);
-                  if (onToggleYellowBox) {
-                    onToggleYellowBox(e.target.checked);
-                  }
-                }}
-                style={{
-                  width: '16px',
-                  height: '16px',
-                  cursor: 'pointer'
-                }}
-              />
-              Vis gul informasjonsboks
-            </label>
-          </div>
-          {yearlyConsumption && checkedItems.size > 0 && (
-            <div style={{
-              fontSize: '14px',
-              color: 'white',
-              fontFamily: 'Oslo Sans, sans-serif'
-            }}>
-              <div>Byggeår: {displayByggeaar} - TEK: {tekLabel}</div>
-              <div>Opprinnelig forbruk: {yearlyConsumption} kWh</div>
-              <div>Total besparelse: {(() => {
-                let totalSavingsKWh = 0;
-                const details: string[] = [];
-                checkedItems.forEach(index => {
-                  const measure = ENERGY_SOLUTIONS[index];
-                  const savings = calculateSavings(measure);
-                  if (savings > 0) {
-                    details.push(`${measure}: ${Math.round(savings)} kWh`);
-                  }
-                  totalSavingsKWh += savings;
-                });
-                return `${Math.round(totalSavingsKWh)} kWh (${details.join(', ')})`;
-              })()}</div>
-              <div>Nytt forbruk: {(() => {
-                const consumptionNum = parseFloat(yearlyConsumption);
-                let totalSavingsKWh = 0;
-                checkedItems.forEach(index => {
-                  const measure = ENERGY_SOLUTIONS[index];
-                  const savings = calculateSavings(measure);
-                  totalSavingsKWh += savings;
-                });
-                return Math.round(Math.max(0, consumptionNum - totalSavingsKWh));
-              })()} kWh</div>
-            </div>
-          )}
-        </div>
-      )}
       
       {/* Render 8 energy solution buttons */}
       {ENERGY_SOLUTIONS.map((buttonText, index) => (

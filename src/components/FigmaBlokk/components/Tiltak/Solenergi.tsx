@@ -28,6 +28,8 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType, buil
 
   // Støtteordninger hentes nå via useEffect
   const needsScroll = stotteordninger.length > 4;
+  const normalizedBuildingType = buildingType?.toLowerCase().trim();
+  const permitScrollTranslation = normalizedBuildingType === 'enebolig' ? '-540px' : '-465px';
 
   // Farger for overskrifter
 
@@ -47,7 +49,9 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType, buil
         style={{ 
           position: 'absolute', 
           top: 0, 
-          left: 0
+          left: 0,
+          transition: `transform 0.6s ease-in-out ${isPermitOpen ? '0.1s' : '0s'}`,
+          transform: isPermitOpen ? `translateY(${permitScrollTranslation})` : 'translateY(0)'
         }}
       >
         <text

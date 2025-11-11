@@ -31,6 +31,8 @@
 - ✅ **Energifelt + besparelsesboks:** `renderEnergyBlock` brukes nå både i visning og redigering, med felles `<foreignObject>` og stabil `kWh/år`-baseline. Energiblokken forankres automatisk 28 px under siste nøkkellinje (vernestatus/areal) – samme avstand som mellom «Nøkkelinformasjon» og «Byggeår».
 - ✅ Besparelseskortet er låst til minimum 40 px klaring fra energiblokken og clampes alltid før kartet slik at verken grønn boks eller kart overlapper. Kartet holder fast `MAP_TOP_Y`, så hele panelet holder seg innenfor rammen også når kortet dukker opp.
 - ✅ Gul liste / blokk-spesifikke felter (Eiertype, Areal leilighet) rendres kun når de har data eller er i redigering, slik at vertikal rytme ikke får ekstra luft.
+- ✅ **Padding-justering (2025‑11‑10):** Adressen og chip-raden er flyttet 42 px nærmere toppkanten (lik margin som sidekantene), og besparelseskortet har fått økt bunnmarg (40 px) slik at det alltid har tydelig luft ned mot kartet – også når energiblokken er aktiv.
+- ✅ **Spacing-tilpasning (2025‑11‑12):** Chip-raden arver nå samme vertikale margin som adressen, og vi kompenserer for fontens ascenders slik at «Nøkkelinformasjon» optisk ligger like langt unna. I tillegg deles lufta mellom energiblokken og kartet likt rundt besparelseskortet, så grønn boks alltid har symmetrisk padding uansett om Gul liste-raden vises eller ikke.
 - 🔁 Neste:
   1. Vurder fortsatt mikrocopy-tooltip på gul-ikonet (fremdeles åpen beslutning fra pkt. 1).
   2. Tempojustering ved hurtig toggling av flere tiltak (ticker-oppdatering).

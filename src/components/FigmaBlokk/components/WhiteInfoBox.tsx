@@ -9,10 +9,32 @@ const MAP_WIDTH = 336;
 const MAP_HEIGHT = 204;
 const MAP_TOP_Y = 496;
 const SAVINGS_CARD_HEIGHT = 132;
-const SAVINGS_CARD_BOTTOM_GAP = 24;
-const MIN_CONTENT_TO_CARD_GAP = 40;
-const MIN_MAP_CLEARANCE = 6;
-const BASE_INFO_Y = 204;
+const HEADER_VERTICAL_OFFSET = 42;
+const SIDE_PADDING = 30;
+const ADDRESS_TOP_MARGIN = SIDE_PADDING;
+const MIN_BADGE_GAP_FROM_ADDRESS = 46;
+const BADGE_ROW_BASE_Y = 94;
+const BADGE_HEIGHT = 30;
+const BADGE_ROW_Y = Math.max(
+  BADGE_ROW_BASE_Y - HEADER_VERTICAL_OFFSET,
+  ADDRESS_TOP_MARGIN + MIN_BADGE_GAP_FROM_ADDRESS
+);
+const BADGE_ROW_SHIFT = BADGE_ROW_Y - BADGE_ROW_BASE_Y;
+const DISTRICT_LABEL_Y = BADGE_ROW_Y + 20;
+const BUILDING_ICON_Y = BADGE_ROW_Y + 7;
+const BADGE_TOP_GAP = BADGE_ROW_Y - ADDRESS_TOP_MARGIN;
+// Compensate for the title font's ascenders so optical gap matches address-to-badge spacing.
+const SECTION_TITLE_ASCENT_ADJUSTMENT = 10;
+const SECTION_TITLE_TOP_GAP = Math.max(0, BADGE_TOP_GAP - SECTION_TITLE_ASCENT_ADJUSTMENT);
+const SECTION_TITLE_Y = BADGE_ROW_Y + BADGE_HEIGHT + SECTION_TITLE_TOP_GAP;
+const SECTION_TITLE_TO_INFO_GAP = MIN_BADGE_GAP_FROM_ADDRESS;
+const BASE_INFO_Y = SECTION_TITLE_Y + SECTION_TITLE_TO_INFO_GAP;
+const EDIT_BUTTON_RECT_OFFSET = -22;
+const EDIT_BUTTON_ICON_OFFSET = -12;
+const EDIT_BUTTON_TEXT_OFFSET = 0;
+const EDIT_BUTTON_RECT_Y = SECTION_TITLE_Y + EDIT_BUTTON_RECT_OFFSET;
+const EDIT_BUTTON_ICON_Y = SECTION_TITLE_Y + EDIT_BUTTON_ICON_OFFSET;
+const EDIT_BUTTON_TEXT_Y = SECTION_TITLE_Y + EDIT_BUTTON_TEXT_OFFSET;
 const INFO_ROW_GAP = 28;
 const INPUT_BASELINE_OFFSET = 18;
 
@@ -502,6 +524,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   const trimmedApartmentArea = (savedArealLeilighet || '').trim();
   const hasApartmentAreaValue = trimmedApartmentArea.length > 0;
   const shouldShowApartmentAreaRow = isBlockBuilding && (isEditMode || hasApartmentAreaValue);
+  const missingVernestatusGap = shouldShowYellowBox ? 0 : INFO_ROW_GAP;
 
   const infoLayout = React.useMemo(() => {
     let cursor = BASE_INFO_Y;
@@ -557,18 +580,18 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     lastInfoBaseline
   } = infoLayout;
 
-  const energyInfoTop = (lastInfoBaseline ?? arealY) + INFO_ROW_GAP;
+  const energyInfoTop = (lastInfoBaseline ?? arealY) + INFO_ROW_GAP + missingVernestatusGap;
   const energyBlockBottom = energyInfoTop + energyBlockHeight;
   const precedingContentBottom = energyBlockBottom;
-  const anchoredCardTop = MAP_TOP_Y - SAVINGS_CARD_HEIGHT - SAVINGS_CARD_BOTTOM_GAP;
-  const minimumCardTop = precedingContentBottom + MIN_CONTENT_TO_CARD_GAP;
-  const maxCardTopBeforeMap = MAP_TOP_Y - SAVINGS_CARD_HEIGHT - MIN_MAP_CLEARANCE;
+  const totalAvailableCardSpace =
+    MAP_TOP_Y - precedingContentBottom - SAVINGS_CARD_HEIGHT;
   let savingsCardY: number;
 
-  if (maxCardTopBeforeMap <= minimumCardTop) {
-    savingsCardY = maxCardTopBeforeMap;
+  if (totalAvailableCardSpace <= 0) {
+    savingsCardY = MAP_TOP_Y - SAVINGS_CARD_HEIGHT;
   } else {
-    savingsCardY = Math.min(Math.max(anchoredCardTop, minimumCardTop), maxCardTopBeforeMap);
+    const equalCardGap = totalAvailableCardSpace / 2;
+    savingsCardY = precedingContentBottom + equalCardGap;
   }
   const shouldAnimateSavingsCardIntro =
     shouldShowSavingsCard && !hasShownSavings && animateSavings && !prefersReducedMotion;
@@ -709,7 +732,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
         <text 
           ref={textRef}
           x="30" 
-          y="72" 
+          y={ADDRESS_TOP_MARGIN}
+          dominantBaseline="hanging"
           fontFamily="Oslo Sans, sans-serif" 
           fontWeight="500"
           fontStyle="normal"
@@ -720,12 +744,14 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
         >
           {addressOnly}
         </text>
-        <rect width={dynamicDistrictWidth} height="30" transform="translate(30 94)" fill="#C7F6C9"/>
-        <path d="M44.7913 104.75C44.7913 105.302 45.2393 105.75 45.7913 105.75C46.3433 105.75 46.7913 105.302 46.7913 104.75C46.7913 104.198 46.3433 103.75 45.7913 103.75C45.2393 103.75 44.7913 104.198 44.7913 104.75Z" fill="#2A2859"/>
-        <path fillRule="evenodd" clipRule="evenodd" d="M42.32 104.804C42.32 102.886 43.874 101.332 45.7915 101.332C47.7086 101.332 49.263 102.887 49.263 104.804C49.263 105.421 49.1009 106.016 48.7931 106.547L53.7838 110.112L51.0298 113.416L47.8308 113.873L45.3703 116.825L38.1543 111.671L40.9083 108.366L43.7566 107.959L42.8624 106.668C42.51 106.116 42.32 105.473 42.32 104.804ZM46.997 109.218L48.239 107.38L52.3253 110.299L50.9016 112.007L46.997 109.218ZM45.8276 110.948L46.4369 110.047L49.9548 112.559L47.4959 112.911L42.2737 109.181L44.3935 108.878L45.8276 110.948ZM48.263 104.804C48.263 103.439 47.1563 102.332 45.7915 102.332C44.4263 102.332 43.32 103.439 43.32 104.804C43.32 105.281 43.4549 105.737 43.6949 106.114L45.8173 109.177L47.8769 106.13C48.1027 105.776 48.2348 105.371 48.2589 104.946L48.263 104.804ZM46.7501 113.607L41.1662 109.618L39.6123 111.483L45.1958 115.471L46.7501 113.607Z" fill="#2A2859"/>
+        <rect width={dynamicDistrictWidth} height="30" transform={`translate(30 ${BADGE_ROW_Y})`} fill="#C7F6C9"/>
+        <g transform={`translate(0, ${BADGE_ROW_SHIFT})`}>
+          <path d="M44.7913 104.75C44.7913 105.302 45.2393 105.75 45.7913 105.75C46.3433 105.75 46.7913 105.302 46.7913 104.75C46.7913 104.198 46.3433 103.75 45.7913 103.75C45.2393 103.75 44.7913 104.198 44.7913 104.75Z" fill="#2A2859"/>
+          <path fillRule="evenodd" clipRule="evenodd" d="M42.32 104.804C42.32 102.886 43.874 101.332 45.7915 101.332C47.7086 101.332 49.263 102.887 49.263 104.804C49.263 105.421 49.1009 106.016 48.7931 106.547L53.7838 110.112L51.0298 113.416L47.8308 113.873L45.3703 116.825L38.1543 111.671L40.9083 108.366L43.7566 107.959L42.8624 106.668C42.51 106.116 42.32 105.473 42.32 104.804ZM46.997 109.218L48.239 107.38L52.3253 110.299L50.9016 112.007L46.997 109.218ZM45.8276 110.948L46.4369 110.047L49.9548 112.559L47.4959 112.911L42.2737 109.181L44.3935 108.878L45.8276 110.948ZM48.263 104.804C48.263 103.439 47.1563 102.332 45.7915 102.332C44.4263 102.332 43.32 103.439 43.32 104.804C43.32 105.281 43.4549 105.737 43.6949 106.114L45.8173 109.177L47.8769 106.13C48.1027 105.776 48.2348 105.371 48.2589 104.946L48.263 104.804ZM46.7501 113.607L41.1662 109.618L39.6123 111.483L45.1958 115.471L46.7501 113.607Z" fill="#2A2859"/>
+        </g>
         <text 
           x="66" 
-          y="114" 
+          y={DISTRICT_LABEL_Y} 
           fontFamily="Oslo Sans, sans-serif" 
           fontWeight="400"
           fontStyle="normal"
@@ -736,15 +762,15 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           {districtName}
         </text>
         
-        <rect width={dynamicBuildingTypeWidth} height="30" transform={`translate(${30 + dynamicDistrictWidth + 8} 94)`} fill="#D1F9FF"/>
+        <rect width={dynamicBuildingTypeWidth} height="30" transform={`translate(${30 + dynamicDistrictWidth + 8} ${BADGE_ROW_Y})`} fill="#D1F9FF"/>
         {/* Building type icon */}
-        <g transform={`translate(${30 + dynamicDistrictWidth + 8 + 14} 101)`}>
+        <g transform={`translate(${30 + dynamicDistrictWidth + 8 + 14} ${BUILDING_ICON_Y})`}>
           <path fillRule="evenodd" clipRule="evenodd" d="M13.5 14.43V0.429993H5.5V2.92999H1V14.43H0V15.43H15V14.43H13.5ZM5.5 14.43H4V11.43H5.5V14.43ZM7.5 14.43H6.5V10.43H3V14.43H2V3.92999H7.5V14.43ZM12.5 14.43H8.5V13.43H11.5V12.43H8.5V11.43H11.5V10.43H8.5V9.42999H11.5V8.42999H8.5V7.42999H11.5V6.42999H8.5V5.42999H11.5V4.42999H8.5V3.42999H11.5V2.42999H7.5V2.92999H6.5V1.42999H12.5V14.43Z" fill="#2A2859"/>
           <path d="M3 7.86499H4V8.93499H3V7.86499ZM5.5 7.86499H6.5V8.93499H5.5V7.86499ZM3 5.35999H4V6.42999H3V5.35999ZM5.5 5.35999H6.5V6.42999H5.5V5.35999Z" fill="#2A2859"/>
         </g>
         <text 
           x={30 + dynamicDistrictWidth + 8 + 36} 
-          y="114" 
+          y={DISTRICT_LABEL_Y} 
           fontFamily="Oslo Sans, sans-serif" 
           fontWeight="400"
           fontStyle="normal"
@@ -758,7 +784,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
         {/* Nøkkelinformasjon text */}
         <text 
           x="30" 
-          y="160" 
+          y={SECTION_TITLE_Y} 
           fontFamily="Oslo Sans, sans-serif" 
           fontWeight="500"
           fontStyle="normal"
@@ -795,10 +821,10 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
             }
           }}
         >
-          <rect x="218" y="138" width="120" height="32" fill="transparent" />
+          <rect x="218" y={EDIT_BUTTON_RECT_Y} width="120" height="32" fill="transparent" />
           <text 
             x="230" 
-            y="160" 
+            y={EDIT_BUTTON_TEXT_Y} 
             fontFamily="Oslo Sans, sans-serif" 
             fontWeight="400"
             fontStyle="normal"
@@ -808,13 +834,13 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           >
             ({isEditMode ? 'Lagre' : 'Rediger'}
           </text>
-          <svg x="300" y="148" width="16" height="20" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg x="300" y={EDIT_BUTTON_ICON_Y} width="16" height="20" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path fillRule="evenodd" clipRule="evenodd" d="M19.5517 5.91012L16.0242 2.38184L5.73471 12.6705L4.51004 17.4114L9.25105 16.1875L9.97883 15.4598L16.982 8.47811L16.9828 8.47895L17.5252 7.93657L17.8668 7.59598L17.8663 7.59546L19.5517 5.91012ZM16.0237 4.14888L17.7837 5.9095L16.9825 6.71075L15.2225 4.95075L16.0237 4.14888ZM7.90938 12.2626L9.65959 14.0124L16.0975 7.5945L14.3381 5.8345L7.90938 12.2626ZM7.02558 13.1464L8.77476 14.8953L8.60808 15.062L6.24995 15.6708L6.85933 13.3126L7.02558 13.1464Z" fill="#2A2859"/>
             <path d="M8.43789 4.51525V3.26525H0.00976562V20.7503H19.9969L19.9935 13.1931L18.7435 13.1937L18.7462 19.5001H1.25933V4.51513L8.43789 4.51525Z" fill="#2A2859"/>
           </svg>
           <text 
             x="318" 
-            y="160" 
+            y={EDIT_BUTTON_TEXT_Y} 
             fontFamily="Oslo Sans, sans-serif" 
             fontWeight="400"
             fontStyle="normal"
