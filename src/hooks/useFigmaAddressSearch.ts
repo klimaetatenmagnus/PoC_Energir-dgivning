@@ -17,7 +17,8 @@ import { THERESES_11A_DATA } from '../testData/theresegate11a';
 import { THERESES_44A_DATA } from '../testData/theresegate44a';
 import { useLandingAnimation } from '../components/FigmaBlokk/hooks/useLandingAnimation';
 import { computeFigmaViewportMetrics, DESIGN_HEIGHT, DESIGN_WIDTH } from '../components/FigmaBlokk/hooks/useFigmaViewportMetrics';
-import { BuildingKind, useTransitionOverlay } from '../context/TransitionOverlayContext';
+import { BuildingKind } from '../context/TransitionOverlayTypes';
+import { useTransitionOverlay } from '../context/useTransitionOverlay';
 
 const FADE_DURATION_MS = 2000;
 const DEBOUNCE_DELAY_MS = 300;

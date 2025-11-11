@@ -1,46 +1,13 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-export type BuildingKind = 'enebolig' | 'blokk';
-
-export interface ViewportRect {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-}
-
-type OverlayPhase = 'idle' | 'captured' | 'animating' | 'settling';
-
-interface OverlayState {
-  phase: OverlayPhase;
-  buildingType: BuildingKind | null;
-  startRect: ViewportRect | null;
-  targetRect: ViewportRect | null;
-}
-
-interface BeginTransitionPayload {
-  buildingType: BuildingKind;
-  startRect: ViewportRect;
-}
-
-interface TransitionOverlayContextValue extends OverlayState {
-  beginTransition: (payload: BeginTransitionPayload) => void;
-  setTargetRect: (buildingType: BuildingKind, rect: ViewportRect) => void;
-  markArrival: () => void;
-  finalizeTransition: () => void;
-  forceReset: () => void;
-  isActive: boolean;
-  recentlyCompleted: BuildingKind | null;
-}
-
-const initialOverlayState: OverlayState = {
-  phase: 'idle',
-  buildingType: null,
-  startRect: null,
-  targetRect: null,
-};
-
-const TransitionOverlayContext = createContext<TransitionOverlayContextValue | undefined>(undefined);
+import {
+  initialOverlayState,
+  TransitionOverlayContext,
+  type BeginTransitionPayload,
+  type BuildingKind,
+  type TransitionOverlayContextValue,
+  type ViewportRect,
+} from './TransitionOverlayTypes';
 
 export const TransitionOverlayProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<OverlayState>(initialOverlayState);
@@ -138,18 +105,3 @@ export const TransitionOverlayProvider: React.FC<{ children: React.ReactNode }> 
     <TransitionOverlayContext.Provider value={value}>{children}</TransitionOverlayContext.Provider>
   );
 };
-
-export const useTransitionOverlay = (): TransitionOverlayContextValue => {
-  const context = useContext(TransitionOverlayContext);
-  if (!context) {
-    throw new Error('useTransitionOverlay must be used within a TransitionOverlayProvider');
-  }
-  return context;
-};
-
-export const toViewportRect = (rect: DOMRect): ViewportRect => ({
-  left: rect.left,
-  top: rect.top,
-  width: rect.width,
-  height: rect.height,
-});
