@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import { loadAppConfig } from "./runtimeConfig.ts";
+import { TransitionOverlayProvider } from "./context/TransitionOverlayContext";
 import "./punkt.scss";
 import "./index.css";
 import "./styles/components.css";
@@ -15,7 +16,9 @@ async function bootstrap() {
 
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
-      <App />
+      <TransitionOverlayProvider>
+        <App />
+      </TransitionOverlayProvider>
     </React.StrictMode>
   );
 }
