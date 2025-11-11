@@ -136,7 +136,17 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   }, [buildingData]);
 
   // Use custom hooks for coordinates
-  const mapCoordinates = useAddressCoordinates(searchAddress);
+  const apiMapCoordinates = React.useMemo(() => {
+    if (!buildingData.coordinatesWgs84) {
+      return null;
+    }
+    return {
+      lat: buildingData.coordinatesWgs84.lat,
+      lng: buildingData.coordinatesWgs84.lon,
+    };
+  }, [buildingData.coordinatesWgs84]);
+
+  const mapCoordinates = useAddressCoordinates(searchAddress, apiMapCoordinates);
   const {
     phase: overlayPhase,
     buildingType: overlayBuildingType,

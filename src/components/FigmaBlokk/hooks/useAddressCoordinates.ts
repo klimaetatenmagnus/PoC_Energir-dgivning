@@ -18,11 +18,28 @@ interface GeonorgeResponse {
 
 const GEONORGE_LOOKUP_URL = 'https://ws.geonorge.no/adresser/v1/sok';
 
-export const useAddressCoordinates = (searchAddress: string) => {
-  const [mapCoordinates, setMapCoordinates] = useState<Coordinates | null>(null);
+const isValidCoordinates = (coords: Coordinates | null | undefined): coords is Coordinates =>
+  Boolean(
+    coords &&
+      Number.isFinite(coords.lat) &&
+      Number.isFinite(coords.lng)
+  );
+
+export const useAddressCoordinates = (
+  searchAddress: string,
+  initialCoordinates?: Coordinates | null
+) => {
+  const [mapCoordinates, setMapCoordinates] = useState<Coordinates | null>(
+    isValidCoordinates(initialCoordinates) ? initialCoordinates : null
+  );
 
   useEffect(() => {
     const trimmedAddress = searchAddress.trim();
+
+    if (isValidCoordinates(initialCoordinates)) {
+      setMapCoordinates(initialCoordinates);
+      return undefined;
+    }
 
     if (!trimmedAddress) {
       setMapCoordinates(null);
@@ -77,7 +94,7 @@ export const useAddressCoordinates = (searchAddress: string) => {
     return () => {
       controller.abort();
     };
-  }, [searchAddress]);
+  }, [initialCoordinates, searchAddress]);
 
   return mapCoordinates;
 };

@@ -40,6 +40,10 @@ export interface AddressLookupResponse {
     north: number;
     epsg: string;
   };
+  coordinatesWgs84?: {
+    lat: number;
+    lon: number;
+  };
   takAreal_m2?: number;
   sol_kwh_m2_yr?: number;
   sol_kwh_bygg_tot?: number;

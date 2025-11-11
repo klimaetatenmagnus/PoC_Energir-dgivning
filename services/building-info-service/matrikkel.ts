@@ -1041,6 +1041,7 @@ export async function resolveBuildingData(
     seksjonsnummer,
     seksjonForEnova,
     rpPBE,
+    coordinatesWgs84: lat !== undefined && lon !== undefined ? { lat, lon } : null,
     attest,
     solarData,
   });
