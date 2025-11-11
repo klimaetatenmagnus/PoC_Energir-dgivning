@@ -120,14 +120,12 @@ interface EnergySolutionButtonsProps {
   onExpand: (expanded: boolean) => void;
   onSelectSolution: (solution: string) => void;
   buildingData?: AddressLookupResponse;
-  showYellowBox?: boolean;
-  onToggleYellowBox?: (show: boolean) => void;
   yearlyConsumption?: string;
   onProcessClick?: () => void;
   onTotalSavingsChange?: (savings: number) => void;
 }
 
-export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, showYellowBox = true, onToggleYellowBox, yearlyConsumption = '', onProcessClick, onTotalSavingsChange }) => {
+export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onProcessClick, onTotalSavingsChange }) => {
   // Add CSS for fade animation
   React.useEffect(() => {
     const style = document.createElement('style');
@@ -154,7 +152,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   }, []);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
-  const [gul_liste, setGul_liste] = useState<boolean>(showYellowBox);
   const [hasClickedReadMore, setHasClickedReadMore] = useState<boolean>(false);
   const [showEnergyInfo, setShowEnergyInfo] = useState<boolean>(false);
 
@@ -439,17 +436,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     onTotalSavingsChange(totalSavingsKWh);
   }, [calculateSavings, checkedItems, onTotalSavingsChange]);
 
-  const displayByggeaar = buildingData?.byggeaar ?? buildingData?.csvData?.byggeaar ?? 'Ukjent';
-  const parsedByggeaarForTek = typeof buildingData?.byggeaar === 'number'
-    ? buildingData.byggeaar
-    : buildingData?.csvData?.byggeaar
-      ? Number(buildingData.csvData.byggeaar)
-      : undefined;
-
-  const tekLabel = parsedByggeaarForTek && !Number.isNaN(parsedByggeaarForTek)
-    ? determineTek(parsedByggeaarForTek)
-    : 'N/A';
-
   return (
     <div 
       style={{
@@ -600,7 +586,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
           Velg tiltak for din bolig
         </span>
       </div>
-      
       {/* Render 8 energy solution buttons */}
       {ENERGY_SOLUTIONS.map((buttonText, index) => (
         <svg 

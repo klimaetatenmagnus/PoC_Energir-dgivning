@@ -372,8 +372,6 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         onExpand={setIsExpanded}
         onSelectSolution={setSelectedSolution}
         buildingData={{...updatedBuildingData, filteredSolarEnergy: solarData?.filteredSolarEnergy}}
-        showYellowBox={showYellowBox}
-        onToggleYellowBox={setShowYellowBox}
         yearlyConsumption={energiforbruk}
         onProcessClick={() => setShowProcess(true)}
         onTotalSavingsChange={setTotalEnergySavings}
