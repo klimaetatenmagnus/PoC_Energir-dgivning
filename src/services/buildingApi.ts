@@ -193,7 +193,7 @@ export class BuildingApiService {
 
   async lookupAddress(
     address: string,
-    useImprovedSelection: boolean = false,
+    useImprovedSelection: boolean = true,
     debug: boolean = false
   ): Promise<AddressLookupResponse> {
     if (this.useMockData) {

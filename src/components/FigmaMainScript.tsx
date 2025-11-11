@@ -14,14 +14,99 @@ import { THERESES_11A_DATA } from '../testData/theresegate11a';
 import { calculateAnnualEnergyConsumption, determineBuildingType } from '../utils/tekEnergyCalculations';
 import { THERESES_44A_DATA } from '../testData/theresegate44a';
 import { useFigmaViewportMetrics } from './FigmaBlokk/hooks/useFigmaViewportMetrics';
+import { EneboligSvg, BlokkSvg } from './FigmaBlokk/components/BuildingSprites';
+import type { LandingSnapshot, BuildingSnapshot } from '../hooks/useFigmaAddressSearch';
+import { useTransitionOverlay, toViewportRect } from '../context/TransitionOverlayContext';
+
+const FIGMA_ARTBOARD_WIDTH = 1728;
+const FIGMA_ARTBOARD_CENTER = FIGMA_ARTBOARD_WIDTH / 2;
+const ENEBOLIG_START_LEFT = 289;
+const BLOKK_START_LEFT = 1051;
+const TARGET_TRANSLATION_X = 235.5 + 74;
+const FIGMA_ARTBOARD_CENTER_PX = `${FIGMA_ARTBOARD_CENTER}px`;
+const TARGET_TRANSLATION_PX = `${TARGET_TRANSLATION_X}px`;
+const FINAL_BOTTOM_OFFSET = 55;
+const SNAPSHOT_RESOLUTION_TIMEOUT_MS = 250;
+const DETAIL_FADE_DURATION_MS = 450;
+
+type BuildingStartCoordinates = {
+  left: number;
+  bottom: number;
+};
+
+type StartSource = 'snapshot' | 'fallback';
+
+const DEFAULT_ENEBOLIG_START: BuildingStartCoordinates = {
+  left: ENEBOLIG_START_LEFT,
+  bottom: 0,
+};
+
+const DEFAULT_BLOKK_START: BuildingStartCoordinates = {
+  left: BLOKK_START_LEFT,
+  bottom: 0,
+};
+
+function useBuildingStartCoordinates(
+  snapshot: BuildingSnapshot | undefined,
+  fallback: BuildingStartCoordinates,
+  lockUpdates: boolean,
+  debugLabel: string,
+): { start: BuildingStartCoordinates | null; source: StartSource | null } {
+  const [start, setStart] = React.useState<BuildingStartCoordinates | null>(() =>
+    snapshot ? { left: snapshot.left, bottom: snapshot.bottom } : null,
+  );
+  const [source, setSource] = React.useState<StartSource | null>(snapshot ? 'snapshot' : null);
+  const fallbackTimerRef = React.useRef<number | null>(null);
+  const isDev = typeof import.meta !== 'undefined' && import.meta.env?.DEV;
+
+  React.useEffect(() => {
+    if (lockUpdates || !snapshot) {
+      return;
+    }
+
+    setStart({ left: snapshot.left, bottom: snapshot.bottom });
+    setSource('snapshot');
+    if (isDev) {
+      console.info(`[skyline-transition] ${debugLabel} start pinned to snapshot`, snapshot);
+    }
+  }, [snapshot, lockUpdates, debugLabel, isDev]);
+
+  React.useEffect(() => {
+    if (lockUpdates || start) {
+      return;
+    }
+
+    fallbackTimerRef.current = window.setTimeout(() => {
+      if (lockUpdates || start) {
+        return;
+      }
+
+      setStart({ left: fallback.left, bottom: fallback.bottom });
+      setSource('fallback');
+      if (isDev) {
+        console.info(`[skyline-transition] ${debugLabel} start fell back to defaults`, fallback);
+      }
+    }, SNAPSHOT_RESOLUTION_TIMEOUT_MS);
+
+    return () => {
+      if (fallbackTimerRef.current) {
+        window.clearTimeout(fallbackTimerRef.current);
+        fallbackTimerRef.current = null;
+      }
+    };
+  }, [fallback.left, fallback.bottom, lockUpdates, start, debugLabel, isDev]);
+
+  return { start, source };
+}
 
 interface FigmaBlokkProps {
   searchAddress: string;
   buildingData: AddressLookupResponse;
   onBack: () => void;
+  landingSnapshot?: LandingSnapshot | null;
 }
 
-export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingData, onBack }) => {
+export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingData, onBack, landingSnapshot }) => {
   // Check if building is an Enebolig
   const isEnebolig = React.useMemo(() => {
     // First check CSV/Excel data
@@ -49,6 +134,16 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
   // Use custom hooks for coordinates
   const mapCoordinates = useAddressCoordinates(searchAddress);
+  const {
+    phase: overlayPhase,
+    buildingType: overlayBuildingType,
+    isActive: overlayIsActive,
+    setTargetRect,
+    recentlyCompleted,
+    finalizeTransition,
+  } = useTransitionOverlay();
+  const buildingKind = isEnebolig ? 'enebolig' : 'blokk';
+  const overlayActiveForThisBuilding = overlayIsActive && overlayBuildingType === buildingKind;
   
   // Animation state
   const [showHeader, setShowHeader] = React.useState(false);
@@ -90,24 +185,22 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
   // State for enebolig animation
   const [animateHouse, setAnimateHouse] = React.useState(false);
-  const [enebolig1Opacity, setEnebolig1Opacity] = React.useState(1);
-  const enebolig1Ref = React.useRef<HTMLDivElement>(null);
-  const enebolig2ContainerRef = React.useRef<HTMLDivElement>(null);
-  
+  const eneboligRef = React.useRef<HTMLDivElement>(null);
+  const blokkRef = React.useRef<HTMLDivElement>(null);
   // State for blokk animation
   const [animateBlokk, setAnimateBlokk] = React.useState(false);
-  const [blokk1Opacity, setBlokk1Opacity] = React.useState(1);
-  const blokk1Ref = React.useRef<HTMLDivElement>(null);
-  const blokk2ContainerRef = React.useRef<HTMLDivElement>(null);
-  
   // State for process slide animation
   const [showProcess, setShowProcess] = React.useState(false);
   
   // State for total energy savings
   const [totalEnergySavings, setTotalEnergySavings] = React.useState<number>(0);
   
-  // Enebolig animation function - disabled
-  // Animation has been removed - Enebolig2 is shown immediately without animation
+  // Delay enabling long transform transitions until after first paint to avoid initial jumps
+  const [allowProcessTransition, setAllowProcessTransition] = React.useState(false);
+  React.useEffect(() => {
+    setAllowProcessTransition(true);
+  }, []);
+
 
   // Handle building data updates from WhiteInfoBox
   const handleUpdateBuildingData = React.useCallback((
@@ -219,26 +312,130 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     checkGulListe();
   }, [buildingData, hasCheckedGulListe]);
 
-  // Handle building animation based on type
+  const {
+    start: eneboligStart,
+    source: eneboligStartSource,
+  } = useBuildingStartCoordinates(landingSnapshot?.enebolig, DEFAULT_ENEBOLIG_START, animateHouse, 'enebolig');
+
+  const {
+    start: blokkStart,
+    source: blokkStartSource,
+  } = useBuildingStartCoordinates(landingSnapshot?.blokk, DEFAULT_BLOKK_START, animateBlokk, 'blokk');
+
+  // Handle building animation start
   React.useEffect(() => {
-    // Start animation immediately
-    if (isEnebolig) {
-      setAnimateHouse(true);
-      // Delay fading out enebolig1 to let it reach position first
-      setTimeout(() => {
-        setEnebolig1Opacity(0);
-      }, 1000); // Start fading after 1 second
-    } else {
-      setAnimateBlokk(true);
-      // Delay fading out blokk1 to let it reach position first
-      setTimeout(() => {
-        setBlokk1Opacity(0);
-      }, 1000); // Start fading after 1 second
+    if (!isEnebolig || animateHouse || !eneboligStart || overlayActiveForThisBuilding) {
+      return;
     }
-  }, [isEnebolig]);
+
+    const delay = eneboligStartSource === 'snapshot' ? 80 : 0;
+    const timer = window.setTimeout(() => {
+      setAnimateHouse(true);
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [isEnebolig, animateHouse, eneboligStart, eneboligStartSource, overlayActiveForThisBuilding]);
+
+  React.useEffect(() => {
+    if (isEnebolig || animateBlokk || !blokkStart || overlayActiveForThisBuilding) {
+      return;
+    }
+
+    const delay = blokkStartSource === 'snapshot' ? 80 : 0;
+    const timer = window.setTimeout(() => {
+      setAnimateBlokk(true);
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [isEnebolig, animateBlokk, blokkStart, blokkStartSource, overlayActiveForThisBuilding]);
   
   // Shared viewport metrics (keeps layout in sync with landing page skyline)
   const { scaleFactor } = useFigmaViewportMetrics();
+
+  React.useLayoutEffect(() => {
+    if (!overlayActiveForThisBuilding) {
+      return;
+    }
+
+    const targetRef = isEnebolig ? eneboligRef : blokkRef;
+    if (!targetRef.current) {
+      return;
+    }
+
+    const rect = targetRef.current.getBoundingClientRect();
+    setTargetRect(buildingKind, toViewportRect(rect));
+  }, [buildingKind, isEnebolig, overlayActiveForThisBuilding, scaleFactor, setTargetRect]);
+
+  React.useEffect(() => {
+    if (!recentlyCompleted) {
+      return;
+    }
+
+    if (recentlyCompleted === 'enebolig') {
+      setAnimateHouse(true);
+    } else if (recentlyCompleted === 'blokk') {
+      setAnimateBlokk(true);
+    }
+  }, [recentlyCompleted]);
+
+  React.useEffect(() => {
+    if (overlayPhase !== 'settling') {
+      return;
+    }
+
+    const settleTimer = window.setTimeout(() => {
+      finalizeTransition();
+    }, DETAIL_FADE_DURATION_MS);
+
+    return () => window.clearTimeout(settleTimer);
+  }, [overlayPhase, finalizeTransition]);
+
+  const eneboligStyle = React.useMemo<React.CSSProperties | null>(() => {
+    if (!eneboligStart) {
+      return null;
+    }
+
+    const forceFinalState = overlayActiveForThisBuilding && isEnebolig;
+    const isFinal = animateHouse || forceFinalState;
+
+    return {
+      position: 'absolute',
+      bottom: isFinal ? `${FINAL_BOTTOM_OFFSET}px` : `${eneboligStart.bottom}px`,
+      left: isFinal ? FIGMA_ARTBOARD_CENTER_PX : `${eneboligStart.left}px`,
+      transform: isFinal
+        ? `translateX(${TARGET_TRANSLATION_PX}) scale(5)`
+        : 'translateX(0) scale(1)',
+      transformOrigin: 'bottom left',
+      transition: forceFinalState
+        ? 'none'
+        : 'transform 2s ease-in-out, bottom 2s ease-in-out, left 2s ease-in-out',
+      zIndex: 3,
+    };
+  }, [animateHouse, eneboligStart, overlayActiveForThisBuilding, isEnebolig]);
+
+  const blokkStyle = React.useMemo<React.CSSProperties | null>(() => {
+    if (!blokkStart) {
+      return null;
+    }
+
+    const forceFinalState = overlayActiveForThisBuilding && !isEnebolig;
+    const isFinal = animateBlokk || forceFinalState;
+
+    return {
+      position: 'absolute',
+      bottom: isFinal ? `${FINAL_BOTTOM_OFFSET}px` : `${blokkStart.bottom}px`,
+      left: isFinal ? FIGMA_ARTBOARD_CENTER_PX : `${blokkStart.left}px`,
+      transform: isFinal
+        ? `translateX(${TARGET_TRANSLATION_PX}) scale(3)`
+        : 'translateX(0) scale(1)',
+      transformOrigin: 'bottom left',
+      transition: forceFinalState
+        ? 'none'
+        : 'transform 2s ease-in-out, bottom 2s ease-in-out, left 2s ease-in-out',
+      zIndex: 3,
+    };
+  }, [animateBlokk, blokkStart, overlayActiveForThisBuilding, isEnebolig]);
+
   
   // Calculate dynamic font size based on address length
   const addressOnly = searchAddress.split(',')[0];
@@ -252,6 +449,15 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
   // Get styles
   const layoutStyles = getLayoutStyles();
+  const containerOpacity =
+    overlayPhase === 'captured' || overlayPhase === 'animating' ? 0 : 1;
+  const containerTransition =
+    [
+      allowProcessTransition ? 'transform 0.8s ease-in-out' : null,
+      'opacity 0.4s ease-in-out',
+    ]
+      .filter(Boolean)
+      .join(', ') || undefined;
 
   return (
     <>
@@ -265,8 +471,6 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         backgroundColor: '#034B45',
         zIndex: 0
       }} />
-      
-      
       <div className="figma-design-container" style={{ 
         ...layoutStyles.container, 
         overflow: 'visible',
@@ -281,7 +485,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         height: '900px',
         zIndex: 2,
         background: 'transparent',
-        transition: 'transform 0.8s ease-in-out'
+        opacity: containerOpacity,
+        transition: containerTransition,
       }}>
         {/* Klimaoslo header with logo and back button */}
         <div 
@@ -377,127 +582,15 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         onTotalSavingsChange={setTotalEnergySavings}
       />
       
-      {/* Enebolig1 - initial small house that animates to Enebolig2 */}
-      {isEnebolig && (
-        <div 
-          ref={enebolig1Ref}
-          style={{
-            position: 'absolute',
-            bottom: animateHouse ? '55px' : '0px', // Start at bottom 0, end at 55px
-            left: animateHouse ? '50%' : '289px', // Start at absolute position (matching Enebolig1 in skyline), end at center
-            transform: animateHouse 
-              ? 'translateX(calc(235.5px + 74px)) scale(5)' // End position (same as Enebolig2)
-              : 'translateX(0) scale(1)', // Start position (no translation needed when using absolute left)
-            transformOrigin: 'bottom left',
-            opacity: enebolig1Opacity,
-            transition: 'transform 2s ease-in-out, opacity 2s ease-in-out, bottom 2s ease-in-out, left 2s ease-in-out',
-            zIndex: 3
-          }}
-        >
-          <svg width="93" height="81" viewBox="0 0 93 81" fill="none">
-            <path d="M31.0182 0.884766L61.7891 31.699V81.0019H31.0182H0.247322V31.699L31.0182 0.884766Z" fill="#D0BFAE"/>
-            <path d="M61.783 31.699H92.554V81.0019H61.783V31.699Z" fill="#F8F0DD"/>
-            <path d="M61.783 31.699H92.554L61.783 0.884766H31.0122L61.783 31.699Z" fill="#2A2859"/>
-            <path d="M24.8618 68.6738H37.1702V80.9995H24.8618V68.6738Z" fill="#2A2859"/>
-          </svg>
+      {/* Building animation */}
+      {isEnebolig && eneboligStyle && (
+        <div ref={eneboligRef} style={eneboligStyle}>
+          <EneboligSvg />
         </div>
       )}
-
-      {/* Enebolig2 - fades in as Enebolig1 fades out */}
-      {isEnebolig && (
-        <div 
-          ref={enebolig2ContainerRef}
-          style={{
-            position: 'absolute',
-            bottom: '55px',
-            left: '50%',
-            transform: 'translateX(calc(235.5px + 74px)) scale(5)',
-            transformOrigin: 'bottom left',
-            opacity: animateHouse ? 1 : 0,
-            transition: 'opacity 2s ease-in-out 1s', // Delay opacity transition
-            zIndex: 2
-          }}
-        >
-          <svg 
-            width="93" 
-            height="81" 
-            viewBox="0 0 93 81" 
-            fill="none" 
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path d="M61.783 31.6973H92.5537V81.0001H61.783V31.6973Z" fill="#F8F0DD"/>
-            <path d="M31.0182 0.884766L61.7891 31.699V81.0019H31.0182H0.247322V31.699L31.0182 0.884766Z" fill="#D0BFAE"/>
-            <path d="M61.783 31.6991H92.5537L61.783 0.884766H31.0122L61.783 31.6991Z" fill="#2A2859"/>
-            <path d="M24.8615 68.6738H37.1699V80.9995H24.8615V68.6738Z" fill="#2A2859"/>
-          </svg>
-        </div>
-      )}
-
-      {/* Blokk1 - initial block that animates to same position as Enebolig2 */}
-      {!isEnebolig && (
-        <div 
-          ref={blokk1Ref}
-          style={{
-            position: 'absolute',
-            bottom: animateBlokk ? '55px' : '0px', // Start at bottom 0, end at 55px
-            left: animateBlokk ? '50%' : '1051px', // Start at absolute position, end at center
-            transform: animateBlokk 
-              ? 'translateX(calc(235.5px + 74px)) scale(3)' // End position (same as Enebolig2's bottom left corner)
-              : 'translateX(0) scale(1)', // Start position
-            transformOrigin: 'bottom left',
-            opacity: blokk1Opacity,
-            transition: 'transform 2s ease-in-out, opacity 2s ease-in-out, bottom 2s ease-in-out, left 2s ease-in-out',
-            zIndex: 3
-          }}
-        >
-          <svg width="136" height="204" viewBox="0 0 136 204" fill="none">
-            <path d="M86.73 0L99.03 12.326H111.34V24.652H123.65V36.977H135.96V49.303H123.65H86.73V36.977H49.8V0H86.73Z" fill="#2A2859"/>
-            <path d="M99.03 49.302H135.96V203.374H99.03V49.302Z" fill="#F8F0DD"/>
-            <path d="M12.87 36.977V24.651H25.17V12.325H37.48L49.79 0L62.1 12.325H74.41V24.651H86.72V36.977H99.03V49.303V203.375H0.57V49.303V36.977H12.87Z" fill="#D0BFAE"/>
-            <path d="M43.64 191.049H55.95V203.375H43.64V191.049Z" fill="#2A2859"/>
-            <path d="M68.25 61.628H80.56V73.954H68.25V61.628Z" fill="#2A2859"/>
-            <path d="M43.64 61.628H55.95V73.954H43.64V61.628Z" fill="#2A2859"/>
-            <path d="M19.02 61.628H31.33V73.954H19.02V61.628Z" fill="#2A2859"/>
-            <path d="M68.25 86.279H80.56V98.604H68.25V86.279Z" fill="#2A2859"/>
-            <path d="M43.64 86.279H55.95V98.604H43.64V86.279Z" fill="#2A2859"/>
-            <path d="M19.02 86.279H31.33V98.604H19.02V86.279Z" fill="#2A2859"/>
-            <path d="M68.25 110.93H80.56V123.256H68.25V110.93Z" fill="#2A2859"/>
-            <path d="M43.64 110.93H55.95V123.256H43.64V110.93Z" fill="#2A2859"/>
-            <path d="M19.02 110.93H31.33V123.256H19.02V110.93Z" fill="#2A2859"/>
-          </svg>
-        </div>
-      )}
-
-      {/* Blokk2 - fades in as Blokk1 fades out */}
-      {!isEnebolig && (
-        <div 
-          ref={blokk2ContainerRef}
-          style={{
-            position: 'absolute',
-            bottom: '55px',
-            left: '50%',
-            transform: 'translateX(calc(235.5px + 74px)) scale(3)',
-            transformOrigin: 'bottom left',
-            opacity: animateBlokk ? 1 : 0,
-            transition: 'opacity 2s ease-in-out 1s', // Delay opacity transition
-            zIndex: 2
-          }}
-        >
-          <svg width="136" height="204" viewBox="0 0 136 204" fill="none">
-            <path d="M86.73 0L99.03 12.326H111.34V24.652H123.65V36.977H135.96V49.303H123.65H86.73V36.977H49.8V0H86.73Z" fill="#2A2859"/>
-            <path d="M99.03 49.302H135.96V203.374H99.03V49.302Z" fill="#F8F0DD"/>
-            <path d="M12.87 36.977V24.651H25.17V12.325H37.48L49.79 0L62.1 12.325H74.41V24.651H86.72V36.977H99.03V49.303V203.375H0.57V49.303V36.977H12.87Z" fill="#D0BFAE"/>
-            <path d="M43.64 191.049H55.95V203.375H43.64V191.049Z" fill="#2A2859"/>
-            <path d="M68.25 61.628H80.56V73.954H68.25V61.628Z" fill="#2A2859"/>
-            <path d="M43.64 61.628H55.95V73.954H43.64V61.628Z" fill="#2A2859"/>
-            <path d="M19.02 61.628H31.33V73.954H19.02V61.628Z" fill="#2A2859"/>
-            <path d="M68.25 86.279H80.56V98.604H68.25V86.279Z" fill="#2A2859"/>
-            <path d="M43.64 86.279H55.95V98.604H43.64V86.279Z" fill="#2A2859"/>
-            <path d="M19.02 86.279H31.33V98.604H19.02V86.279Z" fill="#2A2859"/>
-            <path d="M68.25 110.93H80.56V123.256H68.25V110.93Z" fill="#2A2859"/>
-            <path d="M43.64 110.93H55.95V123.256H43.64V110.93Z" fill="#2A2859"/>
-            <path d="M19.02 110.93H31.33V123.256H19.02V110.93Z" fill="#2A2859"/>
-          </svg>
+      {!isEnebolig && blokkStyle && (
+        <div ref={blokkRef} style={blokkStyle}>
+          <BlokkSvg />
         </div>
       )}
 

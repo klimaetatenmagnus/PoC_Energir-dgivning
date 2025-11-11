@@ -720,9 +720,12 @@ export async function resolveBuildingData(
     }
   }
 
+  const improvedCandidates =
+    eligibleBuildings.length > 0 ? eligibleBuildings : allBygningsInfo;
+
   if (USE_IMPROVED_SELECTION) {
     try {
-      const improved = selectBuildingImproved(adresse, allBygningsInfo, {
+      const improved = selectBuildingImproved(adresse, improvedCandidates, {
         preferExpectedBuilding: true,
         handleRowHouses: true,
         considerBuildingAge: true,

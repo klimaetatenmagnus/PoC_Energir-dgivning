@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 
-interface FigmaViewportMetrics {
+export interface FigmaViewportMetrics {
   scaleFactor: number;
   verticalOffset: number;
 }
 
-const DESIGN_WIDTH = 1728;
-const DESIGN_HEIGHT = 900;
+export const DESIGN_WIDTH = 1728;
+export const DESIGN_HEIGHT = 900;
 const VIEWPORT_PADDING = 10;
 
-const computeMetrics = (): FigmaViewportMetrics => {
+export const computeFigmaViewportMetrics = (): FigmaViewportMetrics => {
   if (typeof window === 'undefined') {
     return { scaleFactor: 1, verticalOffset: 0 };
   }
@@ -31,7 +31,7 @@ const computeMetrics = (): FigmaViewportMetrics => {
 };
 
 export function useFigmaViewportMetrics(): FigmaViewportMetrics {
-  const [metrics, setMetrics] = useState<FigmaViewportMetrics>(() => computeMetrics());
+  const [metrics, setMetrics] = useState<FigmaViewportMetrics>(() => computeFigmaViewportMetrics());
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -39,7 +39,7 @@ export function useFigmaViewportMetrics(): FigmaViewportMetrics {
     }
 
     const handleResize = () => {
-      setMetrics(computeMetrics());
+      setMetrics(computeFigmaViewportMetrics());
     };
 
     window.addEventListener('resize', handleResize);

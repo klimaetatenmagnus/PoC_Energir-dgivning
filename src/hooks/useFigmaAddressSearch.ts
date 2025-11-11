@@ -16,6 +16,8 @@ import { LYSEVEIEN_3_DATA } from '../testData/lyseveien3';
 import { THERESES_11A_DATA } from '../testData/theresegate11a';
 import { THERESES_44A_DATA } from '../testData/theresegate44a';
 import { useLandingAnimation } from '../components/FigmaBlokk/hooks/useLandingAnimation';
+import { computeFigmaViewportMetrics, DESIGN_HEIGHT, DESIGN_WIDTH } from '../components/FigmaBlokk/hooks/useFigmaViewportMetrics';
+import { BuildingKind, useTransitionOverlay } from '../context/TransitionOverlayContext';
 
 const FADE_DURATION_MS = 2000;
 const DEBOUNCE_DELAY_MS = 300;
@@ -25,6 +27,24 @@ type FigmaMode = 'figma' | 'figma-blokk';
 interface TestTrigger {
   address: string;
   result: AddressLookupResponse;
+}
+
+export interface BuildingSnapshot {
+  left: number;
+  bottom: number;
+  width: number;
+  height: number;
+  viewport: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  };
+}
+
+export interface LandingSnapshot {
+  enebolig?: BuildingSnapshot;
+  blokk?: BuildingSnapshot;
 }
 
 interface UseFigmaAddressSearchResult {
@@ -39,7 +59,7 @@ interface UseFigmaAddressSearchResult {
   suggestionsLoading: boolean;
   skylineFadeOpacity: number;
   headerFadeOpacity: number;
-  wrapperRef: RefObject<HTMLDivElement>;
+  wrapperRef: RefObject<HTMLDivElement | null>;
   isEnebolig: boolean;
   handleSearch: () => Promise<void>;
   handleInputChange: (value: string) => void;
@@ -49,6 +69,7 @@ interface UseFigmaAddressSearchResult {
   handleBack: () => void;
   highlightSuggestion: (index: number) => void;
   clearHighlightedSuggestion: () => void;
+  landingSnapshot: LandingSnapshot | null;
 }
 
 const TEST_TRIGGERS: Record<string, TestTrigger> = {
@@ -66,6 +87,33 @@ const TEST_TRIGGERS: Record<string, TestTrigger> = {
   },
 };
 
+const isEneboligResult = (building: AddressLookupResponse): boolean => {
+  const csvType = building.csvData?.bygningstypeNavn?.toLowerCase();
+  if (csvType) {
+    return (
+      csvType.includes('enebolig') ||
+      csvType.includes('tomannsbolig') ||
+      csvType.includes('rekkehus')
+    );
+  }
+
+  const buildingTypeCode = building.bygningstypeKode;
+  if (buildingTypeCode) {
+    const code = Number.parseInt(buildingTypeCode, 10);
+    return Number.isInteger(code) && code >= 110 && code < 140;
+  }
+
+  const buildingTypeId = building.bygningstypeKodeId;
+  if (buildingTypeId) {
+    return [1, 4, 5, 8].includes(buildingTypeId);
+  }
+
+  return false;
+};
+
+const getBuildingKind = (building: AddressLookupResponse): BuildingKind =>
+  isEneboligResult(building) ? 'enebolig' : 'blokk';
+
 export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
   const [mode, setMode] = useState<FigmaMode>('figma');
   const [searchValue, setSearchValue] = useState('');
@@ -78,11 +126,97 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const [landingSnapshot, setLandingSnapshot] = useState<LandingSnapshot | null>(null);
+  const [fadeCompleted, setFadeCompleted] = useState(false);
+  const { beginTransition, forceReset: resetOverlay } = useTransitionOverlay();
 
   const { skylineFadeOpacity, headerFadeOpacity, startFade, resetFade } = useLandingAnimation({
     durationMs: FADE_DURATION_MS,
-    onFadeComplete: () => setMode('figma-blokk'),
+    onFadeComplete: () => setFadeCompleted(true),
   });
+
+  const captureLandingSnapshot = useCallback((buildingKind: BuildingKind) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      const metrics = computeFigmaViewportMetrics();
+      const { scaleFactor } = metrics;
+      if (scaleFactor <= 0) {
+        return;
+      }
+
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const artboardWidth = DESIGN_WIDTH * scaleFactor;
+      const artboardHeight = DESIGN_HEIGHT * scaleFactor;
+      const artboardLeft = viewportWidth / 2 - artboardWidth / 2;
+      const artboardTop = viewportHeight / 2 - artboardHeight / 2;
+
+      const toDesignCoords = (rect: DOMRect): BuildingSnapshot => {
+        const left = (rect.left - artboardLeft) / scaleFactor;
+        const top = (rect.top - artboardTop) / scaleFactor;
+        const width = rect.width / scaleFactor;
+        const height = rect.height / scaleFactor;
+        const bottom = DESIGN_HEIGHT - (top + height);
+        return {
+          left,
+          bottom,
+          width,
+          height,
+          viewport: {
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height,
+          },
+        };
+      };
+
+      const eneboligEl = document.getElementById('landing-enebolig');
+      const blokkEl = document.getElementById('block-building');
+
+      const nextSnapshot: LandingSnapshot = {
+        enebolig: eneboligEl ? toDesignCoords(eneboligEl.getBoundingClientRect()) : undefined,
+        blokk: blokkEl ? toDesignCoords(blokkEl.getBoundingClientRect()) : undefined,
+      };
+
+      setLandingSnapshot(nextSnapshot);
+
+      const selectedSnapshot =
+        buildingKind === 'enebolig' ? nextSnapshot.enebolig : nextSnapshot.blokk;
+      if (selectedSnapshot?.viewport) {
+        beginTransition({
+          buildingType: buildingKind,
+          startRect: selectedSnapshot.viewport,
+        });
+      }
+    });
+  }, [beginTransition]);
+
+  const beginLandingTransition = useCallback((buildingKind: BuildingKind) => {
+    setFadeCompleted(false);
+    captureLandingSnapshot(buildingKind);
+    startFade();
+  }, [captureLandingSnapshot, startFade]);
+
+  useEffect(() => {
+    if (!fadeCompleted) {
+      return;
+    }
+
+    if (landingSnapshot) {
+      setMode('figma-blokk');
+      return;
+    }
+
+    const fallbackTimer = window.setTimeout(() => {
+      setMode('figma-blokk');
+    }, 200);
+
+    return () => window.clearTimeout(fallbackTimer);
+  }, [fadeCompleted, landingSnapshot]);
 
   const clearTimers = useCallback(() => {
     if (debounceTimer.current) {
@@ -141,10 +275,10 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
       setSearchValue(trigger.address);
       setResult(trigger.result);
       setError(null);
-      startFade();
+      beginLandingTransition(getBuildingKind(trigger.result));
       return true;
     },
-    [startFade]
+    [beginLandingTransition]
   );
 
   const fetchSuggestions = useCallback(
@@ -206,7 +340,7 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
     try {
       const lookupResult = await buildingApi.lookupAddress(trimmed);
       setResult(lookupResult);
-      startFade();
+      beginLandingTransition(getBuildingKind(lookupResult));
     } catch (lookupError) {
       setResult(null);
       setMode('figma');
@@ -215,7 +349,7 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
     } finally {
       setLoading(false);
     }
-  }, [resetFade, searchValue, startFade]);
+  }, [beginLandingTransition, resetFade, searchValue]);
 
   const handleSuggestionsNavigation = useCallback(
     (direction: 1 | -1) => {
@@ -279,39 +413,21 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
   );
 
   const handleBack = useCallback(() => {
+    resetOverlay();
     setMode('figma');
     setResult(null);
     setSearchValue('');
     setError(null);
+    setLandingSnapshot(null);
+    setFadeCompleted(false);
     resetFade();
-  }, [resetFade]);
+  }, [resetOverlay, resetFade]);
 
   const isEnebolig = useMemo(() => {
     if (!result) {
       return false;
     }
-
-    const csvType = result.csvData?.bygningstypeNavn?.toLowerCase();
-    if (csvType) {
-      return (
-        csvType.includes('enebolig') ||
-        csvType.includes('tomannsbolig') ||
-        csvType.includes('rekkehus')
-      );
-    }
-
-    const buildingTypeCode = result.bygningstypeKode;
-    if (buildingTypeCode) {
-      const code = Number.parseInt(buildingTypeCode, 10);
-      return Number.isInteger(code) && code >= 110 && code < 140;
-    }
-
-    const buildingTypeId = result.bygningstypeKodeId;
-    if (buildingTypeId) {
-      return [1, 4, 5, 8].includes(buildingTypeId);
-    }
-
-    return false;
+    return isEneboligResult(result);
   }, [result]);
 
   const openSuggestions = useCallback(() => {
@@ -342,5 +458,6 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
     handleBack,
     highlightSuggestion,
     clearHighlightedSuggestion,
+    landingSnapshot,
   };
 }
