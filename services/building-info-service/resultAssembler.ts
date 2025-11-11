@@ -31,6 +31,7 @@ export interface BuildingResult {
   antallSeksjoner: number | null;
   representasjonspunkt: ByggInfo['representasjonspunkt'] | null;
   representasjonspunktPBE: { east: number; north: number } | null;
+  coordinatesWgs84: { lat: number; lon: number } | null;
   energiattest: EnergiattestResult | null;
   bygningstypeKodeId: number | null;
   bygningstypeKode: string | null;
@@ -63,6 +64,7 @@ interface AssembleArgs {
   seksjonsnummer?: number;
   seksjonForEnova?: number;
   rpPBE: { east: number; north: number } | null;
+  coordinatesWgs84: { lat: number; lon: number } | null;
   attest: EnergiattestResult | null;
   solarData: SolarData | null;
 }
@@ -76,6 +78,7 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
     seksjonsnummer,
     seksjonForEnova,
     rpPBE,
+    coordinatesWgs84,
     attest,
     solarData,
   } = args;
@@ -232,6 +235,7 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
     antallSeksjoner,
     representasjonspunkt: bygg.representasjonspunkt ?? null,
     representasjonspunktPBE: rpPBE,
+    coordinatesWgs84,
     energiattest: attest,
     bygningstypeKodeId: bygg.bygningstypeKodeId ?? null,
     bygningstypeKode: bygg.bygningstypeKode ?? null,
