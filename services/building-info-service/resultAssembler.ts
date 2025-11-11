@@ -176,11 +176,28 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
   const csvByggeaar = csvData?.tattIBrukDato
     ? parseInt(csvData.tattIBrukDato.substring(0, 4))
     : null;
-  const finalBruksareal =
-    csvData?.bruksarealTotalt ||
-    attest?.enovaBuildingData?.bruksareal ||
-    bygg.bruksarealM2 ||
-    null;
+
+  let finalBruksareal =
+    csvData?.bruksarealTotalt || attest?.enovaBuildingData?.bruksareal || null;
+
+  if (
+    finalBruksareal === null &&
+    erSeksjonertEiendom &&
+    totalBygningsareal &&
+    totalBygningsareal > 0
+  ) {
+    finalBruksareal = totalBygningsareal;
+    if (LOG) {
+      debugLog(
+        `📐 Bruksareal mangler for seksjon – bruker totalBygningsareal (${totalBygningsareal} m²) som fallback`
+      );
+    }
+  }
+
+  if (finalBruksareal === null) {
+    finalBruksareal = bygg.bruksarealM2 ?? null;
+  }
+
   const finalByggeaar =
     csvByggeaar ||
     attest?.enovaBuildingData?.byggeaar ||
@@ -204,7 +221,7 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
     ? 'csv'
     : attest?.enovaBuildingData?.bruksareal
     ? 'enova'
-    : bygg.bruksarealM2
+    : finalBruksareal
     ? 'matrikkel'
     : 'unknown';
   recordBruksarealSource(bruksarealSource);

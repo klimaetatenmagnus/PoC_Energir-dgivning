@@ -63,6 +63,90 @@ export interface LookupAdresseResult {
   postnummer: string;
 }
 
+interface VegadresseInfo {
+  husnummer?: number;
+  bokstav?: string;
+}
+
+interface AddressMatchInfo {
+  matchesNumber: boolean | null;
+  matchesLetter: boolean | null;
+}
+
+interface MatrikkelXmlInfo {
+  xml: string;
+  isMain: boolean;
+  seksjonsnummer?: number;
+  vegadresse?: VegadresseInfo;
+  objectType?: string;
+}
+
+function parseMatrikkelXml(xml: string): MatrikkelXmlInfo {
+  const isMain =
+    /<hovedadresse>\s*true\s*<\/hovedadresse>/i.test(xml) ||
+    /hovedadresse\s*=\s*["']?true["']?/i.test(xml);
+
+  const seksjonMatch = xml.match(
+    /<(?:ns\d+:)?seksjonsnummer>(\d+)<\/(?:ns\d+:)?seksjonsnummer>/i
+  );
+  const seksjonsnummer = seksjonMatch ? parseInt(seksjonMatch[1], 10) : undefined;
+
+  const vegadresse = extractVegadresse(xml);
+
+  const typeMatch = xml.match(/xsi:type="[^:]+:(\w+)"/i);
+  const objectType = typeMatch ? typeMatch[1] : undefined;
+
+  return { xml, isMain, seksjonsnummer, vegadresse, objectType };
+}
+
+function extractVegadresse(xml: string): VegadresseInfo | undefined {
+  const vegadresseMatch = xml.match(
+    /<(?:ns\d+:)?vegadresse\b[^>]*>([\s\S]*?)<\/(?:ns\d+:)?vegadresse>/i
+  );
+  if (!vegadresseMatch) {
+    return undefined;
+  }
+
+  const vegadresseXml = vegadresseMatch[1];
+  const nummerMatch = vegadresseXml.match(
+    /<(?:ns\d+:)?(?:nummer|husnummer)>(\d+)<\/(?:ns\d+:)?(?:nummer|husnummer)>/i
+  );
+  const bokstavMatch = vegadresseXml.match(
+    /<(?:ns\d+:)?bokstav>([A-Za-z])<\/(?:ns\d+:)?bokstav>/i
+  );
+
+  return {
+    husnummer: nummerMatch ? parseInt(nummerMatch[1], 10) : undefined,
+    bokstav: bokstavMatch ? bokstavMatch[1].trim().toUpperCase() : undefined,
+  };
+}
+
+function computeAddressMatch(
+  adresse: LookupAdresseResult,
+  vegadresse?: VegadresseInfo
+): AddressMatchInfo {
+  const matchesNumber =
+    vegadresse?.husnummer !== undefined
+      ? vegadresse.husnummer === adresse.husnummer
+      : null;
+
+  let matchesLetter: boolean | null;
+  if (!adresse.bokstav) {
+    matchesLetter = true;
+  } else if (vegadresse?.bokstav) {
+    matchesLetter =
+      vegadresse.bokstav.toUpperCase() === adresse.bokstav.toUpperCase();
+  } else {
+    matchesLetter = null;
+  }
+
+  return { matchesNumber, matchesLetter };
+}
+
+function letterToSeksjonsnummer(letter: string): number {
+  return letter.toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0) + 1;
+}
+
 async function withExternalMetrics<T>(
   service: string,
   operation: string,
@@ -441,8 +525,206 @@ export async function resolveBuildingData(
   options: BuildingDataOptions = {}
 ): Promise<BuildingResult> {
   const adr = await lookupAdresse(adresse);
-
   let seksjonsnummer: number | undefined;
+  const normalizedLetter = adr.bokstav ? adr.bokstav.trim().toUpperCase() : null;
+  const expectedSeksjonsnummerFraBokstav = normalizedLetter
+    ? letterToSeksjonsnummer(normalizedLetter)
+    : undefined;
+
+  type MatrikkelCandidate = {
+    id: number;
+    byggIds: number[];
+    harBoligbygg: boolean;
+    addressMatch: AddressMatchInfo;
+    harMatchendeBruksenhet: boolean;
+    objectType?: string;
+  };
+
+  const matrikkelXmlCache = new Map<
+    number,
+    MatrikkelXmlInfo & { addressMatch: AddressMatchInfo }
+  >();
+  const matrikkelCandidateCache = new Map<number, MatrikkelCandidate>();
+  const byggBruksenhetCache = new Map<number, BruksenhetInfo[]>();
+
+  const getMatrikkelInfo = async (id: number) => {
+    const cached = matrikkelXmlCache.get(id);
+    if (cached) {
+      return cached;
+    }
+
+    const xml = await withExternalMetrics(
+      'store-service',
+      'getObjectXml',
+      () => storeClient.getObjectXml(id, 'MatrikkelenhetId')
+    );
+    const parsed = parseMatrikkelXml(xml);
+    const info = {
+      ...parsed,
+      addressMatch: computeAddressMatch(adr, parsed.vegadresse),
+    };
+    matrikkelXmlCache.set(id, info);
+    return info;
+  };
+
+  const bruksenhetMatchesAddress = (
+    bruksenhet: BruksenhetInfo,
+    overrideSeksjon?: number
+  ) => {
+    const targetSeksjon =
+      overrideSeksjon ?? seksjonsnummer ?? expectedSeksjonsnummerFraBokstav;
+
+    if (targetSeksjon && bruksenhet.seksjonsnummer) {
+      return Number(bruksenhet.seksjonsnummer) === targetSeksjon;
+    }
+
+    if (normalizedLetter) {
+      const leilighet = bruksenhet.leilighetnummer?.trim().toUpperCase();
+      if (leilighet) {
+        return leilighet === normalizedLetter;
+      }
+    }
+
+    return false;
+  };
+
+  const loadBruksenheterForBuilding = async (
+    bygg: ByggInfo & { id: number }
+  ): Promise<BruksenhetInfo[]> => {
+    const cached = byggBruksenhetCache.get(bygg.id);
+    if (cached) {
+      return cached;
+    }
+
+    const bruksenheter: BruksenhetInfo[] = [];
+    if (!bygg.bruksenhetIds || bygg.bruksenhetIds.length === 0) {
+      byggBruksenhetCache.set(bygg.id, bruksenheter);
+      return bruksenheter;
+    }
+
+    if (LOG) {
+      debugLog(
+        `📦 Henter ${bygg.bruksenhetIds.length} bruksenheter for bygg ${bygg.id}`
+      );
+    }
+
+    for (const bruksenhetId of bygg.bruksenhetIds) {
+      if (LOG) {
+        debugLog(`  🔍 Henter bruksenhet ${bruksenhetId} via StoreService...`);
+      }
+      try {
+        const bruksenhetInfo = await withExternalMetrics(
+          'store-service',
+          'getBruksenhet',
+          () => storeClient.getBruksenhet(bruksenhetId)
+        );
+        if (bruksenhetInfo) {
+          bruksenheter.push(bruksenhetInfo);
+        }
+      } catch (error) {
+        debugLog(
+          `  ⚠️  Kunne ikke hente detaljer for bruksenhet ${bruksenhetId}:`,
+          error
+        );
+      }
+    }
+
+    byggBruksenhetCache.set(bygg.id, bruksenheter);
+    return bruksenheter;
+  };
+
+  const filterCandidatesByAddress = (candidates: MatrikkelCandidate[]) => {
+    if (!candidates.length) {
+      return candidates;
+    }
+
+    const filters: Array<(candidate: MatrikkelCandidate) => boolean> = [
+      (candidate) =>
+        candidate.addressMatch.matchesNumber === true &&
+        (!normalizedLetter || candidate.addressMatch.matchesLetter === true),
+      (candidate) =>
+        candidate.addressMatch.matchesNumber === true &&
+        candidate.addressMatch.matchesLetter !== false,
+      (candidate) =>
+        candidate.addressMatch.matchesNumber !== false &&
+        candidate.addressMatch.matchesLetter !== false,
+    ];
+
+    for (const predicate of filters) {
+      const subset = candidates.filter(predicate);
+      if (subset.length) {
+        return subset;
+      }
+    }
+
+    return candidates;
+  };
+
+  const analyzeMatrikkelenhet = async (
+    id: number,
+    info?: MatrikkelXmlInfo & { addressMatch: AddressMatchInfo }
+  ): Promise<MatrikkelCandidate | null> => {
+    const cached = matrikkelCandidateCache.get(id);
+    if (cached) {
+      return cached;
+    }
+
+    const parsedInfo = info ?? (await getMatrikkelInfo(id));
+
+    const byggIds = await withExternalMetrics(
+      'bygning-service',
+      'findByggForMatrikkelenhet',
+      () => bygningClient.findByggForMatrikkelenhet(id, ctx()),
+      (result) => (result.length > 0 ? 'success' : 'not_found')
+    );
+    if (!byggIds.length) {
+      return null;
+    }
+
+    let harBoligbygg = false;
+    let harMatchendeBruksenhet = false;
+
+    for (const byggId of byggIds) {
+      try {
+        const byggInfo = await withExternalMetrics(
+          'store-service',
+          'getObject',
+          () => storeClient.getObject(byggId)
+        );
+        if (shouldProcessBuildingType(byggInfo.bygningstypeKodeId)) {
+          harBoligbygg = true;
+        }
+
+        if (
+          !harMatchendeBruksenhet &&
+          (normalizedLetter || expectedSeksjonsnummerFraBokstav) &&
+          byggInfo.bruksenhetIds &&
+          byggInfo.bruksenhetIds.length > 0
+        ) {
+          const bruksenheter = await loadBruksenheterForBuilding({
+            ...byggInfo,
+            id: byggId,
+          });
+          if (bruksenheter.some((b) => bruksenhetMatchesAddress(b))) {
+            harMatchendeBruksenhet = true;
+          }
+        }
+      } catch (error) {
+        debugLog(`⚠️  Kunne ikke hente bygg-info for bygg ${byggId}:`, error);
+      }
+    }
+
+    const candidate: MatrikkelCandidate = {
+      id,
+      byggIds,
+      harBoligbygg,
+      addressMatch: parsedInfo.addressMatch,
+      harMatchendeBruksenhet,
+      objectType: parsedInfo.objectType,
+    };
+    matrikkelCandidateCache.set(id, candidate);
+    return candidate;
+  };
 
   const ids = await withExternalMetrics(
     'matrikkel',
@@ -469,22 +751,50 @@ export async function resolveBuildingData(
   let matrikkelenhetsId: number | undefined;
 
   for (const id of ids) {
-    const xml = await withExternalMetrics(
-      'store-service',
-      'getObjectXml',
-      () => storeClient.getObjectXml(id, 'MatrikkelenhetId')
-    );
+    const info = await getMatrikkelInfo(id);
 
-    const isMain =
-      /<hovedadresse>\s*true\s*<\/hovedadresse>/i.test(xml) ||
-      /hovedadresse\s*=\s*["']?true["']?/i.test(xml);
+    if (info.addressMatch.matchesNumber === false) {
+      if (LOG) {
+        debugLog(`⏭️  Hopper over matrikkelenhet ${id} – husnummer matcher ikke`);
+      }
+      continue;
+    }
 
-    if (isMain) {
+    if (info.addressMatch.matchesLetter === false) {
+      if (normalizedLetter && LOG) {
+        debugLog(
+          `⏭️  Hopper over matrikkelenhet ${id} – bokstav matcher ikke (${normalizedLetter})`
+        );
+      }
+      continue;
+    }
+
+    if (info.isMain) {
+      if (normalizedLetter && info.objectType !== 'Seksjon') {
+        if (LOG) {
+          debugLog(
+            `⏭️  Hopper over matrikkelenhet ${id} med hovedadresse=true – ikke seksjon (${info.objectType})`
+          );
+        }
+        continue;
+      }
+
+      if (normalizedLetter) {
+        const analyse = await analyzeMatrikkelenhet(id, info);
+        if (!analyse || !analyse.harMatchendeBruksenhet) {
+          if (LOG) {
+            debugLog(
+              `⏭️  Hopper over matrikkelenhet ${id} med hovedadresse=true – ingen bruksenhet matcher seksjon ${normalizedLetter}`
+            );
+          }
+          continue;
+        }
+      }
+
       matrikkelenhetsId = id;
 
-      const seksjonMatch = xml.match(/<(?:ns\d+:)?seksjonsnummer>(\d+)<\/(?:ns\d+:)?seksjonsnummer>/i);
-      if (seksjonMatch) {
-        seksjonsnummer = parseInt(seksjonMatch[1]);
+      if (info.seksjonsnummer) {
+        seksjonsnummer = info.seksjonsnummer;
         if (LOG) {
           debugLog(
             `✅ Valgte matrikkelenhet ${id} med hovedadresse=true og seksjonsnummer=${seksjonsnummer}`
@@ -497,32 +807,28 @@ export async function resolveBuildingData(
     }
   }
 
-  if (!matrikkelenhetsId && adr.bokstav) {
+  if (!matrikkelenhetsId && normalizedLetter) {
     if (LOG) {
       debugLog(
-        `⚠️  Ingen hovedadresse funnet, sjekker for seksjonerte matrikkelenheter for bokstav ${adr.bokstav}...`
+        `⚠️  Ingen hovedadresse funnet, sjekker for seksjonerte matrikkelenheter for bokstav ${normalizedLetter}...`
       );
     }
 
-    const forventetSeksjon = adr.bokstav.charCodeAt(0) - 'A'.charCodeAt(0) + 1;
-
     for (const id of ids) {
-      const xml = await withExternalMetrics(
-        'store-service',
-        'getObjectXml',
-        () => storeClient.getObjectXml(id, 'MatrikkelenhetId')
-      );
-      const seksjonMatch = xml.match(/<(?:ns\d+:)?seksjonsnummer>(\d+)<\/(?:ns\d+:)?seksjonsnummer>/i);
+      const info = await getMatrikkelInfo(id);
+      if (info.addressMatch.matchesNumber === false) {
+        continue;
+      }
+      if (!info.seksjonsnummer || expectedSeksjonsnummerFraBokstav === undefined) {
+        continue;
+      }
 
-      if (!seksjonMatch) continue;
-
-      const seksjon = parseInt(seksjonMatch[1]);
-      if (seksjon === forventetSeksjon) {
+      if (info.seksjonsnummer === expectedSeksjonsnummerFraBokstav) {
         matrikkelenhetsId = id;
-        seksjonsnummer = seksjon;
+        seksjonsnummer = info.seksjonsnummer;
         if (LOG) {
           debugLog(
-            `✅ Fant matrikkelenhet ${id} med seksjonsnummer ${seksjon} som matcher bokstav ${adr.bokstav}`
+            `✅ Fant matrikkelenhet ${id} med seksjonsnummer ${seksjonsnummer} som matcher bokstav ${normalizedLetter}`
           );
         }
         break;
@@ -537,53 +843,64 @@ export async function resolveBuildingData(
       );
     }
 
-    const matrikkelEnheterMedBygg: Array<{
-      id: number;
-      byggIds: number[];
-      harBoligbygg: boolean;
-    }> = [];
+    const matrikkelEnheterMedBygg: MatrikkelCandidate[] = [];
 
     for (const id of ids) {
-      const byggIds = await withExternalMetrics(
-        'bygning-service',
-        'findByggForMatrikkelenhet',
-        () => bygningClient.findByggForMatrikkelenhet(id, ctx()),
-        (result) => (result.length > 0 ? 'success' : 'not_found')
-      );
-      if (!byggIds.length) {
-        continue;
+      const candidate = await analyzeMatrikkelenhet(id);
+      if (candidate) {
+        matrikkelEnheterMedBygg.push(candidate);
       }
-
-      let harBoligbygg = false;
-      for (const byggId of byggIds) {
-        try {
-          const byggInfo = await withExternalMetrics(
-            'store-service',
-            'getObject',
-            () => storeClient.getObject(byggId)
-          );
-          if (shouldProcessBuildingType(byggInfo.bygningstypeKodeId)) {
-            harBoligbygg = true;
-            break;
-          }
-        } catch (error) {
-          debugLog(`⚠️  Kunne ikke hente bygg-info for bygg ${byggId}:`, error);
-        }
-      }
-
-      matrikkelEnheterMedBygg.push({ id, byggIds, harBoligbygg });
     }
 
-    const medBoligbygg = matrikkelEnheterMedBygg.filter((m) => m.harBoligbygg);
-    const candidate = medBoligbygg[0] ?? matrikkelEnheterMedBygg[0];
+    let candidateList = filterCandidatesByAddress(
+      matrikkelEnheterMedBygg.filter((m) => m.harBoligbygg)
+    );
 
-    if (candidate) {
-      matrikkelenhetsId = candidate.id;
+    if (!candidateList.length) {
+      candidateList = filterCandidatesByAddress(matrikkelEnheterMedBygg);
+    }
+
+    if (normalizedLetter) {
+      const seksjonsKandidater = candidateList.filter(
+        (candidate) => candidate.objectType === 'Seksjon'
+      );
+      if (seksjonsKandidater.length) {
+        candidateList = seksjonsKandidater;
+      }
+    }
+
+    if (normalizedLetter) {
+      const medBruksenhet = candidateList.filter(
+        (candidate) => candidate.harMatchendeBruksenhet
+      );
+      if (medBruksenhet.length) {
+        candidateList = medBruksenhet;
+      }
+    }
+
+    let selectedCandidate: MatrikkelCandidate | undefined;
+
+    for (const candidate of candidateList) {
+      selectedCandidate = candidate;
+      break;
+    }
+
+    if (!selectedCandidate && candidateList.length) {
+      selectedCandidate = candidateList[0];
+      if (normalizedLetter && LOG) {
+        debugLog(
+          '⚠️  Ingen matrikkelenhet hadde matchende bruksenhet – faller tilbake til første kandidat'
+        );
+      }
+    }
+
+    if (selectedCandidate) {
+      matrikkelenhetsId = selectedCandidate.id;
       if (LOG) {
         debugLog(
-          medBoligbygg.length
-            ? `✅ Valgte matrikkelenhet ${candidate.id} med boligbygg`
-            : `⚠️  Valgte matrikkelenhet ${candidate.id} (ingen boligbygg funnet, fallback)`
+          selectedCandidate.harBoligbygg
+            ? `✅ Valgte matrikkelenhet ${selectedCandidate.id} med boligbygg`
+            : `⚠️  Valgte matrikkelenhet ${selectedCandidate.id} (ingen boligbygg funnet, fallback)`
         );
       }
     }
@@ -682,6 +999,8 @@ export async function resolveBuildingData(
     );
   }
 
+  const erSeksjonertEiendom = seksjonsnummer || adr.bokstav;
+
   if (LOG) {
     debugLog(`🏠 Eligible buildings after filtering: ${eligibleBuildings.length}`);
     for (const bygg of eligibleBuildings) {
@@ -692,13 +1011,39 @@ export async function resolveBuildingData(
     }
   }
 
+  if (erSeksjonertEiendom && eligibleBuildings.length > 0) {
+    const byggMedMatch: Array<ByggInfo & { id: number }> = [];
+    for (const bygg of eligibleBuildings) {
+      const bruksenheter = await loadBruksenheterForBuilding(bygg);
+      if (!bruksenheter.length) {
+        continue;
+      }
+
+      const harMatch = bruksenheter.some((b) => bruksenhetMatchesAddress(b));
+      if (harMatch) {
+        byggMedMatch.push(bygg);
+      }
+    }
+
+    if (byggMedMatch.length) {
+      eligibleBuildings = byggMedMatch;
+      if (LOG) {
+        debugLog(
+          `🎯 Begrenset byggkandidater basert på bruksenheter: ${eligibleBuildings.length} treff`
+        );
+      }
+    } else if (LOG && normalizedLetter) {
+      debugLog(
+        '⚠️  Ingen bygg hadde bruksenheter som matcher seksjonsbokstaven – beholder opprinnelige kandidater'
+      );
+    }
+  }
+
   if (eligibleBuildings.length === 0) {
     throw new Error('Ingen bygninger funnet på denne adressen');
   }
 
   let selectedBygg: (ByggInfo & { id: number }) | null = null;
-
-  const erSeksjonertEiendom = seksjonsnummer || adr.bokstav;
 
   const USE_IMPROVED_SELECTION = options.useImprovedSelection ?? false;
   const DEBUG_IMPROVED = options.debug ?? LOG;
@@ -891,82 +1236,39 @@ export async function resolveBuildingData(
     }
 
     if (bygg.bruksenhetIds && bygg.bruksenhetIds.length > 0) {
+      const bruksenheter = await loadBruksenheterForBuilding(bygg);
+
       if (LOG) {
         debugLog(
-          `📦 Bygget har ${bygg.bruksenhetIds.length} bruksenhet-IDer: ${
-            bygg.bruksenhetIds.join(', ')
-          }`
+          `  📦 Totalt ${bruksenheter.length} bruksenheter hentet for bygg ${bygg.id}`
         );
       }
 
-      try {
-        const bruksenheter: BruksenhetInfo[] = [];
-        for (const bruksenhetId of bygg.bruksenhetIds) {
-          if (LOG) {
-            debugLog(`  🔍 Henter bruksenhet ${bruksenhetId} via StoreService...`);
-          }
+      const matchendeBruksenhet = bruksenheter.find((b) =>
+        bruksenhetMatchesAddress(b)
+      );
 
-          try {
-            const bruksenhetInfo = await withExternalMetrics(
-              'store-service',
-              'getBruksenhet',
-              () => storeClient.getBruksenhet(bruksenhetId)
-            );
-            if (bruksenhetInfo) {
-              bruksenheter.push(bruksenhetInfo);
-              if (LOG) {
-                debugLog(
-                  `  ✅ Hentet bruksenhet ${bruksenhetId}: etasje=${bruksenhetInfo.etasjenummer}, areal=${bruksenhetInfo.bruksarealM2}`
-                );
-              }
-            }
-          } catch (error) {
-            debugLog(
-              `  ⚠️  Kunne ikke hente detaljer for bruksenhet ${bruksenhetId}:`,
-              error
-            );
-          }
-        }
-
+      if (matchendeBruksenhet) {
         if (LOG) {
-          debugLog(`  📦 Totalt ${bruksenheter.length} bruksenheter hentet`);
+          debugLog(
+            `  ✅ Fant matchende bruksenhet ${matchendeBruksenhet.id} for seksjon ${
+              seksjonsnummer || adr.bokstav
+            }`
+          );
         }
 
-        const matchendeBruksenhet = bruksenheter.find((b) => {
-          if (b.seksjonsnummer && seksjonsnummer) {
-            return Number(b.seksjonsnummer) === seksjonsnummer;
-          }
-          if (adr.bokstav) {
-            const leilighet = b.leilighetnummer?.trim().toUpperCase();
-            return leilighet === adr.bokstav.toUpperCase();
-          }
-          return false;
-        });
-
-        if (matchendeBruksenhet) {
+        if (matchendeBruksenhet.bruksarealM2) {
+          bygg.bruksarealM2 = matchendeBruksenhet.bruksarealM2;
           if (LOG) {
             debugLog(
-              `  ✅ Fant matchende bruksenhet ${matchendeBruksenhet.id} for seksjon ${
-                seksjonsnummer || adr.bokstav
-              }`
+              `  📏 Setter bygg-areal til bruksenhet-areal: ${bygg.bruksarealM2} m²`
             );
           }
-
-          if (matchendeBruksenhet.bruksarealM2) {
-            bygg.bruksarealM2 = matchendeBruksenhet.bruksarealM2;
-            if (LOG) {
-              debugLog(
-                `  📏 Setter bygg-areal til bruksenhet-areal: ${bygg.bruksarealM2} m²`
-              );
-            }
-          }
-
-          if (matchendeBruksenhet.bruksenhetstypeNavn) {
-            bygg.bygningstypeBeskrivelse = matchendeBruksenhet.bruksenhetstypeNavn;
-          }
         }
-      } catch (error) {
-        debugLog('⚠️  Feil ved bruksenhet-oppslag:', error);
+
+        if (matchendeBruksenhet.bruksenhetstypeNavn) {
+          bygg.bygningstypeBeskrivelse = matchendeBruksenhet.bruksenhetstypeNavn;
+        }
       }
     }
   }
