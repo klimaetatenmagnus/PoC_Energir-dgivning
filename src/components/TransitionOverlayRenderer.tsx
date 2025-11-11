@@ -1,6 +1,6 @@
 import React from 'react';
 import { BlokkSvg, EneboligSvg } from './FigmaBlokk/components/BuildingSprites';
-import { useTransitionOverlay } from '../context/TransitionOverlayContext';
+import { useTransitionOverlay } from '../context/useTransitionOverlay';
 
 const TIMINGS = {
   enebolig: {

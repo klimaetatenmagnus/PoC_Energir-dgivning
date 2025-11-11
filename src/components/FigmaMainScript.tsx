@@ -16,7 +16,7 @@ import { THERESES_44A_DATA } from '../testData/theresegate44a';
 import { useFigmaViewportMetrics } from './FigmaBlokk/hooks/useFigmaViewportMetrics';
 import { EneboligSvg, BlokkSvg } from './FigmaBlokk/components/BuildingSprites';
 import type { LandingSnapshot, BuildingSnapshot } from '../hooks/useFigmaAddressSearch';
-import { useTransitionOverlay, toViewportRect } from '../context/TransitionOverlayContext';
+import { useTransitionOverlay, toViewportRect } from '../context/useTransitionOverlay';
 
 const FIGMA_ARTBOARD_WIDTH = 1728;
 const FIGMA_ARTBOARD_CENTER = FIGMA_ARTBOARD_WIDTH / 2;
@@ -67,7 +67,7 @@ function useBuildingStartCoordinates(
     setStart({ left: snapshot.left, bottom: snapshot.bottom });
     setSource('snapshot');
     if (isDev) {
-      console.info(`[skyline-transition] ${debugLabel} start pinned to snapshot`, snapshot);
+      console.warn(`[skyline-transition] ${debugLabel} start pinned to snapshot`, snapshot);
     }
   }, [snapshot, lockUpdates, debugLabel, isDev]);
 
@@ -84,7 +84,10 @@ function useBuildingStartCoordinates(
       setStart({ left: fallback.left, bottom: fallback.bottom });
       setSource('fallback');
       if (isDev) {
-        console.info(`[skyline-transition] ${debugLabel} start fell back to defaults`, fallback);
+        console.warn(
+          `[skyline-transition] ${debugLabel} start fell back to defaults`,
+          { left: fallback.left, bottom: fallback.bottom },
+        );
       }
     }, SNAPSHOT_RESOLUTION_TIMEOUT_MS);
 
