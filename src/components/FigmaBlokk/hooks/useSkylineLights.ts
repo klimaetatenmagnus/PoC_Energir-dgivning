@@ -235,15 +235,47 @@ export const useSkylineLights = ({ enabled = false }: UseSkylineLightsOptions) =
     let intervalId: number | undefined;
     if (!prefersReducedMotion) {
       intervalId = window.setInterval(() => {
-        const randomGroup = groups[Math.floor(Math.random() * groups.length)];
-        if (!randomGroup) {
-          return;
+        const toggleCountOptions = [1, 2, 3] as const;
+        const desiredToggleCount =
+          toggleCountOptions[Math.floor(Math.random() * toggleCountOptions.length)];
+        const toggleCount = Math.min(groups.length, desiredToggleCount);
+        const usedGroupIds = new Set<string>();
+
+        // Each interval we change 1-3 unique windows, with a 50/50 chance of turning on/off per window.
+        for (let index = 0; index < toggleCount; index += 1) {
+          const availableActiveGroups = groups.filter(
+            (group) => activeIds.has(group.id) && !usedGroupIds.has(group.id),
+          );
+          const availableInactiveGroups = groups.filter(
+            (group) => !activeIds.has(group.id) && !usedGroupIds.has(group.id),
+          );
+
+          if (!availableActiveGroups.length && !availableInactiveGroups.length) {
+            break;
+          }
+
+          let shouldTurnOn = Math.random() < 0.5;
+          let candidatePool = shouldTurnOn ? availableInactiveGroups : availableActiveGroups;
+
+          if (!candidatePool.length) {
+            shouldTurnOn = !shouldTurnOn;
+            candidatePool = shouldTurnOn ? availableInactiveGroups : availableActiveGroups;
+          }
+
+          if (!candidatePool.length) {
+            break;
+          }
+
+          const selectedGroup = candidatePool[Math.floor(Math.random() * candidatePool.length)];
+          usedGroupIds.add(selectedGroup.id);
+
+          if (shouldTurnOn) {
+            activeIds.add(selectedGroup.id);
+          } else {
+            activeIds.delete(selectedGroup.id);
+          }
         }
-        if (activeIds.has(randomGroup.id)) {
-          activeIds.delete(randomGroup.id);
-        } else {
-          activeIds.add(randomGroup.id);
-        }
+
         applyActiveState(groups, activeIds);
       }, TOGGLE_INTERVAL_MS);
     }
