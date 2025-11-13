@@ -1,6 +1,6 @@
 # Driftsdokumentasjon – Energinøkkelen i Google Cloud
 
-Oppdatert: 2025-10-30 (Codex)
+Oppdatert: 2025-11-14 (Codex)
 
 > Dette dokumentet beskriver Energinøkkelens Google Cloud-miljø, rutiner for bygg/deploy og kjente avvik. Det erstatter `Dokumentasjon/deploy-plan-gcp.md` som “single source of truth” for drift. Oppdater dokumentet hver gang arkitektur, rutiner eller tilgang endres.
 
@@ -176,9 +176,16 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 ### 5.2 Innholdsoppdateringer uten kodeendring
 
 - Oppdater JSON/YAML lokalt og synk til GCS (`gsutil -m rsync content gs://energinokkelen-content` for staging, `...-content-prod` for prod). API-serveren leser direkte fra bøtten; redeploy trengs ikke.
+- 2025-11-13: Nye runtime-filer (`content/tiltak/etterisolering-kjeller-loft.json`, `content/tilskudd/klimaoslo-fasadefond.json`, `content/tilskudd/enova-etterisolering-loft-kjeller.json`) ligger i repoet. Synk dem til staging først; publiser til prod når metadata.status settes til `published` og driftsloggen er oppdatert.
+- 2025-11-13: Solenergi/Varmepumpe er migrert til `content/tiltak/solenergi.json` og `content/tiltak/varmepumpe.json` + nye tilskudd (`klimaoslo-solenergitilskudd`, `enova-solcelleanlegg`, `klimaoslo-vaeske-til-vann-varmepumpe`, `klimaoslo-varmepumpebereder`). Husk å rsync begge bøtter og oppdatere metadata-status før prod-republisering.
+- 2025-11-14: Tetting/Ventilasjon/Vinduer er lagt inn som `content/tiltak/{tetting,ventilasjon,vinduer}.json` (inkl. `variants` for gul liste) og nye tilskudd (`klimaoslo-oppgradering-bygningskropp`, `klimaoslo-energitiltak-borettslag`, `klimaoslo-energikartlegging-borettslag`, `klimaoslo-balansert-ventilasjon`, `klimaoslo-vinduer-dorer`, `enova-energiradgivning`, `byantikvaren-istandsetting`). Filene står som `draft` i metadata og må godkjennes + rsynces før de brukes i prod.
 - For større innholdsendringer kan Cloud Build brukes (kjør staging/prod trigger eller `gcloud builds submit --substitutions _DEPLOY=false` for kun artefakter).
 - Husk eventuelt å invalidere CDN dersom frontend skal lese nye filer direkte (`deploy/gcp/invalidate-cdn-cache.sh`).
 - Tiltakstekster og lignende innhold ligger i `content/tiltak/*.json` og hentes via `/config/content/<sti>.json`. Filer leses først fra GCS-bøtten og faller tilbake til lokale filer.
+- Fra 2025-11-12 validerer API-serveren automatisk alle `content/tiltak/*.json` og `content/tilskudd/*.json` som har `schemaVersion`. Upubliserte/arkiverte dokumenter returnerer 404/410 i prod, og ugyldige filer gir `422` med detaljer i Cloud Logging. Bruk `?draft=1` når redaktører skal forhåndsvise staging-data.
+- `/config/content/tiltak/index.json` og `/config/content/tilskudd/index.json` genereres on-demand og oppsummerer antall publiserte elementer, samt hvor mange som hoppes over (legacy/ugyldig/upublisert). Admin-løsningen skal benytte disse indeksene fremfor å scanne bøtten manuelt.
+- Alle `/config/content/**`-endepunktene returnerer nå `ETag`-headere basert på GCS `generation` (eller filsystemets mtime/size), og støtter `If-None-Match` slik at admin-klienten kan oppdage race conditions og unngå overstyring.
+- Første pilot med nytt schema (`etterisolering-yttervegg`) er supplert med `etterisolering-kjeller-loft`, `solenergi` og `varmepumpe` som nå brukes direkte i frontenden via `useTiltakContent`/`useGrantAwareStotteordninger`.
 
 ### 5.3 CDN-invalidator
 
@@ -329,6 +336,12 @@ gcloud monitoring uptime describe projects/energiverktoy-poc-1234/uptimeCheckCon
 
 | Dato       | Beskrivelse                                                                                                                                                                      | Utført av |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| 2025-11-15 | Temperaturstyring flyttet til `content/tiltak/temperaturstyring.json` med variantdata + nye tilskudd (`klimaoslo-smart-energistyring`, `klimaoslo-pris-effektstyring`) dokumentert i content-/driftsrutinene. | Codex      |
+| 2025-11-13 | Solenergi/Varmepumpe flyttet til `content/tiltak/*.json` + nye tilskudd (`klimaoslo-solenergitilskudd`, `enova-solcelleanlegg`, `klimaoslo-vaeske-til-vann-varmepumpe`, `klimaoslo-varmepumpebereder`), `useGrantAwareStotteordninger` dokumentert og rutiner for rsync/metadata oppdatert. | Codex      |
+| 2025-11-14 | Tetting/Ventilasjon/Vinduer modellert i `content/tiltak/*.json` (inkl. gul-listevarianter) og nye tilskudd (`klimaoslo-oppgradering-bygningskropp`, `klimaoslo-energitiltak-borettslag`, `klimaoslo-energikartlegging-borettslag`, `klimaoslo-balansert-ventilasjon`, `klimaoslo-vinduer-dorer`, `enova-energiradgivning`, `byantikvaren-istandsetting`) lagt til dokumentasjonen. | Codex      |
+| 2025-11-13 | Lagt til nye content-filer (etterisolering kjeller/loft + to tilskudd), dokumentert at frontend henter støtteordninger via `useTilskuddBatch`, og oppdatert Oppdatert-linjen. | Codex      |
+| 2025-11-12 | Noterte at `etterisolering-yttervegg`/`enova-etterisolering` ligger i repoet som første pilot på nytt schema og hentes i frontenden via `useTiltakContent`. | Codex      |
+| 2025-11-12 | La til `ETag/If-None-Match`-støtte for `/config/content/**`-endepunktene slik at klientene kan cache og gjøre optimistisk låsing på innholdsoppdateringer.                        | Codex      |
 | 2025-10-30 | Migrerte `monitoring/building-info-alert-*.json` til MSP-metrikker, validerte med `gcloud alpha monitoring policies create` (feilet pga. manglende `building_info_service_*`-metrikk i MSP) og dokumenterte videre tiltak. | Codex      |
 | 2025-10-30 | Oppdaterte `monitoring/building-info-dashboard.json` til Managed Prometheus-navngiving med eksplisitte cluster-filtre og deployet dashboardet i GCP.                              | Codex      |
 | 2025-10-30 | Dokumenterte at MSP-metrikker er synlige i “Cloud Run Monitoring”, la til videre tiltak for dashboard/alert-konfig og oppdaterte observability-seksjonen. | Codex      |

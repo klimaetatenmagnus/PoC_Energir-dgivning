@@ -1,23 +1,242 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   getOverskriftColor,
   openExternalLink,
-  TiltakComponentProps,
-  useStotteordninger
+  TiltakComponentProps
 } from './shared';
+import type { Stotteordning } from '../../../../services/stotteordning-service';
+import { useTiltakContent } from '../../../../hooks/contentHooks';
+import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
+import type {
+  TiltakAccordionItem,
+  TiltakContent
+} from '../../../../../content/tiltak/schema';
+import type { ContentAudience } from '../../../../../content/schema-helpers';
+import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
+import { renderParagraphWithGlossary } from './glossaryHelpers';
 
 type VentilasjonProps = TiltakComponentProps;
+type VentilasjonComponentProps = TiltakComponentProps & { audience?: ContentAudience };
 
-export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType }) => {
+type ReadMoreLink = {
+  label: string;
+  url: string;
+};
+
+type VentilasjonContentView = {
+  title: string;
+  introParagraphs: string[];
+  buildingTypeParagraphs: Record<string, string[]>;
+  benefits: { title: string; description: string }[];
+  readMore: ReadMoreLink[];
+  accordion: TiltakAccordionItem[];
+  grants: string[];
+};
+
+const defaultVentilasjonContent: VentilasjonContentView = {
+  title: 'Ventilasjon',
+  introParagraphs: [
+    'God ventilasjon er viktig for inneklima, helse og effekten av andre energitiltak. Når du tetter og isolerer blir boligen tettere – uten friskluft kan det gi fukt, dårlig luft og høyere varmebehov.'
+  ],
+  buildingTypeParagraphs: {
+    enebolig: [
+      'Mange eneboliger har ventiler som er tettet igjen eller ikke i bruk. Ved å åpne eller erstatte disse får du bedre luftkvalitet uten store inngrep. På bad og kjøkken kan avtrekksvifter være tilstrekkelig, mens balansert ventilasjon gir jevn temperatur og varmegjenvinning i hele huset.'
+    ],
+    rekkehus: [
+      'I rekkehus og tomannsboliger deler du ofte konstruksjoner med naboen. Start med å åpne, rense og vedlikeholde eksisterende ventiler. Dersom flere i rekken har samme utfordring kan dere planlegge felles tiltak, for eksempel balansert ventilasjon eller nye avtrekksvifter.'
+    ],
+    tomannsbolig: [
+      'I rekkehus og tomannsboliger deler du ofte konstruksjoner med naboen. Start med å åpne, rense og vedlikeholde eksisterende ventiler. Dersom flere i rekken har samme utfordring kan dere planlegge felles tiltak, for eksempel balansert ventilasjon eller nye avtrekksvifter.'
+    ],
+    blokk: [
+      'I leilighetsbygg er det vanlig med naturlig ventilasjon gjennom sjakter og lufteluker. Mange slike løsninger er tettet eller fjernet, og resultatet er dårlig luft – særlig på bad og kjøkken. Få renset og åpnet ventiler i egen bolig, og ta saken opp med styret dersom hele bygget trenger balansert ventilasjon eller nye avtrekk.'
+    ],
+    default: [
+      'I leilighetsbygg er det vanlig med naturlig ventilasjon gjennom sjakter og lufteluker. Mange slike løsninger er tettet eller fjernet, og resultatet er dårlig luft – særlig på bad og kjøkken. Få renset og åpnet ventiler i egen bolig, og ta saken opp med styret dersom hele bygget trenger balansert ventilasjon eller nye avtrekk.'
+    ]
+  },
+  benefits: [
+    { title: 'Redusert støy', description: 'Moderne anlegg gir bedre luft uten trekk og sus.' },
+    { title: 'Ivaretar boligen', description: 'Riktig ventilasjon beskytter mot fukt og mugg.' },
+    { title: 'Bedre bokvalitet', description: 'Jevn temperatur og filtrert luft gir mer komfort.' },
+    { title: 'Redusert energibehov', description: 'Varmegjenvinning tar vare på energien du allerede har betalt for.' }
+  ],
+  readMore: [
+    {
+      label: 'Enova – balansert ventilasjon',
+      url: 'https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/balansert-ventilasjon'
+    },
+    {
+      label: 'SINTEF – slik virker balansert ventilasjon',
+      url: 'https://www.sintef.no/fagomrader/energieffektivisering-bygg/slik-virker-balansert-ventilasjon-i-boliger/'
+    }
+  ],
+  accordion: [
+    {
+      id: 'soknadsplikt',
+      title: 'Søknadsplikt er ikke en stopper, men en støtte',
+      body: [
+        'Er tiltaket ditt søknadspliktig betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.',
+        'Søknadsplikten skal hjelpe deg som tiltakshaver med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak som tar faglig ansvar for prosjektering og utførelse.',
+        'Selv om du må søke, kan selve ventilasjonstiltaket fortsatt være enkelt å gjennomføre. Ta dialogen tidlig og bruk veiledningstilbudene dersom du er usikker.'
+      ],
+      links: [
+        {
+          id: 'dibk-soknadsplikt',
+          label: 'Direktoratet for byggkvalitet – hva er søknadsplikt?',
+          url: 'https://www.dibk.no/regelverk/sak/2/2/innledning'
+        },
+        {
+          id: 'dibk-ansvar',
+          label: 'Tiltakshaver og ansvarlige foretak',
+          url: 'https://www.dibk.no/regelverk/sak/3/12/innledning'
+        },
+        {
+          id: 'lovdata-ansvar',
+          label: 'Plan- og bygningsloven §20-3',
+          url: 'https://lovdata.no/dokument/NL/lov/2008-06-27-71/KAPITTEL_4-1#%C2%A720-3'
+        }
+      ],
+      glossary: [
+        {
+          term: 'søknadspliktig',
+          definition: [
+            'Søknadsplikt betyr at du må ha tillatelse fra Plan- og bygningsetaten før du gjør fysiske endringer på bygningen eller eiendommen.'
+          ],
+          links: [
+            {
+              label: 'Les mer hos DiBK',
+              url: 'https://www.dibk.no/regelverk/sak/2/2/innledning'
+            }
+          ]
+        },
+        {
+          term: 'tiltakshaver',
+          definition: [
+            'Tiltakshaver er personen eller virksomheten som utfører – eller bestiller – et tiltak som krever søknad og tillatelse.'
+          ],
+          links: [
+            {
+              label: 'Tiltakshavers ansvar',
+              url: 'https://www.dibk.no/regelverk/sak/3/12/12-1'
+            }
+          ]
+        },
+        {
+          term: 'ansvarlige foretak',
+          definition: [
+            'Et ansvarlig foretak er et firma med riktig kompetanse som tar ansvar for bestemte deler av et byggeprosjekt.'
+          ],
+          links: [
+            {
+              label: 'Når kreves ansvarsrett?',
+              url: 'https://www.dibk.no/regelverk/sak/3/12/innledning'
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  grants: [
+    'klimaoslo-balansert-ventilasjon',
+    'klimaoslo-energitiltak-borettslag',
+    'klimaoslo-energikartlegging-borettslag',
+    'enova-energiradgivning'
+  ]
+};
+
+function mapVentilasjonContent(content?: TiltakContent): VentilasjonContentView | null {
+  if (!content) {
+    return null;
+  }
+
+  return {
+    title: content.title,
+    introParagraphs: content.introParagraphs,
+    buildingTypeParagraphs: content.buildingTypeParagraphs,
+    benefits: content.benefits.map(({ title, description }) => ({
+      title,
+      description: description ?? ''
+    })),
+    readMore: content.readMore.map(({ label, url }) => ({ label, url })),
+    accordion: content.accordion,
+    grants: content.grants
+  };
+}
+
+const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
+  onBack,
+  buildingType,
+  audience = 'standard'
+}) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
-  const [hoveredWord, setHoveredWord] = useState<string | null>(null);
+  const [hoveredGlossaryTerm, setHoveredGlossaryTerm] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
-  const { stotteordninger } = useStotteordninger({
-    tiltak: 'ventilasjon',
+
+  const { data: tiltakContent } = useTiltakContent('ventilasjon');
+  const resolvedTiltakContent = useMemo(
+    () => applyTiltakVariant(tiltakContent, audience),
+    [tiltakContent, audience]
+  );
+  const mappedContent = useMemo(
+    () => mapVentilasjonContent(resolvedTiltakContent),
+    [resolvedTiltakContent]
+  );
+  const content = mappedContent ?? defaultVentilasjonContent;
+
+  const introParagraphs = content.introParagraphs.length
+    ? content.introParagraphs
+    : defaultVentilasjonContent.introParagraphs;
+
+  const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
+  const buildingParagraphs =
+    content.buildingTypeParagraphs[buildingTypeKey] ??
+    content.buildingTypeParagraphs.default ??
+    defaultVentilasjonContent.buildingTypeParagraphs.default;
+
+  const benefits = [...(content.benefits.length ? content.benefits : defaultVentilasjonContent.benefits)];
+  while (benefits.length < 4) {
+    benefits.push(defaultVentilasjonContent.benefits[benefits.length]);
+  }
+
+  const readMoreLinks = (content.readMore.length ? content.readMore : defaultVentilasjonContent.readMore).slice(0, 3);
+
+  const accordionItem = content.accordion[0] ?? defaultVentilasjonContent.accordion[0];
+  const accordionBody = accordionItem?.body ?? [];
+  const accordionLinks = accordionItem?.links ?? [];
+  const glossaryEntries = accordionItem?.glossary ?? [];
+
+  const {
+    stotteordninger,
+    intendedSource,
+    isLoading: grantLoading
+  } = useGrantAwareStotteordninger({
+    grantIds: content.grants,
+    legacyTiltakSlug: 'ventilasjon',
     buildingType
   });
 
-  const needsScroll = stotteordninger.length > 4;
+  const displayedStotteordninger: Stotteordning[] = stotteordninger.length
+    ? stotteordninger
+    : intendedSource === 'grants' && grantLoading
+      ? [
+          {
+            ordning: 'Henter støtteordninger …',
+            lenke: null,
+            belop: null,
+            overskrift: null
+          }
+        ]
+      : [
+          {
+            ordning: 'Ingen registrerte støtteordninger ennå',
+            lenke: null,
+            belop: null,
+            overskrift: null
+          }
+        ];
+
+  const needsScroll = displayedStotteordninger.length > 4;
 
   return (
     <div style={{ 
@@ -52,7 +271,7 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType }
           fill="#2A2859"
           dominantBaseline="hanging"
         >
-          Ventilasjon
+          {content.title}
         </text>
         
         {/* Main text content with scroll if needed */}
@@ -88,23 +307,23 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType }
                 background: #AAAAAA;
               }
             `}</style>
-            <p style={{ marginBottom: '16px' }}>
-              God ventilasjon er viktig for inneklima og helse – og ikke minst for å få best mulig effekt av andre energitiltak. Når du tetter og isolerer, blir boligen mer energieffektiv, men også tettere. Uten god ventilasjon kan det føre til fukt, dårlig luft og høyt varmebehov.
-            </p>
-            
-            {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
-              <p style={{ marginBottom: '20px' }}>
-                Mange eneboliger har ventiler som er tettet igjen eller ikke i bruk. Ved å åpne eller erstatte disse, kan du forbedre luftkvaliteten uten store inngrep. På bad og kjøkken er avtrekksvifter en enkel løsning mot fukt. Ønsker du jevn temperatur og effektiv ventilasjon i hele boligen, kan balansert ventilasjon være aktuelt. Det er et system som bytter ut luften automatisk og gjenvinner varmen, slik at du sparer energi.
+            {introParagraphs.map((paragraph, index) => (
+              <p
+                key={`intro-${index}`}
+                style={{ marginBottom: index === introParagraphs.length - 1 && buildingParagraphs.length === 0 ? 0 : '16px' }}
+              >
+                {paragraph}
               </p>
-            ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
-              <p style={{ marginBottom: '20px' }}>
-                I mange rekkehus og tomannsboliger er ventilasjonen svekket over tid. Du kan få bedre luftkvalitet bare ved å rense og åpne ventiler, men vurder også mer moderne løsninger. Balansert ventilasjon sørger for at frisk luft kommer inn, brukt luft trekkes ut og varmen bevares – uten trekk. Et slikt tiltak gir jevnere temperatur. Samarbeider du med naboen kan dere oppnå enda mer effektive løsninger.
+            ))}
+
+            {buildingParagraphs.map((paragraph, index) => (
+              <p
+                key={`building-${index}`}
+                style={{ marginBottom: index === buildingParagraphs.length - 1 ? '20px' : '16px' }}
+              >
+                {paragraph}
               </p>
-            ) : (
-              <p style={{ marginBottom: '20px' }}>
-                Mange leiligheter har dårlig ventilasjon etter at gamle systemer ble fjernet eller tettet. Start med å få renset og åpnet ventiler i egen bolig. Hvis flere i bygget har samme utfordring, kan borettslaget vurdere balansert ventilasjon – et system som gir frisk luft og varmegjenbruk. Det gir bedre inneklima for hele bygget.
-              </p>
-            )}
+            ))}
           </div>
         </foreignObject>
         
@@ -132,7 +351,7 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType }
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Redusert støy
+          {benefits[0]?.title ?? defaultVentilasjonContent.benefits[0].title}
         </text>
         <rect
           x="565"
@@ -158,7 +377,7 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType }
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Ivaretar boligen
+          {benefits[1]?.title ?? defaultVentilasjonContent.benefits[1].title}
         </text>
         <rect
           x="565"
@@ -184,7 +403,7 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType }
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Bedre bokvalitet
+          {benefits[2]?.title ?? defaultVentilasjonContent.benefits[2].title}
         </text>
         <rect
           x="565"
@@ -224,7 +443,7 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType }
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Redusert energibehov
+          {benefits[3]?.title ?? defaultVentilasjonContent.benefits[3].title}
         </text>
         
         {/* Dark green box below the list */}
@@ -365,39 +584,25 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType }
         </text>
         
         {/* Links below "Les mer" */}
-        <text
-          x="170"
-          y="502"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-          style={{ cursor: 'pointer' }}
-          onClick={() => openExternalLink('https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/balansert-ventilasjon')}
-        >
-          Enova
-        </text>
-        
-        <text
-          x="170"
-          y="528"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-          style={{ cursor: 'pointer' }}
-          onClick={() => openExternalLink('https://www.sintef.no/fagomrader/energieffektivisering-bygg/slik-virker-balansert-ventilasjon-i-boliger/#:~:text=God%20ventilasjon%20avhenger%20av%20at%20anlegget%20fordeler%20lufta,anbefaler%20balansert%20ventilasjon%20med%20varmegjenvinning%20i%20nye%20boliger.')}
-        >
-          Sintef
-        </text>
+        {readMoreLinks.map((link, index) => (
+          <text
+            key={`${link.label}-${index}`}
+            x="170"
+            y={502 + index * 24}
+            fontFamily="Oslo Sans"
+            fontWeight="300"
+            fontStyle="normal"
+            fontSize="14"
+            lineHeight="22"
+            fill="#FFFFFF"
+            textAnchor="middle"
+            textDecoration="underline"
+            style={{ cursor: 'pointer' }}
+            onClick={() => openExternalLink(link.url)}
+          >
+            {link.label}
+          </text>
+        ))}
         
         {/* Dynamic table with scrollbar */}
         {/* Top border */}
@@ -410,7 +615,7 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType }
         />
         
         {/* Table container with scrolling via foreignObject */}
-        <foreignObject x="298" y="452" width="482" height={needsScroll ? "144" : `${stotteordninger.length * 36}`}>
+        <foreignObject x="298" y="452" width="482" height={needsScroll ? '144' : `${displayedStotteordninger.length * 36}`}>
           <div xmlns="http://www.w3.org/1999/xhtml" style={{
             width: '100%',
             height: '100%',
@@ -434,8 +639,8 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType }
                 background: #AAAAAA;
               }
             `}</style>
-            <svg width="474" height={stotteordninger.length * 36} viewBox={`0 0 474 ${stotteordninger.length * 36}`}>
-              {stotteordninger.map((ordning, index) => {
+            <svg width="474" height={displayedStotteordninger.length * 36} viewBox={`0 0 474 ${displayedStotteordninger.length * 36}`}>
+              {displayedStotteordninger.map((ordning, index) => {
                 const yPosition = index * 36;
                 const textYPosition = yPosition + 18;
                 const boxYPosition = yPosition + 6.5;
@@ -731,233 +936,103 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType }
               </div>
               
               {/* Rectangle with permit information */}
-              <div style={{
-                marginTop: '16px',
-                padding: '16px',
-                backgroundColor: '#2A2859'
-              }}>
-                <h3 style={{
-                  fontFamily: 'Oslo Sans',
-                  fontWeight: 700,
-                  fontSize: '16px',
-                  lineHeight: '24px',
-                  letterSpacing: '-0.2px',
-                  color: '#FFFFFF',
-                  margin: '0 0 12px 0'
-                }}>
-                  Søknadsplikt er ikke en stopper, men en støtte
-                </h3>
-                <p style={{
-                  fontFamily: 'Oslo Sans',
-                  fontWeight: 300,
-                  fontSize: '14px',
-                  lineHeight: '22px',
-                  letterSpacing: '0px',
-                  color: '#FFFFFF',
-                  margin: 0,
-                  position: 'relative'
-                }}>
-                  Er tiltaket ditt <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
-                      position: 'relative'
+              {accordionItem && (
+                <div
+                  style={{
+                    marginTop: '16px',
+                    padding: '16px',
+                    backgroundColor: '#2A2859'
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontFamily: 'Oslo Sans',
+                      fontWeight: 700,
+                      fontSize: '16px',
+                      lineHeight: '24px',
+                      letterSpacing: '-0.2px',
+                      color: '#FFFFFF',
+                      margin: '0 0 12px 0'
                     }}
-                    onMouseEnter={() => setHoveredWord('søknadspliktig')}
-                    onMouseLeave={() => setHoveredWord(null)}
                   >
-                    søknadspliktig
-                    {hoveredWord === 'søknadspliktig' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('søknadspliktig')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Søknadsplikt betyr at du må ha tillatelse fra Plan- og bygningsetaten før et tiltak – altså fysiske endringer på bygninger eller eiendom – kan settes i verk. Les mer om søknadsplikt <a 
-                            href="https://www.dibk.no/regelverk/sak/2/2/innledning" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span>, betyr ikke det at du får avslag. Tvert imot! Søknadsplikten skal sikre at arbeidet planlegges og gjennomføres med god kvalitet – både i papirene og på bygget. Målet er at du som <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={() => setHoveredWord('tiltakshaver')}
-                    onMouseLeave={() => setHoveredWord(null)}
-                  >
-                    tiltakshaver
-                    {hoveredWord === 'tiltakshaver' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('tiltakshaver')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Tiltakshaver er den personen eller virksomheten som utfører eller får utført tiltak – altså fysiske endringer på bygninger eller eiendom – som krever søknad og tillatelse etter plan- og bygningsloven. Les mer om tiltakshavers ansvar <a 
-                            href="https://www.dibk.no/regelverk/sak/3/12/12-1" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span> får det resultatet du ønsker deg, på en trygg og effektiv måte. I mer komplekse saker stilles det krav til <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={() => setHoveredWord('ansvarlige foretak')}
-                    onMouseLeave={() => setHoveredWord(null)}
-                  >
-                    ansvarlige foretak
-                    {hoveredWord === 'ansvarlige foretak' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('ansvarlige foretak')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Et ansvarlig foretak er et firma (for eksempel en arkitekt, byggmester eller entreprenør) som har fagkunnskap og tar ansvar for bestemte deler av et byggeprosjekt. Kommunen stiller krav til at slike firmaer må ha riktig kompetanse og erfaring.
-                          Les mer om ansvarsrett <a 
-                            href="https://www.dibk.no/regelverk/sak/3/12/innledning" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>, og hvilke tiltak som krever ansvarlig foretak <a 
-                            href="https://lovdata.no/dokument/NL/lov/2008-06-27-71/KAPITTEL_4-1#%C2%A720-3" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span>, nettopp for å sikre at de som gjør jobben har riktig kompetanse, og leverer løsninger som faktisk fungerer. Søknadsplikten hjelper deg altså i å lykkes med tiltaket ditt.
-                </p>
-              </div>
+                    {accordionItem.title}
+                  </h3>
+                  {accordionBody.map((paragraph, index) => (
+                    <p
+                      key={`accordion-body-${index}`}
+                      style={{
+                        fontFamily: 'Oslo Sans',
+                        fontWeight: 300,
+                        fontSize: '14px',
+                        lineHeight: '22px',
+                        letterSpacing: '0px',
+                        color: '#FFFFFF',
+                        margin: index === 0 ? 0 : '16px 0 0 0',
+                        position: 'relative'
+                      }}
+                    >
+                      {renderParagraphWithGlossary({
+                        paragraph,
+                        glossary: glossaryEntries,
+                        hoveredTerm: hoveredGlossaryTerm,
+                        setHoveredTerm: setHoveredGlossaryTerm
+                      })}
+                    </p>
+                  ))}
+                  {accordionLinks.length ? (
+                    <div
+                      style={{
+                        marginTop: '16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px'
+                      }}
+                    >
+                      {accordionLinks.map((link) => (
+                        <a
+                          key={link.id ?? link.url}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            fontFamily: 'Oslo Sans',
+                            fontWeight: 300,
+                            fontSize: '14px',
+                            lineHeight: '22px',
+                            letterSpacing: '0px',
+                            color: '#2A2859',
+                            textDecoration: 'underline',
+                            backgroundColor: '#FFFFFF',
+                            padding: '8px 12px'
+                          }}
+                        >
+                          {link.label}
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 18 18"
+                            fill="none"
+                            style={{ marginLeft: '8px', flexShrink: 0 }}
+                          >
+                            <path
+                              d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z"
+                              fill="#2A2859"
+                            />
+                            <path
+                              fillRule="evenodd"
+                              clipRule="evenodd"
+                              d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z"
+                              fill="#2A2859"
+                            />
+                          </svg>
+                        </a>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              )}
                 </div>
               </div>
             </div>
@@ -967,3 +1042,9 @@ export const Ventilasjon: React.FC<VentilasjonProps> = ({ onBack, buildingType }
     </div>
   );
 };
+
+export const Ventilasjon: React.FC<VentilasjonProps> = (props) => (
+  <VentilasjonContentComponent {...props} audience="standard" />
+);
+
+export { VentilasjonContentComponent };

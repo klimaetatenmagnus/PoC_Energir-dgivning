@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "id": "enova-energiradgivning",
+  "title": "Enova – energirådgivning",
+  "summary": "Statlig støtte til profesjonell energirådgiver før du gjennomfører tiltak som tetting, ventilasjon eller nye vinduer.",
+  "description": [
+    "Enova dekker deler av kostnaden når du engasjerer en kvalifisert energirådgiver til å kartlegge boligen og foreslå tiltak. Rapporten kan brukes når du planlegger tetting av luftlekkasjer, oppgraderer vinduer eller vurderer balansert ventilasjon.",
+    "Støtten utbetales etter at rådgivningen er gjennomført og dokumentert."
+  ],
+  "category": "statlig",
+  "provider": {
+    "name": "Enova SF",
+    "organizationNumber": "984 382 882",
+    "url": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/energiradgivning",
+    "contactEmail": "post@enova.no"
+  },
+  "funding": [
+    {
+      "kind": "fixed",
+      "amount": 5000,
+      "currency": "NOK",
+      "description": "Inntil 5 000 kroner i støtte når rapporten oppfyller Enovas krav."
+    }
+  ],
+  "eligibility": [
+    {
+      "id": "fagperson",
+      "title": "Rådgiver må være kvalifisert",
+      "description": [
+        "Energirådgiveren må stå på Enovas liste eller dokumentere tilsvarende kompetanse."
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "rapport-energi",
+      "title": "Lever rådgivningsrapport",
+      "description": [
+        "Rapporten må beskrive minst tre tiltak og effekten på energibruk."
+      ]
+    }
+  ],
+  "buildingTypes": [
+    "enebolig",
+    "rekkehus",
+    "tomannsbolig",
+    "blokk"
+  ],
+  "appliesToTiltak": [
+    "tetting",
+    "ventilasjon",
+    "vinduer",
+    "etterisolering-yttervegg",
+    "etterisolering-kjeller-loft",
+    "solenergi",
+    "varmepumpe"
+  ],
+  "regions": [
+    "national"
+  ],
+  "audiences": [
+    "standard"
+  ],
+  "tags": [
+    "enova",
+    "forprosjekt"
+  ],
+  "contacts": [
+    {
+      "id": "enova-kundesenter",
+      "name": "Enova kundesenter",
+      "email": "post@enova.no",
+      "url": "https://www.enova.no/nb/kontakt-oss/"
+    }
+  ],
+  "application": {
+    "url": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/energiradgivning",
+    "guidanceUrl": "https://www.enova.no/nb/privat/bolig/",
+    "rolling": true,
+    "documents": []
+  },
+  "links": [],
+  "metadata": {
+    "status": "published",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-14T09:25:00Z",
+    "changeSummary": "Lagt til Enovas energirådgivningstilskudd."
+  }
+}

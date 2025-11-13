@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "id": "smart-energistyring",
+  "title": "Smart energistyring",
+  "summary": "Faa oversikt over energibruken i boligen og styr varme etter behov i stedet for etter faste tidsplaner.",
+  "introParagraphs": [
+    "Med smart styring av varme og belysning kan du tilpasse energibruken til faktisk behov og utnytte timespriser paa strom.",
+    "Systemet gir deg full oversikt i en app og kan automatisere tiltak naar strommen er dyr."
+  ],
+  "buildingTypeParagraphs": {
+    "default": [
+      "Losningen passer alle boligtyper og kan kobles til eksisterende panelovner, varmekabler og varmepumper."
+    ],
+    "enebolig": [
+      "Installer styring per etasje slik at oppvarming i kjeller og loft reduseres naar rommene ikke er i bruk."
+    ],
+    "rekkehus": [
+      "Koordiner styring med naboene for aa unngaa samtidige effekttopper dersom dere deler hovedsikringer."
+    ]
+  },
+  "benefits": [
+    {
+      "id": "lavere-forbruk",
+      "title": "Lavere stromregning",
+      "description": "Automatiserte regler kutter unodvendig oppvarming naar du er borte.",
+      "icon": "bolt"
+    },
+    {
+      "id": "bedre-comfort",
+      "title": "Bedre komfort",
+      "description": "Holder jevn temperatur og varsler om avvik for det blir ubehagelig.",
+      "icon": "thermometer"
+    }
+  ],
+  "callsToAction": [
+    {
+      "id": "bestill-energiraad",
+      "label": "Snakk med en energiraadgiver",
+      "url": "https://energinokkelen.oslo.kommune.no/energiraad",
+      "style": "primary"
+    },
+    {
+      "id": "se-veileder",
+      "label": "Last ned veiledning",
+      "url": "https://energinokkelen.oslo.kommune.no/veiledning.pdf",
+      "style": "secondary"
+    }
+  ],
+  "readMore": [
+    {
+      "id": "effektbetaling",
+      "label": "Hva betyr effektledd?",
+      "url": "https://www.hvakosterstrommen.no/effektledd"
+    },
+    {
+      "id": "personvern",
+      "label": "Slik tar du hensyn til personvern",
+      "url": "https://www.datatilsynet.no/personvern-i-smarthus"
+    }
+  ],
+  "customSections": [
+    {
+      "id": "forberedelser",
+      "title": "For du starter",
+      "description": "Sikker sjekkliste",
+      "blocks": [
+        {
+          "id": "kartlegg",
+          "title": "Kartlegg lasten",
+          "body": [
+            "Finn ut hvilke kurser som bruker mest energi og hvor du kan redusere forbruket uten at komforten lider."
+          ],
+          "style": "checklist"
+        }
+      ]
+    }
+  ],
+  "tabs": [
+    {
+      "type": "tabs",
+      "title": "Systemvalg",
+      "description": "Finn den styringen som passer boligen din",
+      "tabs": [
+        {
+          "id": "panelovner",
+          "title": "Panelovner",
+          "summary": "Smartplugger og hub",
+          "body": [
+            "Vanlige panelovner kan styres via radioplugger eller wifi-plugger uten at du maa bytte hele varmekilden."
+          ],
+          "readMore": [
+            {
+              "id": "panel-guide",
+              "label": "Guide til pluginstallasjon",
+              "url": "https://energinokkelen.oslo.kommune.no/panelovner"
+            }
+          ]
+        },
+        {
+          "id": "varmepumpe",
+          "title": "Varmepumpe",
+          "summary": "Open API gir fleksibilitet",
+          "body": [
+            "Velg modeller som stotter apen styring eller kompatible API-er slik at du ikke laases til en app."
+          ]
+        }
+      ]
+    }
+  ],
+  "accordion": [
+    {
+      "id": "soknadsplikt",
+      "title": "Trenger jeg soknad?",
+      "body": [
+        "Nei, styringssystemer er normalt ikke soknadspliktige, men fast elektrisk arbeid maa gjoeres av registrert installator."
+      ],
+      "links": [
+        {
+          "id": "dibk-sikkerhet",
+          "label": "Direktoratet for byggkvalitet",
+          "url": "https://dibk.no/el-sikkerhet"
+        }
+      ]
+    }
+  ],
+  "stats": [
+    {
+      "id": "energibesparelse",
+      "title": "Mulig effekt",
+      "dataPoints": [
+        {
+          "label": "Potensiell besparelse",
+          "value": "1 500",
+          "unit": "kWh"
+        },
+        {
+          "label": "Kostnad",
+          "value": "15 000",
+          "unit": "NOK"
+        }
+      ]
+    }
+  ],
+  "media": {
+    "src": "illustrations/smart-energi.svg",
+    "alt": "Illustrasjon av app for styring av energi"
+  },
+  "grants": [
+    "klimaetaten-smartstyring"
+  ],
+  "relatedTiltak": [
+    "tetting",
+    "varmepumpe"
+  ],
+  "supportTags": [
+    "smart-energi",
+    "styring",
+    "effekt"
+  ],
+  "audiences": [
+    "standard"
+  ],
+  "variants": [
+    {
+      "audience": "gulliste",
+      "introParagraphs": [
+        "I verneverdige bygg bor komponentene skjules og utstyret velges i samraad med byantikvaren."
+      ],
+      "accordion": [
+        {
+          "id": "gulliste-hensyn",
+          "title": "Hensyn i verneverdige bygg",
+          "body": [
+            "Kabelforing maa planlegges slik at panel og lister kan reverseres uten synlige inngrep."
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-12T13:30:00Z",
+    "changeSummary": "Eksempeldata for admin-MVP"
+  }
+}

@@ -103,6 +103,7 @@ export interface UseStotteordningerOptions {
   tiltak: string;
   buildingType?: string;
   gulliste?: boolean;
+  enabled?: boolean;
 }
 
 export interface UseStotteordningerResult {
@@ -111,13 +112,22 @@ export interface UseStotteordningerResult {
   error?: string;
 }
 
-export const useStotteordninger = ({ tiltak, buildingType, gulliste = false }: UseStotteordningerOptions): UseStotteordningerResult => {
+export const useStotteordninger = ({ tiltak, buildingType, gulliste = false, enabled = true }: UseStotteordningerOptions): UseStotteordningerResult => {
   const [stotteordninger, setStotteordninger] = useState<Stotteordning[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(Boolean(enabled));
   const [error, setError] = useState<string>();
 
   useEffect(() => {
     let isMounted = true;
+
+    if (!enabled) {
+      setStotteordninger([]);
+      setIsLoading(false);
+      setError(undefined);
+      return () => {
+        isMounted = false;
+      };
+    }
 
     const fetchStotteordninger = async () => {
       setIsLoading(true);
@@ -151,7 +161,7 @@ export const useStotteordninger = ({ tiltak, buildingType, gulliste = false }: U
     return () => {
       isMounted = false;
     };
-  }, [buildingType, gulliste, tiltak]);
+  }, [buildingType, gulliste, tiltak, enabled]);
 
   return { stotteordninger, isLoading, error };
 };

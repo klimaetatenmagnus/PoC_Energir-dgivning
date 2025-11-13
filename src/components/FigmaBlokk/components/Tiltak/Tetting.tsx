@@ -1,24 +1,244 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   getOverskriftColor,
   openExternalLink,
-  TiltakComponentProps,
-  useStotteordninger
+  TiltakComponentProps
 } from './shared';
+import type { Stotteordning } from '../../../../services/stotteordning-service';
+import { useTiltakContent } from '../../../../hooks/contentHooks';
+import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
+import type {
+  TiltakAccordionItem,
+  TiltakContent
+} from '../../../../../content/tiltak/schema';
+import type { ContentAudience } from '../../../../../content/schema-helpers';
+import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
+import { renderParagraphWithGlossary } from './glossaryHelpers';
 
 type TettingProps = TiltakComponentProps;
+type TettingComponentProps = TiltakComponentProps & { audience?: ContentAudience };
 
-export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
+type ReadMoreLink = {
+  label: string;
+  url: string;
+};
+
+type TettingContentView = {
+  title: string;
+  introParagraphs: string[];
+  buildingTypeParagraphs: Record<string, string[]>;
+  benefits: { title: string; description: string }[];
+  readMore: ReadMoreLink[];
+  accordion: TiltakAccordionItem[];
+  grants: string[];
+};
+
+const defaultTettingContent: TettingContentView = {
+  title: 'Tetting',
+  introParagraphs: [
+    'Trekker det rundt vinduer, dører eller gulv? Da kan tetting være et av de enkleste grepene du gjør for å få bedre komfort og lavere strømforbruk. Små tiltak som tettelister og isolering bak listverk kan ofte gi stor forskjell – og det meste kan du gjøre selv.',
+    'Tetting passer i alle typer bygg og krever sjelden store inngrep.'
+  ],
+  buildingTypeParagraphs: {
+    default: [
+      'I leiligheter er det vanlig at trekken kommer fra gamle vinduer eller overganger mot fellesarealer som trapperom og kjeller. Tetting rundt egne vinduer og dører kan du som regel gjøre selv. Hvis lekkasjene gjelder deler av bygget som flere beboere deler, bør tiltaket tas opp med styret. Tetting er også lurt å gjøre sammen med annet vedlikehold for å få mer igjen for innsatsen.'
+    ],
+    enebolig: [
+      'I eneboliger oppstår trekken ofte rundt vinduer, dører, ved overganger mellom etasjer eller der tak og vegger møtes. Du kan enkelt finne lekkasjer ved å kjenne etter trekk med hånden eller bruke et stearinlys. Mange av tiltakene kan du gjøre selv, og resultatet merkes både på komfort og strømregning.'
+    ],
+    rekkehus: [
+      'I rekkehus og tomannsboliger deler du ofte både konstruksjoner og fasader med naboen. Koordiner arbeidet med de andre slik at dere tetter like punkter og bevarer et helhetlig uttrykk.'
+    ],
+    tomannsbolig: [
+      'I rekkehus og tomannsboliger deler du ofte både konstruksjoner og fasader med naboen. Koordiner arbeidet med de andre slik at dere tetter like punkter og bevarer et helhetlig uttrykk.'
+    ],
+    blokk: [
+      'I blokker er det vanlig at trekken kommer fra felles konstruksjoner: overgangen mellom leilighet og trapperom, gamle sjakter eller ubrukte ventiler. Tetting rundt egne vinduer og innvendige overflater kan du gjøre selv, men tiltak som berører fasaden bør tas opp med styret.'
+    ]
+  },
+  benefits: [
+    { title: 'Mindre trekk', description: 'Lukk luftlekkasjer og få et mer komfortabelt inneklima året rundt.' },
+    { title: 'Ivaretar boligen', description: 'Tettere overganger beskytter konstruksjoner mot fukt og råte.' },
+    { title: 'Bedre bokvalitet', description: 'Jevnere temperatur og mindre støy fra vinduer og dører.' },
+    { title: 'Redusert energibehov', description: 'Mindre varmetap betyr lavere strømforbruk og kostnader.' }
+  ],
+  readMore: [
+    {
+      label: 'Bygg og Bevar – tetting rundt vinduer og dører',
+      url: 'https://byggogbevar.no/enoek/artikler/tiltak/tetting-rundt-vinduer-og-doerer/'
+    },
+    {
+      label: 'Plan- og bygningsetaten – trenger du veiledning?',
+      url: 'https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/'
+    }
+  ],
+  accordion: [
+    {
+      id: 'soknadsplikt',
+      title: 'Søknadsplikt er ikke en stopper, men en støtte',
+      body: [
+        'Er tiltaket ditt søknadspliktig betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.',
+        'Søknadsplikten skal hjelpe deg som tiltakshaver med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak som tar faglig ansvar for prosjektering og utførelse.',
+        'Selv om du må søke, kan selve tettingen fortsatt være enkel å gjennomføre. Ta dialogen tidlig og bruk veiledningstilbudene dersom du er usikker.'
+      ],
+      links: [
+        {
+          id: 'dibk-soknadsplikt',
+          label: 'Direktoratet for byggkvalitet – hva er søknadsplikt?',
+          url: 'https://www.dibk.no/regelverk/sak/2/2/innledning'
+        },
+        {
+          id: 'dibk-ansvar',
+          label: 'Tiltakshaver og ansvarlige foretak',
+          url: 'https://www.dibk.no/regelverk/sak/3/12/innledning'
+        },
+        {
+          id: 'lovdata-ansvar',
+          label: 'Plan- og bygningsloven §20-3',
+          url: 'https://lovdata.no/dokument/NL/lov/2008-06-27-71/KAPITTEL_4-1#%C2%A720-3'
+        }
+      ],
+      glossary: [
+        {
+          term: 'søknadspliktig',
+          definition: [
+            'Søknadsplikt betyr at du må ha tillatelse fra Plan- og bygningsetaten før du gjør fysiske endringer på bygningen eller eiendommen.'
+          ],
+          links: [
+            {
+              label: 'Les mer hos DiBK',
+              url: 'https://www.dibk.no/regelverk/sak/2/2/innledning'
+            }
+          ]
+        },
+        {
+          term: 'tiltakshaver',
+          definition: [
+            'Tiltakshaver er personen eller virksomheten som utfører – eller bestiller – et tiltak som krever søknad og tillatelse.'
+          ],
+          links: [
+            {
+              label: 'Tiltakshavers ansvar',
+              url: 'https://www.dibk.no/regelverk/sak/3/12/12-1'
+            }
+          ]
+        },
+        {
+          term: 'ansvarlige foretak',
+          definition: [
+            'Et ansvarlig foretak er et firma med riktig kompetanse som tar ansvar for bestemte deler av et byggeprosjekt.'
+          ],
+          links: [
+            {
+              label: 'Når kreves ansvarsrett?',
+              url: 'https://www.dibk.no/regelverk/sak/3/12/innledning'
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  grants: [
+    'klimaoslo-oppgradering-bygningskropp',
+    'klimaoslo-energitiltak-borettslag',
+    'klimaoslo-energikartlegging-borettslag',
+    'klimaoslo-vinduer-dorer',
+    'enova-energiradgivning'
+  ]
+};
+
+function mapTettingContent(content?: TiltakContent): TettingContentView | null {
+  if (!content) {
+    return null;
+  }
+
+  return {
+    title: content.title,
+    introParagraphs: content.introParagraphs,
+    buildingTypeParagraphs: content.buildingTypeParagraphs,
+    benefits: content.benefits.map(({ title, description }) => ({
+      title,
+      description: description ?? ''
+    })),
+    readMore: content.readMore.map(({ label, url }) => ({ label, url })),
+    accordion: content.accordion,
+    grants: content.grants
+  };
+}
+
+const TettingContentComponent: React.FC<TettingComponentProps> = ({
+  onBack,
+  buildingType,
+  audience = 'standard'
+}) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
-  const [hoveredWord, setHoveredWord] = useState<string | null>(null);
+  const [hoveredGlossaryTerm, setHoveredGlossaryTerm] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
-  const { stotteordninger } = useStotteordninger({
-    tiltak: 'tetting',
+  const { data: tiltakContent } = useTiltakContent('tetting');
+  const resolvedTiltakContent = useMemo(
+    () => applyTiltakVariant(tiltakContent, audience),
+    [tiltakContent, audience]
+  );
+  const mappedContent = useMemo(
+    () => mapTettingContent(resolvedTiltakContent),
+    [resolvedTiltakContent]
+  );
+  const content = mappedContent ?? defaultTettingContent;
+
+  const introParagraphs = content.introParagraphs.length
+    ? content.introParagraphs
+    : defaultTettingContent.introParagraphs;
+
+  const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
+  const buildingParagraphs =
+    content.buildingTypeParagraphs[buildingTypeKey] ??
+    content.buildingTypeParagraphs.default ??
+    defaultTettingContent.buildingTypeParagraphs.default;
+
+  const benefits = [...(content.benefits.length ? content.benefits : defaultTettingContent.benefits)];
+  while (benefits.length < 4) {
+    benefits.push(defaultTettingContent.benefits[benefits.length]);
+  }
+
+  const readMoreLinks = (content.readMore.length ? content.readMore : defaultTettingContent.readMore).slice(0, 3);
+
+  const accordionItem = content.accordion[0] ?? defaultTettingContent.accordion[0];
+  const accordionBody = accordionItem?.body ?? [];
+  const accordionLinks = accordionItem?.links ?? [];
+  const glossaryEntries = accordionItem?.glossary ?? [];
+
+  const {
+    stotteordninger,
+    intendedSource,
+    isLoading: grantLoading
+  } = useGrantAwareStotteordninger({
+    grantIds: content.grants,
+    legacyTiltakSlug: 'tetting',
     buildingType
   });
 
-  const needsScroll = stotteordninger.length > 4;
+  const displayedStotteordninger: Stotteordning[] = stotteordninger.length
+    ? stotteordninger
+    : intendedSource === 'grants' && grantLoading
+      ? [
+          {
+            ordning: 'Henter støtteordninger …',
+            lenke: null,
+            belop: null,
+            overskrift: null
+          }
+        ]
+      : [
+          {
+            ordning: 'Ingen registrerte støtteordninger ennå',
+            lenke: null,
+            belop: null,
+            overskrift: null
+          }
+        ];
+
+  const needsScroll = displayedStotteordninger.length > 4;
 
   return (
     <div style={{ 
@@ -53,7 +273,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           fill="#2A2859"
           dominantBaseline="hanging"
         >
-          Tetting
+          {content.title}
         </text>
         
         {/* Main text content with scroll if needed */}
@@ -89,21 +309,22 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
                 background: #AAAAAA;
               }
             `}</style>
-            <p style={{ marginBottom: '16px' }}>
-              Trekker det rundt vinduer, dører eller gulv? Da kan tetting være et av de enkleste grepene du gjør for å få bedre komfort og lavere strømforbruk. Små tiltak som tettelister og isolering bak listverk kan ofte gi stor forskjell – og det meste kan du gjøre selv.
-            </p>
-            <p style={{ marginBottom: '16px' }}>
-              Tetting passer i alle typer bygg og krever sjelden store inngrep.
-            </p>
-            {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
-              <p style={{ marginBottom: '20px' }}>
-                I eneboliger oppstår trekken ofte rundt vinduer, dører, ved overganger mellom etasjer eller der tak og vegger møtes. Du kan enkelt finne lekkasjer ved å kjenne etter trekk med hånden eller bruke et stearinlys. Mange av tiltakene kan du gjøre selv, og resultatet merkes både på komfort og strømregning.
+            {introParagraphs.map((paragraph, index) => (
+              <p
+                key={`intro-${index}`}
+                style={{ marginBottom: index === introParagraphs.length - 1 && buildingParagraphs.length === 0 ? 0 : '16px' }}
+              >
+                {paragraph}
               </p>
-            ) : (
-              <p style={{ marginBottom: '20px' }}>
-                I leiligheter er det vanlig at trekk kommer fra gamle vinduer eller overganger mot fellesarealer som trapperom og kjeller. Tetting rundt egne vinduer og dører kan du som regel gjøre selv. Hvis lekkasjene gjelder deler av bygget som flere beboere deler, bør tiltaket tas opp med styret. Tetting er også lurt å gjøre sammen med annet vedlikehold for å få mer igjen for innsatsen.
+            ))}
+            {buildingParagraphs.map((paragraph, index) => (
+              <p
+                key={`building-${index}`}
+                style={{ marginBottom: index === buildingParagraphs.length - 1 ? '20px' : '16px' }}
+              >
+                {paragraph}
               </p>
-            )}
+            ))}
           </div>
         </foreignObject>
         
@@ -131,7 +352,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Mindre trekk
+          {benefits[0]?.title ?? defaultTettingContent.benefits[0].title}
         </text>
         <rect
           x="565"
@@ -157,7 +378,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Ivaretar boligen
+          {benefits[1]?.title ?? defaultTettingContent.benefits[1].title}
         </text>
         <rect
           x="565"
@@ -183,7 +404,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Bedre bokvalitet
+          {benefits[2]?.title ?? defaultTettingContent.benefits[2].title}
         </text>
         <rect
           x="565"
@@ -223,7 +444,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Redusert energibehov
+          {benefits[3]?.title ?? defaultTettingContent.benefits[3].title}
         </text>
         
         {/* Dark green box below the list */}
@@ -364,23 +585,26 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
           Les mer
         </text>
         
-        {/* Link below "Tips om tetting" */}
-        <text
-          x="170"
-          y="502"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-          style={{ cursor: 'pointer' }}
-          onClick={() => openExternalLink('https://byggogbevar.no/enoek/artikler/tiltak/tetting-rundt-vinduer-og-doerer/')}
-        >
-          Bygg og bevar
-        </text>
+        {/* Links below "Tips om tetting" */}
+        {readMoreLinks.map((link, index) => (
+          <text
+            key={`${link.label}-${index}`}
+            x="170"
+            y={502 + index * 24}
+            fontFamily="Oslo Sans"
+            fontWeight="300"
+            fontStyle="normal"
+            fontSize="14"
+            lineHeight="22"
+            fill="#FFFFFF"
+            textAnchor="middle"
+            textDecoration="underline"
+            style={{ cursor: 'pointer' }}
+            onClick={() => openExternalLink(link.url)}
+          >
+            {link.label}
+          </text>
+        ))}
         
         {/* Dynamic table with scrollbar */}
         {/* Top border */}
@@ -393,7 +617,7 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
         />
         
         {/* Table container with scrolling via foreignObject */}
-        <foreignObject x="298" y="452" width="482" height={needsScroll ? "144" : `${stotteordninger.length * 36}`}>
+        <foreignObject x="298" y="452" width="482" height={needsScroll ? '144' : `${displayedStotteordninger.length * 36}`}>
           <div xmlns="http://www.w3.org/1999/xhtml" style={{
             width: '100%',
             height: '100%',
@@ -417,8 +641,8 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
                 background: #AAAAAA;
               }
             `}</style>
-            <svg width="474" height={stotteordninger.length * 36} viewBox={`0 0 474 ${stotteordninger.length * 36}`}>
-              {stotteordninger.map((ordning, index) => {
+            <svg width="474" height={displayedStotteordninger.length * 36} viewBox={`0 0 474 ${displayedStotteordninger.length * 36}`}>
+              {displayedStotteordninger.map((ordning, index) => {
                 const yPosition = index * 36;
                 const textYPosition = yPosition + 18;
                 const boxYPosition = yPosition + 6.5;
@@ -640,77 +864,32 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
               </p>
               
               {/* Links section */}
-              <div style={{ marginTop: '16px' }}>
-                <a 
-                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/skal-du-bygge-rive-eller-endre/ma-du-sende-byggesoknad/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#2A2859',
-                    textDecoration: 'underline',
-                    marginBottom: '12px'
-                  }}
-                >
-                  Sjekk nærmere om tiltaket ditt er søknadspliktig
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
-                    <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
-                  </svg>
-                </a>
-                
-                <a 
-                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/#toc-2"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#2A2859',
-                    textDecoration: 'underline',
-                    marginBottom: '12px'
-                  }}
-                >
-                  Gratis veiledningstime hos Plan- og bygningsetaten for generell informasjon om søknadsplikt
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
-                    <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
-                  </svg>
-                </a>
-                
-                <a 
-                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#2A2859',
-                    textDecoration: 'underline'
-                  }}
-                >
-                  Kontakt Plan- og bygningsetaten for en konkret vurdering av søknadsplikt for ditt tiltak, mot gebyr
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
-                    <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
-                  </svg>
-                </a>
+              <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {accordionLinks.map((link) => (
+                  <a
+                    key={link.url}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      fontFamily: 'Oslo Sans',
+                      fontWeight: 300,
+                      fontSize: '14px',
+                      lineHeight: '22px',
+                      letterSpacing: '0px',
+                      color: '#2A2859',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    {link.label}
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
+                      <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
+                      <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
+                    </svg>
+                  </a>
+                ))}
               </div>
               
               {/* Rectangle with permit information */}
@@ -728,218 +907,30 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
                   color: '#FFFFFF',
                   margin: '0 0 12px 0'
                 }}>
-                  Søknadsplikt er ikke en stopper, men en støtte
+                  {accordionItem?.title ?? defaultTettingContent.accordion[0].title}
                 </h3>
-                <p style={{
-                  fontFamily: 'Oslo Sans',
-                  fontWeight: 300,
-                  fontSize: '14px',
-                  lineHeight: '22px',
-                  letterSpacing: '0px',
-                  color: '#FFFFFF',
-                  margin: 0,
-                  position: 'relative'
-                }}>
-                  Er tiltaket ditt <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
+                {accordionBody.map((paragraph, index) => (
+                  <p
+                    key={`accordion-body-${index}`}
+                    style={{
+                      fontFamily: 'Oslo Sans',
+                      fontWeight: 300,
+                      fontSize: '14px',
+                      lineHeight: '22px',
+                      letterSpacing: '0px',
+                      color: '#FFFFFF',
+                      margin: index === 0 ? 0 : '16px 0 0 0',
                       position: 'relative'
                     }}
-                    onMouseEnter={() => setHoveredWord('søknadspliktig')}
-                    onMouseLeave={() => setHoveredWord(null)}
                   >
-                    søknadspliktig
-                    {hoveredWord === 'søknadspliktig' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('søknadspliktig')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Søknadsplikt betyr at du må ha tillatelse fra Plan- og bygningsetaten før et tiltak – altså fysiske endringer på bygninger eller eiendom – kan settes i verk. Les mer om søknadsplikt <a 
-                            href="https://www.dibk.no/regelverk/sak/2/2/innledning" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span>, betyr ikke det at du får avslag. Tvert imot! Søknadsplikten skal sikre at arbeidet planlegges og gjennomføres med god kvalitet – både i papirene og på bygget. Målet er at du som <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={() => setHoveredWord('tiltakshaver')}
-                    onMouseLeave={() => setHoveredWord(null)}
-                  >
-                    tiltakshaver
-                    {hoveredWord === 'tiltakshaver' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('tiltakshaver')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Tiltakshaver er den personen eller virksomheten som utfører eller får utført tiltak – altså fysiske endringer på bygninger eller eiendom – som krever søknad og tillatelse etter plan- og bygningsloven. Les mer om tiltakshavers ansvar <a 
-                            href="https://www.dibk.no/regelverk/sak/3/12/12-1" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span> får det resultatet du ønsker deg, på en trygg og effektiv måte. I mer komplekse saker stilles det krav til <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={() => setHoveredWord('ansvarlige foretak')}
-                    onMouseLeave={() => setHoveredWord(null)}
-                  >
-                    ansvarlige foretak
-                    {hoveredWord === 'ansvarlige foretak' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('ansvarlige foretak')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Et ansvarlig foretak er et firma (for eksempel en arkitekt, byggmester eller entreprenør) som har fagkunnskap og tar ansvar for bestemte deler av et byggeprosjekt. Kommunen stiller krav til at slike firmaer må ha riktig kompetanse og erfaring.
-                          Les mer om ansvarsrett <a 
-                            href="https://www.dibk.no/regelverk/sak/3/12/innledning" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>, og hvilke tiltak som krever ansvarlig foretak <a 
-                            href="https://lovdata.no/dokument/NL/lov/2008-06-27-71/KAPITTEL_4-1#%C2%A720-3" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span>, nettopp for å sikre at de som gjør jobben har riktig kompetanse, og leverer løsninger som faktisk fungerer. Søknadsplikten hjelper deg altså i å lykkes med tiltaket ditt.
-                </p>
+                    {renderParagraphWithGlossary({
+                      paragraph,
+                      glossary: glossaryEntries,
+                      hoveredTerm: hoveredGlossaryTerm,
+                      setHoveredTerm: setHoveredGlossaryTerm
+                    })}
+                  </p>
+                ))}
               </div>
                 </div>
               </div>
@@ -950,3 +941,9 @@ export const Tetting: React.FC<TettingProps> = ({ onBack, buildingType }) => {
     </div>
   );
 };
+
+export const Tetting: React.FC<TettingProps> = (props) => (
+  <TettingContentComponent {...props} audience="standard" />
+);
+
+export { TettingContentComponent };

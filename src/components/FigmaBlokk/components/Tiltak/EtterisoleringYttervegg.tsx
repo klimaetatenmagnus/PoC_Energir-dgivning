@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ENERGY_SAVINGS_DATA,
   TiltakComponentProps,
@@ -6,17 +6,29 @@ import {
   getOverskriftColor,
   openExternalLink,
   parseNumericValue,
-  resolveEnergyCategory,
-  useStotteordninger
+  resolveEnergyCategory
 } from './shared';
-import { useRuntimeJson } from '../../../../runtimeContent';
+import { useTiltakContent } from '../../../../hooks/contentHooks';
+import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
+import type { TiltakContent } from '../../../../../content/tiltak/schema';
+import type { Stotteordning } from '../../../../services/stotteordning-service';
+import type { ContentAudience } from '../../../../../content/schema-helpers';
+import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
 
 type EtterisoleringYtterveggProps = TiltakComponentProps;
+type EtterisoleringYtterveggComponentProps = TiltakComponentProps & { audience?: ContentAudience };
+
+type ReadMoreLink = {
+  label: string;
+  url: string;
+};
 
 type EtterisoleringYtterveggContent = {
   title: string;
   introParagraphs: string[];
-  buildingTypeParagraphs: Record<string, string>;
+  buildingTypeParagraphs: Record<string, string[]>;
+  readMore: ReadMoreLink[];
+  grants: string[];
 };
 
 const defaultEtterisoleringContent: EtterisoleringYtterveggContent = {
@@ -26,37 +38,135 @@ const defaultEtterisoleringContent: EtterisoleringYtterveggContent = {
     'Hvis du uansett må skifte kledning, altså fasadematerialet, lønner det seg å etterisolere samtidig.'
   ],
   buildingTypeParagraphs: {
-    enebolig:
-      'Har huset ditt en enkel fasade uten mye detaljer, er det som regel uproblematisk å etterisolere utvendig og kle med nytt materiale i ønsket stil. Skal du bevare dagens uttrykk, kan innvendig isolasjon eller forbedret tetting være alternativer.',
-    rekkehus:
-      'I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader. Det gir et helhetlig resultat og gjør det enklere å gjennomføre.',
-    tomannsbolig:
-      'I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader. Det gir et helhetlig resultat og gjør det enklere å gjennomføre.',
-    default:
+    enebolig: [
+      'Har huset ditt en enkel fasade uten mye detaljer, er det som regel uproblematisk å etterisolere utvendig og kle med nytt materiale i ønsket stil.',
+      'Skal du bevare dagens uttrykk, kan innvendig isolasjon eller forbedret tetting være alternativer.'
+    ],
+    rekkehus: [
+      'I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader.',
+      'Det gir et helhetlig resultat og gjør det enklere å gjennomføre.'
+    ],
+    tomannsbolig: [
+      'I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader.',
+      'Det gir et helhetlig resultat og gjør det enklere å gjennomføre.'
+    ],
+    default: [
       'Blokker med store, flate fasader har godt potensial for etterisolering. Ved å etterisolere hele veggflater eller bare utvalgte partier kan dere redusere energiforbruket og oppgradere byggets uttrykk.'
-  }
+    ]
+  },
+  readMore: [
+    {
+      label: 'Direktoratet for byggkvalitet om fasadeendringer',
+      url: 'https://www.dibk.no/smartere-oppussing/artikler/yttertak-og-vegger'
+    },
+    {
+      label: 'Enova – slik etterisolerer du fasaden',
+      url: 'https://www.enova.no/privat/alle-energitiltak/etterisolering/'
+    },
+    {
+      label: 'SINTEF – detaljer for etterisolering',
+      url: 'https://www.sintef.no/siste-nytt/etterisolering/'
+    }
+  ],
+  grants: [
+    'enova-etterisolering',
+    'klimaoslo-fasadefond'
+  ]
 };
 
-export const EtterisoleringYttervegg: React.FC<EtterisoleringYtterveggProps> = ({ onBack, buildingType, buildingData }) => {
+function mapTiltakContentToLegacy(
+  content: TiltakContent | undefined
+): EtterisoleringYtterveggContent | null {
+  if (!content) {
+    return null;
+  }
+
+  const buildingTypeParagraphs: Record<string, string[]> = {};
+  for (const [key, paragraphs] of Object.entries(content.buildingTypeParagraphs)) {
+    if (Array.isArray(paragraphs)) {
+      buildingTypeParagraphs[key] = paragraphs;
+    } else if (paragraphs) {
+      buildingTypeParagraphs[key] = [String(paragraphs)];
+    } else {
+      buildingTypeParagraphs[key] = [];
+    }
+  }
+
+  return {
+    title: content.title,
+    introParagraphs: content.introParagraphs,
+    buildingTypeParagraphs,
+    readMore: content.readMore.map(({ label, url }) => ({ label, url })),
+    grants: content.grants
+  };
+}
+
+const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggComponentProps> = ({
+  onBack,
+  buildingType,
+  buildingData,
+  audience = 'standard'
+}) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
-  const { stotteordninger } = useStotteordninger({
-    tiltak: 'etterisolering_fasade',
+  const { data: tiltakContent } = useTiltakContent('etterisolering-yttervegg');
+  const resolvedTiltakContent = useMemo(
+    () => applyTiltakVariant(tiltakContent, audience),
+    [tiltakContent, audience]
+  );
+  const mappedContent = useMemo(
+    () => mapTiltakContentToLegacy(resolvedTiltakContent),
+    [resolvedTiltakContent]
+  );
+  const content = mappedContent ?? defaultEtterisoleringContent;
+
+  const introParagraphs = content.introParagraphs.length
+    ? content.introParagraphs
+    : defaultEtterisoleringContent.introParagraphs;
+
+  const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
+  const buildingParagraphs =
+    content.buildingTypeParagraphs[buildingTypeKey] ??
+    content.buildingTypeParagraphs.default ??
+    defaultEtterisoleringContent.buildingTypeParagraphs.default;
+
+  const readMoreLinks = (content.readMore.length ? content.readMore : defaultEtterisoleringContent.readMore).slice(0, 5);
+
+  const grantIds = content.grants.length ? content.grants : defaultEtterisoleringContent.grants;
+
+  const {
+    stotteordninger,
+    isLoading: stotteordningerLoading,
+    intendedSource
+  } = useGrantAwareStotteordninger({
+    grantIds,
+    legacyTiltakSlug: 'etterisolering_fasade',
     buildingType
   });
 
-  const needsScroll = stotteordninger.length > 4;
-  const { data: content } = useRuntimeJson<EtterisoleringYtterveggContent>(
-    'tiltak/etterisolering-yttervegg.json',
-    defaultEtterisoleringContent
-  );
+  const displayedStotteordninger: Stotteordning[] = stotteordninger.length
+    ? stotteordninger
+    : intendedSource === 'grants' && stotteordningerLoading
+      ? [
+          {
+            ordning: 'Henter støtteordninger …',
+            lenke: null,
+            belop: null,
+            overskrift: null
+          }
+        ]
+      : [
+          {
+            ordning: 'Ingen registrerte støtteordninger ennå',
+            lenke: null,
+            belop: null,
+            overskrift: null
+          }
+        ];
 
-  const normalisedBuildingType = buildingType?.toLowerCase();
-  const buildingTypeParagraph =
-    (normalisedBuildingType && content.buildingTypeParagraphs[normalisedBuildingType]) ??
-    content.buildingTypeParagraphs.default;
+  const needsScroll = displayedStotteordninger.length > 4;
 
   return (
     <div style={{ 
@@ -127,17 +237,23 @@ export const EtterisoleringYttervegg: React.FC<EtterisoleringYtterveggProps> = (
                 background: #AAAAAA;
               }
             `}</style>
-            {content.introParagraphs.map((paragraph, index) => (
-              <p key={`intro-${index}`} style={{ marginBottom: '16px' }}>
+            {introParagraphs.map((paragraph, index) => (
+              <p
+                key={`intro-${index}`}
+                style={{ marginBottom: index === introParagraphs.length - 1 && buildingParagraphs.length === 0 ? '0' : '16px' }}
+              >
                 {paragraph}
               </p>
             ))}
 
-            {buildingTypeParagraph && (
-              <p style={{ marginBottom: '20px' }}>
-                {buildingTypeParagraph}
+            {buildingParagraphs.map((paragraph, index) => (
+              <p
+                key={`building-${index}`}
+                style={{ marginBottom: index === buildingParagraphs.length - 1 ? '20px' : '16px' }}
+              >
+                {paragraph}
               </p>
-            )}
+            ))}
           </div>
         </foreignObject>
         
@@ -441,57 +557,32 @@ export const EtterisoleringYttervegg: React.FC<EtterisoleringYtterveggProps> = (
           Les mer
         </text>
         
-        {/* Links below "Les mer" */}
-        <text
-          x="170"
-          y="502"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-          style={{ cursor: 'pointer' }}
-          onClick={() => openExternalLink('https://www.dibk.no/smartere-oppussing/artikler/yttertak-og-vegger')}
-        >
-          Direktoratet for byggkvalitet
-        </text>
-        
-        <text
-          x="170"
-          y="528"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-          style={{ cursor: 'pointer' }}
-          onClick={() => openExternalLink('https://www.enova.no/nb/privat/bolig/boligtyper')}
-        >
-          Enova
-        </text>
-        
-        <text
-          x="170"
-          y="554"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-          style={{ cursor: 'pointer' }}
-          onClick={() => openExternalLink('https://www.sintef.no/siste-nytt/2023/etterisolering-er-mer-aktuelt-enn-noen-gang-her-er-vare-tips/')}
-        >
-          Sintef
-        </text>
+        {/* Lenker under "Les mer" */}
+        {readMoreLinks.map((link, index) => {
+          if (!link?.url) {
+            return null;
+          }
+          const lineY = 502 + index * 26;
+          return (
+            <text
+              key={`${link.label}-${index}`}
+              x="170"
+              y={lineY}
+              fontFamily="Oslo Sans"
+              fontWeight="300"
+              fontStyle="normal"
+              fontSize="14"
+              lineHeight="22"
+              fill="#FFFFFF"
+              textAnchor="middle"
+              textDecoration="underline"
+              style={{ cursor: 'pointer' }}
+              onClick={() => openExternalLink(link.url)}
+            >
+              {link.label}
+            </text>
+          );
+        })}
         
         {/* Dynamic table with scrollbar */}
         {/* Top border */}
@@ -504,7 +595,7 @@ export const EtterisoleringYttervegg: React.FC<EtterisoleringYtterveggProps> = (
         />
         
         {/* Table container with scrolling via foreignObject */}
-        <foreignObject x="298" y="452" width="482" height={needsScroll ? "144" : `${stotteordninger.length * 36}`}>
+        <foreignObject x="298" y="452" width="482" height={needsScroll ? "144" : `${displayedStotteordninger.length * 36}`}>
           <div xmlns="http://www.w3.org/1999/xhtml" style={{
             width: '100%',
             height: '100%',
@@ -528,8 +619,8 @@ export const EtterisoleringYttervegg: React.FC<EtterisoleringYtterveggProps> = (
                 background: #AAAAAA;
               }
             `}</style>
-            <svg width="474" height={stotteordninger.length * 36} viewBox={`0 0 474 ${stotteordninger.length * 36}`}>
-              {stotteordninger.map((ordning, index) => {
+            <svg width="474" height={displayedStotteordninger.length * 36} viewBox={`0 0 474 ${displayedStotteordninger.length * 36}`}>
+              {displayedStotteordninger.map((ordning, index) => {
                 const yPosition = index * 36;
                 const textYPosition = yPosition + 18;
                 const boxYPosition = yPosition + 6.5;
@@ -1129,3 +1220,9 @@ export const EtterisoleringYttervegg: React.FC<EtterisoleringYtterveggProps> = (
     </div>
   );
 };
+
+export const EtterisoleringYttervegg: React.FC<EtterisoleringYtterveggProps> = (props) => (
+  <EtterisoleringYtterveggContentComponent {...props} audience="standard" />
+);
+
+export { EtterisoleringYtterveggContentComponent };

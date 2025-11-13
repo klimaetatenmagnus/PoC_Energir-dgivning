@@ -5,6 +5,8 @@ import cors from 'cors';
 import fetch from 'node-fetch';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import type { Dirent } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { Storage } from '@google-cloud/storage';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
 import { metricsRegistry } from '../services/building-info-service/metrics.js';
@@ -12,6 +14,17 @@ import { energyRatingService } from './services/energyRatingService.js';
 import { execFile } from 'child_process';
 import type { ExecFileOptions } from 'child_process';
 import { promisify } from 'util';
+import { z } from 'zod';
+import { TiltakContentSchema, type TiltakContent } from '../content/tiltak/schema';
+import { TilskuddContentSchema, type TilskuddContent } from '../content/tilskudd/schema';
+import type {
+  ContentCatalogItem,
+  ContentCatalogResponse,
+  ContentCollection,
+  TiltakCatalogItem,
+  TilskuddCatalogItem
+} from './types/contentCatalog';
+import type { ContentStatus } from '../content/schema-helpers';
 
 const execFileAsync = promisify(execFile);
 
@@ -70,16 +83,152 @@ type JsonObject = Record<string, unknown>;
 
 type BucketJsonCacheEntry = {
   generation: string | null;
+  etag: string | null;
   data: JsonObject;
 };
 
 type LocalJsonCacheEntry = {
   mtime: number;
+  size: number;
+  etag: string | null;
   data: JsonObject;
+};
+
+type LoadedJsonFile = {
+  data: JsonObject;
+  etag: string | null;
 };
 
 const bucketJsonCache = new Map<string, BucketJsonCacheEntry>();
 const localJsonCache = new Map<string, LocalJsonCacheEntry>();
+
+type ValidatedTiltakDocument = {
+  kind: 'validated';
+  collection: 'tiltak';
+  data: TiltakContent;
+  etag: string | null;
+};
+
+type ValidatedTilskuddDocument = {
+  kind: 'validated';
+  collection: 'tilskudd';
+  data: TilskuddContent;
+  etag: string | null;
+};
+
+type LegacyContentDocument = {
+  kind: 'legacy';
+  collection: ContentCollection;
+  data: JsonObject;
+  etag: string | null;
+};
+
+type GenericContentDocument = {
+  kind: 'generic';
+  collection: null;
+  data: JsonObject;
+  etag: string | null;
+};
+
+type LoadedContentDocument =
+  | ValidatedTiltakDocument
+  | ValidatedTilskuddDocument
+  | LegacyContentDocument
+  | GenericContentDocument;
+
+type ValidatedContentDocument = Extract<LoadedContentDocument, { kind: 'validated' }>;
+
+type ContentCollectionConfig =
+  | {
+      collection: 'tiltak';
+      schema: typeof TiltakContentSchema;
+    }
+  | {
+      collection: 'tilskudd';
+      schema: typeof TilskuddContentSchema;
+    };
+
+const contentCollectionConfigs: Record<ContentCollection, ContentCollectionConfig> = {
+  tiltak: { collection: 'tiltak', schema: TiltakContentSchema },
+  tilskudd: { collection: 'tilskudd', schema: TilskuddContentSchema }
+};
+
+const legacyContentWarnings = new Set<string>();
+
+function buildEtagHeaderValue(tag: string | null): string | undefined {
+  if (!tag) {
+    return undefined;
+  }
+  return `"${tag}"`;
+}
+
+function parseIfNoneMatchHeader(value: string | string[] | undefined): string[] {
+  if (!value) {
+    return [];
+  }
+
+  const rawValues = Array.isArray(value) ? value : [value];
+  const tokens: string[] = [];
+
+  for (const raw of rawValues) {
+    const parts = raw.split(',');
+    for (const part of parts) {
+      let token = part.trim();
+      if (!token) {
+        continue;
+      }
+      if (token === '*') {
+        tokens.push('*');
+        continue;
+      }
+      if (token.startsWith('W/')) {
+        token = token.slice(2).trim();
+      }
+      if (token.startsWith('"') && token.endsWith('"') && token.length >= 2) {
+        token = token.slice(1, -1);
+      }
+      tokens.push(token);
+    }
+  }
+
+  return tokens;
+}
+
+function ifNoneMatchMatches(
+  headerValue: string | string[] | undefined,
+  tag: string | null
+): boolean {
+  if (!tag) {
+    return false;
+  }
+
+  const tokens = parseIfNoneMatchHeader(headerValue);
+  if (tokens.includes('*')) {
+    return true;
+  }
+
+  return tokens.some((candidate) => candidate === tag);
+}
+
+class ContentValidationError extends Error {
+  constructor(
+    public readonly relativePath: string,
+    public readonly issues: z.ZodIssue[]
+  ) {
+    super(`Content validation failed for ${relativePath}`);
+    this.name = 'ContentValidationError';
+  }
+}
+
+class ContentAccessError extends Error {
+  constructor(
+    public readonly relativePath: string,
+    public readonly status: ContentStatus
+  ) {
+    super(`Content ${relativePath} is not accessible (status=${status})`);
+    this.name = 'ContentAccessError';
+  }
+}
 
 type AppConfigResponse = {
   apiBaseUrl: string;
@@ -125,6 +274,27 @@ function createConfigFromSource(
 }
 
 const configRootPath = path.resolve(configDirectory);
+type FileStatSummary = { mtimeMs: number; size: number };
+
+function createDiskEtag(stat: FileStatSummary): string {
+  return `disk:${stat.mtimeMs}:${stat.size}`;
+}
+
+function deriveBucketEtag(metadata: { etag?: string; generation?: string | null }): string | null {
+  if (metadata && typeof metadata.etag === 'string' && metadata.etag.length > 0) {
+    return `gcs:${metadata.etag}`;
+  }
+
+  if (metadata && typeof metadata.generation === 'string' && metadata.generation.length > 0) {
+    return `gcs:${metadata.generation}`;
+  }
+
+  if (metadata && metadata.generation && typeof metadata.generation !== 'string') {
+    return `gcs:${String(metadata.generation)}`;
+  }
+
+  return null;
+}
 
 function isSafeRelativePath(relativePath: string): boolean {
   if (!relativePath) {
@@ -143,7 +313,7 @@ function isSafeRelativePath(relativePath: string): boolean {
   return true;
 }
 
-async function loadJsonFromDisk(relativePath: string): Promise<JsonObject> {
+async function loadJsonFromDisk(relativePath: string): Promise<LoadedJsonFile> {
   if (!isSafeRelativePath(relativePath)) {
     throw new Error(`Unsafe content path: ${relativePath}`);
   }
@@ -155,19 +325,20 @@ async function loadJsonFromDisk(relativePath: string): Promise<JsonObject> {
 
   const stat = await fs.stat(resolvedPath);
   const cached = localJsonCache.get(relativePath);
-  if (cached && cached.mtime === stat.mtimeMs) {
+  if (cached && cached.mtime === stat.mtimeMs && cached.size === stat.size) {
     debugLog(`Serving cached local content: ${relativePath}`);
-    return cached.data;
+    return { data: cached.data, etag: cached.etag };
   }
 
   const raw = await fs.readFile(resolvedPath, 'utf-8');
   const parsed = JSON.parse(raw) as JsonObject;
-  localJsonCache.set(relativePath, { mtime: stat.mtimeMs, data: parsed });
+  const etag = createDiskEtag(stat);
+  localJsonCache.set(relativePath, { mtime: stat.mtimeMs, size: stat.size, etag, data: parsed });
   debugLog(`Loaded local content file: ${relativePath}`);
-  return parsed;
+  return { data: parsed, etag };
 }
 
-async function loadJsonFromBucket(relativePath: string): Promise<JsonObject> {
+async function loadJsonFromBucket(relativePath: string): Promise<LoadedJsonFile> {
   if (!storage || !contentBucketName) {
     throw new Error('Content bucket is not configured');
   }
@@ -179,21 +350,22 @@ async function loadJsonFromBucket(relativePath: string): Promise<JsonObject> {
   const file = storage.bucket(contentBucketName).file(relativePath);
   const [metadata] = await file.getMetadata();
   const generation = metadata.generation ?? null;
+  const etag = deriveBucketEtag(metadata);
 
   const cached = bucketJsonCache.get(relativePath);
   if (cached && cached.generation === generation) {
     debugLog(`Serving cached bucket content: ${relativePath} (generation ${generation ?? 'unknown'})`);
-    return cached.data;
+    return { data: cached.data, etag: cached.etag };
   }
 
   const [buffer] = await file.download();
   const parsed = JSON.parse(buffer.toString('utf-8')) as JsonObject;
-  bucketJsonCache.set(relativePath, { generation, data: parsed });
+  bucketJsonCache.set(relativePath, { generation, etag, data: parsed });
   debugLog(`Loaded bucket content file: ${relativePath} (generation ${generation ?? 'unknown'})`);
-  return parsed;
+  return { data: parsed, etag };
 }
 
-async function loadJsonFile(relativePath: string): Promise<JsonObject> {
+async function loadJsonFile(relativePath: string): Promise<LoadedJsonFile> {
   if (storage && contentBucketName) {
     try {
       return await loadJsonFromBucket(relativePath);
@@ -209,7 +381,7 @@ async function loadAppConfig(): Promise<AppConfigResponse> {
   const defaults = getDefaultAppConfig();
 
   try {
-    const parsed = await loadJsonFile('app.json');
+    const { data: parsed } = await loadJsonFile('app.json');
     return createConfigFromSource(parsed, defaults);
   } catch (error) {
     console.error('[api-server] Failed to load app config, using defaults', error);
@@ -242,6 +414,252 @@ function normaliseBaseUrl(value: string): string {
   const ensuredLeading = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
   return ensuredLeading.endsWith('/') ? ensuredLeading.slice(0, -1) : ensuredLeading;
 }
+
+function detectContentCollection(relativePath: string): ContentCollection | null {
+  if (relativePath.startsWith('tiltak/')) {
+    return 'tiltak';
+  }
+  if (relativePath.startsWith('tilskudd/')) {
+    return 'tilskudd';
+  }
+  return null;
+}
+
+function logLegacyContentWarning(relativePath: string, reason: string): void {
+  if (legacyContentWarnings.has(relativePath)) {
+    return;
+  }
+  legacyContentWarnings.add(relativePath);
+  console.warn(`[api-server] Legacy content ${relativePath}: ${reason}`);
+}
+
+function parseDraftQueryParam(value: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.some((entry) => parseDraftQueryParam(entry));
+  }
+
+  if (typeof value === 'string') {
+    const normalised = value.trim().toLowerCase();
+    return normalised === '1' || normalised === 'true' || normalised === 'yes';
+  }
+
+  if (typeof value === 'number') {
+    return value === 1;
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (value && typeof value === 'object' && 'draft' in (value as Record<string, unknown>)) {
+    return parseDraftQueryParam((value as Record<string, unknown>).draft);
+  }
+
+  return false;
+}
+
+async function listLocalContentFiles(collection: ContentCollection): Promise<string[]> {
+  const results: string[] = [];
+  async function walk(relativeDir: string): Promise<void> {
+    const absoluteDir = path.resolve(configRootPath, relativeDir);
+    let entries: Dirent[];
+    try {
+      entries = await fs.readdir(absoluteDir, { withFileTypes: true });
+    } catch (error) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code === 'ENOENT') {
+        return;
+      }
+      throw error;
+    }
+
+    for (const entry of entries) {
+      const entryRelativePath = path.posix.join(relativeDir.replace(/\\/g, '/'), entry.name);
+      if (entry.isDirectory()) {
+        await walk(entryRelativePath);
+        continue;
+      }
+
+      if (entry.isFile() && entry.name.endsWith('.json')) {
+        results.push(entryRelativePath);
+      }
+    }
+  }
+
+  await walk(collection);
+
+  return results
+    .filter((filePath) => !filePath.endsWith('/index.json'))
+    .sort((a, b) => a.localeCompare(b));
+}
+
+async function listBucketContentFiles(collection: ContentCollection): Promise<string[]> {
+  if (!storage || !contentBucketName) {
+    return [];
+  }
+
+  const prefix = `${collection}/`;
+  const [files] = await storage.bucket(contentBucketName).getFiles({
+    prefix,
+    autoPaginate: true
+  });
+
+  return files
+    .map((file) => file.name)
+    .filter((name): name is string => typeof name === 'string' && name.startsWith(prefix))
+    .filter((name) => name.endsWith('.json') && !name.endsWith('/index.json'))
+    .sort((a, b) => a.localeCompare(b));
+}
+
+async function listContentFiles(collection: ContentCollection): Promise<string[]> {
+  if (storage && contentBucketName) {
+    return listBucketContentFiles(collection);
+  }
+  return listLocalContentFiles(collection);
+}
+
+async function loadContentDocument(
+  relativePath: string,
+  options: { includeDrafts?: boolean } = {}
+): Promise<LoadedContentDocument> {
+  const { data, etag } = await loadJsonFile(relativePath);
+  const collection = detectContentCollection(relativePath);
+  if (!collection) {
+    return { kind: 'generic', collection: null, data, etag };
+  }
+
+  if (typeof (data as { schemaVersion?: unknown }).schemaVersion !== 'number') {
+    logLegacyContentWarning(relativePath, 'missing schemaVersion – skipping validation');
+    return { kind: 'legacy', collection, data, etag };
+  }
+
+  const config = contentCollectionConfigs[collection];
+  const parsed = config.schema.safeParse(data);
+  if (!parsed.success) {
+    console.error(
+      `[api-server] Validation failed for ${relativePath}`,
+      parsed.error.flatten()
+    );
+    throw new ContentValidationError(relativePath, parsed.error.issues);
+  }
+
+  const includeDrafts = Boolean(options.includeDrafts);
+  const status = parsed.data.metadata.status;
+  if (!includeDrafts && status !== 'published') {
+    console.warn(
+      `[api-server] Blocked ${relativePath} because status=${status} (draft access disabled)`
+    );
+    throw new ContentAccessError(relativePath, status);
+  }
+
+  return { kind: 'validated', collection, data: parsed.data, etag } as ValidatedContentDocument;
+}
+
+function createTiltakCatalogItem(
+  relativePath: string,
+  document: TiltakContent
+): TiltakCatalogItem {
+  return {
+    type: 'tiltak',
+    id: document.id,
+    title: document.title,
+    summary: document.summary,
+    status: document.metadata.status,
+    updatedAt: document.metadata.updatedAt,
+    updatedBy: document.metadata.updatedBy,
+    audiences: document.audiences,
+    schemaVersion: document.schemaVersion,
+    path: relativePath,
+    grants: document.grants,
+    supportTags: document.supportTags,
+    buildingTypes: Object.keys(document.buildingTypeParagraphs),
+    variantAudiences: document.variants.map((variant) => variant.audience)
+  };
+}
+
+function createTilskuddCatalogItem(
+  relativePath: string,
+  document: TilskuddContent
+): TilskuddCatalogItem {
+  return {
+    type: 'tilskudd',
+    id: document.id,
+    title: document.title,
+    summary: document.summary,
+    status: document.metadata.status,
+    updatedAt: document.metadata.updatedAt,
+    updatedBy: document.metadata.updatedBy,
+    audiences: document.audiences,
+    schemaVersion: document.schemaVersion,
+    path: relativePath,
+    buildingTypes: document.buildingTypes,
+    appliesToTiltak: document.appliesToTiltak,
+    tags: document.tags,
+    validFrom: document.metadata.validFrom,
+    validTo: document.metadata.validTo
+  };
+}
+
+async function buildContentCatalog(
+  collection: ContentCollection,
+  options: { includeDrafts?: boolean } = {}
+): Promise<ContentCatalogResponse> {
+  const files = await listContentFiles(collection);
+  const items: ContentCatalogItem[] = [];
+  let skippedLegacy = 0;
+  let skippedUnpublished = 0;
+  let skippedInvalid = 0;
+
+  for (const relativePath of files) {
+    try {
+      const document = await loadContentDocument(relativePath, options);
+      if (document.kind !== 'validated') {
+        skippedLegacy += 1;
+        continue;
+      }
+
+      if (document.collection === 'tiltak') {
+        items.push(createTiltakCatalogItem(relativePath, document.data));
+      } else if (document.collection === 'tilskudd') {
+        items.push(createTilskuddCatalogItem(relativePath, document.data));
+      }
+    } catch (error) {
+      if (error instanceof ContentAccessError) {
+        skippedUnpublished += 1;
+        continue;
+      }
+      if (error instanceof ContentValidationError) {
+        skippedInvalid += 1;
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  return {
+    collection,
+    generatedAt: new Date().toISOString(),
+    includeDrafts: Boolean(options.includeDrafts),
+    total: items.length,
+    items,
+    skippedLegacy,
+    skippedUnpublished,
+    skippedInvalid
+  };
+}
+
+function computeCatalogEtag(catalog: ContentCatalogResponse): string | null {
+  try {
+    const { generatedAt: _generatedAt, ...snapshot } = catalog;
+    const payload = JSON.stringify(snapshot);
+    const digest = createHash('sha1').update(payload).digest('hex');
+    return `catalog:${digest}`;
+  } catch (error) {
+    console.error('[api-server] Failed to compute catalog etag', error);
+    return null;
+  }
+}
+
 
 async function detectPythonBinary(): Promise<string> {
   const attempted: string[] = [];
@@ -325,10 +743,43 @@ app.get('/config/app.json', async (_req, res) => {
   }
 });
 
+app.get('/config/content/:collection/index.json', async (req, res) => {
+  const collectionParam = req.params.collection;
+  if (collectionParam !== 'tiltak' && collectionParam !== 'tilskudd') {
+    res.status(404).json({ error: 'Unknown content collection' });
+    return;
+  }
+
+  const collection = collectionParam as ContentCollection;
+  const includeDrafts = parseDraftQueryParam(req.query?.draft);
+  try {
+    const catalog = await buildContentCatalog(collection, { includeDrafts });
+    const etag = computeCatalogEtag(catalog);
+    if (etag && ifNoneMatchMatches(req.headers['if-none-match'], etag)) {
+      const etagHeader = buildEtagHeaderValue(etag);
+      if (etagHeader) {
+        res.setHeader('ETag', etagHeader);
+      }
+      res.status(304).end();
+      return;
+    }
+
+    const etagHeader = buildEtagHeaderValue(etag);
+    if (etagHeader) {
+      res.setHeader('ETag', etagHeader);
+    }
+    res.json(catalog);
+  } catch (error) {
+    console.error('[api-server] Failed to build content catalog', error);
+    res.status(500).json({ error: 'Failed to build content catalog' });
+  }
+});
+
 app.get(/^\/config\/content\/(.+)$/, async (req, res) => {
   const params = req.params as unknown as Record<number, string>;
   const requestedPath = params ? params[0] : undefined;
   const safePath = sanitiseContentRequestPath(requestedPath);
+  const includeDrafts = parseDraftQueryParam(req.query?.draft);
 
   if (!safePath) {
     res.status(400).json({ error: 'Invalid content path' });
@@ -336,9 +787,41 @@ app.get(/^\/config\/content\/(.+)$/, async (req, res) => {
   }
 
   try {
-    const data = await loadJsonFile(safePath);
-    res.json(data);
+    const document = await loadContentDocument(safePath, { includeDrafts });
+    if (document.etag && ifNoneMatchMatches(req.headers['if-none-match'], document.etag)) {
+      const etagHeader = buildEtagHeaderValue(document.etag);
+      if (etagHeader) {
+        res.setHeader('ETag', etagHeader);
+      }
+      res.status(304).end();
+      return;
+    }
+
+    const etagHeader = buildEtagHeaderValue(document.etag);
+    if (etagHeader) {
+      res.setHeader('ETag', etagHeader);
+    }
+    res.json(document.data);
   } catch (error) {
+    if (error instanceof ContentAccessError) {
+      const statusCode = error.status === 'archived' ? 410 : 404;
+      res.status(statusCode).json({
+        error: 'content_not_available',
+        status: error.status,
+        path: safePath
+      });
+      return;
+    }
+
+    if (error instanceof ContentValidationError) {
+      res.status(422).json({
+        error: 'invalid_content',
+        path: safePath,
+        issues: error.issues
+      });
+      return;
+    }
+
     const err = error as NodeJS.ErrnoException;
     if (err && (err.code === 'ENOENT' || err.code === 'ENOTDIR')) {
       res.status(404).json({ error: 'Content not found' });

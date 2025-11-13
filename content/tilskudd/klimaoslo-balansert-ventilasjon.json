@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "id": "klimaoslo-balansert-ventilasjon",
+  "title": "Balansert ventilasjon i boliger",
+  "summary": "Støtte til boligeiere som installerer balansert ventilasjon eller ventilasjonsvarmepumpe i eksisterende bolig.",
+  "description": [
+    "Klimaetaten gir økonomisk støtte til prosjekter som etablerer balansert ventilasjon med varmegjenvinning. Ordningen passer for både småhus og større bygg der god luftkvalitet og lavere energibruk må kombineres.",
+    "Støtte kan gis til prosjektering, kanalnett, aggregat og nødvendige byggtilpasninger."
+  ],
+  "category": "kommunal",
+  "provider": {
+    "name": "Klima- og energifondet (Oslo kommune)",
+    "url": "https://www.klimaoslo.no/tilskudd/balansert-ventilasjon/",
+    "contactEmail": "klimaetaten@bym.oslo.kommune.no"
+  },
+  "funding": [
+    {
+      "kind": "fixed",
+      "amount": 50000,
+      "currency": "NOK",
+      "description": "Inntil 50 000 kroner per boenhet til balansert ventilasjon eller ventilasjonsvarmepumpe."
+    }
+  ],
+  "eligibility": [
+    {
+      "id": "luftmengder",
+      "title": "Ventilasjonsløsningen må dimensjoneres av fagperson",
+      "description": [
+        "Prosjekter må dokumentere luftmengder, støydemping og varmegjenvinningens virkningsgrad."
+      ]
+    },
+    {
+      "id": "ibygd",
+      "title": "Boligen må være lokalisert i Oslo",
+      "description": [
+        "Ordningen gjelder for eksisterende boliger innenfor kommunegrensen."
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "sluttrapport-vent",
+      "title": "Sluttrapport med målinger",
+      "description": [
+        "Det skal leveres innreguleringsrapport og dokumentasjon på at luftkvalitet og støy er innenfor gjeldende krav."
+      ]
+    }
+  ],
+  "buildingTypes": [
+    "enebolig",
+    "rekkehus",
+    "tomannsbolig",
+    "blokk"
+  ],
+  "appliesToTiltak": [
+    "ventilasjon",
+    "varmepumpe"
+  ],
+  "regions": [
+    "oslo"
+  ],
+  "audiences": [
+    "standard"
+  ],
+  "tags": [
+    "ventilasjon",
+    "inneklima",
+    "kommunal-stotte"
+  ],
+  "contacts": [
+    {
+      "id": "klimaetaten-vent",
+      "name": "Klimaetaten",
+      "email": "klimaetaten@bym.oslo.kommune.no",
+      "url": "https://www.klimaoslo.no/tilskudd/"
+    }
+  ],
+  "application": {
+    "url": "https://www.klimaoslo.no/tilskudd/balansert-ventilasjon/",
+    "guidanceUrl": "https://www.klimaoslo.no/tilskudd/",
+    "rolling": true,
+    "documents": [
+      {
+        "id": "teknisk-veileder",
+        "label": "Teknisk veileder",
+        "url": "https://www.klimaoslo.no/wp-content/uploads/ventilasjon-veileder.pdf"
+      }
+    ]
+  },
+  "links": [
+    {
+      "id": "energirad-vent",
+      "label": "Kombiner med energirådgivning",
+      "url": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/energiradgivning"
+    }
+  ],
+  "metadata": {
+    "status": "published",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-14T09:15:00Z",
+    "changeSummary": "Ny grant-beskrivelse for balansert ventilasjon."
+  }
+}

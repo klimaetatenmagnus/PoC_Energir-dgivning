@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "id": "enova-solcelleanlegg",
+  "title": "Enova-tilskudd til solcelleanlegg",
+  "summary": "Statlig støtte når du installerer solcelleanlegg på egen bolig.",
+  "description": [
+    "Enova dekker deler av kostnadene når du installerer solcelleanlegg som produserer strøm til egen bolig. Ordningen gjelder både for nye og eksisterende eneboliger, tomannsboliger og rekkehus.",
+    "Du søker i etterkant av installasjonen og får utbetalt støtte når anlegget er satt i drift og dokumentasjonen er godkjent."
+  ],
+  "category": "statlig",
+  "provider": {
+    "name": "Enova",
+    "url": "https://www.enova.no",
+    "contactEmail": "post@enova.no"
+  },
+  "funding": [
+    {
+      "kind": "fixed",
+      "amount": 47500,
+      "currency": "NOK",
+      "description": "15 000 kroner i basisstøtte + 2 000 kroner per kW installert effekt (inntil 15 kW)."
+    }
+  ],
+  "eligibility": [
+    {
+      "id": "bolig",
+      "title": "Boligen må være registrert som helårsbolig",
+      "description": [
+        "Anlegget må monteres på egen bolig i Norge og være tilkoblet strømnettet som plusskunde."
+      ]
+    },
+    {
+      "id": "installator",
+      "title": "Bruk kvalifisert installatør",
+      "description": [
+        "Anlegget må installeres av fagfolk som kan dokumentere samsvarserklæring og sende melding til nettselskapet."
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "dokumentasjon",
+      "title": "Dokumenter kostnader og strømproduksjon",
+      "description": [
+        "Last opp faktura, kvittering for betalt beløp og bilde av ferdig installasjon. Enova kan be om målerdata for å bekrefte produksjonen."
+      ],
+      "documents": [
+        {
+          "id": "kravliste",
+          "label": "Sjekkliste fra Enova",
+          "url": "https://www.enova.no/privat/alle-energitiltak/solcelleanlegg/slik-soker-du/"
+        }
+      ]
+    }
+  ],
+  "buildingTypes": [
+    "enebolig",
+    "rekkehus",
+    "tomannsbolig"
+  ],
+  "appliesToTiltak": [
+    "solenergi"
+  ],
+  "regions": [
+    "national"
+  ],
+  "audiences": [
+    "standard"
+  ],
+  "tags": [
+    "solenergi",
+    "plusskunde",
+    "enova"
+  ],
+  "contacts": [
+    {
+      "id": "enova-svarer",
+      "name": "Enova Svarer",
+      "url": "https://www.enova.no/kontakt-oss"
+    }
+  ],
+  "application": {
+    "url": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/solcelleanlegg",
+    "guidanceUrl": "https://www.enova.no/privat/alle-energitiltak/slik-soker-du/",
+    "rolling": true,
+    "documents": [
+      {
+        "id": "fakturamaler",
+        "label": "Krav til faktura og vedlegg",
+        "url": "https://www.enova.no/privat/alle-energitiltak/dokumentasjon/"
+      }
+    ]
+  },
+  "links": [
+    {
+      "id": "plusskunde-veiledning",
+      "label": "NVE – slik blir du plusskunde",
+      "url": "https://www.nve.no/reguleringsmyndigheten/nett/plusskunde/"
+    }
+  ],
+  "metadata": {
+    "status": "published",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-13T09:46:00Z",
+    "changeSummary": "Opprettet Enova-tilskudd til solcelleanlegg for bruk i adminverktøyet."
+  }
+}

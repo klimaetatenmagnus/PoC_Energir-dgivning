@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "id": "byantikvaren-istandsetting",
+  "title": "Tilskudd til istandsetting av kulturminner i Oslo",
+  "summary": "Ordning fra Byantikvaren for vedlikehold og istandsetting av bevaringsverdige bygg.",
+  "description": [
+    "Byantikvaren gir tilskudd til tiltak som sikrer kulturhistoriske bygninger. Midlene kan brukes til tetting, vindusrehabilitering og annet vedlikehold som ivaretar det historiske uttrykket.",
+    "Søknaden vurderes etter antikvariske kvaliteter, kost-nytte og hvor kritisk tiltaket er for å stanse forfall."
+  ],
+  "category": "kommunal",
+  "provider": {
+    "name": "Byantikvaren i Oslo",
+    "url": "https://www.oslo.kommune.no/tilskudd-legater-og-stipend/tilskudd-til-istandsetting-av-kulturminner/",
+    "contactEmail": "byantikvaren@bja.oslo.kommune.no"
+  },
+  "funding": [
+    {
+      "kind": "percentage",
+      "rate": 35,
+      "description": "Opp til 35 % av kostnaden kan dekkes for prioriterte tiltak, avhengig av antikvarisk verdi."
+    }
+  ],
+  "eligibility": [
+    {
+      "id": "vernestatus",
+      "title": "Bygget må stå på gul liste eller være fredet",
+      "description": [
+        "Søkere må dokumentere vernestatus og beskrive hvorfor tiltaket er nødvendig nå."
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "antikvarisk-plan",
+      "title": "Antikvarisk plan",
+      "description": [
+        "Tiltaket skal beskrive materialbruk, metode og hvordan arbeidene dokumenteres."
+      ]
+    }
+  ],
+  "buildingTypes": [
+    "enebolig",
+    "rekkehus",
+    "tomannsbolig",
+    "blokk"
+  ],
+  "appliesToTiltak": [
+    "tetting",
+    "ventilasjon",
+    "vinduer"
+  ],
+  "regions": [
+    "oslo"
+  ],
+  "audiences": [
+    "gulliste"
+  ],
+  "tags": [
+    "kulturminne",
+    "byantikvaren"
+  ],
+  "contacts": [
+    {
+      "id": "byantikvaren-kontakt",
+      "name": "Byantikvaren",
+      "email": "byantikvaren@bja.oslo.kommune.no",
+      "url": "https://www.oslo.kommune.no/byantikvaren/"
+    }
+  ],
+  "application": {
+    "url": "https://www.oslo.kommune.no/tilskudd-legater-og-stipend/tilskudd-til-istandsetting-av-kulturminner/",
+    "guidanceUrl": "https://www.oslo.kommune.no/byantikvaren/",
+    "rolling": false,
+    "deadline": "2025-02-15T00:00:00Z",
+    "documents": []
+  },
+  "links": [],
+  "metadata": {
+    "status": "published",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-14T09:30:00Z",
+    "changeSummary": "Lagt til Byantikvarens ordning for gulliste-tiltak."
+  }
+}
