@@ -110,6 +110,8 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 `api-server` leser `/config/app.json` direkte fra bøtten (via `CONTENT_BUCKET`) og faller tilbake til lokale filer hvis objektet ikke finnes. JSON-en caches per GCS-generation, så oppdatering av filen i bøtten blir synlig uten redeploy.
 `deploy/gcp/invalidate-cdn-cache.sh` brukes til å invalidere LB cache etter deploy (via Cloud Build steg).
 
+> Merk: `energinokkelen-content` (staging) og `energinokkelen-content-prod` (prod) er den eneste autoritative lagringen for tiltak- og støtteordningsdata. Alle redaktørendringer må først testes i staging-bøtten og bekreftes via staging-frontend/admin før filene kopieres videre til prod (se pilotkravet i `Dokumentasjon/Utvikling/tiltak-innholdsredigering-plan.md`).
+
 ### 4.6 Load balancer, CDN og DNS
 
 - **Global HTTPS LB:** `staging-frontend-map` (brukes for både staging/prod hostnames).

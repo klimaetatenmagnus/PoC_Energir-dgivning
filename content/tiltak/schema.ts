@@ -146,7 +146,7 @@ const VariantOverrideSchema = z
     audience: ContentAudienceSchema,
     title: NonEmptyStringSchema.optional(),
     introParagraphs: ParagraphArraySchema.optional(),
-    buildingTypeParagraphs: BuildingParagraphsSchema.optional(),
+    buildingTypeParagraphs: PartialBuildingParagraphsSchema.optional(),
     benefits: z.array(BenefitSchema).optional(),
     readMore: z.array(LinkSchema).optional(),
     callsToAction: z.array(CallToActionSchema).optional(),

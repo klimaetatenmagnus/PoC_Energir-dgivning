@@ -148,7 +148,9 @@
 - Hvordan håndteres tilgang til tilskuddsdata dersom andre team vil gjenbruke API-et?
 
 ## 13. Neste steg
+- Verifiser at staging-bøtten for runtime-innhold (`gs://energinokkelen-content`) finnes. Hvis ikke, opprett den i `europe-north1` med versjonering (`gcloud storage buckets create gs://energinokkelen-content --location=europe-north1 --uniform-bucket-level-access --enable-object-versioning`) før du synker filer.
 - Synk `content/tiltak/temperaturstyring.json` og tilknyttede tilskuddsfiler (`klimaoslo-smart-energistyring`, `klimaoslo-pris-effektstyring`) til `gs://energinokkelen-content`, og verifiser via `/config/content/tiltak/temperaturstyring.json?draft=1` før prod-publisering.
+- Gjennomfør ende-til-ende testing av admin-UI og dynamiske tiltak/tilskudd i staging (redaktørflyt, forhåndsvisning, publisering) og dokumenter resultatene før funksjonen åpnes i prod.
 - Etabler dokumentert og automatisert rutine for variant-/gul-listeinnhold (metadataflyt, schema-validering, skript for staging→prod-synk og auditlogging av endringer).
 - Videreutvikle admin-frontend + BFF (listevisning, CRUD med relasjonsvelger, forhåndsvisning via `draft=1`, audit/logging) og planlegg bygg/deploy til Cloud Run bak IAP.
 - Operationaliser publiseringsløpet: `gsutil rsync`-skript per miljø, sjekklister for metadata og driftslogg, samt automatisert CDN-invalidasjon for `/config/content/**`.
@@ -164,6 +166,7 @@
 - `content/examples/*.json`: Referansefiler som viser hele schemaet for tiltak/tilskudd og brukes som mal ved nye migreringer.
 - `content/schema-helpers.ts`: Felles typer (`ContentAudience`, `MetadataSchema`, `BuildingTypeKeySchema` m.m.) som både tiltak- og tilskuddsskjemaene importerer.
 - `content/tiltak/schema.ts` og `content/tilskudd/schema.ts`: Zod-skjemaene som definerer alle felter, `schemaVersion` og variantstøtte.
+- Alle filer synkes til `gs://energinokkelen-content` (staging) og `gs://energinokkelen-content-prod` (prod) før de tas i bruk i miljøene, jf. `Dokumentasjon/gcp-driftshandbok.md`.
 - `src/hooks/contentHooks.ts`: SWR-baserte hooks (`useTiltakContent`, `useTilskuddContent`, `useTilskuddBatch`, `useTiltakCatalog`) som henter `/config/content/**` med ETag/cache og håndterer `?draft=1`.
 - `src/utils/tiltakContent.ts`: `applyTiltakVariant`, `normaliseBuildingTypeKey` og `getBuildingParagraphs` holder variantlogikk og byggtypeoppslag samlet.
 - `src/components/FigmaBlokk/components/Tiltak/`: Alle tiltakskomponenter, `GulListeTiltak/`-wrapperne, `glossaryHelpers.tsx`, `useGrantAwareStotteordninger.ts` og `shared.ts`.
