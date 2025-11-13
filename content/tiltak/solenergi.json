@@ -4,7 +4,7 @@
   "title": "Solenergi",
   "summary": "Produser din egen strøm med solceller eller solfangere og få bedre kontroll på energibruken.",
   "introParagraphs": [
-    "Solcelleanlegg er et effektivt og stadig mer lønnsomt tiltak for boligeiere i Oslo. Du kan produsere egen strøm, bruke mindre fra strømnettet og samtidig bidra til lavere utslipp.",
+    "Hahaha - Solcelleanlegg er et effektivt og stadig mer lønnsomt tiltak for boligeiere i Oslo. Du kan produsere egen strøm, bruke mindre fra strømnettet og samtidig bidra til lavere utslipp.",
     "Har du overskuddsproduksjon, kan du få lavere nettleie ved å registrere deg som plusskunde. Sjekk Solkartet for å se hvor mye sol taket ditt får gjennom året og hvor godt egnet huset er."
   ],
   "buildingTypeParagraphs": {
@@ -102,7 +102,7 @@
   ],
   "metadata": {
     "status": "published",
-    "updatedBy": "codex",
+    "updatedBy": "Magnus",
     "updatedAt": "2025-11-15T12:15:00Z",
     "changeSummary": "Lagt til gul-listevariant og oppdatert grants for solenergi-innholdet."
   },

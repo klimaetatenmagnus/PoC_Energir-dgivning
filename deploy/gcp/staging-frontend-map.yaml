@@ -2,6 +2,7 @@ defaultService: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc
 hostRules:
   - hosts:
       - 34.111.174.210
+      - staging.energinokkelen.no
     pathMatcher: staging-matcher
   - hosts:
       - energinokkelen.no
