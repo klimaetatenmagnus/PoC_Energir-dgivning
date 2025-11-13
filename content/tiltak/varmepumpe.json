@@ -1,0 +1,213 @@
+{
+  "schemaVersion": 1,
+  "id": "varmepumpe",
+  "title": "Varmepumpe",
+  "summary": "Velg riktig varmepumpeløsning for boligen din og få lavere energibruk, jevnere temperatur og bedre komfort.",
+  "introParagraphs": [
+    "Varmepumper henter energi fra luft, jord eller berg og gir mer varme enn de bruker strøm til. Riktig type og plassering er avgjørende for å få god effekt, lite støy og et uttrykk som passer huset.",
+    "Det finnes løsninger for alt fra små eneboliger til store borettslag. Start med å kartlegge varmebehov, fasadeuttrykk og hvilke tekniske føringer (ventilasjon, vannbåren varme) du allerede har."
+  ],
+  "buildingTypeParagraphs": {
+    "default": [
+      "I blokker og større boligbygg må varmepumper planlegges som felles tiltak. Luft-til-vann eller væske-til-vann koblet til felles varmeanlegg gir skjulte installasjoner og energisparing for hele bygget.",
+      "Ved luft-til-luft varmepumper med utedel må dere ta hensyn til støy og visuell påvirkning. Ta tidlig dialog i styret og med naboene, så finner dere løsninger som fungerer for alle."
+    ],
+    "enebolig": [
+      "I eneboliger har du ofte stor frihet til å velge plassering av inne- og utedel. Luft-til-luft er vanligst, men luft- eller væske-til-vann kan være aktuelt ved vannbåren varme.",
+      "Plasser utedelen slik at støy ikke plager deg selv eller naboene, og vurder eksisterende tekniske gjennomføringer for å unngå nye hull i fasaden."
+    ],
+    "rekkehus": [
+      "I rekkehus og tomannsboliger deler man gjerne fasadeuttrykk og taklinjer. Koordiner plassering av utedeler slik at dere beholder et helhetlig uttrykk og møter kravene i reguleringsplanen.",
+      "Har dere felles varmeanlegg eller balansert ventilasjon, kan luft-til-vann eller ventilasjonsvarmepumpe gi større besparelser enn enkelte luft-til-luft-enheter."
+    ],
+    "tomannsbolig": [
+      "I rekkehus og tomannsboliger deler man gjerne fasadeuttrykk og taklinjer. Koordiner plassering av utedeler slik at dere beholder et helhetlig uttrykk og møter kravene i reguleringsplanen.",
+      "Har dere felles varmeanlegg eller balansert ventilasjon, kan luft-til-vann eller ventilasjonsvarmepumpe gi større besparelser enn enkelte luft-til-luft-enheter."
+    ]
+  },
+  "benefits": [
+    {
+      "id": "redusert-stoy",
+      "title": "Redusert støy",
+      "description": "Oppgraderte og riktig plasserte varmepumper gir effektiv drift uten sjenerende lyd."
+    },
+    {
+      "id": "ivaretar-boligen",
+      "title": "Ivaretar boligen",
+      "description": "Jeven varme og bedre styring beskytter konstruksjoner og innemiljø."
+    },
+    {
+      "id": "bedre-bokvalitet",
+      "title": "Bedre bokvalitet",
+      "description": "Stabil temperatur og filtrert luft gir bedre komfort i alle rom."
+    },
+    {
+      "id": "lavere-stromregning",
+      "title": "Lavere strømregning",
+      "description": "Hver kWh strøm til varmepumpen gir flere kWh varme tilbake."
+    }
+  ],
+  "tabs": [
+    {
+      "type": "tabs",
+      "title": "Typer varmepumper",
+      "tabs": [
+        {
+          "id": "luft-luft",
+          "title": "Luft-luft",
+          "body": [
+            "Luft-til-luft varmepumper henter varme fra uteluften og blåser den direkte inn som varm luft i oppholdsrom. De er rimelige, raske å installere og passer godt i mindre boliger eller åpne planløsninger.",
+            "Planlegg plasseringen av inne- og utedel nøye – særlig i verneverdige bygg hvor visuelle hensyn er viktige. Velg en installatør som kan dokumentere lydnivå og riktig kondensavløp."
+          ]
+        },
+        {
+          "id": "luft-vann",
+          "title": "Luft-vann",
+          "body": [
+            "Luft-til-vann-systemer bruker varmen i uteluften til å varme opp vann som sirkulerer i radiatorer, gulvvarme eller tappevann. Løsningen krever et vannbårent system, men gir helhetlig oppvarming.",
+            "Installasjonen er mer omfattende enn luft-til-luft og passer best i boliger med jevnt varmebehov og plass til akkumulatortank."
+          ]
+        },
+        {
+          "id": "vaeske-vann",
+          "title": "Væske-vann",
+          "body": [
+            "Væske-til-vann varmepumper henter varme fra berg, jord eller sjø via nedgravde kollektorer eller borehull. De har høy effektivitet selv på kalde vinterdager og kan dekke både oppvarming og tappevann.",
+            "Løsningen krever prosjektering og boring, men gir skjulte installasjoner og passer godt ved rehabilitering eller i større boliger og borettslag."
+          ]
+        },
+        {
+          "id": "ventilasjon",
+          "title": "Ventilasjon",
+          "body": [
+            "Ventilasjonsvarmepumper gjenvinner varme fra brukt luft og bruker den til å varme opp tilluft, tappevann eller vannbåren varme. De forutsetter balansert ventilasjon med kanalnett.",
+            "Dette er mest aktuelt i nyere boliger eller når man likevel skal installere et nytt ventilasjonsanlegg."
+          ]
+        }
+      ]
+    }
+  ],
+  "readMore": [
+    {
+      "id": "sintef-varmepumpe",
+      "label": "SINTEF – varmepumpeteknologi",
+      "url": "https://www.sintef.no/ekspertise/sintef-energi/varmepumpeteknologi/"
+    },
+    {
+      "id": "enova-vaeske-vann",
+      "label": "Enova – væske-til-vann varmepumpe",
+      "url": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/vaeske-til-vann-varmepumpe"
+    },
+    {
+      "id": "enova-varmepumpebereder",
+      "label": "Enova – varmepumpebereder",
+      "url": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/varmepumpebereder"
+    }
+  ],
+  "accordion": [
+    {
+      "id": "soknadsplikt",
+      "title": "Søknadsplikt og ansvar",
+      "body": [
+        "Varmepumper regnes som tekniske installasjoner, og tiltaket er ofte søknadspliktig dersom det påvirker fasaden eller krever nye tekniske gjennomføringer. Bruk foretak som kan søke Plan- og bygningsetaten for deg.",
+        "Søknadsplikten skal sikre at arbeidet prosjekteres og utføres med riktig kompetanse, og at løsningen fungerer godt både teknisk og visuelt."
+      ],
+      "links": [
+        {
+          "id": "pbe-veiledning",
+          "label": "Plan- og bygningsetaten – trenger du veiledning?",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/"
+        },
+        {
+          "id": "dibk-ansvar",
+          "label": "DiBK – ansvarsrett og roller",
+          "url": "https://www.dibk.no/regelverk/sak/3/12/"
+        }
+      ]
+    }
+  ],
+  "grants": [
+    "klimaoslo-vaeske-til-vann-varmepumpe",
+    "klimaoslo-varmepumpebereder"
+  ],
+  "supportTags": [
+    "varmepumpe",
+    "oppvarming",
+    "energifleksibilitet"
+  ],
+  "audiences": [
+    "standard",
+    "gulliste"
+  ],
+  "metadata": {
+    "status": "published",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-15T12:25:00Z",
+    "changeSummary": "Lagt til gul-listevariant, ekstra kildelenker og støtteordninger for varmepumpe."
+  },
+  "variants": [
+    {
+      "audience": "gulliste",
+      "introParagraphs": [
+        "Varmepumpe kan være en god løsning for oppvarming, bedre inneklima og en effektiv måte å spare energi og redusere strømregningen på – også i verneverdige bygninger.",
+        "Det er viktig å velge riktig type og plassering av hensyn til byggets historiske verdier. I mange tilfeller finnes det gode løsninger, så lenge de planlegges og utføres på riktig måte."
+      ],
+      "buildingTypeParagraphs": {
+        "enebolig": [
+          "På murhus, laftede hus, bindingsverk og reisverk anbefales det å unngå plassering av varmepumpe mot gaten. Tenk på at naboer ikke forstyrres av støy og visuell påvirkning, og bruk gjerne eksisterende hull og åpninger der det er mulig.",
+          "Luft-til-luft varmepumpe er det vanligste alternativet, men luft-til-vann kan være aktuelt for større oppvarmingsbehov."
+        ],
+        "rekkehus": [
+          "På murhus, laftede hus, bindingsverk og reisverk anbefales det å unngå plassering av varmepumpe mot gaten. Tenk på støy og visuell påvirkning, og benytt eksisterende hull, ventiler og pipegjennomføringer. Dersom bygget har originale eller sjeldne fasadedetaljer må det tas særskilt hensyn.",
+          "Siden mange tomannsboliger og rekkehus har like fasader, bør du samarbeide med naboen. Da er det enklere å finne løsninger som fungerer både teknisk og visuelt."
+        ],
+        "tomannsbolig": [
+          "På murhus, laftede hus, bindingsverk og reisverk anbefales det å unngå plassering av varmepumpe mot gaten. Tenk på støy og visuell påvirkning, og benytt eksisterende hull, ventiler og pipegjennomføringer. Dersom bygget har originale eller sjeldne fasadedetaljer må det tas særskilt hensyn.",
+          "Siden mange tomannsboliger og rekkehus har like fasader, bør du samarbeide med naboen. Da er det enklere å finne løsninger som fungerer både teknisk og visuelt."
+        ],
+        "blokk": [
+          "I blokker er det spesielt viktig å ta hensyn til både byggets helhet og naboene rundt. Mange bygg på gul liste har fasader og detaljer med høy verneverdi, og utedeler til luft-til-luft varmepumper kan derfor være lite egnet.",
+          "Vurder heller luft-til-vann eller væske-til-vann-løsninger som kobles til et felles vannbårent anlegg. Det krever mer planlegging, men gir skjulte installasjoner og energisparing for hele bygget.",
+          "Når du deler fasade, tekniske løsninger og utearealer i borettslag eller sameier, må tiltaket koordineres gjennom styret. Samkjørte løsninger gir bedre kvalitet og øker sjansen for byggetillatelse."
+        ],
+        "default": [
+          "I blokker er det spesielt viktig å ta hensyn til både byggets helhet og naboene rundt. Mange bygg på gul liste har fasader og detaljer med høy verneverdi, og utedeler til luft-til-luft varmepumper kan derfor være lite egnet.",
+          "Vurder heller luft-til-vann eller væske-til-vann-løsninger som kobles til et felles vannbårent anlegg. Det krever mer planlegging, men gir skjulte installasjoner og energisparing for hele bygget.",
+          "Når du deler fasade, tekniske løsninger og utearealer i borettslag eller sameier, må tiltaket koordineres gjennom styret. Samkjørte løsninger gir bedre kvalitet og øker sjansen for byggetillatelse."
+        ]
+      },
+      "readMore": [
+        {
+          "id": "riksantikvaren-varmepumpe",
+          "label": "Riksantikvaren – varmepumper i verneverdige bygg",
+          "url": "https://www.riksantikvaren.no/veileder/rad-om-varmepumper-i-fredede-og-verneverdige-bygninger/"
+        },
+        {
+          "id": "sintef-varmepumpe",
+          "label": "SINTEF – varmepumpeteknologi",
+          "url": "https://www.sintef.no/ekspertise/sintef-energi/varmepumpeteknologi/"
+        },
+        {
+          "id": "enova-vaeske-vann",
+          "label": "Enova – væske-til-vann varmepumpe",
+          "url": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/vaeske-til-vann-varmepumpe"
+        },
+        {
+          "id": "enova-varmepumpebereder",
+          "label": "Enova – varmepumpebereder",
+          "url": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/varmepumpebereder"
+        }
+      ],
+      "grants": [
+        "klimaoslo-vaeske-til-vann-varmepumpe",
+        "klimaoslo-varmepumpebereder",
+        "byantikvaren-istandsetting"
+      ],
+      "supportTags": [
+        "varmepumpe",
+        "gulliste",
+        "vern"
+      ]
+    }
+  ]
+}

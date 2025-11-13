@@ -1,25 +1,316 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   getOverskriftColor,
   openExternalLink,
-  TiltakComponentProps,
-  useStotteordninger
+  TiltakComponentProps
 } from './shared';
+import { useTiltakContent } from '../../../../hooks/contentHooks';
+import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
+import type { TiltakContent } from '../../../../../content/tiltak/schema';
+import type { Stotteordning } from '../../../../services/stotteordning-service';
+import type { ContentAudience } from '../../../../../content/schema-helpers';
+import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
+
+type VarmepumpeTab = {
+  id: string;
+  title: string;
+  body: string[];
+};
+
+type VarmepumpeComponentProps = TiltakComponentProps & { audience?: ContentAudience };
+
+type VarmepumpeContent = {
+  title: string;
+  introParagraphs: string[];
+  buildingTypeParagraphs: Record<string, string[]>;
+  tabs: VarmepumpeTab[];
+  benefits: { title: string; description: string }[];
+  readMore: { label: string; url: string }[];
+  grants: string[];
+};
+
+const defaultVarmepumpeContent: VarmepumpeContent = {
+  title: 'Varmepumpe',
+  introParagraphs: [
+    'Varmepumpe er en effektiv måte å senke strømforbruket, få jevnere temperatur og bedre inneklima. Riktig type og plassering er viktig for at anlegget skal fungere godt og ikke gi unødig støy eller visuell påvirkning. Det finnes løsninger for de fleste boligtyper.'
+  ],
+  buildingTypeParagraphs: {
+    default: [
+      'I blokker med felles tekniske systemer kan det være aktuelt å installere luft-til-vann eller væske-til-vann varmepumpe, koblet til et felles varmeanlegg. Dette krever planlegging, men gir skjulte installasjoner og energisparing for hele bygget.',
+      'Ved luft-til-luft varmepumper med utedel må dere ta hensyn til støy og visuell påvirkning. Ta tidlig dialog i styret og med naboene, så finner dere løsninger som fungerer for alle.'
+    ],
+    enebolig: [
+      'Ved montering av varmepumpe i enebolig bør du vurdere både innendørs og utendørs plassering nøye. Utedelen bør plasseres slik at den ikke er til sjenanse, og at støyen ikke forstyrrer oppholdssoner eller naboer.',
+      'Luft-til-luft varmepumpe er det vanligste alternativet, men luft-til-vann kan være aktuelt for større oppvarmingsbehov.'
+    ],
+    rekkehus: [
+      'Luft-til-luft varmepumpe er ofte den enkleste løsningen på rekkehus og flermannsboliger. Har dere vannbåren varme, kan luft-til-vann være aktuelt.',
+      'I hus med felles tak eller like fasader er det lurt å planlegge varmepumpene i dialog med naboen for å finne løsninger som fungerer teknisk og visuelt.'
+    ],
+    tomannsbolig: [
+      'Luft-til-luft varmepumpe er ofte den enkleste løsningen på rekkehus og flermannsboliger. Har dere vannbåren varme, kan luft-til-vann være aktuelt.',
+      'I hus med felles tak eller like fasader er det lurt å planlegge varmepumpene i dialog med naboen for å finne løsninger som fungerer teknisk og visuelt.'
+    ]
+  },
+  tabs: [
+    {
+      id: 'luft-luft',
+      title: 'Luft-luft',
+      body: [
+        'Luft-til-luft varmepumper henter varme fra uteluften og blåser den direkte inn som varm luft i boligen. Den er rimelig, enkel å installere og passer godt for mindre boliger eller åpne planløsninger.',
+        'Inne- og utedelen er synlige, så plassering bør planlegges nøye – særlig i verneverdige bygg hvor visuelle hensyn er viktige.'
+      ]
+    },
+    {
+      id: 'luft-vann',
+      title: 'Luft-vann',
+      body: [
+        'Luft-til-vann-systemer bruker varmen i uteluften til å varme opp vann, som sirkulerer i radiatorer, gulvvarme eller brukes til tappevann. Dette gir en jevn og behagelig oppvarming, men krever at huset har et vannbårent system.',
+        'Det er en mer omfattende installasjon enn luft-til-luft, og passer godt i boliger der man ønsker en helhetlig løsning.'
+      ]
+    },
+    {
+      id: 'vaeske-vann',
+      title: 'Væske-vann',
+      body: [
+        'Væske-til-vann varmepumper henter varme fra fjell, jord eller sjø via nedgravde rør eller borehull. Den har høy effektivitet også på kalde vinterdager og gir varme til både oppvarming og tappevann.',
+        'Dette er den mest omfattende og kostbare løsningen, men den egner seg godt for større boliger, blokker eller ved rehabilitering der man ønsker et robust og skjult system.'
+      ]
+    },
+    {
+      id: 'ventilasjon',
+      title: 'Ventilasjon',
+      body: [
+        'Ventilasjonsvarmepumper gjenvinner varme fra brukt luft som ventileres ut av boligen, og bruker den til å varme opp tilluft, tappevann eller vannbåren varme.',
+        'Ventilasjonsvarmepumper krever balansert ventilasjon (altså at både tilluft og avtrekk går i kanalnett), og er derfor mest egnet i nyere hus eller når det etableres nytt ventilasjonsanlegg.'
+      ]
+    }
+  ],
+  benefits: [
+    {
+      title: 'Redusert støy',
+      description: 'Riktig plassering og moderne teknologi gir stillegående drift.'
+    },
+    {
+      title: 'Ivaretar boligen',
+      description: 'Jeven varme beskytter konstruksjoner og innemiljø.'
+    },
+    {
+      title: 'Bedre bokvalitet',
+      description: 'Stabil temperatur og filtrert luft gir bedre komfort.'
+    },
+    {
+      title: 'Lavere strømregning',
+      description: 'Hver kWh strøm gir flere kWh varme tilbake.'
+    }
+  ],
+  readMore: [
+    {
+      label: 'Sintef',
+      url: 'https://www.sintef.no/ekspertise/sintef-energi/varmepumpeteknologi/'
+    },
+    {
+      label: 'Enova – væske-til-vann',
+      url: 'https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/vaeske-til-vann-varmepumpe'
+    },
+    {
+      label: 'Enova – varmepumpebereder',
+      url: 'https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/varmepumpebereder'
+    }
+  ],
+  grants: [
+    'klimaoslo-vaeske-til-vann-varmepumpe',
+    'klimaoslo-varmepumpebereder'
+  ]
+};
+
+function mapTiltakContentToVarmepumpe(content?: TiltakContent): VarmepumpeContent | null {
+  if (!content) {
+    return null;
+  }
+
+  const buildingTypeParagraphs: Record<string, string[]> = {};
+  for (const [key, value] of Object.entries(content.buildingTypeParagraphs)) {
+    if (Array.isArray(value)) {
+      buildingTypeParagraphs[key] = value;
+    } else if (value) {
+      buildingTypeParagraphs[key] = [String(value)];
+    } else {
+      buildingTypeParagraphs[key] = [];
+    }
+  }
+
+  const flattenedTabs: VarmepumpeTab[] = [];
+  for (const section of content.tabs ?? []) {
+    for (const tab of section.tabs ?? []) {
+      flattenedTabs.push({
+        id: tab.id,
+        title: tab.title,
+        body: tab.body
+      });
+    }
+  }
+
+  return {
+    title: content.title,
+    introParagraphs: content.introParagraphs,
+    buildingTypeParagraphs,
+    tabs: flattenedTabs,
+    benefits: content.benefits.map(({ title, description }) => ({
+      title,
+      description: description ?? ''
+    })),
+    readMore: content.readMore.map(({ label, url }) => ({ label, url })),
+    grants: content.grants
+  };
+}
 
 type VarmepumpeProps = TiltakComponentProps;
 
-export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType }) => {
+const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
+  onBack,
+  buildingType,
+  audience = 'standard'
+}) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
   const [activeButton, setActiveButton] = useState<string>('Generelt');
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
-  const { stotteordninger } = useStotteordninger({
-    tiltak: 'varmepumpe',
+
+  const { data: tiltakContent } = useTiltakContent('varmepumpe');
+  const resolvedTiltakContent = useMemo(
+    () => applyTiltakVariant(tiltakContent, audience),
+    [tiltakContent, audience]
+  );
+  const mappedContent = useMemo(
+    () => mapTiltakContentToVarmepumpe(resolvedTiltakContent),
+    [resolvedTiltakContent]
+  );
+  const content = mappedContent ?? defaultVarmepumpeContent;
+
+  const tabsFromContent = content.tabs.length ? content.tabs : defaultVarmepumpeContent.tabs;
+  const tabBodies = useMemo(() => {
+    const entries: Record<string, string[]> = {};
+    tabsFromContent.forEach((tab) => {
+      entries[tab.title] = tab.body;
+      entries[tab.id] = tab.body;
+    });
+    return entries;
+  }, [tabsFromContent]);
+
+  const introParagraphs = content.introParagraphs.length
+    ? content.introParagraphs
+    : defaultVarmepumpeContent.introParagraphs;
+
+  const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
+  const buildingParagraphs =
+    content.buildingTypeParagraphs[buildingTypeKey] ??
+    content.buildingTypeParagraphs.default ??
+    defaultVarmepumpeContent.buildingTypeParagraphs.default;
+
+  const generalBody = [...introParagraphs, ...buildingParagraphs];
+
+  const benefitSlots = [0, 1, 2, 3] as const;
+  const benefits = benefitSlots.map(
+    (slot) => content.benefits[slot] ?? defaultVarmepumpeContent.benefits[slot]
+  );
+  const readMoreLinks = (content.readMore.length ? content.readMore : defaultVarmepumpeContent.readMore).slice(
+    0,
+    3
+  );
+
+  const grantIds = content.grants.length ? content.grants : defaultVarmepumpeContent.grants;
+  const {
+    stotteordninger,
+    isLoading: stotteordningerLoading,
+    intendedSource
+  } = useGrantAwareStotteordninger({
+    grantIds,
+    legacyTiltakSlug: 'varmepumpe',
     buildingType
   });
 
-  const needsScroll = stotteordninger.length > 4;
+  const displayedStotteordninger: Stotteordning[] = stotteordninger.length
+    ? stotteordninger
+    : intendedSource === 'grants' && stotteordningerLoading
+      ? [
+          {
+            ordning: 'Henter støtteordninger …',
+            lenke: null,
+            belop: null,
+            overskrift: null
+          }
+        ]
+      : [
+          {
+            ordning: 'Ingen registrerte støtteordninger ennå',
+            lenke: null,
+            belop: null,
+            overskrift: null
+          }
+        ];
+
+  const needsScroll = displayedStotteordninger.length > 4;
+
+  const activeTabParagraphs =
+    activeButton === 'Generelt'
+      ? generalBody
+      : tabBodies[activeButton] ?? tabBodies[activeButton.toLowerCase()] ?? [];
+  const activeTabKey =
+    activeButton === 'Generelt'
+      ? 'generelt'
+      : activeButton.toLowerCase().replace(/\s+/g, '-');
+
+  const renderScrollableParagraphs = (key: string, paragraphs: string[]) => (
+    <foreignObject key={key} x="60" y="69" width="464" height="289">
+      <div
+        xmlns="http://www.w3.org/1999/xhtml"
+        style={{
+          fontFamily: 'Oslo Sans',
+          fontWeight: 300,
+          fontStyle: 'normal',
+          fontSize: '14px',
+          lineHeight: '22px',
+          letterSpacing: '0px',
+          color: '#000000',
+          height: '100%',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          paddingRight: '10px',
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#CCCCCC #F5F5F5'
+        }}
+      >
+        <style>{`
+          div::-webkit-scrollbar {
+            width: 6px;
+          }
+          div::-webkit-scrollbar-track {
+            background: #F5F5F5;
+          }
+          div::-webkit-scrollbar-thumb {
+            background: #CCCCCC;
+            border-radius: 3px;
+          }
+          div::-webkit-scrollbar-thumb:hover {
+            background: #AAAAAA;
+          }
+        `}</style>
+        {paragraphs.map((paragraph, index) => (
+          <p
+            key={`${key}-${index}`}
+            style={{
+              marginTop: index === 0 ? 0 : undefined,
+              marginBottom: index === paragraphs.length - 1 ? 0 : '16px'
+            }}
+          >
+            {paragraph}
+          </p>
+        ))}
+      </div>
+    </foreignObject>
+  );
 
   return (
     <div style={{ 
@@ -54,7 +345,7 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType }) 
           fill="#2A2859"
           dominantBaseline="hanging"
         >
-          Varmepumpe
+          {content.title}
         </text>
         
         
@@ -280,221 +571,8 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType }) 
           fill="#CCCCCC"
         />
         
-        {/* Content areas for each button */}
-        {activeButton === 'Generelt' && (
-          <foreignObject x="60" y="69" width="464" height="289">
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{
-              fontFamily: 'Oslo Sans',
-              fontWeight: 300,
-              fontStyle: 'normal',
-              fontSize: '14px',
-              lineHeight: '22px',
-              letterSpacing: '0px',
-              color: '#000000',
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingRight: '10px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CCCCCC #F5F5F5'
-            }}>
-              <style>{`
-                div::-webkit-scrollbar {
-                  width: 6px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: #F5F5F5;
-                }
-                div::-webkit-scrollbar-thumb {
-                  background: #CCCCCC;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: #AAAAAA;
-                }
-              `}</style>
-              <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                Varmepumpe er en effektiv måte å senke strømforbruket, få jevnere temperatur og bedre inneklima. Riktig type og plassering er viktig for at anlegget skal fungere godt og ikke gi unødig støy eller visuell påvirkning. Det finnes løsninger for de fleste boligtyper.
-              </p>
-              {buildingType?.toLowerCase() === 'enebolig' && (
-                <p style={{ marginBottom: 0 }}>
-                  Ved montering av varmepumpe i enebolig bør du vurdere både innendørs og utendørs plassering nøye. Utedelen bør plasseres slik at den ikke er til sjenanse, og at støyen ikke forstyrrer oppholdssoner eller naboer. Mange benytter eksisterende tekniske gjennomføringer, som gamle ventiler, for å unngå nye inngrep i fasaden. Luft-til-luft varmepumpe er det vanligste alternativet, men luft-til-vann kan være aktuelt for større oppvarmingsbehov.
-                </p>
-              )}
-              {(buildingType?.toLowerCase() === 'rekkehus' || buildingType?.toLowerCase() === 'tomannsbolig') && (
-                <p style={{ marginBottom: 0 }}>
-                  Luft-til-luft varmepumpe er ofte den enkleste løsningen på rekkehus og flermannsboliger. Det kan gi god effekt uten store inngrep. Har dere vannbåren varme, kan luft-til-vann være mer aktuelt. I hus med felles tak eller like fasader er det lurt å planlegge varmepumpene i dialog med naboen. Da er det enklere å finne løsninger som fungerer både teknisk og visuelt. Gjerne bruk eksisterende tekniske føringer som gamle ventiler og åpninger.
-                </p>
-              )}
-              {(buildingType?.toLowerCase() === 'leilighet' || buildingType?.toLowerCase() === 'blokk' || buildingType?.toLowerCase() === 'store boligbygg') && (
-                <>
-                  <p style={{ marginBottom: '16px' }}>
-                    I blokker med felles tekniske systemer kan det være aktuelt å installere luft-til-vann eller væske-til-vann varmepumpe, koblet til et felles varmeanlegg. Dette krever planlegging, men gir skjulte installasjoner og energisparing for hele bygget.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Ved luft-til-luft varmepumper med utedel må dere ta hensyn til støy og visuell påvirkning. Ta tidlig dialog med styret, borettslaget og naboene – det øker sjansen for å finne løsninger som fungerer for alle.
-                  </p>
-                </>
-              )}
-            </div>
-          </foreignObject>
-        )}
-        
-        {activeButton === 'Luft-luft' && (
-          <foreignObject x="60" y="69" width="464" height="289">
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{
-              fontFamily: 'Oslo Sans',
-              fontWeight: 300,
-              fontStyle: 'normal',
-              fontSize: '14px',
-              lineHeight: '22px',
-              letterSpacing: '0px',
-              color: '#000000',
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingRight: '10px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CCCCCC #F5F5F5'
-            }}>
-              <style>{`
-                div::-webkit-scrollbar {
-                  width: 6px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: #F5F5F5;
-                }
-                div::-webkit-scrollbar-thumb {
-                  background: #CCCCCC;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: #AAAAAA;
-                }
-              `}</style>
-              <p style={{ marginTop: 0, marginBottom: 0 }}>
-                Luft-til-luft varmepumper henter varme fra uteluften og blåser den direkte inn som varm luft i boligen. Den er rimelig, enkel å installere og passer godt for mindre boliger eller åpne planløsninger. Inne- og utedelen er synlige, så plassering bør planlegges nøye – særlig i verneverdige bygg hvor visuelle hensyn er viktige.
-              </p>
-            </div>
-          </foreignObject>
-        )}
-        
-        {activeButton === 'Luft-vann' && (
-          <foreignObject x="60" y="69" width="464" height="289">
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{
-              fontFamily: 'Oslo Sans',
-              fontWeight: 300,
-              fontStyle: 'normal',
-              fontSize: '14px',
-              lineHeight: '22px',
-              letterSpacing: '0px',
-              color: '#000000',
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingRight: '10px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CCCCCC #F5F5F5'
-            }}>
-              <style>{`
-                div::-webkit-scrollbar {
-                  width: 6px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: #F5F5F5;
-                }
-                div::-webkit-scrollbar-thumb {
-                  background: #CCCCCC;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: #AAAAAA;
-                }
-              `}</style>
-              <p style={{ marginTop: 0, marginBottom: 0 }}>
-                Luft-til-vann-systemer bruker varmen i uteluften til å varme opp vann, som sirkulerer i radiatorer, gulvvarme eller brukes til tappevann. Dette gir en jevn og behagelig oppvarming, men krever at huset har et vannbårent system. Det er en mer omfattende installasjon enn luft-til-luft, og passer godt i boliger der man ønsker en helhetlig løsning.
-              </p>
-            </div>
-          </foreignObject>
-        )}
-        
-        {activeButton === 'Væske-vann' && (
-          <foreignObject x="60" y="69" width="464" height="289">
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{
-              fontFamily: 'Oslo Sans',
-              fontWeight: 300,
-              fontStyle: 'normal',
-              fontSize: '14px',
-              lineHeight: '22px',
-              letterSpacing: '0px',
-              color: '#000000',
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingRight: '10px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CCCCCC #F5F5F5'
-            }}>
-              <style>{`
-                div::-webkit-scrollbar {
-                  width: 6px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: #F5F5F5;
-                }
-                div::-webkit-scrollbar-thumb {
-                  background: #CCCCCC;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: #AAAAAA;
-                }
-              `}</style>
-              <p style={{ marginTop: 0, marginBottom: 0 }}>
-                Væske-til-vann varmepumper henter varme fra fjell, jord eller sjø via nedgravde rør eller borehull. Den har høy effektivitet, også på kalde vinterdager, og gir varme til både oppvarming og tappevann. Dette er den mest omfattende og kostbare løsningen, men den egner seg godt for større boliger, blokker eller ved rehabilitering der man ønsker et robust og skjult system.
-              </p>
-            </div>
-          </foreignObject>
-        )}
-        
-        {activeButton === 'Ventilasjon' && (
-          <foreignObject x="60" y="69" width="464" height="289">
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{
-              fontFamily: 'Oslo Sans',
-              fontWeight: 300,
-              fontStyle: 'normal',
-              fontSize: '14px',
-              lineHeight: '22px',
-              letterSpacing: '0px',
-              color: '#000000',
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingRight: '10px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CCCCCC #F5F5F5'
-            }}>
-              <style>{`
-                div::-webkit-scrollbar {
-                  width: 6px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: #F5F5F5;
-                }
-                div::-webkit-scrollbar-thumb {
-                  background: #CCCCCC;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: #AAAAAA;
-                }
-              `}</style>
-              <p style={{ marginTop: 0, marginBottom: 0 }}>
-                Ventilasjonsvarmepumper gjenvinner varme fra brukt luft som ventileres ut av boligen, og bruker den til å varme opp tilluft, tappevann eller vannbåren varme. Ventilasjonsvarmepumper krever balansert ventilasjon (altså at både tilluft og avtrekk går i kanalnett), og er derfor mest egnet i nyere hus eller når det etableres nytt ventilasjonsanlegg.
-              </p>
-            </div>
-          </foreignObject>
-        )}
+        {/* Content areas for hver knapp */}
+        {renderScrollableParagraphs(activeTabKey, activeTabParagraphs)}
         
         {/* Blue rectangles */}
         <rect
@@ -520,7 +598,7 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType }) 
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Redusert støy
+          {benefits[0]?.title ?? defaultVarmepumpeContent.benefits[0].title}
         </text>
         <rect
           x="565"
@@ -546,7 +624,7 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType }) 
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Ivaretar boligen
+          {benefits[1]?.title ?? defaultVarmepumpeContent.benefits[1].title}
         </text>
         <rect
           x="565"
@@ -572,7 +650,7 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType }) 
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Bedre bokvalitet
+          {benefits[2]?.title ?? defaultVarmepumpeContent.benefits[2].title}
         </text>
         <rect
           x="565"
@@ -598,7 +676,7 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType }) 
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Lavere strømregning
+          {benefits[3]?.title ?? defaultVarmepumpeContent.benefits[3].title}
         </text>
         
         {/* Dark green box below the list */}
@@ -739,10 +817,11 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType }) 
         </text>
         
         {/* Links below "Les mer" */}
-        <a href="https://www.sintef.no/ekspertise/sintef-energi/varmepumpeteknologi/" target="_blank" rel="noopener noreferrer">
+        {readMoreLinks.map((link, index) => (
           <text
+            key={`varmepumpe-read-more-${link.label}-${index}`}
             x="170"
-            y="480"
+            y={480 + index * 22}
             fontFamily="Oslo Sans"
             fontWeight="300"
             fontStyle="normal"
@@ -752,44 +831,11 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType }) 
             textAnchor="middle"
             textDecoration="underline"
             style={{ cursor: 'pointer' }}
+            onClick={() => openExternalLink(link.url)}
           >
-            Sintef
+            {link.label}
           </text>
-        </a>
-        <a href="https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/vaeske-til-vann-varmepumpe" target="_blank" rel="noopener noreferrer">
-          <text
-            x="170"
-            y="502"
-            fontFamily="Oslo Sans"
-            fontWeight="300"
-            fontStyle="normal"
-            fontSize="14"
-            lineHeight="22"
-            fill="#FFFFFF"
-            textAnchor="middle"
-            textDecoration="underline"
-            style={{ cursor: 'pointer' }}
-          >
-            Enova
-          </text>
-        </a>
-        <a href="https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/varmepumpebereder" target="_blank" rel="noopener noreferrer">
-          <text
-            x="170"
-            y="524"
-            fontFamily="Oslo Sans"
-            fontWeight="300"
-            fontStyle="normal"
-            fontSize="14"
-            lineHeight="22"
-            fill="#FFFFFF"
-            textAnchor="middle"
-            textDecoration="underline"
-            style={{ cursor: 'pointer' }}
-          >
-            Enova
-          </text>
-        </a>
+        ))}
         
         {/* Dynamic table with scrollbar */}
         {/* Top border */}
@@ -802,7 +848,7 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType }) 
         />
         
         {/* Table container with scrolling via foreignObject */}
-        <foreignObject x="298" y="452" width="482" height={needsScroll ? "144" : `${stotteordninger.length * 36}`}>
+        <foreignObject x="298" y="452" width="482" height={needsScroll ? "144" : `${displayedStotteordninger.length * 36}`}>
           <div xmlns="http://www.w3.org/1999/xhtml" style={{
             width: '100%',
             height: '100%',
@@ -826,8 +872,8 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType }) 
                 background: #AAAAAA;
               }
             `}</style>
-            <svg width="474" height={stotteordninger.length * 36} viewBox={`0 0 474 ${stotteordninger.length * 36}`}>
-              {stotteordninger.map((ordning, index) => {
+            <svg width="474" height={displayedStotteordninger.length * 36} viewBox={`0 0 474 ${displayedStotteordninger.length * 36}`}>
+              {displayedStotteordninger.map((ordning, index) => {
                 const yPosition = index * 36;
                 const textYPosition = yPosition + 18;
                 const boxYPosition = yPosition + 6.5;
@@ -1355,3 +1401,9 @@ export const Varmepumpe: React.FC<VarmepumpeProps> = ({ onBack, buildingType }) 
     </div>
   );
 };
+
+export const Varmepumpe: React.FC<VarmepumpeProps> = (props) => (
+  <VarmepumpeContentComponent {...props} audience="standard" />
+);
+
+export { VarmepumpeContentComponent };

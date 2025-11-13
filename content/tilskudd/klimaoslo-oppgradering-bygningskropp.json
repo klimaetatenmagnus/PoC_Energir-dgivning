@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "id": "klimaoslo-oppgradering-bygningskropp",
+  "title": "Oppgradering av bygningskropp i privatboliger",
+  "summary": "Støtte til privatboliger i Oslo som tetter luftlekkasjer, oppgraderer vinduer eller etterisolerer fasader for å redusere energibruk.",
+  "description": [
+    "Klima- og energifondet dekker deler av kostnadene når boligeiere i Oslo oppgraderer klimaskallet sitt. Ordningen retter seg mot tiltak som tetting rundt vinduer og dører, utskifting til energieffektive vinduer, etterisolering og andre grep som dokumentert reduserer varmetapet.",
+    "Støtten kan kombineres med andre kommunale og statlige ordninger så lenge samlet tilskudd ikke overstiger de faktiske kostnadene."
+  ],
+  "category": "kommunal",
+  "provider": {
+    "name": "Klima- og energifondet (Oslo kommune)",
+    "url": "https://www.klimaoslo.no/tilskudd/oppgradering-av-bygningskropp-i-privatboliger/",
+    "contactEmail": "klimaetaten@bym.oslo.kommune.no"
+  },
+  "funding": [
+    {
+      "kind": "fixed",
+      "amount": 150000,
+      "currency": "NOK",
+      "description": "Fondet dekker inntil 150 000 kroner av dokumenterte kostnader til tetting, vindusoppgradering eller annen klimaskallsrehabilitering."
+    },
+    {
+      "kind": "percentage",
+      "rate": 30,
+      "description": "Prosjekter med energiberegninger kan få inntil 30 % av investeringen refundert."
+    }
+  ],
+  "eligibility": [
+    {
+      "id": "lokasjon",
+      "title": "Boligen må ligge i Oslo",
+      "description": [
+        "Eiendommen må være registrert i Oslo kommune og søkeren må være eier eller styreleder i borettslag/sameie."
+      ]
+    },
+    {
+      "id": "energiberegning",
+      "title": "Dokumenter forventet energibesparelse",
+      "description": [
+        "Søknaden skal beskrive hvilke tiltak som gjennomføres og hvor mye levert energi som spares. Energirådgiver eller entreprenør kan bistå med beregning."
+      ],
+      "documents": [
+        {
+          "id": "mal-prosjekt",
+          "label": "Mal for prosjektbeskrivelse",
+          "url": "https://www.klimaoslo.no/tilskudd/oppgradering-av-bygningskropp-i-privatboliger/"
+        }
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "faktura",
+      "title": "Legg ved faktura og før/etter-bilder",
+      "description": [
+        "Sluttrapporten må vise hvilke tiltak som er utført, dokumentere energiforbedringen og inneholde kopi av fakturaer."
+      ]
+    }
+  ],
+  "buildingTypes": [
+    "enebolig",
+    "rekkehus",
+    "tomannsbolig"
+  ],
+  "appliesToTiltak": [
+    "tetting",
+    "vinduer",
+    "etterisolering-yttervegg",
+    "etterisolering-kjeller-loft"
+  ],
+  "regions": [
+    "oslo"
+  ],
+  "audiences": [
+    "standard"
+  ],
+  "tags": [
+    "tetting",
+    "klimaskall",
+    "kommunal-stotte"
+  ],
+  "contacts": [
+    {
+      "id": "klimaetaten-service",
+      "name": "Klimaetaten",
+      "email": "klimaetaten@bym.oslo.kommune.no",
+      "url": "https://www.klimaoslo.no/tilskudd/"
+    }
+  ],
+  "application": {
+    "url": "https://www.klimaoslo.no/tilskudd/oppgradering-av-bygningskropp-i-privatboliger/",
+    "guidanceUrl": "https://www.klimaoslo.no/tilskudd/",
+    "rolling": true,
+    "documents": [
+      {
+        "id": "veileder",
+        "label": "Veileder for privatboliger",
+        "url": "https://www.klimaoslo.no/wp-content/uploads/tiltaksguide-privatboliger.pdf"
+      }
+    ]
+  },
+  "links": [
+    {
+      "id": "energiradgivning",
+      "label": "Bestill energirådgivning",
+      "url": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/energiradgivning"
+    }
+  ],
+  "metadata": {
+    "status": "published",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-14T09:00:00Z",
+    "changeSummary": "La til kommunal støtteordning relevant for tetting og vindusoppgraderinger."
+  }
+}

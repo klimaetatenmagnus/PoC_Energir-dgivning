@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "id": "ventilasjon",
+  "title": "Ventilasjon",
+  "summary": "Sikre frisk luft og lavere energibruk med riktige ventilasjonsløsninger.",
+  "introParagraphs": [
+    "God ventilasjon er viktig for inneklima, helse og effekten av andre energitiltak. Når du tetter og isolerer blir boligen tettere – uten friskluft kan det gi fukt, dårlig luft og høyere varmebehov."
+  ],
+  "buildingTypeParagraphs": {
+    "enebolig": [
+      "Mange eneboliger har ventiler som er tettet igjen eller ikke i bruk. Ved å åpne eller erstatte disse får du bedre luftkvalitet uten store inngrep. På bad og kjøkken kan avtrekksvifter være tilstrekkelig, mens balansert ventilasjon gir jevn temperatur og varmegjenvinning i hele huset."
+    ],
+    "rekkehus": [
+      "I rekkehus og tomannsboliger deler du ofte konstruksjoner med naboen. Start med å åpne, rense og vedlikeholde eksisterende ventiler. Dersom flere i rekken har samme utfordring kan dere planlegge felles tiltak, for eksempel balansert ventilasjon eller nye avtrekksvifter."
+    ],
+    "tomannsbolig": [
+      "I rekkehus og tomannsboliger deler du ofte konstruksjoner med naboen. Start med å åpne, rense og vedlikeholde eksisterende ventiler. Dersom flere i rekken har samme utfordring kan dere planlegge felles tiltak, for eksempel balansert ventilasjon eller nye avtrekksvifter."
+    ],
+    "blokk": [
+      "I leilighetsbygg er det vanlig med naturlig ventilasjon gjennom sjakter og lufteluker. Mange slike løsninger er tettet eller fjernet, og resultatet er dårlig luft – særlig på bad og kjøkken. Få renset og åpnet ventiler i egen bolig, og ta saken opp med styret dersom hele bygget trenger balansert ventilasjon eller nye avtrekk."
+    ],
+    "default": [
+      "I leilighetsbygg er det vanlig med naturlig ventilasjon gjennom sjakter og lufteluker. Mange slike løsninger er tettet eller fjernet, og resultatet er dårlig luft – særlig på bad og kjøkken. Få renset og åpnet ventiler i egen bolig, og ta saken opp med styret dersom hele bygget trenger balansert ventilasjon eller nye avtrekk."
+    ]
+  },
+  "benefits": [
+    { "id": "redusert-stoy", "title": "Redusert støy", "description": "Moderne anlegg gir bedre luft uten trekk og sus." },
+    { "id": "ivaretar-boligen", "title": "Ivaretar boligen", "description": "Riktig ventilasjon beskytter mot fukt og mugg." },
+    { "id": "bedre-bokvalitet", "title": "Bedre bokvalitet", "description": "Jevn temperatur og filtrert luft gir mer komfort." },
+    { "id": "redusert-energibehov", "title": "Redusert energibehov", "description": "Varmegjenvinning tar vare på energien du allerede har betalt for." }
+  ],
+  "readMore": [
+    {
+      "id": "enova-balansert",
+      "label": "Enova – balansert ventilasjon",
+      "url": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/balansert-ventilasjon"
+    },
+    {
+      "id": "sintef-vent",
+      "label": "SINTEF – slik virker balansert ventilasjon",
+      "url": "https://www.sintef.no/fagomrader/energieffektivisering-bygg/slik-virker-balansert-ventilasjon-i-boliger/"
+    }
+  ],
+  "accordion": [
+    {
+      "id": "soknadsplikt",
+      "title": "Søknadsplikt er ikke en stopper, men en støtte",
+      "body": [
+        "Er tiltaket ditt søknadspliktig betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.",
+        "Søknadsplikten skal hjelpe deg som tiltakshaver med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak som tar faglig ansvar for prosjektering og utførelse.",
+        "Selv om du må søke, kan selve ventilasjonstiltaket fortsatt være enkelt å gjennomføre. Ta dialogen tidlig og bruk veiledningstilbudene dersom du er usikker."
+      ],
+      "links": [
+        { "id": "dibk-soknadsplikt", "label": "Direktoratet for byggkvalitet – hva er søknadsplikt?", "url": "https://www.dibk.no/regelverk/sak/2/2/innledning" },
+        { "id": "dibk-ansvar", "label": "Tiltakshaver og ansvarlige foretak", "url": "https://www.dibk.no/regelverk/sak/3/12/innledning" },
+        { "id": "lovdata-ansvar", "label": "Plan- og bygningsloven §20-3", "url": "https://lovdata.no/dokument/NL/lov/2008-06-27-71/KAPITTEL_4-1#%C2%A720-3" }
+      ],
+      "glossary": [
+        { "term": "søknadspliktig", "definition": ["Søknadsplikt betyr at du må ha tillatelse fra Plan- og bygningsetaten før du gjør fysiske endringer på bygningen eller eiendommen."], "links": [{ "label": "Les mer hos DiBK", "url": "https://www.dibk.no/regelverk/sak/2/2/innledning" }] },
+        { "term": "tiltakshaver", "definition": ["Tiltakshaver er personen eller virksomheten som utfører – eller bestiller – et tiltak som krever søknad og tillatelse."], "links": [{ "label": "Tiltakshavers ansvar", "url": "https://www.dibk.no/regelverk/sak/3/12/12-1" }] },
+        { "term": "ansvarlig foretak", "definition": ["Et ansvarlig foretak er et firma med riktig kompetanse som tar ansvar for bestemte deler av et byggeprosjekt."], "links": [{ "label": "Når kreves ansvarsrett?", "url": "https://www.dibk.no/regelverk/sak/3/12/innledning" }] }
+      ]
+    }
+  ],
+  "grants": [
+    "klimaoslo-balansert-ventilasjon",
+    "klimaoslo-energitiltak-borettslag",
+    "klimaoslo-energikartlegging-borettslag",
+    "enova-energiradgivning"
+  ],
+  "supportTags": ["ventilasjon", "inneklima", "varmegjenvinning"],
+  "audiences": ["standard"],
+  "metadata": {
+    "status": "draft",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-14T09:48:00Z",
+    "changeSummary": "Flyttet ventilasjonstekstene til content/."
+  },
+  "variants": [
+    {
+      "audience": "gulliste",
+      "introParagraphs": [
+        "I verneverdige bygg må du kombinere god luftkvalitet med hensyn til arkitektur. Rehabiliter gamle ventiler og sjakter i stedet for å fjerne dem, og planlegg eventuelle nye gjennomføringer sammen med Byantikvaren.",
+        "Når du tetter og isolerer historiske bygg er det ekstra viktig å sikre styrt ventilasjon slik at fukt ikke bygger seg opp i konstruksjonene."
+      ],
+      "buildingTypeParagraphs": {
+        "enebolig": [
+          "Mange eldre eneboliger har verken vifter eller balansert ventilasjon. Sørg for ny lufttilførsel når du tetter – enten ved å åpne gamle ventiler, sette inn nye bak radiatorer eller installere diskrete avtrekk.",
+          "For større tiltak bør du vurdere balansert ventilasjon, men planlegg føringer og synlige komponenter slik at fasaden ikke endres."
+        ],
+        "rekkehus": [
+          "Eldre rekkehus har ofte like fasader og detaljerte vindusprofiler. Samarbeid med naboene slik at ventilasjonsløsningen ser lik ut fra utsiden, og få råd hos Byantikvaren før du gjør inngrep i fasaden.",
+          "Enkle avtrekksvifter eller gjenåpnede ventiler kan ofte løse behovet uten å påvirke uttrykket." 
+        ],
+        "tomannsbolig": [
+          "Eldre rekkehus har ofte like fasader og detaljerte vindusprofiler. Samarbeid med naboene slik at ventilasjonsløsningen ser lik ut fra utsiden, og få råd hos Byantikvaren før du gjør inngrep i fasaden.",
+          "Enkle avtrekksvifter eller gjenåpnede ventiler kan ofte løse behovet uten å påvirke uttrykket." 
+        ],
+        "blokk": [
+          "I bygårder er ventilasjonssystemene ofte koblet til felles sjakter. Kartlegg hva som finnes fra før, og avklar tiltak med styret og Byantikvaren før du gjør nye hull eller føringer i fasaden.",
+          "Behov for balansert ventilasjon bør vurderes samlet slik at aggregat, kanaler og eksosplassering ivaretar arkitekturen."
+        ]
+      },
+      "readMore": [
+        {
+          "id": "pbe-veiledning-vent",
+          "label": "Plan- og bygningsetaten – veiledning",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/"
+        },
+        {
+          "id": "byantikvaren-vent",
+          "label": "Kontakt Byantikvaren",
+          "url": "https://www.oslo.kommune.no/etater-foretak-og-ombud/byantikvaren/#toc-2"
+        }
+      ],
+      "accordion": [
+        {
+          "id": "soknadsplikt",
+          "title": "Avklar søknadsplikt for nye føringer",
+          "body": [
+            "Ventilasjonskanaler og ventiler som påvirker fasaden kan være søknadspliktige, spesielt i gul liste-bygg.",
+            "Planlegg tiltaket sammen med fagpersoner og Byantikvaren før du bestiller utstyr eller starter boring."
+          ],
+          "links": [
+            {
+              "id": "byantikvaren-time-vent",
+              "label": "Bestill møte med Byantikvaren",
+              "url": "https://www.oslo.kommune.no/etater-foretak-og-ombud/byantikvaren/#toc-2"
+            }
+          ]
+        }
+      ],
+      "grants": [
+        "klimaoslo-balansert-ventilasjon",
+        "klimaoslo-energitiltak-borettslag",
+        "klimaoslo-energikartlegging-borettslag",
+        "byantikvaren-istandsetting",
+        "enova-energiradgivning"
+      ],
+      "supportTags": ["ventilasjon", "gulliste", "vern"]
+    }
+  ]
+}

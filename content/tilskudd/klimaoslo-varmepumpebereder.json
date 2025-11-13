@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "id": "klimaoslo-varmepumpebereder",
+  "title": "Tilskudd til varmepumpebereder",
+  "summary": "Støtte fra Oslo kommune når varmtvannsbereder med varmepumpe installeres i mindre boliger.",
+  "description": [
+    "Klima- og energifondet gir støtte når eneboliger og tomannsboliger erstatter elektrisk bereder med en integrert varmepumpebereder. Løsningen reduserer strømforbruket til tappevann med opptil 70 %. ",
+    "Tiltaket kan kombineres med luft-til-luft varmepumpe eller andre energieffektiviseringstiltak."
+  ],
+  "category": "kommunal",
+  "provider": {
+    "name": "Klima- og energifondet (Oslo kommune)",
+    "url": "https://www.klimaoslo.no/tilskudd/varmepumpebereder/",
+    "contactEmail": "postmottak@uke.oslo.kommune.no"
+  },
+  "funding": [
+    {
+      "kind": "fixed",
+      "amount": 10000,
+      "currency": "NOK",
+      "description": "Inntil 10 000 kroner i støtte per bolig."
+    }
+  ],
+  "eligibility": [
+    {
+      "id": "boligtype",
+      "title": "Gjelder enebolig, tomannsbolig og rekkehus i Oslo",
+      "description": [
+        "Boligen må være registrert i Oslo kommune og ha elektrisk tappevannsoppvarming før tiltaket."
+      ]
+    },
+    {
+      "id": "fagfolk",
+      "title": "Installasjon utført av fagfolk",
+      "description": [
+        "Det kreves dokumentasjon på at installatøren har nødvendig kompetanse og har håndtert kondensavløp og ventilasjon etter forskriftene."
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "dokumentasjon",
+      "title": "Lever kvittering og bilde",
+      "description": [
+        "Sluttrapporten skal inneholde bilde av ferdig installasjon, samsvarserklæring og faktura som viser kostnad for utstyr og arbeid."
+      ]
+    }
+  ],
+  "buildingTypes": [
+    "enebolig",
+    "rekkehus",
+    "tomannsbolig"
+  ],
+  "appliesToTiltak": [
+    "varmepumpe"
+  ],
+  "regions": [
+    "oslo"
+  ],
+  "audiences": [
+    "standard"
+  ],
+  "tags": [
+    "varmepumpe",
+    "tappevann",
+    "klimaoslo"
+  ],
+  "contacts": [
+    {
+      "id": "klimaetaten",
+      "name": "Klimaetaten",
+      "email": "klimaetaten@bym.oslo.kommune.no",
+      "url": "https://www.klimaoslo.no/tilskudd/"
+    }
+  ],
+  "application": {
+    "url": "https://www.klimaoslo.no/tilskudd/varmepumpebereder/",
+    "guidanceUrl": "https://www.klimaoslo.no/tilskudd/",
+    "rolling": true,
+    "documents": [
+      {
+        "id": "veiledning-varmepumpebereder",
+        "label": "Veileder for varmepumpeberedere",
+        "url": "https://www.klimaoslo.no/wp-content/uploads/varmepumpebereder-veileder.pdf"
+      }
+    ]
+  },
+  "links": [
+    {
+      "id": "enova-varmepumpebereder",
+      "label": "Statlig støtte fra Enova",
+      "url": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/varmepumpebereder"
+    }
+  ],
+  "metadata": {
+    "status": "published",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-13T09:48:00Z",
+    "changeSummary": "Beskrivelse av varmepumpebereder-tilskudd for bruk i nytt content-system."
+  }
+}

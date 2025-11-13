@@ -11,6 +11,6 @@ export { UtskiftningAvVinduGul } from './GulListeTiltak/UtskiftningAvVinduGul';
 export { IsoleringAvKjellerOgLoft } from './IsoleringAvKjellerOgLoft';
 export { IsoleringAvKjellerOgLoftGul } from './GulListeTiltak/IsoleringAvKjellerOgLoftGul';
 export { EtterisoleringYttervegg } from './EtterisoleringYttervegg';
-export { EtterisoleringYttervegg as EtterisoleringYtterveggGul } from './GulListeTiltak/EtterisoleringYtterveggGul';
+export { EtterisoleringYtterveggGul } from './GulListeTiltak/EtterisoleringYtterveggGul';
 export { Ventilasjon } from './Ventilasjon';
 export { VentilasjonGul } from './GulListeTiltak/VentilasjonGul';

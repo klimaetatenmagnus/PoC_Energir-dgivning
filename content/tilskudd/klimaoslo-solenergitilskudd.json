@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "id": "klimaoslo-solenergitilskudd",
+  "title": "Solenergitilskudd for borettslag og sameier",
+  "summary": "Kommunalt tilskudd som dekker deler av investeringene i solcelle- eller solfangeranlegg i Oslo.",
+  "description": [
+    "Klima- og energifondet i Oslo kommune støtter større solenergiprosjekter i borettslag, sameier og boligstiftelser. Ordningen gjør det enklere å fase ut fossil energi og redusere belastningen på strømnettet.",
+    "Tilskuddet kan kombineres med andre støtteordninger, men summen kan ikke overstige dokumenterte kostnader."
+  ],
+  "category": "kommunal",
+  "provider": {
+    "name": "Klima- og energifondet (Oslo kommune)",
+    "url": "https://www.klimaoslo.no/tilskudd/solenergitilskudd/",
+    "contactEmail": "postmottak@uke.oslo.kommune.no"
+  },
+  "funding": [
+    {
+      "kind": "percentage",
+      "rate": 20,
+      "description": "Inntil 20 % av dokumenterte investeringskostnader."
+    },
+    {
+      "kind": "custom",
+      "description": "Maksimalt 3 000 000 kroner per prosjekt."
+    }
+  ],
+  "eligibility": [
+    {
+      "id": "borettslag",
+      "title": "For borettslag, sameier og boligstiftelser i Oslo",
+      "description": [
+        "Tiltaket må gjelde bygg i Oslo kommune og forankres i styret eller generalforsamlingen.",
+        "Private eneboliger henvises til statlige ordninger fra Enova."
+      ]
+    },
+    {
+      "id": "prosjektering",
+      "title": "Prosjekteringen må dokumenteres",
+      "description": [
+        "Søknaden skal beskrive energiproduksjon, tilkobling til eksisterende anlegg og hvordan anlegget ivaretar byggets uttrykk."
+      ],
+      "documents": [
+        {
+          "id": "prosjektbeskrivelse",
+          "label": "Mal for prosjektbeskrivelse",
+          "url": "https://www.klimaoslo.no/tilskudd/solenergitilskudd/"
+        }
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "rapportering",
+      "title": "Lever sluttrapport og faktura",
+      "description": [
+        "Sluttrapport skal beskrive installert effekt, produksjonsprognose og eventuelle avvik fra opprinnelig plan.",
+        "Faktura må spesifisere kostnader til materialer, arbeid og prosjektering."
+      ]
+    }
+  ],
+  "buildingTypes": [
+    "rekkehus",
+    "tomannsbolig",
+    "blokk"
+  ],
+  "appliesToTiltak": [
+    "solenergi"
+  ],
+  "regions": [
+    "oslo"
+  ],
+  "audiences": [
+    "standard"
+  ],
+  "tags": [
+    "solenergi",
+    "klimaoslo",
+    "energifond"
+  ],
+  "contacts": [
+    {
+      "id": "klimaetaten",
+      "name": "Klimaetaten",
+      "email": "klimaetaten@bym.oslo.kommune.no",
+      "url": "https://www.klimaoslo.no/tilskudd/"
+    }
+  ],
+  "application": {
+    "url": "https://www.klimaoslo.no/tilskudd/solenergitilskudd/",
+    "guidanceUrl": "https://www.klimaoslo.no/tilskudd/",
+    "rolling": true,
+    "documents": [
+      {
+        "id": "tilskuddsveileder",
+        "label": "Veileder for solenergiprosjekter",
+        "url": "https://www.klimaoslo.no/wp-content/uploads/solenergitilskudd-veileder.pdf"
+      }
+    ]
+  },
+  "links": [
+    {
+      "id": "klimaoslo-energikartlegging",
+      "label": "Energikartleggingstilskudd",
+      "url": "https://www.klimaoslo.no/tilskudd/kartleggingsstotte-for-borettslag-og-sameier/"
+    }
+  ],
+  "metadata": {
+    "status": "published",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-13T09:45:00Z",
+    "changeSummary": "Ny tilskuddsbeskrivelse for kommunalt solenergitilskudd."
+  }
+}

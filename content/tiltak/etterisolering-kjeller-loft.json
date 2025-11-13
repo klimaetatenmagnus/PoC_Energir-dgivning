@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "id": "etterisolering-kjeller-loft",
+  "title": "Etterisolering av kjeller og loft",
+  "summary": "Reduser varmetapet ved å oppgradere loftsgulv og gulv mot kjeller – særlig effektivt i eldre boliger.",
+  "introParagraphs": [
+    "Etterisolering av loft og gulv mot kjeller er en av de mest kostnadseffektive måtene å senke energibruk, få et lunere inneklima og kutte strømutgiftene. Mange boliger har lite eller utdatert isolasjon i disse konstruksjonene.",
+    "Når du legger inn ny isolasjon samtidig som du sikrer god fukthåndtering og ventilasjon, kan du oppnå merkbare besparelser uten å endre fasaden."  
+  ],
+  "buildingTypeParagraphs": {
+    "default": [
+      "I blokker er tiltakene ofte felles prosjekter som må forankres i styret. Loftsgulv kan isoleres ovenfra, mens gulv mot uoppvarmet kjeller kan isoleres nedenfra eller med blåseisolasjon mellom bjelkelag."  
+    ],
+    "enebolig": [
+      "Eneboliger har som regel lett tilgang til loft og kjeller, noe som gjør etterisolering enkelt å kombinere med vedlikehold. Legg minst 20 cm isolasjon i loftsgulvet og vurder samtidig tetting rundt gjennomføringer for å unngå trekk og fukt.",
+      "I kjelleren kan du isolere mellom bjelker eller fra undersiden – husk dampsperre og ventilasjon der det er risiko for kondens."  
+    ],
+    "rekkehus": [
+      "Rekkehus og tomannsboliger deler gjerne bjelkelag eller loftsarealer. Samarbeid om tiltakene slik at dere får samme tykkelse og dampsperre, og unngå kuldebroer mellom boenheter."  
+    ],
+    "tomannsbolig": [
+      "Rekkehus- og tomannsboliger deler gjerne bjelkelag eller loftsarealer. Samarbeid om tiltakene slik at dere får samme tykkelse og dampsperre, og unngå kuldebroer mellom boenheter."  
+    ]
+  },
+  "benefits": [
+    {
+      "id": "mindre-trekk",
+      "title": "Mindre trekk",
+      "description": "Oppgraderte loft og gulv stopper kald luft og gir jevnere temperatur."
+    },
+    {
+      "id": "ivaretar-boligen",
+      "title": "Ivaretar boligen",
+      "description": "Bedre isolasjon beskytter konstruksjonene mot fukt og råte."
+    },
+    {
+      "id": "lavere-strom",
+      "title": "Lavere strømregning",
+      "description": "Redusert varmetap gjør at oppvarmingsbehovet faller umiddelbart."
+    },
+    {
+      "id": "energibehov",
+      "title": "Redusert energibehov",
+      "description": "Jo mindre varme som lekker ut, jo mindre energi må du produsere."  
+    }
+  ],
+  "readMore": [
+    {
+      "id": "enova-veiledning",
+      "label": "Enova – etterisolering",
+      "url": "https://www.enova.no/privat/alle-energitiltak/etterisolering/"
+    },
+    {
+      "id": "dibk-etterisolering",
+      "label": "DiBK – krav ved etterisolering",
+      "url": "https://www.dibk.no/smartere-oppussing/etterisolering/"
+    }
+  ],
+  "grants": [
+    "enova-etterisolering-loft-kjeller"
+  ],
+  "supportTags": [
+    "etterisolering",
+    "loft",
+    "kjeller"
+  ],
+  "audiences": [
+    "standard",
+    "gulliste"
+  ],
+  "metadata": {
+    "status": "draft",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-15T12:45:00Z",
+    "changeSummary": "Oppdatert tiltaket med gul-listevariant, nye lenker og støtteordninger."
+  },
+  "variants": [
+    {
+      "audience": "gulliste",
+      "introParagraphs": [
+        "Etterisolering av loft, kjeller og gulv er en av de mest effektive og rimelige måtene å spare energi i eldre bygg – uten å endre byggets utseende.",
+        "Riktig isolasjon kan gjøre boligen mer komfortabel og senke strømforbruket betydelig. I bygg med verneverdi er det ekstra viktig å bruke metoder og materialer som spiller på lag med konstruksjonen."
+      ],
+      "buildingTypeParagraphs": {
+        "enebolig": [
+          "I eldre eneboliger er det ofte god tilgang til både loft og kjeller, noe som gir mange muligheter for isolering uten store inngrep.",
+          "Loftet kan isoleres i gulvet med naturbaserte materialer som trefiber eller cellulose – gjerne rundt 20 cm – slik at du beholder takets uttrykk. I kjelleren er det lurt å isolere i gulvet over i stedet for på innsiden av murveggene, gjerne ved innblåsing i etasjeskillet.",
+          "Husk å sikre god ventilasjon for å unngå fukt, og kontakt Byantikvaren hvis du er usikker på hvordan tiltaket påvirker huset."
+        ],
+        "rekkehus": [
+          "Loft og kjeller i rekkehus og tomannsboliger kan være felles eller ligge tett inntil naboens del. Samordn tiltakene slik at dere bevarer symmetrien og får en løsning som godtas av Plan- og bygningsetaten.",
+          "Loftsgulv kan isoleres ovenfra uten å påvirke fasaden, mens gulv mot kjeller isoleres best ved å blåse inn materiale i etasjeskillet. Husk ventilasjon og fuktsikring."
+        ],
+        "tomannsbolig": [
+          "Loft og kjeller i rekkehus og tomannsboliger kan være felles eller ligge tett inntil naboens del. Samordn tiltakene slik at dere bevarer symmetrien og får en løsning som godtas av Plan- og bygningsetaten.",
+          "Loftsgulv kan isoleres ovenfra uten å påvirke fasaden, mens gulv mot kjeller isoleres best ved å blåse inn materiale i etasjeskillet. Husk ventilasjon og fuktsikring."
+        ],
+        "blokk": [
+          "I blokker er loft og kjeller som regel fellesarealer. Tiltak bør derfor planlegges i styret, slik at både uttrykk og tekniske krav ivaretas.",
+          "Utvendig uttrykk bør bevares, så prioriter innvendig isolering, tetting og ventilasjonsforbedringer som ikke påvirker fasaden direkte."
+        ],
+        "default": [
+          "I blokker er loft og kjeller som regel fellesarealer. Tiltak bør derfor planlegges i styret, slik at både uttrykk og tekniske krav ivaretas.",
+          "Utvendig uttrykk bør bevares, så prioriter innvendig isolering, tetting og ventilasjonsforbedringer som ikke påvirker fasaden direkte."
+        ]
+      },
+      "readMore": [
+        {
+          "id": "riksantikvaren-energisparing",
+          "label": "Riksantikvaren – energisparing i gamle hus",
+          "url": "https://riksantikvaren.no/veileder/rad-om-energisparing-i-gamle-hus/#72aa0e54-2678-43a1-8fd2-f4f2f7697e46"
+        },
+        {
+          "id": "fortidsminneforeningen-tiltak",
+          "label": "Fortidsminneforeningen – tiltak i gamle hus",
+          "url": "https://issuu.com/fortidsminneforeningen/docs/en_k-tiltak_i_gamle_hus/7"
+        },
+        {
+          "id": "enova-boligtyper",
+          "label": "Enova – energitiltak per boligtype",
+          "url": "https://www.enova.no/nb/privat/bolig/boligtyper"
+        }
+      ],
+      "grants": [
+        "enova-etterisolering-loft-kjeller",
+        "byantikvaren-istandsetting"
+      ],
+      "supportTags": [
+        "etterisolering",
+        "loft",
+        "kjeller",
+        "gulliste",
+        "vern"
+      ]
+    }
+  ]
+}

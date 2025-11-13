@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "id": "klimaetaten-smartstyring",
+  "title": "Tilskudd til smart energistyring",
+  "summary": "Stotteordning for husholdninger som installerer styringssystemer som reduserer effektforbruk.",
+  "description": [
+    "Tilskuddet dekker deler av kostnaden for sentral styring av varme og andre store laster.",
+    "Ordningen prioriterer boliger med dokumenterte effekttopper eller store fleksible laster."
+  ],
+  "category": "kommunal",
+  "provider": {
+    "name": "Klimaetaten i Oslo",
+    "url": "https://www.oslo.kommune.no/klima-og-miljo",
+    "contactEmail": "energitilskudd@klima.oslo.kommune.no",
+    "contactPhone": "+47 21 80 21 80"
+  },
+  "funding": [
+    {
+      "kind": "fixed",
+      "amount": 15000,
+      "currency": "NOK",
+      "description": "Maks per adresse"
+    },
+    {
+      "kind": "percentage",
+      "rate": 35,
+      "description": "Kan dekke inntil 35 prosent av dokumenterte kostnader"
+    }
+  ],
+  "eligibility": [
+    {
+      "id": "bolig-i-oslo",
+      "title": "Boligen maa ligge i Oslo",
+      "description": [
+        "Ordningen er begrenset til private boliger med eget abonnement.",
+        "Borettslag kan soke per oppgang dersom styringen gir effektgevinster for hele bygget."
+      ]
+    },
+    {
+      "id": "styringskrav",
+      "title": "Systemet maa kunne dokumentere automatikk",
+      "description": [
+        "Det skal foreligge en logg som viser hvordan systemet reagerer paa effektpris eller lokale maalinger."
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "installator",
+      "title": "Bruk registrert installator",
+      "description": [
+        "Alt fast elektrisk arbeid maa utfoeres av registrert elektroinstallator, og firmaet maa dokumentere sluttkontroll."
+      ],
+      "documents": [
+        {
+          "id": "dokumentasjonsskjema",
+          "label": "Skjema for ferdigmeldt arbeid",
+          "url": "https://energinokkelen.oslo.kommune.no/skjema.pdf"
+        }
+      ]
+    }
+  ],
+  "buildingTypes": [
+    "enebolig",
+    "rekkehus",
+    "blokk"
+  ],
+  "appliesToTiltak": [
+    "smart-energistyring",
+    "temperaturstyring"
+  ],
+  "regions": [
+    "oslo"
+  ],
+  "audiences": [
+    "standard"
+  ],
+  "tags": [
+    "kommunal",
+    "smart-energi"
+  ],
+  "contacts": [
+    {
+      "id": "veileder",
+      "name": "Energiraadgiverteamet",
+      "email": "energitilskudd@klima.oslo.kommune.no",
+      "phone": "+47 21 80 21 80"
+    }
+  ],
+  "application": {
+    "url": "https://www.oslo.kommune.no/tilskudd/smart-energi",
+    "guidanceUrl": "https://energinokkelen.oslo.kommune.no/veileder",
+    "deadline": "2025-12-31T22:59:59Z",
+    "rolling": false,
+    "processingTimeWeeks": 6,
+    "documents": [
+      {
+        "id": "budsjettmal",
+        "label": "Budsjettmal",
+        "url": "https://energinokkelen.oslo.kommune.no/budsjett.xlsx"
+      }
+    ]
+  },
+  "links": [
+    {
+      "id": "personvern",
+      "label": "Behandling av persondata",
+      "url": "https://www.oslo.kommune.no/personvern"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-12T13:35:00Z",
+    "validFrom": "2025-01-01T00:00:00Z",
+    "validTo": "2025-12-31T22:59:59Z",
+    "changeSummary": "Eksempeldata for admin-MVP"
+  }
+}

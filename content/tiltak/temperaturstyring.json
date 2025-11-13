@@ -1,0 +1,221 @@
+{
+  "schemaVersion": 1,
+  "id": "temperaturstyring",
+  "title": "Temperaturstyring",
+  "summary": "Styr varme og andre store laster smartere for å senke strømregningen uten å gå på kompromiss med komfort.",
+  "introParagraphs": [
+    "Temperaturstyring handler om å bruke varmen smartere – til riktig tid og på riktig sted. Med enkle grep kan du varme opp rom du bruker, og senke temperaturen der det står tomt. Systemene spenner fra manuelle termostater til automatiske løsninger som følger døgnrytme, strømpris eller effektbelastning i boligen.",
+    "Tiltaket gir best effekt når du kombinerer styringen med god oversikt over strømforbruket ditt. Da ser du raskt hva som trekker mest, og kan styre eller planlegge lastene slik at de flyttes til rimeligere timer."
+  ],
+  "buildingTypeParagraphs": {
+    "default": [
+      "I leiligheter og blokkbygg er varmeanlegget ofte felles. Likevel kan du gjøre mye i egen bolig gjennom panelovner, intelligente stikkontakter eller styring av varmekabler. Har borettslaget felles laster som elbillading eller varmtvannsberedere, bør du ta opp effekt- og prisstyring med styret slik at tiltakene koordineres."
+    ],
+    "enebolig": [
+      "I eneboliger har du gjerne full kontroll på oppvarmingen i hvert rom. Smarte termostater eller styring via app gjør det enkelt å senke temperaturen om natten eller når boligen står tom. Har du elbillader, varmtvannsbereder eller solceller, kan du også bruke effektstyring for å forebygge høye effekttopper."
+    ],
+    "rekkehus": [
+      "I rekkehus og tomannsboliger opplever mange at enkelte rom blir kaldere enn andre. Rom-for-rom-styring lar deg holde det lunt i oppholdsrom, mens du senker temperaturen i rom som ikke er i bruk. Deles hovedsikringen med naboene, kan felles effektstyring sikre jevnere belastning gjennom døgnet."
+    ],
+    "tomannsbolig": [
+      "I rekkehus og tomannsboliger opplever mange at enkelte rom blir kaldere enn andre. Rom-for-rom-styring lar deg holde det lunt i oppholdsrom, mens du senker temperaturen i rom som ikke er i bruk. Deles hovedsikringen med naboene, kan felles effektstyring sikre jevnere belastning gjennom døgnet."
+    ],
+    "blokk": [
+      "I blokker har beboere ofte mindre innflytelse på varmeanlegget, men du kan likevel redusere forbruket lokalt. Panelovner med døgnstyring, styring av gulvvarme på bad eller tidsstyrt komfortvarme gir bedre kontroll. Har dere felles tekniske anlegg bør tiltak koordineres med styret slik at ventilasjon, varme og eventuelt solstrøm jobber sammen."
+    ]
+  },
+  "benefits": [
+    {
+      "id": "reduert-energibehov",
+      "title": "Redusert energibehov",
+      "description": "Automatiserte regler kutter unødvendig oppvarming og gir lavere forbruk."
+    },
+    {
+      "id": "bedre-bokvalitet",
+      "title": "Bedre bokvalitet",
+      "description": "Jevnere temperatur og styring fra app eller panel gir økt komfort."
+    },
+    {
+      "id": "lavere-stromregning",
+      "title": "Lavere strømregning",
+      "description": "Flytt forbruk til billige timer og unngå høye effekttopper."
+    },
+    {
+      "id": "bedre-stromstyring",
+      "title": "Bedre strømstyring",
+      "description": "Koble styringen til elbillader, varmtvann eller solceller for å bruke strømmen smartere."
+    }
+  ],
+  "readMore": [
+    {
+      "id": "enova-varmestyring",
+      "label": "Enova – varmestyringssystem",
+      "url": "https://www.enova.no/nb/privat/bolig/tema-redusere-eller-styre-stromforbruket/varmestyringssystem/"
+    },
+    {
+      "id": "effekt-pris",
+      "label": "Slik virker effekt- og prisstyring",
+      "url": "https://www.klimaoslo.no/tilskudd/smart-energistyring-for-boliger/"
+    }
+  ],
+  "accordion": [
+    {
+      "id": "soknadsplikt",
+      "title": "Søknadsplikt er ikke en stopper, men en støtte",
+      "body": [
+        "Temperaturstyring og styring av elektriske laster handler ofte om å montere termostater, sensorer eller styrebokser. Det er vanligvis ikke søknadspliktig, men alt fast elektrisk arbeid må gjøres av registrert installatør. Er du i tvil, ta kontakt med Plan- og bygningsetaten for veiledning.",
+        "Søknadsplikten skal hjelpe deg som tiltakshaver med å få et trygt og dokumentert resultat. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak for prosjektering eller utførelse. Avklar rollen til fagpersoner tidlig slik at prosjektet går smidig."
+      ],
+      "links": [
+        {
+          "id": "dibk-soknadsplikt",
+          "label": "Direktoratet for byggkvalitet – hva er søknadsplikt?",
+          "url": "https://www.dibk.no/regelverk/sak/2/2/innledning"
+        },
+        {
+          "id": "dibk-ansvar",
+          "label": "Tiltakshaver og ansvarlige foretak",
+          "url": "https://www.dibk.no/regelverk/sak/3/12/innledning"
+        }
+      ],
+      "glossary": [
+        {
+          "term": "søknadspliktig",
+          "definition": [
+            "Søknadsplikt betyr at kommunen skal godkjenne tiltaket før du gjennomfører det. Det gjelder når du gjør fysiske endringer på bygningen som påvirker sikkerhet eller uttrykk."
+          ],
+          "links": [
+            {
+              "label": "Les mer hos DiBK",
+              "url": "https://www.dibk.no/regelverk/sak/2/2/innledning"
+            }
+          ]
+        },
+        {
+          "term": "tiltakshaver",
+          "definition": [
+            "Tiltakshaver er personen eller virksomheten som bestiller eller utfører tiltaket. Du har ansvar for at arbeidene utføres lovlig og med riktig kompetanse."
+          ],
+          "links": [
+            {
+              "label": "Tiltakshavers ansvar",
+              "url": "https://www.dibk.no/regelverk/sak/3/12/12-1"
+            }
+          ]
+        },
+        {
+          "term": "ansvarlige foretak",
+          "definition": [
+            "Et ansvarlig foretak er en fagperson eller virksomhet som står ansvarlig for prosjektering eller utførelse. Kommunen kan kreve dette i tiltak som påvirker sikkerhet eller konstruksjon."
+          ],
+          "links": [
+            {
+              "label": "Når kreves ansvarsrett?",
+              "url": "https://www.dibk.no/regelverk/sak/3/12/innledning"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "grants": [
+    "enova-energiradgivning",
+    "klimaoslo-smart-energistyring",
+    "klimaoslo-pris-effektstyring"
+  ],
+  "supportTags": [
+    "smart-energi",
+    "styring",
+    "effekt"
+  ],
+  "audiences": [
+    "standard",
+    "gulliste"
+  ],
+  "metadata": {
+    "status": "published",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-15T10:00:00Z",
+    "changeSummary": "Første strukturerte innholdsversjon av Temperaturstyring med variantdata og støtteordninger."
+  },
+  "variants": [
+    {
+      "audience": "gulliste",
+      "introParagraphs": [
+        "I verneverdige bygg handler temperaturstyring om å kombinere smartere styring med varsom bruk av eksisterende detaljer. Velg utstyr som kan skjules bak paneler eller i tekniske skap slik at uttrykket bevares.",
+        "Koordiner tiltak med Byantikvaren der styringen påvirker synlige elementer som brytere, kabelføringer eller panelovner. Mange løsninger kan monteres reversibelt uten å skade originalmaterialer."
+      ],
+      "buildingTypeParagraphs": {
+        "default": [
+          "I verneverdige bygg bør styringsutstyr og kabelføringer planlegges slik at de kan fjernes igjen uten varige spor. Velg løsninger som kan skjules bak eksisterende paneler eller i tekniske skap, og avklar alltid med Byantikvaren før du endrer synlige detaljer."
+        ],
+        "enebolig": [
+          "Eldre eneboliger har ofte originalt listverk og synlige ledninger. Bruk styring som kan monteres på eksisterende punkt og velg kabelføring som kan fjernes uten spor. Avklar større grep med Byantikvaren før du endrer faste installasjoner."
+        ],
+        "rekkehus": [
+          "I verneverdige rekkehus deler dere uttrykk og installasjoner. Avklar med styret hvilke termostater, lokasjoner og kabelføringer som er tillatt før du monterer nytt utstyr.",
+          "Små tiltak som tettelister eller innvendig styring er sjelden problematisk, men inngrep i felles fasader eller synlig utstyr må koordineres."
+        ],
+        "tomannsbolig": [
+          "I verneverdige rekkehus deler dere uttrykk og installasjoner. Avklar med styret hvilke termostater, lokasjoner og kabelføringer som er tillatt før du monterer nytt utstyr.",
+          "Små tiltak som tettelister eller innvendig styring er sjelden problematisk, men inngrep i felles fasader eller synlig utstyr må koordineres."
+        ],
+        "blokk": [
+          "I bygårder og murgårder påvirker styringskabler, paneler eller sensorer ofte fellesarealer. Planlegg tiltak sammen med styret og Byantikvaren slik at ventilasjon, varme og bevaringshensyn ivaretas."
+        ]
+      },
+      "readMore": [
+        {
+          "id": "pbe-soknadsplikt",
+          "label": "Sjekk om tiltaket er søknadspliktig",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/skal-du-bygge-rive-eller-endre/ma-du-sende-byggesoknad/"
+        },
+        {
+          "id": "byantikvaren-veiledning",
+          "label": "Bestill veiledning hos Byantikvaren",
+          "url": "https://www.oslo.kommune.no/etater-foretak-og-ombud/byantikvaren/#toc-2"
+        }
+      ],
+      "accordion": [
+        {
+          "id": "gulliste-veiledning",
+          "title": "Avklar søknadsplikt tidlig",
+          "body": [
+            "Små, reversible tiltak er normalt ikke søknadspliktige, men endringer i synlige installasjoner eller varmeanlegg kan være det. Bestill veiledning hos Byantikvaren eller Plan- og bygningsetaten før du starter.",
+            "Teknisk installasjon skal utføres av fagfolk. Vurder midlertidige løsninger dersom du må teste styringen før du eventuelt søker om varig endring."
+          ],
+          "links": [
+            {
+              "id": "byantikvaren-time",
+              "label": "Bestill veiledningstime hos Byantikvaren",
+              "url": "https://www.oslo.kommune.no/etater-foretak-og-ombud/byantikvaren/#toc-2"
+            },
+            {
+              "id": "pbe-veiledning",
+              "label": "Plan- og bygningsetaten – veiledning",
+              "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "reversibel",
+              "definition": [
+                "Et tiltak er reversibelt når det kan fjernes og byggverket tilbakeføres uten varige spor. Slike tiltak er ofte lettere å få godkjent i verneverdige bygg."
+              ]
+            }
+          ]
+        }
+      ],
+      "grants": [
+        "enova-energiradgivning",
+        "klimaoslo-smart-energistyring",
+        "byantikvaren-istandsetting"
+      ],
+      "supportTags": [
+        "smart-energi",
+        "gulliste",
+        "vern"
+      ]
+    }
+  ]
+}

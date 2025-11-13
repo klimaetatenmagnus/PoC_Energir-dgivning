@@ -48,11 +48,13 @@
     "server/**/*",
     "services/**/*",
     "packages/**/*",
+    "content/**/*.ts",
     "src/services/solarEnergyService.ts",
     "src/services/gul-liste-service.ts",
     "src/services/gul-liste-integration.ts",
     "src/components/FigmaMainScript.tsx",
     "src/components/FigmaBlokk/**/*",
+    "src/hooks/**/*",
     "src/types/**/*",
     "src/runtimeConfig.ts"
   ],

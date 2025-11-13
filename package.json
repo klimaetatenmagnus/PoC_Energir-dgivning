@@ -48,7 +48,8 @@
     "react-dom": "^18.3.1",
     "soap": "^1.1.11",
     "swr": "^2.3.3",
-    "xml2js": "^0.6.2"
+    "xml2js": "^0.6.2",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@swc/core": "^1.7.0",

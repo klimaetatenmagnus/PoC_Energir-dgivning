@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 1,
+  "id": "vinduer",
+  "title": "Oppgradering av vinduer",
+  "summary": "Reduser varmetap og ta vare på fasaden med riktige vindus- og dørløsninger.",
+  "introParagraphs": [
+    "Vinduer står for en stor del av varmetapet i en bolig. Med gode vedlikeholds- og oppgraderingsgrep kan du halvere tapet sammenlignet med eldre vinduer og dører.",
+    "Start alltid med de enkleste tiltakene – tetting, justering og varevinduer – før du vurderer full utskifting."
+  ],
+  "buildingTypeParagraphs": {
+    "enebolig": [
+      "Eneboliger har ofte vinduer i ulike størrelser og aldre. Kartlegg hvilke som kan repareres, og hvilke som bør skiftes ut for å få ned energibruken."
+    ],
+    "rekkehus": [
+      "I rekkehus og tomannsboliger er uttrykket ofte likt. Koordiner tiltak med naboene for å bevare helheten – spesielt ved utskifting."
+    ],
+    "tomannsbolig": [
+      "I rekkehus og tomannsboliger er uttrykket ofte likt. Koordiner tiltak med naboene for å bevare helheten – spesielt ved utskifting."
+    ],
+    "blokk": [
+      "I blokker og større boligbygg må styret planlegge arbeidet samlet slik at fasaden og lydkravene ivaretas."
+    ],
+    "default": [
+      "Velg løsninger som passer bygningens uttrykk og energibehov, og dokumenter hvilken effekt tiltaket har på varmetapet." 
+    ]
+  },
+  "benefits": [
+    { "id": "mindre-trekk", "title": "Mindre trekk", "description": "Tettere vinduer og dører gir varmere rom og mindre støy." },
+    { "id": "redusert-stoy", "title": "Redusert støy", "description": "Moderne vinduer skjermer mot trafikk og vær." },
+    { "id": "hoyere-boligverdi", "title": "Høyere boligverdi", "description": "Oppgraderte vinduer og fasader gir bedre energimerke og attraktivitet." },
+    { "id": "redusert-energibehov", "title": "Redusert energibehov", "description": "Lavere U-verdi betyr lavere varmetap og strømregning." }
+  ],
+  "readMore": [
+    {
+      "id": "dibk-velg-vinduer",
+      "label": "DiBK – bytte vinduer, velg vinduer som gir deg lys og varme",
+      "url": "https://www.dibk.no/bygge-eller-endre/puss-opp-energismart/bytte-vinduer-velg-vinduer-som-gir-deg-lys-og-varme/"
+    }
+  ],
+  "tabs": [
+    {
+      "type": "tabs",
+      "title": "Tiltak du kan vurdere",
+      "tabs": [
+        {
+          "id": "generelt",
+          "title": "Generelt",
+          "body": [
+            "Vinduer har mye å si for både komfort og energibruk. Godt isolerte vinduer og dører kan halvere varmetapet sammenlignet med eldre løsninger, og er derfor et naturlig startpunkt når du oppgraderer boligen."
+          ]
+        },
+        {
+          "id": "vedlikehold",
+          "title": "Vedlikehold",
+          "body": [
+            "Vinduer i tre kan få nytt liv med maling, kitting, justering av hengsler og tetting. Plast- og aluminiumsvinduer trenger rengjøring og smurte beslag for å holde seg tette."
+          ],
+          "buildingTypeBody": {
+            "blokk": [
+              "I eldre flermannsboliger kan originale trevinduer ofte repareres. Fjerning av løs maling, utskifting av råteskadde deler og nye tetningslister gir lavere varmetap og bevarer uttrykket."
+            ]
+          }
+        },
+        {
+          "id": "oppgradering",
+          "title": "Oppgradering",
+          "body": [
+            "Hvis rammene er solide kan du oppgradere med nye glass eller varevinduer. Det gir bedre isolasjon, mindre trekk og bevarer utseendet."
+          ],
+          "buildingTypeBody": {
+            "rekkehus": [
+              "Koordiner oppgraderinger med naboen. Like varevinduer eller glass gjør det enklere å bevare symmetrien og få gunstige priser."
+            ],
+            "tomannsbolig": [
+              "Koordiner oppgraderinger med naboen. Like varevinduer eller glass gjør det enklere å bevare symmetrien og få gunstige priser."
+            ]
+          }
+        },
+        {
+          "id": "utskiftning",
+          "title": "Utskiftning",
+          "body": [
+            "Når vinduene ikke lar seg reparere kan utskifting gi den største energibesparelsen. Velg produkter med lav U-verdi og sørg for god tetting rundt karmen for å få full effekt."
+          ],
+          "buildingTypeBody": {
+            "enebolig": [
+              "Eneboliger kan ofte bytte vinduer rom for rom. Planlegg rekkefølgen og kombiner utskiftingen med god tetting rundt vindusåpningen.",
+              "Velg produkter med lav U-verdi; trelags vinduer holder mer varme enn tolags." 
+            ],
+            "rekkehus": [
+              "I rekkehus lønner det seg å koordinere utskiftingen slik at alle boliger får likt uttrykk. Del gjerne på prosjektering og innkjøp.",
+              "Når flere går sammen kan dere stille krav til både energiytelse og estetikk." 
+            ],
+            "tomannsbolig": [
+              "I rekkehus lønner det seg å koordinere utskiftingen slik at alle boliger får likt uttrykk. Del gjerne på prosjektering og innkjøp.",
+              "Når flere går sammen kan dere stille krav til både energiytelse og estetikk." 
+            ],
+            "blokk": [
+              "I blokker må utskiftingen planlegges og søkes om av styret. Velg løsninger som ivaretar både fasade, lydkrav og energi." 
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "accordion": [
+    {
+      "id": "soknadsplikt",
+      "title": "Søknadsplikt og fagansvar",
+      "body": [
+        "Vindusutskifting påvirker fasaden og er ofte søknadspliktig. Ta tidlig dialog med Plan- og bygningsetaten, spesielt dersom bygget er bevaringsverdig eller flere boenheter må koordinere arbeidet.",
+        "I større prosjekter krever kommunen ansvarlige foretak for prosjektering og utførelse."
+      ],
+      "links": [
+        {
+          "id": "dibk-soknadsplikt",
+          "label": "Direktoratet for byggkvalitet – hva er søknadsplikt?",
+          "url": "https://www.dibk.no/regelverk/sak/2/2/innledning"
+        },
+        {
+          "id": "dibk-ansvar",
+          "label": "Tiltakshaver og ansvarlige foretak",
+          "url": "https://www.dibk.no/regelverk/sak/3/12/innledning"
+        }
+      ],
+      "glossary": [
+        {
+          "term": "U-verdi",
+          "definition": [
+            "U-verdien forteller hvor godt vinduet isolerer. Jo lavere verdi, jo mindre varme slipper ut og jo bedre er vinduet for energibruken."
+          ],
+          "links": [
+            {
+              "label": "Les mer hos DiBK",
+              "url": "https://www.dibk.no/regelverk/byggteknisk-forskrift-tek17/14/14-2"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "grants": [
+    "klimaoslo-vinduer-dorer",
+    "klimaoslo-oppgradering-bygningskropp",
+    "klimaoslo-energitiltak-borettslag",
+    "klimaoslo-energikartlegging-borettslag",
+    "byantikvaren-istandsetting",
+    "enova-energiradgivning"
+  ],
+  "supportTags": ["vinduer", "fasade", "klimaskall"],
+  "audiences": ["standard", "gulliste"],
+  "metadata": {
+    "status": "draft",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-14T09:55:00Z",
+    "changeSummary": "Første JSON-versjon av vindu-tiltaket."
+  },
+  "variants": [
+    {
+      "audience": "gulliste",
+      "introParagraphs": [
+        "I bevaringsverdige bygg må vinduer og dører repareres før de eventuelt skiftes ut. Små grep som tetting, justering og varevinduer gir stor effekt og bevarer detaljer.",
+        "Dersom utskifting er eneste løsning, må du dokumentere tilstanden og avtale materiale, profil og glass med Byantikvaren før bestilling."
+      ],
+      "tabs": [
+        {
+          "type": "tabs",
+          "title": "Tiltak du kan vurdere",
+          "tabs": [
+            {
+              "id": "generelt",
+              "title": "Generelt",
+              "body": [
+                "Start alltid med en tilstandsvurdering. Mange gamle vinduer kan restaureres og gi like god energiytelse med varevinduer som et nytt vindu – samtidig som du bevarer uttrykket."
+              ]
+            },
+            {
+              "id": "vedlikehold",
+              "title": "Vedlikehold",
+              "body": [
+                "Skrap, puss og mal treverket med tradisjonelle produkter. Skift ut råteskadde deler og etterse kittfalsen. Tetningslister kan legges på innsiden slik at det ikke synes."
+              ]
+            },
+            {
+              "id": "oppgradering",
+              "title": "Oppgradering",
+              "body": [
+                "Varevinduer eller energiglass kan monteres på innsiden uten å endre fasaden. Husk å dokumentere hvordan løsningen kan reverseres ved behov."
+              ]
+            },
+            {
+              "id": "utskiftning",
+              "title": "Utskiftning",
+              "body": [
+                "Når vinduene er for dårlige til å reddes, må nye produkter skreddersys til byggets uttrykk. Ta mål og detaljer sammen med fagperson og Byantikvaren før du bestiller."
+              ]
+            }
+          ]
+        }
+      ],
+      "readMore": [
+        {
+          "id": "byantikvaren-vindu",
+          "label": "Byantikvaren – veiledning for vindusarbeid",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/kulturminner-og-bevaring/"
+        }
+      ],
+      "grants": [
+        "klimaoslo-vinduer-dorer",
+        "byantikvaren-istandsetting",
+        "klimaoslo-oppgradering-bygningskropp",
+        "enova-energiradgivning"
+      ],
+      "supportTags": ["vinduer", "gulliste", "vern"]
+    }
+  ]
+}

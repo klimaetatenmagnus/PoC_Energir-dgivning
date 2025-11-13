@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "id": "klimaoslo-vinduer-dorer",
+  "title": "Tilskudd til bytte av vinduer og ytterdører",
+  "summary": "Støtte til energieffektive vinduer og dører, med egne satser for bygg på gul liste.",
+  "description": [
+    "Klima- og energifondet gir støtte når boligeiere oppgraderer vinduer og dører for å redusere varmetap og ivareta fasaden. Ordningen gjelder både full utskifting og energieffektive varevinduer, og har tilpassede krav for bevaringsverdige bygg.",
+    "Prosjektet må bidra til lavere U-verdi og samtidig ta hensyn til byggets arkitektur."
+  ],
+  "category": "kommunal",
+  "provider": {
+    "name": "Klima- og energifondet (Oslo kommune)",
+    "url": "https://www.klimaoslo.no/tilskudd/tilskudd-til-bytte-av-vinduer-og-dorer/",
+    "contactEmail": "klimaetaten@bym.oslo.kommune.no"
+  },
+  "funding": [
+    {
+      "kind": "percentage",
+      "rate": 20,
+      "description": "Standardbygg kan få inntil 20 % av kostnaden refundert."
+    },
+    {
+      "kind": "percentage",
+      "rate": 15,
+      "description": "Bygg på gul liste får inntil 15 % støtte når U-verdien forblir mellom 0,8 og 1,0 for å ivareta uttrykket."
+    }
+  ],
+  "eligibility": [
+    {
+      "id": "u-verdi",
+      "title": "Vis til beregnet U-verdi",
+      "description": [
+        "Materialvalg og glass må dokumentere hvilken U-verdi som oppnås før og etter tiltaket."
+      ]
+    },
+    {
+      "id": "antikvar",
+      "title": "Koordiner med Byantikvaren for verneverdige bygg",
+      "description": [
+        "For gul liste må løsningen være avklart i forhåndsmøte eller gjennom uttalelse fra Byantikvaren."
+      ],
+      "documents": [
+        {
+          "id": "byantikvaren-veiledning",
+          "label": "Veiledning for vindusrehabilitering",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/kulturminner-og-bevaring/"
+        }
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "sluttrapport-vinduer",
+      "title": "Sluttrapport",
+      "description": [
+        "Rapporten skal vise bilder før/etter, beskrive valgt løsning og legge ved fakturaer."
+      ]
+    }
+  ],
+  "buildingTypes": [
+    "enebolig",
+    "rekkehus",
+    "tomannsbolig",
+    "blokk"
+  ],
+  "appliesToTiltak": [
+    "vinduer",
+    "tetting"
+  ],
+  "regions": [
+    "oslo"
+  ],
+  "audiences": [
+    "standard"
+  ],
+  "tags": [
+    "vinduer",
+    "fasade",
+    "kommunal-stotte"
+  ],
+  "contacts": [
+    {
+      "id": "klimaetaten-vindu",
+      "name": "Klimaetaten",
+      "email": "klimaetaten@bym.oslo.kommune.no",
+      "url": "https://www.klimaoslo.no/tilskudd/"
+    }
+  ],
+  "application": {
+    "url": "https://www.klimaoslo.no/tilskudd/tilskudd-til-bytte-av-vinduer-og-dorer/",
+    "guidanceUrl": "https://www.klimaoslo.no/tilskudd/",
+    "rolling": true,
+    "documents": [
+      {
+        "id": "sjekkliste-vindu",
+        "label": "Sjekkliste for vindusutskifting",
+        "url": "https://www.klimaoslo.no/wp-content/uploads/vindu-sjekkliste.pdf"
+      }
+    ]
+  },
+  "links": [
+    {
+      "id": "varevindu",
+      "label": "Les om varevinduer",
+      "url": "https://byggogbevar.no/enoek/artikler/tiltak/varevinduer/"
+    }
+  ],
+  "metadata": {
+    "status": "published",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-14T09:20:00Z",
+    "changeSummary": "Tilført vindus- og dørsstøtten til grantbiblioteket."
+  }
+}

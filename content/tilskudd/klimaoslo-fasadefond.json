@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "id": "klimaoslo-fasadefond",
+  "title": "Klima- og energifondet: støtte til fasadeoppgradering",
+  "summary": "Kommunal støtteordning som dekker deler av kostnadene når borettslag og sameier oppgraderer fasader og energiytelse samtidig.",
+  "description": [
+    "Klima- og energifondet gir støtte til energieffektiviseringstiltak i Oslo der tiltaket også forbedrer byggets klimaskall. Etterisolering av fasade kombinert med ny kledning, tetting og kontrollert lufting prioriteres fordi tiltaket reduserer både energibruk og vedlikeholdskostnader.",
+    "Ordningen er særlig aktuell for borettslag og sameier i eldre bygårder, men rekkehus og småhus kan også få støtte dersom tiltaket gir dokumentert energigevinst."
+  ],
+  "category": "kommunal",
+  "provider": {
+    "name": "Klima- og energifondet (Oslo kommune)",
+    "url": "https://www.oslo.kommune.no/klima-og-energi/klima-og-energifondet/",
+    "contactEmail": "klimaetaten@oslo.kommune.no"
+  },
+  "funding": [
+    {
+      "kind": "percentage",
+      "rate": 30,
+      "description": "Fondet dekker inntil 30 % av dokumenterte kostnader til prosjektering og gjennomføring av fasadeoppgradering med etterisolering."
+    }
+  ],
+  "eligibility": [
+    {
+      "id": "lokalisering",
+      "title": "Bygget må ligge i Oslo",
+      "description": [
+        "Eiendommen må være registrert i Oslo kommune og tiltaket må være del av et helhetlig energi- og vedlikeholdsprosjekt."
+      ],
+      "documents": []
+    },
+    {
+      "id": "energiberegning",
+      "title": "Legg ved energiberegning",
+      "description": [
+        "Prosjektet må dokumentere forventet reduksjon i levert energi eller forbedret energimerke."
+      ],
+      "documents": []
+    }
+  ],
+  "requirements": [
+    {
+      "id": "prosjektplan",
+      "title": "Prosjektplan og budsjett",
+      "description": [
+        "Søknaden skal inneholde prosjektplan, fremdriftsplan, budsjett og beskrivelse av fagpersoner som utfører arbeidet."
+      ],
+      "documents": []
+    }
+  ],
+  "buildingTypes": [
+    "blokk",
+    "rekkehus",
+    "tomannsbolig",
+    "enebolig"
+  ],
+  "appliesToTiltak": [
+    "etterisolering-yttervegg"
+  ],
+  "regions": [
+    "oslo"
+  ],
+  "audiences": [
+    "standard"
+  ],
+  "tags": [
+    "fasade",
+    "energitiltak",
+    "kommunal-stotte"
+  ],
+  "contacts": [
+    {
+      "id": "klimaetaten-veiledning",
+      "name": "Klimaetaten – veiledning",
+      "email": "klimaetaten@oslo.kommune.no",
+      "url": "https://www.oslo.kommune.no/klima-og-energi/klima-og-energifondet/"
+    }
+  ],
+  "application": {
+    "url": "https://www.oslo.kommune.no/klima-og-energi/klima-og-energifondet/sok-stotte/",
+    "guidanceUrl": "https://www.oslo.kommune.no/klima-og-energi/klima-og-energifondet/veiledning/",
+    "rolling": false,
+    "deadline": "2025-12-01T00:00:00Z",
+    "documents": []
+  },
+  "links": [
+    {
+      "id": "tiltakskrav",
+      "label": "Detaljerte krav til fasadeprosjekter",
+      "url": "https://www.oslo.kommune.no/klima-og-energi/klima-og-energifondet/krav"
+    }
+  ],
+  "metadata": {
+    "status": "published",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-13T08:30:00Z",
+    "changeSummary": "Lagt til kommunalt tilskudd som kan presenteres i adminverktøyet."
+  }
+}

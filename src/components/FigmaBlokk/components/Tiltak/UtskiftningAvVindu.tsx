@@ -1,29 +1,343 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ENERGY_SAVINGS_DATA,
   TiltakComponentProps,
   calculateTekPeriod,
   parseNumericValue,
   resolveEnergyCategory,
-  useStotteordninger,
   getOverskriftColor,
   openExternalLink
 } from './shared';
+import type { Stotteordning } from '../../../../services/stotteordning-service';
+import { useTiltakContent } from '../../../../hooks/contentHooks';
+import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
+import type {
+  TiltakAccordionItem,
+  TiltakContent,
+  TiltakTabsSection
+} from '../../../../../content/tiltak/schema';
+import type { ContentAudience } from '../../../../../content/schema-helpers';
+import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
+import { renderParagraphWithGlossary } from './glossaryHelpers';
 
 type UtskiftningAvVinduProps = TiltakComponentProps;
+type UtskiftningAvVinduComponentProps = TiltakComponentProps & { audience?: ContentAudience };
 
-export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, buildingType, buildingData }) => {
+type ReadMoreLink = {
+  id?: string;
+  label: string;
+  url: string;
+};
+
+export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = (props) => (
+  <UtskiftningAvVinduContentComponent {...props} audience="standard" />
+);
+
+export { UtskiftningAvVinduContentComponent };
+
+type VinduerContentView = {
+  title: string;
+  introParagraphs: string[];
+  buildingTypeParagraphs: Record<string, string[]>;
+  benefits: { title: string; description?: string }[];
+  readMore: ReadMoreLink[];
+  accordion: TiltakAccordionItem[];
+  tabs: TiltakTabsSection[];
+  grants: string[];
+};
+
+const defaultVinduerContent: VinduerContentView = {
+  title: 'Oppgradering av vinduer',
+  introParagraphs: [
+    'Vinduer står for en stor del av varmetapet i en bolig. Med gode vedlikeholds- og oppgraderingsgrep kan du halvere tapet sammenlignet med eldre vinduer og dører.',
+    'Start alltid med de enkleste tiltakene – tetting, justering og varevinduer – før du vurderer full utskifting.'
+  ],
+  buildingTypeParagraphs: {
+    enebolig: [
+      'Eneboliger har ofte vinduer i ulike størrelser og aldre. Kartlegg hvilke som kan repareres, og hvilke som bør skiftes ut for å få ned energibruken.'
+    ],
+    rekkehus: [
+      'I rekkehus og tomannsboliger er uttrykket ofte likt. Koordiner tiltak med naboene for å bevare helheten – spesielt ved utskifting.'
+    ],
+    tomannsbolig: [
+      'I rekkehus og tomannsboliger er uttrykket ofte likt. Koordiner tiltak med naboene for å bevare helheten – spesielt ved utskifting.'
+    ],
+    blokk: [
+      'I blokker og større boligbygg må styret planlegge arbeidet samlet slik at fasaden og lydkravene ivaretas.'
+    ],
+    default: [
+      'Velg løsninger som passer bygningens uttrykk og energibehov, og dokumenter hvilken effekt tiltaket har på varmetapet.'
+    ]
+  },
+  benefits: [
+    { title: 'Mindre trekk', description: 'Tettere vinduer og dører gir varmere rom og mindre støy.' },
+    { title: 'Redusert støy', description: 'Moderne vinduer skjermer mot trafikk og vær.' },
+    {
+      title: 'Høyere boligverdi',
+      description: 'Oppgraderte vinduer og fasader gir bedre energimerke og attraktivitet.'
+    },
+    { title: 'Redusert energibehov', description: 'Lavere U-verdi betyr lavere varmetap og strømregning.' }
+  ],
+  readMore: [
+    {
+      id: 'dibk-velg-vinduer',
+      label: 'DiBK – bytte vinduer, velg vinduer som gir deg lys og varme',
+      url: 'https://www.dibk.no/bygge-eller-endre/puss-opp-energismart/bytte-vinduer-velg-vinduer-som-gir-deg-lys-og-varme/'
+    }
+  ],
+  accordion: [
+    {
+      id: 'soknadsplikt',
+      title: 'Søknadsplikt og fagansvar',
+      body: [
+        'Vindusutskifting påvirker fasaden og er ofte søknadspliktig. Ta tidlig dialog med Plan- og bygningsetaten, spesielt dersom bygget er bevaringsverdig eller flere boenheter må koordinere arbeidet.',
+        'I større prosjekter krever kommunen ansvarlige foretak for prosjektering og utførelse.'
+      ],
+      links: [
+        {
+          id: 'dibk-soknadsplikt',
+          label: 'Direktoratet for byggkvalitet – hva er søknadsplikt?',
+          url: 'https://www.dibk.no/regelverk/sak/2/2/innledning'
+        },
+        {
+          id: 'dibk-ansvar',
+          label: 'Tiltakshaver og ansvarlige foretak',
+          url: 'https://www.dibk.no/regelverk/sak/3/12/innledning'
+        }
+      ],
+      glossary: [
+        {
+          term: 'U-verdi',
+          definition: [
+            'U-verdien forteller hvor godt vinduet isolerer. Jo lavere verdi, jo mindre varme slipper ut og jo bedre er vinduet for energibruken.'
+          ],
+          links: [
+            {
+              label: 'Les mer hos DiBK',
+              url: 'https://www.dibk.no/regelverk/byggteknisk-forskrift-tek17/14/14-2'
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  tabs: [
+    {
+      type: 'tabs',
+      title: 'Tiltak du kan vurdere',
+      tabs: [
+        {
+          id: 'generelt',
+          title: 'Generelt',
+          body: [
+            'Vinduer har mye å si for både komfort og energibruk. Godt isolerte vinduer og dører kan halvere varmetapet sammenlignet med eldre løsninger, og er derfor et naturlig startpunkt når du oppgraderer boligen.'
+          ],
+          readMore: []
+        },
+        {
+          id: 'vedlikehold',
+          title: 'Vedlikehold',
+          body: [
+            'Vinduer i tre kan få nytt liv med maling, kitting, justering av hengsler og tetting. Plast- og aluminiumsvinduer trenger rengjøring og smurte beslag for å holde seg tette.'
+          ],
+          buildingTypeBody: {
+            blokk: [
+              'I eldre flermannsboliger kan originale trevinduer ofte repareres. Fjerning av løs maling, utskifting av råteskadde deler og nye tetningslister gir lavere varmetap og bevarer uttrykket.'
+            ]
+          },
+          readMore: []
+        },
+        {
+          id: 'oppgradering',
+          title: 'Oppgradering',
+          body: [
+            'Hvis rammene er solide kan du oppgradere med nye glass eller varevinduer. Det gir bedre isolasjon, mindre trekk og bevarer utseendet.'
+          ],
+          buildingTypeBody: {
+            rekkehus: [
+              'Koordiner oppgraderinger med naboen. Like varevinduer eller glass gjør det enklere å bevare symmetrien og få gunstige priser.'
+            ],
+            tomannsbolig: [
+              'Koordiner oppgraderinger med naboen. Like varevinduer eller glass gjør det enklere å bevare symmetrien og få gunstige priser.'
+            ]
+          },
+          readMore: []
+        },
+        {
+          id: 'utskiftning',
+          title: 'Utskiftning',
+          body: [
+            'Når vinduene ikke lar seg reparere kan utskifting gi den største energibesparelsen. Velg produkter med lav U-verdi og sørg for god tetting rundt karmen for å få full effekt.'
+          ],
+          buildingTypeBody: {
+            enebolig: [
+              'Eneboliger kan ofte bytte vinduer rom for rom. Planlegg rekkefølgen og kombiner utskiftingen med god tetting rundt vindusåpningen.',
+              'Velg produkter med lav U-verdi; trelags vinduer holder mer varme enn tolags.'
+            ],
+            rekkehus: [
+              'I rekkehus lønner det seg å koordinere utskiftingen slik at alle boliger får likt uttrykk. Del gjerne på prosjektering og innkjøp.',
+              'Når flere går sammen kan dere stille krav til både energiytelse og estetikk.'
+            ],
+            tomannsbolig: [
+              'I rekkehus lønner det seg å koordinere utskiftingen slik at alle boliger får likt uttrykk. Del gjerne på prosjektering og innkjøp.',
+              'Når flere går sammen kan dere stille krav til både energiytelse og estetikk.'
+            ],
+            blokk: [
+              'I blokker må utskiftingen planlegges og søkes om av styret. Velg løsninger som ivaretar både fasade, lydkrav og energi.'
+            ]
+          },
+          readMore: []
+        }
+      ]
+    }
+  ],
+  grants: [
+    'klimaoslo-vinduer-dorer',
+    'klimaoslo-oppgradering-bygningskropp',
+    'klimaoslo-energitiltak-borettslag',
+    'klimaoslo-energikartlegging-borettslag',
+    'byantikvaren-istandsetting',
+    'enova-energiradgivning'
+  ]
+};
+
+function mapVinduerContent(content?: TiltakContent): VinduerContentView | null {
+  if (!content) {
+    return null;
+  }
+
+  return {
+    title: content.title,
+    introParagraphs: content.introParagraphs,
+    buildingTypeParagraphs: content.buildingTypeParagraphs,
+    benefits: content.benefits.map(({ title, description }) => ({
+      title,
+      description: description ?? undefined
+    })),
+    readMore: content.readMore.map(({ id, label, url }) => ({ id, label, url })),
+    accordion: content.accordion,
+    tabs: content.tabs,
+    grants: content.grants
+  };
+}
+
+const TAB_BUTTON_SLOTS = [
+  { rectX: 60, textX: 76, width: 101 },
+  { rectX: 161, textX: 177, width: 118 },
+  { rectX: 279, textX: 295, width: 136 },
+  { rectX: 415, textX: 431, width: 105 }
+] as const;
+
+const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentProps> = ({
+  onBack,
+  buildingType,
+  buildingData,
+  audience = 'standard'
+}) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
-  const [hoveredWord, setHoveredWord] = useState<string | null>(null);
-  const [activeButton, setActiveButton] = useState<string>('Generelt');
-  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
+  const [hoveredGlossaryTerm, setHoveredGlossaryTerm] = useState<string | null>(null);
+  const [activeTabId, setActiveTabId] = useState<string | null>(null);
+  const [hoveredTabId, setHoveredTabId] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
-  const { stotteordninger } = useStotteordninger({
-    tiltak: 'vinduer',
+
+  const { data: tiltakContent } = useTiltakContent('vinduer');
+  const resolvedTiltakContent = useMemo(
+    () => applyTiltakVariant(tiltakContent, audience),
+    [tiltakContent, audience]
+  );
+  const mappedContent = useMemo(
+    () => mapVinduerContent(resolvedTiltakContent),
+    [resolvedTiltakContent]
+  );
+  const content = mappedContent ?? defaultVinduerContent;
+
+  const tabsSection = useMemo(
+    () => content.tabs[0] ?? defaultVinduerContent.tabs[0],
+    [content]
+  );
+  const resolvedTabs = useMemo(() => tabsSection?.tabs ?? [], [tabsSection]);
+  const displayedTabs = useMemo(
+    () => resolvedTabs.slice(0, TAB_BUTTON_SLOTS.length),
+    [resolvedTabs]
+  );
+
+  useEffect(() => {
+    if (!displayedTabs.length) {
+      setActiveTabId(null);
+      return;
+    }
+    setActiveTabId((current) => {
+      if (current && displayedTabs.some((tab) => tab.id === current)) {
+        return current;
+      }
+      return displayedTabs[0].id;
+    });
+  }, [displayedTabs]);
+
+  const activeTab =
+    displayedTabs.find((tab) => tab.id === activeTabId) ?? displayedTabs[0] ?? null;
+  const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
+  const introParagraphs = content.introParagraphs.length
+    ? content.introParagraphs
+    : defaultVinduerContent.introParagraphs;
+  const baseBuildingParagraphs =
+    content.buildingTypeParagraphs[buildingTypeKey] ??
+    content.buildingTypeParagraphs.default ??
+    defaultVinduerContent.buildingTypeParagraphs.default;
+  const tabBody = activeTab?.body?.length ? activeTab.body : introParagraphs;
+  const tabBuildingParagraphs =
+    activeTab?.buildingTypeBody?.[buildingTypeKey] ??
+    activeTab?.buildingTypeBody?.default ??
+    baseBuildingParagraphs;
+
+  const benefits = [...(content.benefits.length ? content.benefits : defaultVinduerContent.benefits)];
+  while (benefits.length < 4) {
+    benefits.push(defaultVinduerContent.benefits[benefits.length]);
+  }
+
+  const readMoreLinks = (content.readMore.length ? content.readMore : defaultVinduerContent.readMore).slice(0, 3);
+  const [primaryReadMore, ...secondaryReadMoreLinks] = readMoreLinks;
+
+  const accordionItem = content.accordion[0] ?? defaultVinduerContent.accordion[0];
+  const accordionBody = accordionItem?.body ?? [];
+  const accordionLinks = accordionItem?.links ?? [];
+  const glossaryEntries = accordionItem?.glossary ?? [];
+  const resolvedAccordionBody = accordionBody.length ? accordionBody : defaultVinduerContent.accordion[0].body;
+  const accordionIntroParagraph = resolvedAccordionBody.length > 1 ? resolvedAccordionBody[0] : null;
+  const accordionDetailParagraphs =
+    resolvedAccordionBody.length > 1 ? resolvedAccordionBody.slice(1) : resolvedAccordionBody;
+
+  const {
+    stotteordninger,
+    intendedSource,
+    isLoading: grantsLoading
+  } = useGrantAwareStotteordninger({
+    grantIds: content.grants,
+    legacyTiltakSlug: 'vinduer',
     buildingType
   });
 
-  const needsScroll = stotteordninger.length > 4;
+  const displayedStotteordninger: Stotteordning[] = stotteordninger.length
+    ? stotteordninger
+    : intendedSource === 'grants' && grantsLoading
+      ? [
+          {
+            ordning: 'Henter støtteordninger …',
+            lenke: null,
+            belop: null,
+            overskrift: null
+          }
+        ]
+      : [
+          {
+            ordning: 'Ingen registrerte støtteordninger ennå',
+            lenke: null,
+            belop: null,
+            overskrift: null
+          }
+        ];
+
+  const needsScroll = displayedStotteordninger.length > 4;
 
   return (
     <div style={{ 
@@ -58,619 +372,125 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
           fill="#2A2859"
           dominantBaseline="hanging"
         >
-          Oppgradering av vindu
+          {content.title}
         </text>
         
         
-        {/* Button boxes - invisible clickable areas */}
-        <rect
-          x="60"
-          y="4"
-          width="101"
-          height="49"
-          fill="transparent"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Generelt')}
-          onMouseEnter={() => setHoveredButton('Generelt')}
-          onMouseLeave={() => setHoveredButton(null)}
-        />
-        
-        <rect
-          x="161"
-          y="4"
-          width="118"
-          height="49"
-          fill="transparent"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Vedlikehold')}
-          onMouseEnter={() => setHoveredButton('Vedlikehold')}
-          onMouseLeave={() => setHoveredButton(null)}
-        />
-        
-        <rect
-          x="279"
-          y="4"
-          width="136"
-          height="49"
-          fill="transparent"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Oppgradering')}
-          onMouseEnter={() => setHoveredButton('Oppgradering')}
-          onMouseLeave={() => setHoveredButton(null)}
-        />
-        
-        <rect
-          x="415"
-          y="4"
-          width="105"
-          height="49"
-          fill="transparent"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Utskiftning')}
-          onMouseEnter={() => setHoveredButton('Utskiftning')}
-          onMouseLeave={() => setHoveredButton(null)}
-        />
-        
-        {/* Text inside button boxes */}
-        <text
-          x="76"
-          y="28.5"
-          fontFamily="Oslo Sans"
-          fontWeight="400"
-          fontStyle="normal"
-          fontSize="16"
-          lineHeight="24"
-          letterSpacing="-0.2"
-          fill={activeButton === 'Generelt' ? "#000000" : hoveredButton === 'Generelt' ? "#1F42AA" : "#666666"}
-          dominantBaseline="middle"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Generelt')}
-          onMouseEnter={() => setHoveredButton('Generelt')}
-          onMouseLeave={() => setHoveredButton(null)}
-        >
-          Generelt
-        </text>
-        
-        <text
-          x="177"
-          y="28.5"
-          fontFamily="Oslo Sans"
-          fontWeight="400"
-          fontStyle="normal"
-          fontSize="16"
-          lineHeight="24"
-          letterSpacing="-0.2"
-          fill={activeButton === 'Vedlikehold' ? "#000000" : hoveredButton === 'Vedlikehold' ? "#1F42AA" : "#666666"}
-          dominantBaseline="middle"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Vedlikehold')}
-          onMouseEnter={() => setHoveredButton('Vedlikehold')}
-          onMouseLeave={() => setHoveredButton(null)}
-        >
-          Vedlikehold
-        </text>
-        
-        <text
-          x="295"
-          y="28.5"
-          fontFamily="Oslo Sans"
-          fontWeight="400"
-          fontStyle="normal"
-          fontSize="16"
-          lineHeight="24"
-          letterSpacing="-0.2"
-          fill={activeButton === 'Oppgradering' ? "#000000" : hoveredButton === 'Oppgradering' ? "#1F42AA" : "#666666"}
-          dominantBaseline="middle"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Oppgradering')}
-          onMouseEnter={() => setHoveredButton('Oppgradering')}
-          onMouseLeave={() => setHoveredButton(null)}
-        >
-          Oppgradering
-        </text>
-        
-        <text
-          x="431"
-          y="28.5"
-          fontFamily="Oslo Sans"
-          fontWeight="400"
-          fontStyle="normal"
-          fontSize="16"
-          lineHeight="24"
-          letterSpacing="-0.2"
-          fill={activeButton === 'Utskiftning' ? "#000000" : hoveredButton === 'Utskiftning' ? "#1F42AA" : "#666666"}
-          dominantBaseline="middle"
-          style={{ cursor: 'pointer' }}
-          onClick={() => setActiveButton('Utskiftning')}
-          onMouseEnter={() => setHoveredButton('Utskiftning')}
-          onMouseLeave={() => setHoveredButton(null)}
-        >
-          Utskiftning
-        </text>
-        
-        {/* Button underlines - active and hover */}
-        <rect
-          x="60"
-          y="49"
-          width="101"
-          height="4"
-          fill={activeButton === 'Generelt' ? "#6FE9FF" : "#1F42AA"}
-          opacity={activeButton === 'Generelt' ? 1 : hoveredButton === 'Generelt' ? 1 : 0}
-          style={{ transition: `opacity ${activeButton === 'Generelt' || hoveredButton === 'Generelt' ? '0.3s' : '0.1s'} ease-in-out` }}
-        />
-        
-        <rect
-          x="161"
-          y="49"
-          width="118"
-          height="4"
-          fill={activeButton === 'Vedlikehold' ? "#6FE9FF" : "#1F42AA"}
-          opacity={activeButton === 'Vedlikehold' ? 1 : hoveredButton === 'Vedlikehold' ? 1 : 0}
-          style={{ transition: `opacity ${activeButton === 'Vedlikehold' || hoveredButton === 'Vedlikehold' ? '0.3s' : '0.1s'} ease-in-out` }}
-        />
-        
-        <rect
-          x="279"
-          y="49"
-          width="136"
-          height="4"
-          fill={activeButton === 'Oppgradering' ? "#6FE9FF" : "#1F42AA"}
-          opacity={activeButton === 'Oppgradering' ? 1 : hoveredButton === 'Oppgradering' ? 1 : 0}
-          style={{ transition: `opacity ${activeButton === 'Oppgradering' || hoveredButton === 'Oppgradering' ? '0.3s' : '0.1s'} ease-in-out` }}
-        />
-        
-        <rect
-          x="415"
-          y="49"
-          width="105"
-          height="4"
-          fill={activeButton === 'Utskiftning' ? "#6FE9FF" : "#1F42AA"}
-          opacity={activeButton === 'Utskiftning' ? 1 : hoveredButton === 'Utskiftning' ? 1 : 0}
-          style={{ transition: `opacity ${activeButton === 'Utskiftning' || hoveredButton === 'Utskiftning' ? '0.3s' : '0.1s'} ease-in-out` }}
-        />
-        
-        {/* Horizontal line above content */}
-        <rect
-          x="60"
-          y="53"
-          width="464"
-          height="1"
-          fill="#CCCCCC"
-        />
-        
-        {/* Content areas for each button */}
-        {activeButton === 'Generelt' && (
-          <foreignObject x="60" y="69" width="464" height="289">
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{
-              fontFamily: 'Oslo Sans',
-              fontWeight: 300,
-              fontStyle: 'normal',
-              fontSize: '14px',
-              lineHeight: '22px',
-              letterSpacing: '0px',
-              color: '#000000',
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingRight: '10px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CCCCCC #F5F5F5'
-            }}>
-              <style>{`
-                div::-webkit-scrollbar {
-                  width: 6px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: #F5F5F5;
-                }
-                div::-webkit-scrollbar-thumb {
-                  background: #CCCCCC;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: #AAAAAA;
-                }
-              `}</style>
-              <p style={{ marginTop: 0, marginBottom: 0 }}>
-                Vinduer har mye å si for både komfort og energibruk i boligen. Så mye som 40 % av varmetapet kan komme herfra. Dette betyr stort potensial for å spare strøm og få et bedre inneklima. Godt isolerte vinduer og dører kan halvere varmetapet sammenlignet med vanlige vinduer og dører. Det finnes det flere måter å forbedre dem på, og det er lurt å starte med de enkleste løsningene først, før du vurderer større arbeider.
-              </p>
-            </div>
-          </foreignObject>
-        )}
-        
-        {activeButton === 'Vedlikehold' && (
-          <foreignObject x="60" y="69" width="464" height="289">
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{
-              fontFamily: 'Oslo Sans',
-              fontWeight: 300,
-              fontStyle: 'normal',
-              fontSize: '14px',
-              lineHeight: '22px',
-              letterSpacing: '0px',
-              color: '#000000',
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingRight: '10px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CCCCCC #F5F5F5'
-            }}>
-              <style>{`
-                div::-webkit-scrollbar {
-                  width: 6px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: #F5F5F5;
-                }
-                div::-webkit-scrollbar-thumb {
-                  background: #CCCCCC;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: #AAAAAA;
-                }
-              `}</style>
-              {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Vinduer i tre kan forbedres med enkle grep som maling, kitting, justering og tetting. Dette gir bedre komfort og forlenger levetiden.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette. Enkle vedlikeholdsoppgaver kan redusere varmetap og utsette behovet for utskifting.
-                  </p>
-                </>
-              ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Vinduer i tre kan forbedres med enkle grep som maling, kitting, justering og tetting. Dette gir bedre komfort og forlenger levetiden.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette. Enkle vedlikeholdsoppgaver kan redusere varmetap og utsette behovet for utskifting.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    I mange eldre flermannsboliger er vinduene laget av solid treverk og passer godt til bygningens stil. Ofte kan de repareres og brukes videre i mange år. Typiske oppgaver er å fjerne maling og kitt, skifte ut deler som har fått råte, justere hengsler og legge på tetningslister.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Ved å holde vinduene i god stand, reduserer du varmetap og bevarer utseendet på huset.
-                  </p>
-                </>
-              )}
-            </div>
-          </foreignObject>
-        )}
-        
-        {activeButton === 'Oppgradering' && (
-          <foreignObject x="60" y="69" width="464" height="289">
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{
-              fontFamily: 'Oslo Sans',
-              fontWeight: 300,
-              fontStyle: 'normal',
-              fontSize: '14px',
-              lineHeight: '22px',
-              letterSpacing: '0px',
-              color: '#000000',
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingRight: '10px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CCCCCC #F5F5F5'
-            }}>
-              <style>{`
-                div::-webkit-scrollbar {
-                  width: 6px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: #F5F5F5;
-                }
-                div::-webkit-scrollbar-thumb {
-                  background: #CCCCCC;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: #AAAAAA;
-                }
-              `}</style>
-              {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Om vindusrammen er i god nok stand, og tåler økt vekt fra glasset, kan du bytte ut det gamle glasset med et som isolerer bedre.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    En annen vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer vinduets utseende.
-                  </p>
-                </>
-              ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Om vindusrammen er i god nok stand, og tåler økt vekt fra glasset, kan du bytte ut det gamle glasset med et som isolerer bedre.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    En annen vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer vinduets utseende.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Hvis flere boliger i rekken har like vinduer, kan det være smart å samarbeide for å bevare helheten og oppnå bedre pris.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Om vindusrammen er i god nok stand, og tåler økt vekt fra glasset, kan du bytte ut det gamle glasset med et som isolerer bedre.
-                  </p>
-                  <p style={{ marginBottom: '16px' }}>
-                    En annen vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer vinduets utseende.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Det er lurt å samarbeide med naboen for å finne de beste tekniske og visuelle løsningene.
-                  </p>
-                </>
-              )}
-            </div>
-          </foreignObject>
-        )}
-        
-        {activeButton === 'Utskiftning' && (
-          <foreignObject x="60" y="69" width="464" height="289">
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{
-              fontFamily: 'Oslo Sans',
-              fontWeight: 300,
-              fontStyle: 'normal',
-              fontSize: '14px',
-              lineHeight: '22px',
-              letterSpacing: '0px',
-              color: '#000000',
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingRight: '10px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CCCCCC #F5F5F5'
-            }}>
-              <style>{`
-                div::-webkit-scrollbar {
-                  width: 6px;
-                }
-                div::-webkit-scrollbar-track {
-                  background: #F5F5F5;
-                }
-                div::-webkit-scrollbar-thumb {
-                  background: #CCCCCC;
-                  border-radius: 3px;
-                }
-                div::-webkit-scrollbar-thumb:hover {
-                  background: #AAAAAA;
-                }
-              `}</style>
-              {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Dersom vinduene er dårlige og ikke lar seg reparere, vil det ofte lønne seg å bytte dem ut. Nye vinduer med god isolasjon kan gi lavere strømforbruk og bedre inneklima – spesielt i kombinasjon med god tetting rundt vindusåpningen.
-                  </p>
-                  <p style={{ marginBottom: 0, position: 'relative' }}>
-                    Velg vinduer med lav <span 
-                      style={{ 
-                        textDecoration: 'underline', 
-                        textDecorationStyle: 'dotted', 
-                        textUnderlineOffset: '4px',
-                        cursor: 'pointer',
-                        position: 'relative'
-                      }}
-                      onMouseEnter={() => setHoveredWord('U-verdi')}
-                      onMouseLeave={() => setHoveredWord(null)}
-                    >
-                      U-verdi
-                      {hoveredWord === 'U-verdi' && (
-                        <div 
-                          onMouseEnter={() => setHoveredWord('U-verdi')}
-                          onMouseLeave={() => setHoveredWord(null)}
-                          style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: '0',
-                            width: '280px',
-                            backgroundColor: '#D1F9FF',
-                            padding: '12px',
-                            marginTop: '0',
-                            zIndex: 1000
-                          }}>
-                          <h4 style={{
-                            fontFamily: 'Oslo Sans',
-                            fontWeight: 700,
-                            fontStyle: 'normal',
-                            fontSize: '16px',
-                            lineHeight: '24px',
-                            letterSpacing: '-0.2px',
-                            color: '#000000',
-                            margin: '0 0 8px 0'
-                          }}>
-                            Ordforklaring
-                          </h4>
-                          <p style={{
-                            fontFamily: 'Oslo Sans',
-                            fontWeight: 300,
-                            fontSize: '14px',
-                            lineHeight: '22px',
-                            letterSpacing: '0px',
-                            color: '#000000',
-                            margin: 0
-                          }}>
-                            U-verdien sier hvor godt vinduet isolerer. Jo lavere tall, jo mindre varme slipper ut – og jo bedre er vinduet for energibruken. Les mer om U-verdi <a 
-                              href="https://www.dibk.no/regelverk/byggteknisk-forskrift-tek17/14/14-2" 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              style={{ 
-                                color: '#000000', 
-                                textDecoration: 'underline',
-                                fontFamily: 'Oslo Sans',
-                                fontWeight: 300,
-                                fontSize: '14px'
-                              }}
-                            >her</a>.
-                          </p>
-                        </div>
-                      )}
-                    </span>. Et trelags vindu isolerer betydelig bedre mot kulde enn et tolags vindu. Derfor er det særlig mye å energi å spare i det nordiske klimaet.
-                  </p>
-                </>
-              ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Dersom vinduene er dårlige og ikke lar seg reparere, vil det ofte lønne seg å bytte dem ut. Nye vinduer med god isolasjon kan gi lavere strømforbruk og bedre inneklima – spesielt i kombinasjon med god tetting rundt vindusåpningen.
-                  </p>
-                  <p style={{ marginBottom: '16px', position: 'relative' }}>
-                    Velg vinduer med lav <span 
-                      style={{ 
-                        textDecoration: 'underline', 
-                        textDecorationStyle: 'dotted', 
-                        textUnderlineOffset: '4px',
-                        cursor: 'pointer',
-                        position: 'relative'
-                      }}
-                      onMouseEnter={() => setHoveredWord('U-verdi')}
-                      onMouseLeave={() => setHoveredWord(null)}
-                    >
-                      U-verdi
-                      {hoveredWord === 'U-verdi' && (
-                        <div 
-                          onMouseEnter={() => setHoveredWord('U-verdi')}
-                          onMouseLeave={() => setHoveredWord(null)}
-                          style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: '0',
-                            width: '280px',
-                            backgroundColor: '#D1F9FF',
-                            padding: '12px',
-                            marginTop: '0',
-                            zIndex: 1000
-                          }}>
-                          <h4 style={{
-                            fontFamily: 'Oslo Sans',
-                            fontWeight: 700,
-                            fontStyle: 'normal',
-                            fontSize: '16px',
-                            lineHeight: '24px',
-                            letterSpacing: '-0.2px',
-                            color: '#000000',
-                            margin: '0 0 8px 0'
-                          }}>
-                            Ordforklaring
-                          </h4>
-                          <p style={{
-                            fontFamily: 'Oslo Sans',
-                            fontWeight: 300,
-                            fontSize: '14px',
-                            lineHeight: '22px',
-                            letterSpacing: '0px',
-                            color: '#000000',
-                            margin: 0
-                          }}>
-                            U-verdien sier hvor godt vinduet isolerer. Jo lavere tall, jo mindre varme slipper ut – og jo bedre er vinduet for energibruken. Les mer om U-verdi <a 
-                              href="https://www.dibk.no/regelverk/byggteknisk-forskrift-tek17/14/14-2" 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              style={{ 
-                                color: '#000000', 
-                                textDecoration: 'underline',
-                                fontFamily: 'Oslo Sans',
-                                fontWeight: 300,
-                                fontSize: '14px'
-                              }}
-                            >her</a>.
-                          </p>
-                        </div>
-                      )}
-                    </span>. Et trelags vindu isolerer betydelig bedre mot kulde enn et tolags vindu. Derfor er det særlig mye å energi å spare i det nordiske klimaet.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Hvis flere boliger i rekken har like vinduer, kan det være smart å samarbeide for å bevare helheten og oppnå bedre pris.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p style={{ marginTop: 0, marginBottom: '16px' }}>
-                    Dersom vinduene er dårlige og ikke lar seg reparere, vil det ofte lønne seg å bytte dem ut. Nye vinduer med god isolasjon kan gi lavere strømforbruk og bedre inneklima – spesielt i kombinasjon med god tetting rundt vindusåpningen.
-                  </p>
-                  <p style={{ marginBottom: '16px', position: 'relative' }}>
-                    Velg vinduer med lav <span 
-                      style={{ 
-                        textDecoration: 'underline', 
-                        textDecorationStyle: 'dotted', 
-                        textUnderlineOffset: '4px',
-                        cursor: 'pointer',
-                        position: 'relative'
-                      }}
-                      onMouseEnter={() => setHoveredWord('U-verdi')}
-                      onMouseLeave={() => setHoveredWord(null)}
-                    >
-                      U-verdi
-                      {hoveredWord === 'U-verdi' && (
-                        <div 
-                          onMouseEnter={() => setHoveredWord('U-verdi')}
-                          onMouseLeave={() => setHoveredWord(null)}
-                          style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: '0',
-                            width: '280px',
-                            backgroundColor: '#D1F9FF',
-                            padding: '12px',
-                            marginTop: '0',
-                            zIndex: 1000
-                          }}>
-                          <h4 style={{
-                            fontFamily: 'Oslo Sans',
-                            fontWeight: 700,
-                            fontStyle: 'normal',
-                            fontSize: '16px',
-                            lineHeight: '24px',
-                            letterSpacing: '-0.2px',
-                            color: '#000000',
-                            margin: '0 0 8px 0'
-                          }}>
-                            Ordforklaring
-                          </h4>
-                          <p style={{
-                            fontFamily: 'Oslo Sans',
-                            fontWeight: 300,
-                            fontSize: '14px',
-                            lineHeight: '22px',
-                            letterSpacing: '0px',
-                            color: '#000000',
-                            margin: 0
-                          }}>
-                            U-verdien sier hvor godt vinduet isolerer. Jo lavere tall, jo mindre varme slipper ut – og jo bedre er vinduet for energibruken. Les mer om U-verdi <a 
-                              href="https://www.dibk.no/regelverk/byggteknisk-forskrift-tek17/14/14-2" 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              style={{ 
-                                color: '#000000', 
-                                textDecoration: 'underline',
-                                fontFamily: 'Oslo Sans',
-                                fontWeight: 300,
-                                fontSize: '14px'
-                              }}
-                            >her</a>.
-                          </p>
-                        </div>
-                      )}
-                    </span>. Et trelags vindu isolerer betydelig bedre mot kulde enn et tolags vindu. Derfor er det særlig mye å energi å spare i det nordiske klimaet.
-                  </p>
-                  <p style={{ marginBottom: 0 }}>
-                    Det er lurt å samarbeide med naboen for å finne de beste tekniske og visuelle løsningene.
-                  </p>
-                </>
-              )}
-            </div>
-          </foreignObject>
-        )}
-        
+
+{/* Tab buttons */}
+{displayedTabs.map((tab, index) => {
+  const slot = TAB_BUTTON_SLOTS[index] ?? TAB_BUTTON_SLOTS[TAB_BUTTON_SLOTS.length - 1];
+  const isActive = tab.id === activeTabId;
+  const isHovered = hoveredTabId === tab.id;
+  return (
+    <React.Fragment key={tab.id}>
+      <rect
+        x={slot.rectX}
+        y="4"
+        width={slot.width}
+        height="49"
+        fill="transparent"
+        style={{ cursor: 'pointer' }}
+        onClick={() => setActiveTabId(tab.id)}
+        onMouseEnter={() => setHoveredTabId(tab.id)}
+        onMouseLeave={() => setHoveredTabId(null)}
+      />
+      <text
+        x={slot.textX}
+        y="28.5"
+        fontFamily="Oslo Sans"
+        fontWeight="400"
+        fontStyle="normal"
+        fontSize="16"
+        lineHeight="24"
+        letterSpacing="-0.2"
+        fill={isActive ? '#000000' : isHovered ? '#1F42AA' : '#666666'}
+        dominantBaseline="middle"
+        style={{ cursor: 'pointer' }}
+        onClick={() => setActiveTabId(tab.id)}
+        onMouseEnter={() => setHoveredTabId(tab.id)}
+        onMouseLeave={() => setHoveredTabId(null)}
+      >
+        {tab.title}
+      </text>
+      <rect
+        x={slot.rectX}
+        y="49"
+        width={slot.width}
+        height="4"
+        fill={isActive ? '#6FE9FF' : '#1F42AA'}
+        opacity={isActive || isHovered ? 1 : 0}
+        style={{
+          transition: `opacity ${isActive || isHovered ? '0.3s' : '0.1s'} ease-in-out`
+        }}
+      />
+    </React.Fragment>
+  );
+})}
+
+{/* Horizontal line above content */}
+<rect
+  x="60"
+  y="53"
+  width="464"
+  height="1"
+  fill="#CCCCCC"
+/>
+
+{/* Tab content */}
+<foreignObject x="60" y="69" width="464" height="289">
+  <div
+    xmlns="http://www.w3.org/1999/xhtml"
+    style={{
+      fontFamily: 'Oslo Sans',
+      fontWeight: 300,
+      fontStyle: 'normal',
+      fontSize: '14px',
+      lineHeight: '22px',
+      letterSpacing: '0px',
+      color: '#000000',
+      height: '100%',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      paddingRight: '10px',
+      scrollbarWidth: 'thin',
+      scrollbarColor: '#CCCCCC #F5F5F5'
+    }}
+  >
+    <style>{`
+      div::-webkit-scrollbar {
+        width: 6px;
+      }
+      div::-webkit-scrollbar-track {
+        background: #F5F5F5;
+      }
+      div::-webkit-scrollbar-thumb {
+        background: #CCCCCC;
+        border-radius: 3px;
+      }
+      div::-webkit-scrollbar-thumb:hover {
+        background: #AAAAAA;
+      }
+    `}</style>
+    {(tabBody.length ? tabBody : introParagraphs).map((paragraph, index) => (
+      <p
+        key={`tab-body-${activeTab?.id ?? 'default'}-${index}`}
+        style={{ marginTop: index === 0 ? 0 : '16px', marginBottom: 0 }}
+      >
+        {paragraph}
+      </p>
+    ))}
+    {tabBuildingParagraphs.map((paragraph, index) => (
+      <p
+        key={`tab-building-${activeTab?.id ?? 'default'}-${index}`}
+        style={{ marginTop: '16px', marginBottom: 0 }}
+      >
+        {paragraph}
+      </p>
+    ))}
+  </div>
+</foreignObject>
+
         {/* Blue rectangles */}
         <rect
           x="565"
@@ -695,7 +515,7 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Mindre trekk
+          {benefits[0]?.title ?? defaultVinduerContent.benefits[0].title}
         </text>
         <rect
           x="565"
@@ -720,7 +540,7 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Redusert støy
+          {benefits[1]?.title ?? defaultVinduerContent.benefits[1].title}
         </text>
         <rect
           x="565"
@@ -746,7 +566,7 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Høyere boligverdi
+          {benefits[2]?.title ?? defaultVinduerContent.benefits[2].title}
         </text>
         <rect
           x="565"
@@ -786,7 +606,7 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Redusert energibehov
+          {benefits[3]?.title ?? defaultVinduerContent.benefits[3].title}
         </text>
         
         {/* Dark green box below the list */}
@@ -988,8 +808,8 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
           Les mer
         </text>
         
-        {/* Single link below "Les mer" */}
-        <a href="https://www.dibk.no/bygge-eller-endre/puss-opp-energismart/bytte-vinduer-velg-vinduer-som-gir-deg-lys-og-varme/#:~:text=Ved%20%C3%A5%20bytte%20til%20nye%20vinduer%20med%20god,halverer%20varmetapet%20sammenlignet%20med%20vanlige%20vinduer%20og%20d%C3%B8rer." target="_blank" rel="noopener noreferrer">
+        {/* Primary read more link */}
+        {primaryReadMore ? (
           <text
             x="170"
             y="480"
@@ -1002,10 +822,58 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
             textAnchor="middle"
             textDecoration="underline"
             style={{ cursor: 'pointer' }}
+            onClick={() => openExternalLink(primaryReadMore.url)}
           >
-            Direktoratet for byggkvalitet
+            {primaryReadMore.label}
           </text>
-        </a>
+        ) : (
+          <text
+            x="170"
+            y="480"
+            fontFamily="Oslo Sans"
+            fontWeight="300"
+            fontStyle="normal"
+            fontSize="14"
+            lineHeight="22"
+            fill="#FFFFFF"
+            textAnchor="middle"
+          >
+            Ingen lenker registrert
+          </text>
+        )}
+
+        {secondaryReadMoreLinks.length ? (
+          <foreignObject x="80" y="520" width="180" height={secondaryReadMoreLinks.length * 28}>
+            <div
+              xmlns="http://www.w3.org/1999/xhtml"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                alignItems: 'center'
+              }}
+            >
+              {secondaryReadMoreLinks.map((link) => (
+                <button
+                  key={link.id ?? link.url}
+                  onClick={() => openExternalLink(link.url)}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    color: '#FFFFFF',
+                    textDecoration: 'underline',
+                    fontFamily: 'Oslo Sans',
+                    fontWeight: 300,
+                    fontSize: '12px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {link.label}
+                </button>
+              ))}
+            </div>
+          </foreignObject>
+        ) : null}
         
         {/* Dynamic table with scrollbar */}
         {/* Top border */}
@@ -1018,7 +886,7 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
         />
         
         {/* Table container with scrolling via foreignObject */}
-        <foreignObject x="298" y="452" width="482" height={needsScroll ? "144" : `${stotteordninger.length * 36}`}>
+        <foreignObject x="298" y="452" width="482" height={needsScroll ? "144" : `${displayedStotteordninger.length * 36}`}>
           <div xmlns="http://www.w3.org/1999/xhtml" style={{
             width: '100%',
             height: '100%',
@@ -1042,8 +910,8 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
                 background: #AAAAAA;
               }
             `}</style>
-            <svg width="474" height={stotteordninger.length * 36} viewBox={`0 0 474 ${stotteordninger.length * 36}`}>
-              {stotteordninger.map((ordning, index) => {
+            <svg width="474" height={displayedStotteordninger.length * 36} viewBox={`0 0 474 ${displayedStotteordninger.length * 36}`}>
+              {displayedStotteordninger.map((ordning, index) => {
                 const yPosition = index * 36;
                 const textYPosition = yPosition + 18;
                 const boxYPosition = yPosition + 6.5;
@@ -1202,10 +1070,10 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
           <path fillRule="evenodd" clipRule="evenodd" d="M18.1 23.0539L16.5 24.7472L11 18.8207L16.5 13L18.1 14.6933L15.3 17.6566H28.4H30.6V19.9849V21.3961V25.5938V27.005V29.3333H28.4H18.8397V27.005H28.4V25.5938V21.3961V19.9849H15.2L18.1 23.0539Z" fill="white"/>
         </g>
         
-        {/* HTML Dropdown elements inside SVG with foreignObject */}
+
+        {/* Permit check accordion */}
         <foreignObject x="60" y="625" width="720" height="1000">
           <div xmlns="http://www.w3.org/1999/xhtml" style={{ width: '100%', height: '100%' }}>
-            {/* Permit Check Dropdown */}
             <div>
           <button
             onClick={() => setIsPermitOpen(!isPermitOpen)}
@@ -1262,81 +1130,38 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
               opacity: isPermitOpen ? 1 : 0,
               transition: `opacity ${isPermitOpen ? '0.4s' : '0.1s'} ease-in-out ${isPermitOpen ? '0.2s' : '0s'}, padding 0.6s ease-in-out`
             }}>
-              <p style={{ margin: 0 }}>
-                Mindre arbeider, som vedlikehold av eksisterende vinduer, er ikke søknadspliktig. Hvis arbeidene derimot endrer fasadens utseende, må du søke om tillatelse. Dette kan særlig gjelde utskifting av vinduer. Plan- og bygningsetaten gir veiledning om søknadsplikt og eventuelt om du må kontakte en fagperson (arkitekt, byggmester eller entreprenør) til å hjelpe deg.
-              </p>
-              
-              {/* Links section */}
-              <div style={{ marginTop: '16px' }}>
-                <a 
-                  href="#"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#2A2859',
-                    textDecoration: 'underline',
-                    marginBottom: '12px'
-                  }}
-                >
-                  Sjekk nærmere om tiltaket ditt er søknadsplikt her
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
-                    <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
-                  </svg>
-                </a>
-                
-                <a 
-                  href="#"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#2A2859',
-                    textDecoration: 'underline',
-                    marginBottom: '12px'
-                  }}
-                >
-                  Gratis veiledningstime hos Plan- og bygningsetaten for generell informasjon om søknadsplikt her
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
-                    <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
-                  </svg>
-                </a>
-                
-                <a 
-                  href="#"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#2A2859',
-                    textDecoration: 'underline',
-                    marginBottom: '12px'
-                  }}
-                >
-                  Kontakt Plan- og bygningsetaten for en konkret vurdering av søknadsplikt for ditt tiltak, mot gebyr, her
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
-                    <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
-                  </svg>
-                </a>
-                
+              {accordionIntroParagraph ? (
+                <p style={{ margin: 0 }}>
+                  {accordionIntroParagraph}
+                </p>
+              ) : null}
+              <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {accordionLinks.map((link) => (
+                  <a
+                    key={link.url}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      fontFamily: 'Oslo Sans',
+                      fontWeight: 300,
+                      fontSize: '14px',
+                      lineHeight: '22px',
+                      letterSpacing: '0px',
+                      color: '#2A2859',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    {link.label}
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
+                      <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
+                      <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
+                    </svg>
+                  </a>
+                ))}
               </div>
-              
-              {/* Rectangle with permit information */}
               <div style={{
                 marginTop: '16px',
                 padding: '16px',
@@ -1351,224 +1176,37 @@ export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = ({ onBack, 
                   color: '#FFFFFF',
                   margin: '0 0 12px 0'
                 }}>
-                  Søknadsplikt er ikke en stopper, men en støtte
+                  {accordionItem?.title ?? defaultVinduerContent.accordion[0].title}
                 </h3>
-                <p style={{
-                  fontFamily: 'Oslo Sans',
-                  fontWeight: 300,
-                  fontSize: '14px',
-                  lineHeight: '22px',
-                  letterSpacing: '0px',
-                  color: '#FFFFFF',
-                  margin: 0,
-                  position: 'relative'
-                }}>
-                  Er tiltaket ditt <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
+                {accordionDetailParagraphs.map((paragraph, index) => (
+                  <p
+                    key={`accordion-body-${index}`}
+                    style={{
+                      fontFamily: 'Oslo Sans',
+                      fontWeight: 300,
+                      fontSize: '14px',
+                      lineHeight: '22px',
+                      letterSpacing: '0px',
+                      color: '#FFFFFF',
+                      margin: index === 0 ? 0 : '16px 0 0 0',
                       position: 'relative'
                     }}
-                    onMouseEnter={() => setHoveredWord('søknadspliktig')}
-                    onMouseLeave={() => setHoveredWord(null)}
                   >
-                    søknadspliktig
-                    {hoveredWord === 'søknadspliktig' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('søknadspliktig')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Søknadsplikt betyr at du må ha tillatelse fra Plan- og bygningsetaten før et tiltak – altså fysiske endringer på bygninger eller eiendom – kan settes i verk. Les mer om søknadsplikt <a 
-                            href="https://www.dibk.no/regelverk/sak/2/2/innledning" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span>, betyr ikke det at du får avslag. Tvert imot! Søknadsplikten skal sikre at arbeidet planlegges og gjennomføres med god kvalitet – både i papirene og på bygget. Målet er at du som <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={() => setHoveredWord('tiltakshaver')}
-                    onMouseLeave={() => setHoveredWord(null)}
-                  >
-                    tiltakshaver
-                    {hoveredWord === 'tiltakshaver' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('tiltakshaver')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Tiltakshaver er den personen eller virksomheten som utfører eller får utført tiltak – altså fysiske endringer på bygninger eller eiendom – som krever søknad og tillatelse etter plan- og bygningsloven. Les mer om tiltakshavers ansvar <a 
-                            href="https://www.dibk.no/regelverk/sak/3/12/12-1" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span> får det resultatet du ønsker deg, på en trygg og effektiv måte. I mer komplekse saker stilles det krav til <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={() => setHoveredWord('ansvarlige foretak')}
-                    onMouseLeave={() => setHoveredWord(null)}
-                  >
-                    ansvarlige foretak
-                    {hoveredWord === 'ansvarlige foretak' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('ansvarlige foretak')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Et ansvarlig foretak er et firma (for eksempel en arkitekt, byggmester eller entreprenør) som har fagkunnskap og tar ansvar for bestemte deler av et byggeprosjekt. Kommunen stiller krav til at slike firmaer må ha riktig kompetanse og erfaring.
-                          Les mer om ansvarsrett <a 
-                            href="https://www.dibk.no/regelverk/sak/3/12/innledning" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>, og hvilke tiltak som krever ansvarlig foretak <a 
-                            href="https://lovdata.no/dokument/NL/lov/2008-06-27-71/KAPITTEL_4-1#%C2%A720-3" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span>, nettopp for å sikre at de som gjør jobben har riktig kompetanse, og leverer løsninger som faktisk fungerer. Søknadsplikten hjelper deg altså i å lykkes med tiltaket ditt.
-                </p>
+                    {renderParagraphWithGlossary({
+                      paragraph,
+                      glossary: glossaryEntries,
+                      hoveredTerm: hoveredGlossaryTerm,
+                      setHoveredTerm: setHoveredGlossaryTerm
+                    })}
+                  </p>
+                ))}
               </div>
                 </div>
               </div>
             </div>
           </div>
         </foreignObject>
+
         
         {/* Source tooltip - moved to end for proper z-order */}
         {showSourceTooltip && (

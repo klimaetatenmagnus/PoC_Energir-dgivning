@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "id": "solenergi",
+  "title": "Solenergi",
+  "summary": "Produser din egen strøm med solceller eller solfangere og få bedre kontroll på energibruken.",
+  "introParagraphs": [
+    "Solcelleanlegg er et effektivt og stadig mer lønnsomt tiltak for boligeiere i Oslo. Du kan produsere egen strøm, bruke mindre fra strømnettet og samtidig bidra til lavere utslipp.",
+    "Har du overskuddsproduksjon, kan du få lavere nettleie ved å registrere deg som plusskunde. Sjekk Solkartet for å se hvor mye sol taket ditt får gjennom året og hvor godt egnet huset er."
+  ],
+  "buildingTypeParagraphs": {
+    "default": [
+      "Blokker og større leilighetsbygg har ofte store takflater som fanger opp mye sol. Fasader og tak med markerte arkitektoniske detaljer må vurderes varsomt, og solcellefelt bør legges slik at de ikke bryter med uttrykket mot gaten. Planlegg tiltaket som et felles prosjekt i borettslaget eller sameiet for å sikre helhetlige løsninger."
+    ],
+    "enebolig": [
+      "Eneboliger har ofte gode forhold for solenergi, særlig når takflatene vender mot sør, øst eller vest. Tilpass anlegget til husets uttrykk – eventuelt ved å bruke garasje, uthus eller tilbygg – dersom du ønsker et mer diskret resultat."
+    ],
+    "rekkehus": [
+      "I rekkehus og tomannsboliger deler du gjerne takflater med naboen. Samordn planene slik at dere får et helhetlig uttrykk og enklere behandling av byggesøknad."
+    ],
+    "tomannsbolig": [
+      "I rekkehus og tomannsboliger deler du gjerne takflater med naboen. Samordn planene slik at dere får et helhetlig uttrykk og enklere behandling av byggesøknad."
+    ]
+  },
+  "benefits": [
+    {
+      "id": "hoyere-boligverdi",
+      "title": "Høyere boligverdi",
+      "description": "Egen strømpoduksjon og bedre energimerke gjør boligen mer attraktiv."
+    },
+    {
+      "id": "bedre-stromstyring",
+      "title": "Bedre strømstyring",
+      "description": "Du ser tydelig når du produserer og bruker strøm, og kan styre forbruket smartere."
+    },
+    {
+      "id": "lavere-stromregning",
+      "title": "Lavere strømregning",
+      "description": "Strømmen du produserer selv erstatter dyrere energi fra nettet."
+    },
+    {
+      "id": "egenprodusert-strom",
+      "title": "Egenprodusert strøm",
+      "description": "Overskudd kan selges tilbake til nettet eller brukes til å lade elbil og varmelager."
+    }
+  ],
+  "readMore": [
+    {
+      "id": "enova-solcelle",
+      "label": "Enova – solcelleanlegg",
+      "url": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/solcelleanlegg"
+    },
+    {
+      "id": "nve-plusskunde",
+      "label": "NVE – plusskundeordningen",
+      "url": "https://www.nve.no/reguleringsmyndigheten/regulering/nettvirksomhet/nettleie/tariffer-for-produksjon/plusskunder/"
+    },
+    {
+      "id": "pbe-solkart",
+      "label": "Plan- og bygningsetaten – Solkartet",
+      "url": "https://od2.pbe.oslo.kommune.no/solkart/"
+    }
+  ],
+  "accordion": [
+    {
+      "id": "soknadsplikt",
+      "title": "Søknadsplikt og veiledning",
+      "body": [
+        "Solcelle- og solfangeranlegg er vanligvis søknadspliktige fordi de regnes som tekniske installasjoner og fasadeendringer. Kontakt en fagperson som kan søke Plan- og bygningsetaten på dine vegne.",
+        "I noen tilfeller kan eneboliger få unntak dersom tiltaket regnes som «enkel installasjon» og ikke endrer fasadeuttrykket. Terskelen er lavere for bevaringsverdige bygg."
+      ],
+      "links": [
+        {
+          "id": "sak10-veiledning",
+          "label": "Veiledning til SAK10 § 4-1 bokstav e nr. 4",
+          "url": "https://www.dibk.no/regelverk/sak/2/4/4-1"
+        },
+        {
+          "id": "pbe-solcelle",
+          "label": "Sjekk om tiltaket er søknadspliktig",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/skal-du-bygge-rive-eller-endre/ma-du-sende-byggesoknad/solcelle-eller-solfangeranlegg/"
+        },
+        {
+          "id": "pbe-veiledning",
+          "label": "Få veiledning fra Plan- og bygningsetaten",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/"
+        }
+      ]
+    }
+  ],
+  "grants": [
+    "klimaoslo-solenergitilskudd",
+    "enova-solcelleanlegg"
+  ],
+  "supportTags": [
+    "solenergi",
+    "solcelle",
+    "plusskunde"
+  ],
+  "audiences": [
+    "standard",
+    "gulliste"
+  ],
+  "metadata": {
+    "status": "published",
+    "updatedBy": "codex",
+    "updatedAt": "2025-11-15T12:15:00Z",
+    "changeSummary": "Lagt til gul-listevariant og oppdatert grants for solenergi-innholdet."
+  },
+  "variants": [
+    {
+      "audience": "gulliste",
+      "introParagraphs": [
+        "Solcelleanlegg kan være et effektivt og lønnsomt tiltak – også for deg som bor i et bygg med verneverdi. Med riktig plassering og god tilpasning er det fullt mulig å produsere egen strøm, samtidig som du tar vare på bygningens uttrykk.",
+        "Har du overskuddsproduksjon, kan du få lavere nettleie ved å registrere deg som plusskunde hos nettselskapet.",
+        "I Oslos solkart kan du sjekke hvor mye sol taket ditt får gjennom året – og vurdere om tiltaket er aktuelt for din bolig."
+      ],
+      "buildingTypeParagraphs": {
+        "enebolig": [
+          "Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. På hus med markerte takdetaljer eller fremtredende arkitektonisk uttrykk er det ofte bedre å plassere anlegget på garasje, uthus eller tilbygg for å bevare fasaden mot gata.",
+          "Et møte med Byantikvaren kan hjelpe deg å finne løsninger som både ivaretar bygget og gir ønsket energigevinst."
+        ],
+        "rekkehus": [
+          "Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi, men i flermannsboliger bør anlegget planlegges i dialog med naboen. Mange hus har symmetrisk utforming eller felles tak, og ved å samarbeide får dere et helhetlig uttrykk som enklere får byggetillatelse.",
+          "Bakside, bod eller tilbygg egner seg ofte best for diskrete løsninger med lav visuell påvirkning. Et møte med Byantikvaren kan hjelpe dere å finne gode alternativer."
+        ],
+        "tomannsbolig": [
+          "Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi, men i flermannsboliger bør anlegget planlegges i dialog med naboen. Mange hus har symmetrisk utforming eller felles tak, og ved å samarbeide får dere et helhetlig uttrykk som enklere får byggetillatelse.",
+          "Bakside, bod eller tilbygg egner seg ofte best for diskrete løsninger med lav visuell påvirkning. Et møte med Byantikvaren kan hjelpe dere å finne gode alternativer."
+        ],
+        "blokk": [
+          "Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. I eldre blokker er flate tak og bakgårdsfasader ofte best egnet, mens fasader og tak med tydelige arkitektoniske detaljer som regel bør bevares.",
+          "Når tiltak planlegges som et felles prosjekt i borettslaget eller sameiet, kan dere få til løsninger som både gir energigevinst og ivaretar byggets uttrykk. Et møte med Byantikvaren kan hjelpe dere å finne gode løsninger."
+        ],
+        "default": [
+          "Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. I eldre blokker er flate tak og bakgårdsfasader ofte best egnet, mens fasader og tak med arkitektoniske detaljer bør bevares.",
+          "Planlegg tiltaket som et felles prosjekt slik at dere både får energigevinst og ivaretar byggets uttrykk. Byantikvaren kan bidra med råd dersom dere er usikre."
+        ]
+      },
+      "grants": [
+        "klimaoslo-solenergitilskudd",
+        "enova-solcelleanlegg",
+        "byantikvaren-istandsetting"
+      ],
+      "supportTags": [
+        "solenergi",
+        "gulliste",
+        "vern"
+      ]
+    }
+  ]
+}

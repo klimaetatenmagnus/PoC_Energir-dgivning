@@ -1,22 +1,180 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   getOverskriftColor,
   openExternalLink,
-  TiltakComponentProps,
-  useStotteordninger
+  TiltakComponentProps
 } from './shared';
+import { useTiltakContent } from '../../../../hooks/contentHooks';
+import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
+import type { TiltakContent } from '../../../../../content/tiltak/schema';
+import type { Stotteordning } from '../../../../services/stotteordning-service';
+import type { ContentAudience } from '../../../../../content/schema-helpers';
+import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
+
+type SolenergiComponentProps = TiltakComponentProps & { audience?: ContentAudience };
+
+type SolenergiContent = {
+  title: string;
+  introParagraphs: string[];
+  buildingTypeParagraphs: Record<string, string[]>;
+  benefits: { title: string; description: string }[];
+  readMore: { label: string; url: string }[];
+  grants: string[];
+};
+
+const defaultSolenergiContent: SolenergiContent = {
+  title: 'Solenergi',
+  introParagraphs: [
+    'Solcelleanlegg er et effektivt og stadig mer lønnsomt tiltak for boligeiere i Oslo. Du kan produsere egen strøm og bruke mindre fra strømnettet – samtidig som du bidrar til lavere utslipp.',
+    'Har du overskuddsproduksjon, kan du få lavere nettleie ved å registrere deg som plusskunde hos nettselskapet. I Oslos solkart kan du sjekke hvor mye sol taket ditt får gjennom året og vurdere om tiltaket er aktuelt.'
+  ],
+  buildingTypeParagraphs: {
+    default: [
+      'Blokker har ofte store flater som fanger opp mye sol. Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. Fasader og tak med markerte detaljer bør som regel ikke endres, og det kan være lurt å plassere anlegget slik at det ikke er synlig fra gaten.'
+    ],
+    enebolig: [
+      'Eneboliger har ofte gode forhold for solenergi, særlig om takflatene vender mot sør, øst eller vest. Anlegget bør tilpasses husets uttrykk – alternativt kan garasje, uthus eller tilbygg brukes for å oppnå et mer diskret uttrykk.'
+    ],
+    rekkehus: [
+      'Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. I flermannsboliger bør anlegget planlegges i dialog med naboen. Mange av disse husene har symmetrisk utforming eller felles tak, og ved å samarbeide kan dere finne løsninger som både ser helhetlige ut og enklere får byggetillatelse.'
+    ],
+    tomannsbolig: [
+      'Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. I flermannsboliger bør anlegget planlegges i dialog med naboen for å sikre et helhetlig uttrykk og lettere behandling av søknaden.'
+    ]
+  },
+  benefits: [
+    {
+      title: 'Høyere boligverdi',
+      description: 'Egen strømproduksjon og bedre energimerke gjør boligen mer attraktiv.'
+    },
+    {
+      title: 'Bedre strømstyring',
+      description: 'Du ser når du produserer og bruker strøm og kan styre forbruket smartere.'
+    },
+    {
+      title: 'Lavere strømregning',
+      description: 'Strømmen du produserer selv erstatter dyrere energi fra nettet.'
+    },
+    {
+      title: 'Egenprodusert strøm',
+      description: 'Overskudd kan selges tilbake til nettet eller brukes lokalt.'
+    }
+  ],
+  readMore: [
+    { label: 'Enova', url: 'https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/solcelleanlegg' },
+    {
+      label: 'Plusskundeordning',
+      url: 'https://www.nve.no/reguleringsmyndigheten/regulering/nettvirksomhet/nettleie/tariffer-for-produksjon/plusskunder/'
+    },
+    { label: 'Solkartet', url: 'https://od2.pbe.oslo.kommune.no/solkart/' }
+  ],
+  grants: [
+    'klimaoslo-solenergitilskudd',
+    'enova-solcelleanlegg'
+  ]
+};
+
+function mapTiltakContentToSolenergi(content?: TiltakContent): SolenergiContent | null {
+  if (!content) {
+    return null;
+  }
+
+  const buildingTypeParagraphs: Record<string, string[]> = {};
+  for (const [key, value] of Object.entries(content.buildingTypeParagraphs)) {
+    if (Array.isArray(value)) {
+      buildingTypeParagraphs[key] = value;
+    } else if (value) {
+      buildingTypeParagraphs[key] = [String(value)];
+    } else {
+      buildingTypeParagraphs[key] = [];
+    }
+  }
+
+  return {
+    title: content.title,
+    introParagraphs: content.introParagraphs,
+    buildingTypeParagraphs,
+    benefits: content.benefits.map(({ title, description }) => ({
+      title,
+      description: description ?? ''
+    })),
+    readMore: content.readMore.map(({ label, url }) => ({ label, url })),
+    grants: content.grants
+  };
+}
 
 type SolenergiProps = TiltakComponentProps;
 
-export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType, buildingData }) => {
+const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
+  onBack,
+  buildingType,
+  buildingData,
+  audience = 'standard'
+}) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
-  const { stotteordninger } = useStotteordninger({
-    tiltak: 'solenergi',
+  const { data: tiltakContent } = useTiltakContent('solenergi');
+  const resolvedTiltakContent = useMemo(
+    () => applyTiltakVariant(tiltakContent, audience),
+    [tiltakContent, audience]
+  );
+  const mappedContent = useMemo(
+    () => mapTiltakContentToSolenergi(resolvedTiltakContent),
+    [resolvedTiltakContent]
+  );
+  const content = mappedContent ?? defaultSolenergiContent;
+
+  const introParagraphs = content.introParagraphs.length
+    ? content.introParagraphs
+    : defaultSolenergiContent.introParagraphs;
+
+  const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
+  const buildingParagraphs =
+    content.buildingTypeParagraphs[buildingTypeKey] ??
+    content.buildingTypeParagraphs.default ??
+    defaultSolenergiContent.buildingTypeParagraphs.default;
+
+  const benefitSlots = [0, 1, 2, 3] as const;
+  const benefits = benefitSlots.map(
+    (slot) => content.benefits[slot] ?? defaultSolenergiContent.benefits[slot]
+  );
+  const readMoreLinks = (content.readMore.length ? content.readMore : defaultSolenergiContent.readMore).slice(
+    0,
+    3
+  );
+
+  const grantIds = content.grants.length ? content.grants : defaultSolenergiContent.grants;
+  const {
+    stotteordninger,
+    isLoading: stotteordningerLoading,
+    intendedSource
+  } = useGrantAwareStotteordninger({
+    grantIds,
+    legacyTiltakSlug: 'solenergi',
     buildingType
   });
+
+  const displayedStotteordninger: Stotteordning[] = stotteordninger.length
+    ? stotteordninger
+    : intendedSource === 'grants' && stotteordningerLoading
+      ? [
+          {
+            ordning: 'Henter støtteordninger …',
+            lenke: null,
+            belop: null,
+            overskrift: null
+          }
+        ]
+      : [
+          {
+            ordning: 'Ingen registrerte støtteordninger ennå',
+            lenke: null,
+            belop: null,
+            overskrift: null
+          }
+        ];
 
   // Håndter tilbake-knapp med animasjon
   const handleBack = () => {
@@ -26,8 +184,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType, buil
     }
   };
 
-  // Støtteordninger hentes nå via useEffect
-  const needsScroll = stotteordninger.length > 4;
+  const needsScroll = displayedStotteordninger.length > 4;
   const normalizedBuildingType = buildingType?.toLowerCase().trim();
   const permitScrollTranslation = normalizedBuildingType === 'enebolig' ? '-540px' : '-465px';
 
@@ -66,7 +223,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType, buil
           fill="#2A2859"
           dominantBaseline="hanging"
         >
-          Solenergi
+          {content.title}
         </text>
         
         {/* Main text content with scroll if needed */}
@@ -102,45 +259,23 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType, buil
                 background: #AAAAAA;
               }
             `}</style>
-            <p style={{ 
-              marginBottom: '16px',
-              fontFamily: 'Oslo Sans',
-              fontWeight: 300,
-              fontSize: '14px',
-              lineHeight: '22px',
-              letterSpacing: '0px',
-              verticalAlign: 'middle'
-            }}>
-              Solcelleanlegg er et effektivt og stadig mer lønnsomt tiltak for boligeiere i Oslo. Du kan produsere egen strøm og bruke mindre fra strømnettet – samtidig som du bidrar til lavere utslipp.
-            </p>
-            <p style={{ marginBottom: '16px' }}>
-              Har du overskuddsproduksjon, kan du få lavere nettleie ved å registrere deg som plusskunde hos nettselskapet.
-            </p>
-            <p style={{ marginBottom: '16px' }}>
-              I <a 
-                href="https://od2.pbe.oslo.kommune.no/solkart/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{ 
-                  color: '#000000', 
-                  textDecoration: 'underline'
-                }}
-              >Oslos solkart</a> kan du sjekke hvor mye sol taket ditt får gjennom året – og vurdere om tiltaket er aktuelt for deg.
-            </p>
+            {introParagraphs.map((paragraph, index) => (
+              <p
+                key={`intro-${index}`}
+                style={{ marginBottom: index === introParagraphs.length - 1 && buildingParagraphs.length === 0 ? '0' : '16px' }}
+              >
+                {paragraph}
+              </p>
+            ))}
 
-            {buildingType && buildingType.toLowerCase() === 'enebolig' ? (
-              <p style={{ marginBottom: '20px' }}>
-                Eneboliger har ofte gode forhold for solenergi, særlig om takflatene vender mot sør, øst eller vest. Anlegget bør tilpasses husets uttrykk - alternativt kan garasje, uthus eller tilbygg brukes for å oppnå et mer diskret uttrykk.
+            {buildingParagraphs.map((paragraph, index) => (
+              <p
+                key={`building-${index}`}
+                style={{ marginBottom: index === buildingParagraphs.length - 1 ? '20px' : '16px' }}
+              >
+                {paragraph}
               </p>
-            ) : buildingType && (buildingType.toLowerCase() === 'rekkehus' || buildingType.toLowerCase() === 'tomannsbolig') ? (
-              <p style={{ marginBottom: '20px' }}>
-                Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. I flermannsboliger burde anlegget planlegges i dialog med naboen. Mange av disse husene har symmetrisk utforming eller felles tak, og ved å samarbeide kan dere finne løsninger som både ser helhetlige ut og som enklere får byggetillatelse.
-              </p>
-            ) : (
-              <p style={{ marginBottom: '20px' }}>
-                Blokker har ofte store flater som fanger opp mye sol. Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. Fasader og tak med arkitektoniske markerte deler bør som regel ikke endres, og det kan være lurt å plassere anlegget slik at det ikke er synlig fra gaten. Tiltaket må planlegges som et felles prosjekt i borettslaget eller sameiet, og dere kan få til gode løsninger som både gir energigevinst og tar vare på byggets uttrykk.
-              </p>
-            )}
+            ))}
           </div>
         </foreignObject>
         
@@ -169,7 +304,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType, buil
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Høyere boligverdi
+          {benefits[0]?.title ?? defaultSolenergiContent.benefits[0].title}
         </text>
         <rect
           x="565"
@@ -196,7 +331,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType, buil
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Bedre strømstyring
+          {benefits[1]?.title ?? defaultSolenergiContent.benefits[1].title}
         </text>
         <rect
           x="565"
@@ -222,7 +357,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType, buil
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Lavere strømregning
+          {benefits[2]?.title ?? defaultSolenergiContent.benefits[2].title}
         </text>
         <rect
           x="565"
@@ -247,7 +382,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType, buil
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          Egenprodusert strøm
+          {benefits[3]?.title ?? defaultSolenergiContent.benefits[3].title}
         </text>
         
         {/* Dark green box below the list */}
@@ -379,38 +514,25 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType, buil
         </text>
         
         {/* Links below "Les mer" */}
-        <text
-          x="170"
-          y="496"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-          style={{ cursor: 'pointer' }}
-          onClick={() => openExternalLink('https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/solcelleanlegg')}
-        >
-          Enova
-        </text>
-        <text
-          x="170"
-          y="518"
-          fontFamily="Oslo Sans"
-          fontWeight="300"
-          fontStyle="normal"
-          fontSize="14"
-          lineHeight="22"
-          fill="#FFFFFF"
-          textAnchor="middle"
-          textDecoration="underline"
-          style={{ cursor: 'pointer' }}
-          onClick={() => openExternalLink('https://www.nve.no/reguleringsmyndigheten/regulering/nettvirksomhet/nettleie/tariffer-for-produksjon/plusskunder/')}
-        >
-          Plusskundeordning
-        </text>
+        {readMoreLinks.map((link, index) => (
+          <text
+            key={`read-more-${link.label}-${index}`}
+            x="170"
+            y={496 + index * 22}
+            fontFamily="Oslo Sans"
+            fontWeight="300"
+            fontStyle="normal"
+            fontSize="14"
+            lineHeight="22"
+            fill="#FFFFFF"
+            textAnchor="middle"
+            textDecoration="underline"
+            style={{ cursor: 'pointer' }}
+            onClick={() => openExternalLink(link.url)}
+          >
+            {link.label}
+          </text>
+        ))}
         
         {/* Dynamic table with scrollbar */}
         {/* Top border */}
@@ -423,7 +545,7 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType, buil
         />
         
         {/* Table container with scrolling via foreignObject */}
-        <foreignObject x="298" y="452" width="482" height={needsScroll ? "144" : `${stotteordninger.length * 36}`}>
+        <foreignObject x="298" y="452" width="482" height={needsScroll ? "144" : `${displayedStotteordninger.length * 36}`}>
           <div xmlns="http://www.w3.org/1999/xhtml" style={{
             width: '100%',
             height: '100%',
@@ -447,8 +569,8 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType, buil
                 background: #AAAAAA;
               }
             `}</style>
-            <svg width="474" height={stotteordninger.length * 36} viewBox={`0 0 474 ${stotteordninger.length * 36}`}>
-              {stotteordninger.map((ordning, index) => {
+            <svg width="474" height={displayedStotteordninger.length * 36} viewBox={`0 0 474 ${displayedStotteordninger.length * 36}`}>
+              {displayedStotteordninger.map((ordning, index) => {
                 const yPosition = index * 36;
                 const textYPosition = yPosition + 18;
                 const boxYPosition = yPosition + 6.5;
@@ -1078,3 +1200,9 @@ export const Solenergi: React.FC<SolenergiProps> = ({ onBack, buildingType, buil
     </div>
   );
 };
+
+export const Solenergi: React.FC<SolenergiProps> = (props) => (
+  <SolenergiContentComponent {...props} audience="standard" />
+);
+
+export { SolenergiContentComponent };
