@@ -74,7 +74,7 @@ function renderGlossaryTooltip({
   entry,
   hoveredTerm,
   setHoveredTerm
-}: GlossaryTooltipParams): JSX.Element {
+}: GlossaryTooltipParams): React.ReactElement {
   const termKey = entry.term.toLowerCase();
   const isHovered = hoveredTerm === termKey;
 
