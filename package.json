@@ -16,6 +16,8 @@
     "build:backend": "node scripts/build-backend.mjs",
     "build:prod": "npm run build && npm run build:backend",
     "preview": "vite preview",
+    "content:validate": "node --import tsx scripts/validate-content.ts",
+    "content:publish": "node --import tsx scripts/content-publish.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "verify": "npm run typecheck && npm run lint && npm run test:contract && npm run test:smoke",
