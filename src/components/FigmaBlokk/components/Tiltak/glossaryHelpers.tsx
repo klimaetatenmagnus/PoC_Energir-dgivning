@@ -40,13 +40,13 @@ export function renderParagraphWithGlossary({
       parts.forEach((part, partIndex) => {
         if (partIndex % 2 === 1) {
           nextNodes.push(
-            <GlossaryTooltip
-              key={`${entry.term}-${entryIndex}-${partIndex}`}
-              term={part}
-              entry={entry}
-              hoveredTerm={hoveredTerm}
-              setHoveredTerm={setHoveredTerm}
-            />
+            renderGlossaryTooltip({
+              key: `${entry.term}-${entryIndex}-${partIndex}`,
+              term: part,
+              entry,
+              hoveredTerm,
+              setHoveredTerm
+            })
           );
         } else {
           nextNodes.push(part);
@@ -60,24 +60,27 @@ export function renderParagraphWithGlossary({
   return nodes;
 }
 
-type GlossaryTooltipProps = {
+type GlossaryTooltipParams = {
+  key: string;
   term: string;
   entry: TiltakGlossaryEntry;
   hoveredTerm: string | null;
   setHoveredTerm: (term: string | null) => void;
 };
 
-const GlossaryTooltip: React.FC<GlossaryTooltipProps> = ({
+function renderGlossaryTooltip({
+  key,
   term,
   entry,
   hoveredTerm,
   setHoveredTerm
-}) => {
+}: GlossaryTooltipParams): JSX.Element {
   const termKey = entry.term.toLowerCase();
   const isHovered = hoveredTerm === termKey;
 
   return (
     <span
+      key={key}
       style={{
         textDecoration: 'underline',
         textDecorationStyle: 'dotted',
@@ -166,7 +169,7 @@ const GlossaryTooltip: React.FC<GlossaryTooltipProps> = ({
       )}
     </span>
   );
-};
+}
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\\\$&');
