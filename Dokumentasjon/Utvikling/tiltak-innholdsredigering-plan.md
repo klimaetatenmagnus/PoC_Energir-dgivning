@@ -68,7 +68,7 @@
   - ✅ (2025-11-15) Alle gjenværende tiltaks-komponenter – inkludert `UtskiftningAvVindu` og samtlige `GulListeTiltak/*`-wrappere – henter nå innhold fra `content/tiltak/*.json` via `useTiltakContent`/`applyTiltakVariant`, slik at legacy-API-et kun brukes som nød-fallback i `useGrantAwareStotteordninger`.
 
 ## 5. Admin-grensesnitt (MVP-krav)
-- **Autentisering:** Sikres med IAP og Google Workspace-gruppen `energinokkelredaktor@klimaoslo.no`. Andre brukere møter 403.
+- **Autentisering:** Sikres med IAP og Google Workspace-gruppen `energinokkel-redaktor@klimaoslo.no`. Andre brukere møter 403.
 - **Funksjoner:** 
   - Dashbord med miljøvelger (staging/prod) og to faner: Tiltak og Tilskudd. Begge støtter søk, filtrering og statusvisning (kladd/publisert/arkivert).
   - Skjemavisning med sanntidsforhåndsvisning av tiltakskort/tilskuddskort. Felter har constraints (påkrevd, URL, dato, beløp) og relasjonsvalg (tiltak ↔ tilskudd).
@@ -90,13 +90,13 @@
 2. **Serverless NEGs:** Opprett `staging-admin-neg` og `prod-admin-neg` (type Cloud Run). Disse peker til respektive tjenester og brukes videre i load balanceren.
 3. **Backend services:** Lag `staging-admin-backend` og `prod-admin-backend` (HTTP, serverless). Koble de nye NEGs inn, aktiver logging og definer en health check (`/health`).
 4. **URL map/routing:** I eksisterende HTTPS load balancer legges path rules (`/admin`, `/admin/*`). Trafikk mot staging-host peker til `staging-admin-backend`, prod-host mot `prod-admin-backend`.
-5. **IAP:** Aktiver IAP på begge backendene ved å bruke eksisterende OAuth-klient (`Energinokkelen-IAP`). Legg til `group:energinokkelredaktor@klimaoslo.no` som `roles/iap.httpsResourceAccessor`. Test innlogging i staging før prod.
+5. **IAP:** Aktiver IAP på begge backendene ved å bruke eksisterende OAuth-klient (`Energinokkelen-IAP`). Legg til `group:energinokkel-redaktor@klimaoslo.no` som `roles/iap.httpsResourceAccessor`. Test innlogging i staging før prod.
 6. **IAM-rydding:** Når IAP fungerer, fjern `allUsers`/`allAuthenticatedUsers` fra begge Cloud Run-tjenestene. Servicekontoen får kun nødvendige roller (Storage Object Admin på content-bøttene, Secret Manager accessor).
 7. **Observability:** Eksponer `/metrics` fra admin-API (prometheus-format) og legg tjenestene inn i eksisterende dashboard. Publiseringshendelser logges til Cloud Logging + Slack for revisjon.
 
 ## 8. Tilgang, sikkerhet og logging
 - Service account `content-admin@energiverktoy-poc-1234.iam.gserviceaccount.com` brukes av admin-API og begrenses til Storage + Secret Manager.
-- IAP er den eneste autentiseringsmekanismen foran admin-pathene. Workspace-gruppen `energinokkelredaktor@klimaoslo.no` håndterer hvem som kan logge inn.
+- IAP er den eneste autentiseringsmekanismen foran admin-pathene. Workspace-gruppen `energinokkel-redaktor@klimaoslo.no` håndterer hvem som kan logge inn.
 - Audit: Admin-API legger `updatedBy`, `updatedAt`, `changeSummary` inn i metadatafeltet på hvert JSON-objekt. Cloud Logging + GCS object versioning gir ytterligere revisjon.
 - Hendelser: Pub/Sub-notifikasjoner trigges på `content/tiltak/*` og `content/tilskudd/*` slik at Slack-kanalen #energinøkkelen-monitor får beskjed om publiseringer eller rollbacks.
 
@@ -127,7 +127,7 @@
 | Dato | Aktivitet | Utført av |
 | ---- | --------- | --------- |
 | 2025-11-12 | Planen utvidet til å dekke tilskudd, CRUD-krav og admin-arkitektur | Codex |
-| 2025-11-12 | Workspace-gruppen `energinokkelredaktor@klimaoslo.no` opprettet og fylt med redaktører | Magnus Lundstein |
+| 2025-11-12 | Workspace-gruppen `energinokkel-redaktor@klimaoslo.no` opprettet og fylt med redaktører | Magnus Lundstein |
 | 2025-11-12 | Zod-skjema for tiltak og tilskudd etablert + eksempeldata lagt i `content/examples/*` | Codex |
 | 2025-11-12 | API-serveren validerer nå `/config/content/**`, håndterer `?draft=1` og eksponerer dynamiske kataloger for tiltak/tilskudd | Codex |
 | 2025-11-12 | `useTiltakContent`/`useTilskuddContent`/`useTiltakCatalog` implementert + første tiltak/tilskudd migrert (etterisolering ↔ enova) | Codex |

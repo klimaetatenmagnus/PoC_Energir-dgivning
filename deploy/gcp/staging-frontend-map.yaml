@@ -35,6 +35,20 @@ pathMatchers:
           urlRewrite:
             hostRewrite: energinokkelen-168751968131.europe-north1.run.app
       - matchRules:
+          - prefixMatch: /_gcp_iap/
+        priority: 240
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendServices/staging-admin-backend
+        routeAction:
+          urlRewrite:
+            hostRewrite: energinokkelen-admin-168751968131.europe-north1.run.app
+      - matchRules:
+          - prefixMatch: /admin
+        priority: 250
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendServices/staging-admin-backend
+        routeAction:
+          urlRewrite:
+            hostRewrite: energinokkelen-admin-168751968131.europe-north1.run.app
+      - matchRules:
           - fullPathMatch: /metrics
         priority: 300
         service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendServices/staging-api-backend
