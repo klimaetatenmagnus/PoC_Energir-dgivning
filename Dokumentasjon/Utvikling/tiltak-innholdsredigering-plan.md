@@ -152,6 +152,7 @@
 - Synk `content/tiltak/temperaturstyring.json` og tilknyttede tilskuddsfiler (`klimaoslo-smart-energistyring`, `klimaoslo-pris-effektstyring`) til `gs://energinokkelen-content`, og verifiser via `/config/content/tiltak/temperaturstyring.json?draft=1` før prod-publisering.
 - Gjennomfør ende-til-ende testing av admin-UI og dynamiske tiltak/tilskudd i staging (redaktørflyt, forhåndsvisning, publisering) og dokumenter resultatene før funksjonen åpnes i prod.
 - Etabler dokumentert og automatisert rutine for variant-/gul-listeinnhold (metadataflyt, schema-validering, skript for staging→prod-synk og auditlogging av endringer).
+- Dokumentasjonen er nå samlet i `Dokumentasjon/innholdsdrift-tiltak.md`, og CLI-skriptene `npm run content:validate` og `npm run content:publish -- <push-staging|promote>` brukes som referanseprosess frem til admin-UI automatiserer flyten.
 - Videreutvikle admin-frontend + BFF (listevisning, CRUD med relasjonsvelger, forhåndsvisning via `draft=1`, audit/logging) og planlegg bygg/deploy til Cloud Run bak IAP.
 - Operationaliser publiseringsløpet: `gsutil rsync`-skript per miljø, sjekklister for metadata og driftslogg, samt automatisert CDN-invalidasjon for `/config/content/**`.
 - Beskriv hvordan legacy-støtteordningskilden kan fases helt ut når alle `grants` er på plass, inkl. fallback-metrikk og alerting når legacy-data brukes.

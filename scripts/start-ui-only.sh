@@ -16,6 +16,7 @@ echo "🧹 Cleaning up..."
 pkill -f "node.*api-server" 2>/dev/null || true
 pkill -f "node.*building-info-service" 2>/dev/null || true
 pkill -f "node.*solar-service" 2>/dev/null || true
+pkill -f "node.*services/admin-api" 2>/dev/null || true
 pkill -f "vite" 2>/dev/null || true
 sleep 1
 
@@ -26,6 +27,25 @@ if [ -f "${ROOT_DIR}/.env" ]; then
   source "${ROOT_DIR}/.env"
   set +a
 fi
+
+# Default admin-API konfig til lokale dummyverdier slik at vi slipper ekte GCP-tilganger.
+LOCAL_CONTENT_ROOT="${ROOT_DIR}/content"
+LOCAL_LOG_DIR="${LOCAL_CONTENT_ROOT}/logs"
+mkdir -p "${LOCAL_LOG_DIR}"
+
+export ADMIN_CLOUD_BUILD_PROJECT="${ADMIN_CLOUD_BUILD_PROJECT:-local-dev}"
+export GOOGLE_CLOUD_PROJECT="${GOOGLE_CLOUD_PROJECT:-$ADMIN_CLOUD_BUILD_PROJECT}"
+export ADMIN_CLOUD_BUILD_LOCATION="${ADMIN_CLOUD_BUILD_LOCATION:-local}"
+export ADMIN_CONTENT_STAGING_PREFIX="${ADMIN_CONTENT_STAGING_PREFIX:-$LOCAL_CONTENT_ROOT}"
+export ADMIN_CONTENT_PROD_PREFIX="${ADMIN_CONTENT_PROD_PREFIX:-$LOCAL_CONTENT_ROOT}"
+export ADMIN_CONTENT_LOG_PREFIX="${ADMIN_CONTENT_LOG_PREFIX:-$LOCAL_LOG_DIR}"
+export ADMIN_CONTENT_PUBLISHER_SERVICE_ACCOUNT="${ADMIN_CONTENT_PUBLISHER_SERVICE_ACCOUNT:-content-admin@local-dev.iam.gserviceaccount.com}"
+export ADMIN_API_PORT="${ADMIN_API_PORT:-4100}"
+
+# Mirror Punkt-ikonene til public slik at pkt-icon kan lastes lokalt.
+echo "📦 Syncing Punkt-ikoner til public/punkt-assets ..."
+rsync -a --delete "${ROOT_DIR}/node_modules/@oslokommune/punkt-assets/dist/icons/" \
+  "${ROOT_DIR}/public/punkt-assets/icons/"
 
 # Check if Python is available
 if ! command -v python &> /dev/null && ! command -v python3 &> /dev/null; then
@@ -51,6 +71,11 @@ echo "  BASE_URL: $MATRIKKEL_API_BASE_URL_PROD"
 LIVE=1 npx tsx src/api-server.ts &
 API_PID=$!
 
+# Start admin API
+echo "🛠️ Starting admin API on port ${ADMIN_API_PORT}..."
+npx tsx services/admin-api/index.ts &
+ADMIN_API_PID=$!
+
 # Wait for services
 echo "⏳ Waiting for services to start..."
 sleep 5
@@ -65,6 +90,7 @@ echo "🌐 UI: http://localhost:5173"
 echo "🔌 API: http://localhost:3001"
 echo "🏢 Building Service: http://localhost:4000"
 echo "☀️  Solar Service: http://localhost:4003"
+echo "🔐 Admin API: http://localhost:4100/admin/api"
 echo "📊 Støtteordninger: http://localhost:3001/api/stotteordninger"
 echo ""
 echo "📋 Test addresses:"
@@ -79,10 +105,10 @@ echo "================================================"
 echo ""
 
 # Trap to cleanup all services on exit
-trap 'echo ""; echo "🛑 Stopping all services..."; kill $API_PID $BUILDING_PID $SOLAR_PID 2>/dev/null || true; exit' INT TERM
+trap 'echo ""; echo "🛑 Stopping all services..."; kill $API_PID $BUILDING_PID $SOLAR_PID $ADMIN_API_PID 2>/dev/null || true; exit' INT TERM
 
 # Start only vite
 npm run dev:client
 
 # Cleanup
-kill $API_PID $BUILDING_PID $SOLAR_PID 2>/dev/null || true
+kill $API_PID $BUILDING_PID $SOLAR_PID $ADMIN_API_PID 2>/dev/null || true

@@ -36,12 +36,12 @@
       "description": "Du beskytter konstruksjonen mot fukt og oppgraderer fasaden samtidig."
     },
     {
-      "id": "hoyere-verdi",
+      "id": "hoyere-boligverdi",
       "title": "Høyere boligverdi",
       "description": "Oppgradert fasade og bedre energimerke gjør boligen mer attraktiv."
     },
     {
-      "id": "lavere-energibehov",
+      "id": "redusert-energibehov",
       "title": "Redusert energibehov",
       "description": "Mindere varmetap betyr lavere strømregning og mindre klimafotavtrykk."
     }

@@ -1,0 +1,24 @@
+.admin-env-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-env-toggle__label {
+  margin: 0;
+  font-weight: 600;
+  color: var(--pkt-color-text-secondary, #4c566a);
+}
+
+.admin-env-toggle__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 36rem) {
+  .admin-env-toggle__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

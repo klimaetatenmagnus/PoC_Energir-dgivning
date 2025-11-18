@@ -34,12 +34,12 @@
       "description": "Bedre isolasjon beskytter konstruksjonene mot fukt og råte."
     },
     {
-      "id": "lavere-strom",
+      "id": "lavere-stromregning",
       "title": "Lavere strømregning",
       "description": "Redusert varmetap gjør at oppvarmingsbehovet faller umiddelbart."
     },
     {
-      "id": "energibehov",
+      "id": "redusert-energibehov",
       "title": "Redusert energibehov",
       "description": "Jo mindre varme som lekker ut, jo mindre energi må du produsere."  
     }

@@ -1,0 +1,355 @@
+{
+  "schemaVersion": 1,
+  "buildingTypes": [
+    {
+      "id": "default",
+      "label": "Alle byggtyper (fallback)",
+      "description": "Standardtekst som brukes dersom ingen byggtype er valgt.",
+      "aliases": [
+        "alle",
+        "generelt"
+      ],
+      "internalOnly": true
+    },
+    {
+      "id": "enebolig",
+      "label": "Enebolig og smaahus",
+      "description": "Frittstaende eneboliger, rekkehus som oppleves som smaahus og lignende.",
+      "aliases": [
+        "smaahus",
+        "villa"
+      ],
+      "internalOnly": false
+    },
+    {
+      "id": "tomannsbolig",
+      "label": "Tomannsbolig",
+      "description": "Vertikaldelte tomannsboliger eller horisontaldelte tomannsboliger.",
+      "aliases": [
+        "2-mannsbolig"
+      ],
+      "internalOnly": false
+    },
+    {
+      "id": "rekkehus",
+      "label": "Rekkehus og kjedet",
+      "description": "Kjedete smaahus og rekkehus med felles vegger.",
+      "aliases": [
+        "rekke",
+        "kjedet"
+      ],
+      "internalOnly": false
+    },
+    {
+      "id": "blokk",
+      "label": "Blokk og leilighetsbygg",
+      "description": "Leilighetsbygg, blokker og borettslag med felles tekniske anlegg.",
+      "aliases": [
+        "leilighet",
+        "borettslag"
+      ],
+      "internalOnly": false
+    }
+  ],
+  "benefits": [
+    {
+      "id": "mindre-trekk",
+      "title": "Mindre trekk",
+      "description": "Oppgraderte bygg stopper kald luft og gir jevnere temperatur.",
+      "icon": "snow",
+      "tags": [
+        "inneklima",
+        "komfort"
+      ]
+    },
+    {
+      "id": "ivaretar-boligen",
+      "title": "Ivaretar boligen",
+      "description": "Bedre isolasjon beskytter konstruksjoner mot fukt og raate.",
+      "icon": "home",
+      "tags": [
+        "vern",
+        "bygg"
+      ]
+    },
+    {
+      "id": "hoyere-boligverdi",
+      "title": "Hoyere boligverdi",
+      "description": "Oppgraderte fasader, betre energimerke og eigen stromproduksjon gjer boligen meir attraktiv.",
+      "icon": "graph",
+      "tags": [
+        "verdi",
+        "solenergi"
+      ]
+    },
+    {
+      "id": "bedre-stromstyring",
+      "title": "Bedre strømstyring",
+      "description": "Gjor det lett aa styre forbruket smartere basert paa produksjon og pris.",
+      "icon": "bulb",
+      "tags": [
+        "styring",
+        "smart-energi"
+      ]
+    },
+    {
+      "id": "lavere-stromregning",
+      "title": "Lavere stromregning",
+      "description": "Egenprodusert eller spart energi erstatter dyrere kjop fra nettet.",
+      "icon": "coin-stacks",
+      "tags": [
+        "kostnad",
+        "solenergi"
+      ]
+    },
+    {
+      "id": "egenprodusert-strom",
+      "title": "Egenprodusert strom",
+      "description": "Overskudd kan selges, brukes til elbil eller lagres i batteri.",
+      "icon": "charging-point",
+      "tags": [
+        "solenergi",
+        "plusskunde"
+      ]
+    },
+    {
+      "id": "bedre-bokvalitet",
+      "title": "Bedre bokvalitet",
+      "description": "Jevnere temperatur og styring fra app gir bedre komfort.",
+      "icon": "house-heart",
+      "tags": [
+        "comfort",
+        "inneklima"
+      ]
+    },
+    {
+      "id": "redusert-energibehov",
+      "title": "Redusert energibehov",
+      "description": "Mindre varmetap og smartere styring gir lavere energibruk og kostnader.",
+      "icon": "nature-plant",
+      "tags": [
+        "energieffektivisering"
+      ]
+    },
+    {
+      "id": "redusert-stoy",
+      "title": "Redusert stoy",
+      "description": "Riktig plassering og oppgradering gjor tiltak stille i drift.",
+      "icon": "megaphone",
+      "tags": [
+        "komfort"
+      ]
+    }
+  ],
+  "supportTags": [
+    {
+      "id": "effekt",
+      "label": "Effekt og topper",
+      "description": "Tiltak som reduserer effekttopper eller kostnader knyttet til effektledd.",
+      "synonyms": [
+        "effektledd",
+        "kapasitetsledd"
+      ],
+      "category": "energi"
+    },
+    {
+      "id": "energieffektivisering",
+      "label": "Energieffektivisering",
+      "description": "Generelle grep som senker samlet energibruk.",
+      "synonyms": [
+        "energisparing"
+      ],
+      "category": "energi"
+    },
+    {
+      "id": "energifleksibilitet",
+      "label": "Energifleksibilitet",
+      "description": "Gir mulighet til aa bytte eller flytte energikilder.",
+      "synonyms": [
+        "fleksibilitet"
+      ],
+      "category": "energi"
+    },
+    {
+      "id": "etterisolering",
+      "label": "Etterisolering",
+      "description": "Tiltak som oeker isolasjon i vegger, loft eller kjeller.",
+      "synonyms": [
+        "isolasjon"
+      ],
+      "category": "bygg"
+    },
+    {
+      "id": "fasade",
+      "label": "Fasade",
+      "description": "Endringer som paavirker yttervegger og uttrykk.",
+      "synonyms": [
+        "yttervegg"
+      ],
+      "category": "bygg"
+    },
+    {
+      "id": "gulliste",
+      "label": "Gulliste",
+      "description": "Viser at innholdet gjelder vernede eller saerlig bevaringsverdige bygg.",
+      "synonyms": [
+        "vernede bygg"
+      ],
+      "category": "status"
+    },
+    {
+      "id": "inneklima",
+      "label": "Inneklima",
+      "description": "Tiltak som forbedrer luftkvalitet og komfort.",
+      "synonyms": [
+        "luftkvalitet"
+      ],
+      "category": "komfort"
+    },
+    {
+      "id": "isolasjon",
+      "label": "Isolasjon",
+      "description": "Generell tagg for isolasjonsarbeid.",
+      "synonyms": [
+        "isolering"
+      ],
+      "category": "bygg"
+    },
+    {
+      "id": "kjeller",
+      "label": "Kjeller",
+      "description": "Tiltak i kjeller eller krypkjeller.",
+      "synonyms": [
+        "krypkjeller"
+      ],
+      "category": "bygg"
+    },
+    {
+      "id": "klimaskall",
+      "label": "Klimaskall",
+      "description": "Tagg for tiltak som styrker den ytre klimaskjermen.",
+      "synonyms": [
+        "skall"
+      ],
+      "category": "bygg"
+    },
+    {
+      "id": "loft",
+      "label": "Loft",
+      "description": "Tiltak i loft eller takkonstruksjon.",
+      "synonyms": [
+        "takkonstruksjon"
+      ],
+      "category": "bygg"
+    },
+    {
+      "id": "oppvarming",
+      "label": "Oppvarming",
+      "description": "Teknologier og grep som gir bedre oppvarming.",
+      "synonyms": [
+        "varme"
+      ],
+      "category": "energi"
+    },
+    {
+      "id": "plusskunde",
+      "label": "Plusskunde",
+      "description": "Tiltak som gjor det mulig aa levere eller selge egenprodusert energi.",
+      "synonyms": [
+        "pluskunde"
+      ],
+      "category": "energi"
+    },
+    {
+      "id": "smart-energi",
+      "label": "Smart energi",
+      "description": "Styringssystemer og automasjon.",
+      "synonyms": [
+        "smartstyring"
+      ],
+      "category": "styring"
+    },
+    {
+      "id": "solcelle",
+      "label": "Solcelle",
+      "description": "Tiltak med solcellepanel.",
+      "synonyms": [
+        "pv"
+      ],
+      "category": "solenergi"
+    },
+    {
+      "id": "solenergi",
+      "label": "Solenergi",
+      "description": "Generell tagg for solenergi og solfangere.",
+      "synonyms": [
+        "sol"
+      ],
+      "category": "solenergi"
+    },
+    {
+      "id": "styring",
+      "label": "Styring",
+      "description": "Energi- og varmestyring.",
+      "synonyms": [
+        "kontroll"
+      ],
+      "category": "styring"
+    },
+    {
+      "id": "tetting",
+      "label": "Tetting",
+      "description": "Forbedrer lufttetthet rundt klimaskjermen.",
+      "synonyms": [
+        "lufttetthet"
+      ],
+      "category": "bygg"
+    },
+    {
+      "id": "varmegjenvinning",
+      "label": "Varmegjenvinning",
+      "description": "Teknologi som henter varme fra avtrekk eller spillvarme.",
+      "synonyms": [
+        "gjenvinning"
+      ],
+      "category": "energi"
+    },
+    {
+      "id": "varmepumpe",
+      "label": "Varmepumpe",
+      "description": "Spesifikk tagg for varmepumpelosninger.",
+      "synonyms": [
+        "hp",
+        "vp"
+      ],
+      "category": "oppvarming"
+    },
+    {
+      "id": "ventilasjon",
+      "label": "Ventilasjon",
+      "description": "Tiltak for bedre ventilasjon eller balansert luft.",
+      "synonyms": [
+        "lufting"
+      ],
+      "category": "inneklima"
+    },
+    {
+      "id": "vern",
+      "label": "Vern",
+      "description": "Tagg som markerer hensyn til vern eller byantikvaren.",
+      "synonyms": [
+        "byantikvaren"
+      ],
+      "category": "status"
+    },
+    {
+      "id": "vinduer",
+      "label": "Vinduer",
+      "description": "Tiltak knyttet til utskifting eller oppgradering av vinduer.",
+      "synonyms": [
+        "glass"
+      ],
+      "category": "bygg"
+    }
+  ]
+}

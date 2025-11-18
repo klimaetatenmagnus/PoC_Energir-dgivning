@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PktButton, PktInput, PktAlert } from '@oslokommune/punkt-react';
+import { PktButton, PktAlert, PktTextinput } from '@oslokommune/punkt-react';
 import '../styles/components.css';
 import { resolveApiUrl } from '../runtimeConfig.ts';
 
@@ -93,7 +93,7 @@ export const EnergyRatingCalculator: React.FC<EnergyRatingCalculatorProps> = ({ 
       </div>
 
       <div className="energy-rating-calculator__form">
-        <PktInput
+        <PktTextinput
           label="Årlig energiforbruk"
           placeholder="F.eks. 15000"
           value={yearlyConsumption}
@@ -101,11 +101,12 @@ export const EnergyRatingCalculator: React.FC<EnergyRatingCalculatorProps> = ({ 
             setYearlyConsumption(e.target.value);
             setError('');
           }}
-          helperText="Oppgi totalt årlig forbruk i kWh (elektrisitet, fjernvarme osv)"
+          helptext="Oppgi totalt årlig forbruk i kWh (elektrisitet, fjernvarme osv)"
           type="number"
           min="0"
           step="100"
           id="yearly-consumption"
+          fullwidth
         />
 
         <PktButton

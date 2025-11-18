@@ -15,8 +15,12 @@ import { execFile } from 'child_process';
 import type { ExecFileOptions } from 'child_process';
 import { promisify } from 'util';
 import { z } from 'zod';
-import { TiltakContentSchema, type TiltakContent } from '../content/tiltak/schema';
+import { TiltakContentSchema, type TiltakContent, type TiltakBenefit } from '../content/tiltak/schema';
 import { TilskuddContentSchema, type TilskuddContent } from '../content/tilskudd/schema';
+import {
+  ContentDictionarySchema,
+  type ContentDictionary
+} from '../content/dictionaries/schema';
 import type {
   ContentCatalogItem,
   ContentCatalogResponse,
@@ -389,6 +393,88 @@ async function loadAppConfig(): Promise<AppConfigResponse> {
   }
 }
 
+async function loadContentDictionary(): Promise<{ data: ContentDictionary; etag: string | null }> {
+  const { data, etag } = await loadJsonFile('dictionaries/index.json');
+  const parsed = ContentDictionarySchema.parse(data);
+  return { data: parsed, etag };
+}
+
+function buildBenefitDictionaryMap(dictionary: ContentDictionary): Map<string, TiltakBenefit> {
+  const map = new Map<string, TiltakBenefit>();
+  for (const entry of dictionary.benefits) {
+    map.set(entry.id, {
+      id: entry.id,
+      title: entry.title,
+      description: entry.description,
+      icon: entry.icon
+    });
+  }
+  return map;
+}
+
+function resolveBenefitsFromRefs(
+  refs: string[],
+  fallback: TiltakBenefit[],
+  dictionary: Map<string, TiltakBenefit>,
+  context: string
+): TiltakBenefit[] {
+  if (!refs?.length) {
+    return Array.isArray(fallback) ? fallback : [];
+  }
+
+  const resolved: TiltakBenefit[] = [];
+  const seen = new Set<string>();
+
+  for (const ref of refs) {
+    if (!ref || seen.has(ref)) {
+      continue;
+    }
+    seen.add(ref);
+    const entry = dictionary.get(ref);
+    if (!entry) {
+      console.warn(`[api-server] Unknown benefit ref "${ref}" in ${context}`);
+      continue;
+    }
+    resolved.push(entry);
+  }
+
+  return resolved;
+}
+
+async function resolveTiltakBenefits(content: TiltakContent): Promise<TiltakContent> {
+  const hasGlobalRefs =
+    (content.benefitRefs?.length ?? 0) > 0 ||
+    content.variants.some((variant) => (variant.benefitRefs?.length ?? 0) > 0);
+
+  if (!hasGlobalRefs) {
+    return content;
+  }
+
+  const { data: dictionary } = await loadContentDictionary();
+  const benefitMap = buildBenefitDictionaryMap(dictionary);
+
+  const resolved: TiltakContent = {
+    ...content,
+    benefits: resolveBenefitsFromRefs(
+      content.benefitRefs ?? [],
+      content.benefits,
+      benefitMap,
+      `tiltak:${content.id}`
+    ),
+    variants: content.variants.map((variant) => ({
+      ...variant,
+      benefits: resolveBenefitsFromRefs(
+        variant.benefitRefs ?? [],
+        variant.benefits ?? [],
+        benefitMap,
+        `tiltak:${content.id}:variant:${variant.audience}`
+      )
+    }))
+  };
+
+  return resolved;
+}
+
 function sanitiseContentRequestPath(rawPath: string | undefined): string | null {
   if (!rawPath) {
     return null;
@@ -552,7 +638,12 @@ async function loadContentDocument(
     throw new ContentAccessError(relativePath, status);
   }
 
-  return { kind: 'validated', collection, data: parsed.data, etag } as ValidatedContentDocument;
+  let resolvedData = parsed.data;
+  if (collection === 'tiltak') {
+    resolvedData = await resolveTiltakBenefits(parsed.data);
+  }
+
+  return { kind: 'validated', collection, data: resolvedData, etag } as ValidatedContentDocument;
 }
 
 function createTiltakCatalogItem(
@@ -740,6 +831,30 @@ app.get('/config/app.json', async (_req, res) => {
   } catch (error) {
     console.error('[api-server] Failed to load app config', error);
     res.status(500).json({ error: 'Failed to load app config' });
+  }
+});
+
+app.get('/config/dictionaries/index.json', async (req, res) => {
+  try {
+    const { data, etag } = await loadContentDictionary();
+    if (etag && ifNoneMatchMatches(req.headers['if-none-match'], etag)) {
+      const etagHeader = buildEtagHeaderValue(etag);
+      if (etagHeader) {
+        res.setHeader('ETag', etagHeader);
+      }
+      res.status(304).end();
+      return;
+    }
+
+    const etagHeader = buildEtagHeaderValue(etag);
+    if (etagHeader) {
+      res.setHeader('ETag', etagHeader);
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error('[api-server] Failed to load content dictionary', error);
+    res.status(500).json({ error: 'Failed to load content dictionary' });
   }
 });
 

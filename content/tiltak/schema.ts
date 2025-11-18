@@ -55,6 +55,8 @@ const BenefitSchema = z
   })
   .strict();
 
+const BenefitReferenceSchema = z.string().regex(/^[a-z0-9-]+$/);
+
 const ContentBlockSchema = z
   .object({
     id: SlugSchema.optional(),
@@ -147,6 +149,7 @@ const VariantOverrideSchema = z
     title: NonEmptyStringSchema.optional(),
     introParagraphs: ParagraphArraySchema.optional(),
     buildingTypeParagraphs: PartialBuildingParagraphsSchema.optional(),
+    benefitRefs: z.array(BenefitReferenceSchema).max(4).default([]),
     benefits: z.array(BenefitSchema).optional(),
     readMore: z.array(LinkSchema).optional(),
     callsToAction: z.array(CallToActionSchema).optional(),
@@ -167,6 +170,7 @@ export const TiltakContentSchema = z
     summary: z.string().trim().max(280).optional(),
     introParagraphs: ParagraphArraySchema,
     buildingTypeParagraphs: BuildingParagraphsSchema,
+    benefitRefs: z.array(BenefitReferenceSchema).max(4).default([]),
     benefits: z.array(BenefitSchema).default([]),
     readMore: z.array(LinkSchema).default([]),
     callsToAction: z.array(CallToActionSchema).default([]),

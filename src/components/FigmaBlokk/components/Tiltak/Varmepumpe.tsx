@@ -340,7 +340,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontWeight="700"
           fontStyle="normal"
           fontSize="24"
-          lineHeight="36"
+          style={{ lineHeight: '36px' }}
           letterSpacing="-0.2"
           fill="#2A2859"
           dominantBaseline="hanging"
@@ -418,12 +418,12 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontWeight="400"
           fontStyle="normal"
           fontSize="16"
-          lineHeight="24"
+          style={{ lineHeight: '24px', cursor: 'pointer' }}
           letterSpacing="-0.2"
           fill={activeButton === 'Generelt' ? "#000000" : hoveredButton === 'Generelt' ? "#1F42AA" : "#666666"}
           dominantBaseline="middle"
           textAnchor="middle"
-          style={{ cursor: 'pointer' }}
+          
           onClick={() => setActiveButton('Generelt')}
           onMouseEnter={() => setHoveredButton('Generelt')}
           onMouseLeave={() => setHoveredButton(null)}
@@ -438,12 +438,12 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontWeight="400"
           fontStyle="normal"
           fontSize="16"
-          lineHeight="24"
+          style={{ lineHeight: '24px', cursor: 'pointer' }}
           letterSpacing="-0.2"
           fill={activeButton === 'Luft-luft' ? "#000000" : hoveredButton === 'Luft-luft' ? "#1F42AA" : "#666666"}
           dominantBaseline="middle"
           textAnchor="middle"
-          style={{ cursor: 'pointer' }}
+          
           onClick={() => setActiveButton('Luft-luft')}
           onMouseEnter={() => setHoveredButton('Luft-luft')}
           onMouseLeave={() => setHoveredButton(null)}
@@ -458,12 +458,12 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontWeight="400"
           fontStyle="normal"
           fontSize="16"
-          lineHeight="24"
+          style={{ lineHeight: '24px', cursor: 'pointer' }}
           letterSpacing="-0.2"
           fill={activeButton === 'Luft-vann' ? "#000000" : hoveredButton === 'Luft-vann' ? "#1F42AA" : "#666666"}
           dominantBaseline="middle"
           textAnchor="middle"
-          style={{ cursor: 'pointer' }}
+          
           onClick={() => setActiveButton('Luft-vann')}
           onMouseEnter={() => setHoveredButton('Luft-vann')}
           onMouseLeave={() => setHoveredButton(null)}
@@ -478,12 +478,12 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontWeight="400"
           fontStyle="normal"
           fontSize="16"
-          lineHeight="24"
+          style={{ lineHeight: '24px', cursor: 'pointer' }}
           letterSpacing="-0.2"
           fill={activeButton === 'Væske-vann' ? "#000000" : hoveredButton === 'Væske-vann' ? "#1F42AA" : "#666666"}
           dominantBaseline="middle"
           textAnchor="middle"
-          style={{ cursor: 'pointer' }}
+          
           onClick={() => setActiveButton('Væske-vann')}
           onMouseEnter={() => setHoveredButton('Væske-vann')}
           onMouseLeave={() => setHoveredButton(null)}
@@ -498,12 +498,12 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontWeight="400"
           fontStyle="normal"
           fontSize="16"
-          lineHeight="24"
+          style={{ lineHeight: '24px', cursor: 'pointer' }}
           letterSpacing="-0.2"
           fill={activeButton === 'Ventilasjon' ? "#000000" : hoveredButton === 'Ventilasjon' ? "#1F42AA" : "#666666"}
           dominantBaseline="middle"
           textAnchor="middle"
-          style={{ cursor: 'pointer' }}
+          
           onClick={() => setActiveButton('Ventilasjon')}
           onMouseEnter={() => setHoveredButton('Ventilasjon')}
           onMouseLeave={() => setHoveredButton(null)}
@@ -593,7 +593,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontSize="14"
-          lineHeight="22"
+          style={{ lineHeight: '22px' }}
           letterSpacing="-0.2"
           fill="#2A2859"
           dominantBaseline="middle"
@@ -619,7 +619,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontSize="14"
-          lineHeight="22"
+          style={{ lineHeight: '22px' }}
           letterSpacing="-0.2"
           fill="#2A2859"
           dominantBaseline="middle"
@@ -645,7 +645,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontSize="14"
-          lineHeight="22"
+          style={{ lineHeight: '22px' }}
           letterSpacing="-0.2"
           fill="#2A2859"
           dominantBaseline="middle"
@@ -671,7 +671,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontSize="14"
-          lineHeight="22"
+          style={{ lineHeight: '22px' }}
           letterSpacing="-0.2"
           fill="#2A2859"
           dominantBaseline="middle"
@@ -769,7 +769,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontWeight="100"
           fontStyle="normal"
           fontSize="14"
-          lineHeight="22"
+          style={{ lineHeight: '22px' }}
           letterSpacing="0"
           fill="#FFFFFF"
           dominantBaseline="hanging"
@@ -784,7 +784,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontWeight="100"
           fontStyle="normal"
           fontSize="14"
-          lineHeight="22"
+          style={{ lineHeight: '22px' }}
           letterSpacing="0"
           fill="#FFFFFF"
           dominantBaseline="hanging"
@@ -808,7 +808,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontWeight="700"
           fontStyle="normal"
           fontSize="18"
-          lineHeight="28"
+          style={{ lineHeight: '28px' }}
           letterSpacing="-0.2"
           fill="#FFFFFF"
           textAnchor="middle"
@@ -826,11 +826,11 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
             fontWeight="300"
             fontStyle="normal"
             fontSize="14"
-            lineHeight="22"
+            style={{ lineHeight: '22px', cursor: 'pointer' }}
             fill="#FFFFFF"
             textAnchor="middle"
             textDecoration="underline"
-            style={{ cursor: 'pointer' }}
+            
             onClick={() => openExternalLink(link.url)}
           >
             {link.label}
@@ -897,7 +897,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
                       fontWeight="300"
                       fontStyle="normal"
                       fontSize="12"
-                      lineHeight="20"
+                      style={{ lineHeight: '20px' }}
                       letterSpacing="-0.2"
                       fill="#000000"
                       dominantBaseline="middle"
@@ -922,7 +922,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
                       fontWeight="300"
                       fontStyle="normal"
                       fontSize="10"
-                      lineHeight="22"
+                      style={{ lineHeight: '22px' }}
                       letterSpacing="-0.2"
                       fill="#000000"
                       textAnchor="middle"
@@ -939,12 +939,12 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
                       fontWeight="300"
                       fontStyle="normal"
                       fontSize="12"
-                      lineHeight="18.67"
+                      style={{ lineHeight: '18.67px', cursor: 'pointer' }}
                       letterSpacing="-0.13"
                       fill="#000000"
                       textDecoration="underline"
                       dominantBaseline="middle"
-                      style={{ cursor: 'pointer' }}
+                      
                       onClick={() => openExternalLink(ordning.lenke)}
                     >
                       Lenke
@@ -964,7 +964,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontWeight="500"
           fontStyle="normal"
           fontSize="16"
-          lineHeight="24"
+          style={{ lineHeight: '24px' }}
           letterSpacing="-0.2"
           fill="#000000"
         >
@@ -979,7 +979,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontWeight="500"
           fontStyle="normal"
           fontSize="16"
-          lineHeight="24"
+          style={{ lineHeight: '24px' }}
           letterSpacing="-0.2"
           fill="#000000"
         >
@@ -994,7 +994,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontWeight="500"
           fontStyle="normal"
           fontSize="16"
-          lineHeight="24"
+          style={{ lineHeight: '24px' }}
           letterSpacing="-0.2"
           fill="#000000"
         >
@@ -1009,7 +1009,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fontWeight="700"
           fontStyle="normal"
           fontSize="18"
-          lineHeight="28"
+          style={{ lineHeight: '28px' }}
           letterSpacing="-0.2"
           fill="#000000"
           dominantBaseline="hanging"

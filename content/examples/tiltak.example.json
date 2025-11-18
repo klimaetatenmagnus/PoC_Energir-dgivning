@@ -18,20 +18,11 @@
       "Koordiner styring med naboene for aa unngaa samtidige effekttopper dersom dere deler hovedsikringer."
     ]
   },
-  "benefits": [
-    {
-      "id": "lavere-forbruk",
-      "title": "Lavere stromregning",
-      "description": "Automatiserte regler kutter unodvendig oppvarming naar du er borte.",
-      "icon": "bolt"
-    },
-    {
-      "id": "bedre-comfort",
-      "title": "Bedre komfort",
-      "description": "Holder jevn temperatur og varsler om avvik for det blir ubehagelig.",
-      "icon": "thermometer"
-    }
+  "benefitRefs": [
+    "mindre-trekk",
+    "lavere-stromregning"
   ],
+  "benefits": [],
   "callsToAction": [
     {
       "id": "bestill-energiraad",
@@ -165,6 +156,9 @@
       "audience": "gulliste",
       "introParagraphs": [
         "I verneverdige bygg bor komponentene skjules og utstyret velges i samraad med byantikvaren."
+      ],
+      "benefitRefs": [
+        "ivaretar-boligen"
       ],
       "accordion": [
         {

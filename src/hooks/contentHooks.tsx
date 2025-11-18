@@ -1,9 +1,11 @@
+import { createContext, useContext, type ReactNode } from 'react';
 import useSWR, { type KeyedMutator } from 'swr';
 import type { TiltakContent } from '../../content/tiltak/schema';
 import type { TilskuddContent } from '../../content/tilskudd/schema';
 import type {
   ContentCatalogResponse,
-  TiltakCatalogItem
+  TiltakCatalogItem,
+  TilskuddCatalogItem
 } from '../types/contentCatalog';
 
 type ContentFetcherResult<T> = {
@@ -30,17 +32,97 @@ export type ContentHookResult<T> = {
 
 export type ContentHookOptions = {
   includeDrafts?: boolean;
+  baseUrl?: string;
 };
+
+type ResolvedContentHookOptions = {
+  includeDrafts: boolean;
+  baseUrl: string;
+};
+
+type ContentFetchContextValue = ResolvedContentHookOptions;
+
+const DEFAULT_CONTENT_BASE_URL = '/config/content';
+
+const ContentFetchContext = createContext<ContentFetchContextValue>({
+  includeDrafts: false,
+  baseUrl: DEFAULT_CONTENT_BASE_URL
+});
+
+export function ContentFetchProvider({
+  includeDrafts,
+  baseUrl,
+  children
+}: {
+  includeDrafts?: boolean;
+  baseUrl?: string;
+  children: ReactNode;
+}) {
+  const value: ContentFetchContextValue = {
+    includeDrafts: Boolean(includeDrafts),
+    baseUrl: normaliseContentBaseUrl(baseUrl)
+  };
+
+  return <ContentFetchContext.Provider value={value}>{children}</ContentFetchContext.Provider>;
+}
+
+export function useContentFetchSettings(): ContentFetchContextValue {
+  return useContext(ContentFetchContext);
+}
+
+function useContentFetchOptions(options: ContentHookOptions = {}): ResolvedContentHookOptions {
+  const context = useContentFetchSettings();
+  const includeDrafts =
+    options.includeDrafts !== undefined ? Boolean(options.includeDrafts) : context.includeDrafts;
+  return {
+    includeDrafts,
+    baseUrl: normaliseContentBaseUrl(options.baseUrl ?? context.baseUrl)
+  };
+}
+
+function resolveContentFetchOptions(options: ContentHookOptions = {}): ResolvedContentHookOptions {
+  return {
+    includeDrafts: Boolean(options.includeDrafts),
+    baseUrl: normaliseContentBaseUrl(options.baseUrl)
+  };
+}
 
 const resourceCache = new Map<string, ContentResourceCacheEntry<unknown>>();
 
-function buildResourceCacheKey(relativePath: string, includeDrafts: boolean): string {
-  return `${relativePath}|draft=${includeDrafts ? '1' : '0'}`;
+function buildResourceCacheKey(
+  relativePath: string,
+  includeDrafts: boolean,
+  baseUrl: string
+): string {
+  return `${baseUrl}|${relativePath}|draft=${includeDrafts ? '1' : '0'}`;
 }
 
-function buildContentUrl(relativePath: string, includeDrafts: boolean): string {
+function normaliseContentBaseUrl(baseUrl?: string): string {
+  if (!baseUrl) {
+    return DEFAULT_CONTENT_BASE_URL;
+  }
+
+  let trimmed = baseUrl.trim();
+  if (!trimmed) {
+    return DEFAULT_CONTENT_BASE_URL;
+  }
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+  }
+
+  if (!trimmed.startsWith('/')) {
+    trimmed = `/${trimmed}`;
+  }
+
+  return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+}
+
+function buildContentUrl(relativePath: string, includeDrafts: boolean, baseUrl: string): string {
+  const sanitizedPath = relativePath.replace(/^\/+/, '');
   const query = includeDrafts ? '?draft=1' : '';
-  return `/config/content/${relativePath}${query}`;
+  const prefix = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  return `${prefix}${sanitizedPath}${query}`;
 }
 
 function normaliseEtag(rawEtag: string | null): { raw: string | null; clean: string | null } {
@@ -75,9 +157,10 @@ async function parseErrorBody(response: Response): Promise<string | null> {
 
 async function fetchContentResource<T>(
   relativePath: string,
-  includeDrafts: boolean
+  includeDrafts: boolean,
+  baseUrl: string
 ): Promise<ContentFetcherResult<T>> {
-  const resourceKey = buildResourceCacheKey(relativePath, includeDrafts);
+  const resourceKey = buildResourceCacheKey(relativePath, includeDrafts, baseUrl);
   const cached = resourceCache.get(resourceKey) as ContentResourceCacheEntry<T> | undefined;
 
   const headers: Record<string, string> = {};
@@ -85,7 +168,7 @@ async function fetchContentResource<T>(
     headers['If-None-Match'] = cached.rawEtag;
   }
 
-  const url = buildContentUrl(relativePath, includeDrafts);
+  const url = buildContentUrl(relativePath, includeDrafts, baseUrl);
   const response = await fetch(url, {
     headers,
     cache: 'no-store'
@@ -103,7 +186,7 @@ async function fetchContentResource<T>(
 
     // Retry once without conditional headers if cache entry is missing
     resourceCache.delete(resourceKey);
-    return fetchContentResourceWithoutCache<T>(relativePath, includeDrafts);
+    return fetchContentResourceWithoutCache<T>(relativePath, includeDrafts, baseUrl);
   }
 
   if (!response.ok) {
@@ -135,9 +218,10 @@ async function fetchContentResource<T>(
 
 async function fetchContentResourceWithoutCache<T>(
   relativePath: string,
-  includeDrafts: boolean
+  includeDrafts: boolean,
+  baseUrl: string
 ): Promise<ContentFetcherResult<T>> {
-  const url = buildContentUrl(relativePath, includeDrafts);
+  const url = buildContentUrl(relativePath, includeDrafts, baseUrl);
   const response = await fetch(url, { cache: 'no-store' });
 
   if (!response.ok) {
@@ -158,7 +242,7 @@ async function fetchContentResourceWithoutCache<T>(
     rawEtag: raw
   };
 
-  const resourceKey = buildResourceCacheKey(relativePath, includeDrafts);
+  const resourceKey = buildResourceCacheKey(relativePath, includeDrafts, baseUrl);
   resourceCache.set(resourceKey, cacheEntry);
 
   return {
@@ -173,9 +257,11 @@ export async function fetchTiltakContent(
   tiltakId: string,
   options: ContentHookOptions = {}
 ): Promise<ContentFetcherResult<TiltakContent>> {
+  const resolved = resolveContentFetchOptions(options);
   return fetchContentResource<TiltakContent>(
     `tiltak/${tiltakId}.json`,
-    Boolean(options.includeDrafts)
+    resolved.includeDrafts,
+    resolved.baseUrl
   );
 }
 
@@ -183,15 +269,18 @@ export async function fetchTilskuddContent(
   tilskuddId: string,
   options: ContentHookOptions = {}
 ): Promise<ContentFetcherResult<TilskuddContent>> {
+  const resolved = resolveContentFetchOptions(options);
   return fetchContentResource<TilskuddContent>(
     `tilskudd/${tilskuddId}.json`,
-    Boolean(options.includeDrafts)
+    resolved.includeDrafts,
+    resolved.baseUrl
   );
 }
 
 async function fetchTilskuddBatch(
   tilskuddIds: string[],
-  includeDrafts: boolean
+  includeDrafts: boolean,
+  baseUrl: string
 ): Promise<ContentFetcherResult<TilskuddContent[]>> {
   if (!tilskuddIds.length) {
     return {
@@ -203,7 +292,7 @@ async function fetchTilskuddBatch(
   }
 
   const results = await Promise.all(
-    tilskuddIds.map((id) => fetchTilskuddContent(id, { includeDrafts }))
+    tilskuddIds.map((id) => fetchTilskuddContent(id, { includeDrafts, baseUrl }))
   );
 
   return {
@@ -221,16 +310,30 @@ async function fetchTilskuddBatch(
 export async function fetchTiltakCatalog(
   options: ContentHookOptions = {}
 ): Promise<ContentFetcherResult<ContentCatalogResponse<TiltakCatalogItem>>> {
+  const resolved = resolveContentFetchOptions(options);
   return fetchContentResource<ContentCatalogResponse<TiltakCatalogItem>>(
     'tiltak/index.json',
-    Boolean(options.includeDrafts)
+    resolved.includeDrafts,
+    resolved.baseUrl
   );
 }
 
-type TiltakKey = ['tiltak', string, boolean];
-type TilskuddKey = ['tilskudd', string, boolean];
-type TilskuddBatchKey = ['tilskudd-batch', string, boolean];
-type TiltakCatalogKey = ['tiltak-catalog', boolean];
+export async function fetchTilskuddCatalog(
+  options: ContentHookOptions = {}
+): Promise<ContentFetcherResult<ContentCatalogResponse<TilskuddCatalogItem>>> {
+  const resolved = resolveContentFetchOptions(options);
+  return fetchContentResource<ContentCatalogResponse<TilskuddCatalogItem>>(
+    'tilskudd/index.json',
+    resolved.includeDrafts,
+    resolved.baseUrl
+  );
+}
+
+type TiltakKey = ['tiltak', string, boolean, string];
+type TilskuddKey = ['tilskudd', string, boolean, string];
+type TilskuddBatchKey = ['tilskudd-batch', string, boolean, string];
+type TiltakCatalogKey = ['tiltak-catalog', boolean, string];
+type TilskuddCatalogKey = ['tilskudd-catalog', boolean, string];
 
 const swrConfig = {
   revalidateOnFocus: false,
@@ -241,14 +344,20 @@ export function useTiltakContent(
   tiltakId: string | null | undefined,
   options: ContentHookOptions = {}
 ): ContentHookResult<TiltakContent> {
-  const includeDrafts = Boolean(options.includeDrafts);
-  const key = tiltakId ? (['tiltak', tiltakId, includeDrafts] as TiltakKey) : null;
+  const resolved = useContentFetchOptions(options);
+  const key = tiltakId
+    ? (['tiltak', tiltakId, resolved.includeDrafts, resolved.baseUrl] as TiltakKey)
+    : null;
 
   const { data, error, mutate } = useSWR<
     ContentFetcherResult<TiltakContent>,
     Error,
     TiltakKey | null
-  >(key, ([, id, draft]) => fetchTiltakContent(id, { includeDrafts: draft }), swrConfig);
+  >(
+    key,
+    ([, id, draft, base]) => fetchTiltakContent(id, { includeDrafts: draft, baseUrl: base }),
+    swrConfig
+  );
 
   return {
     data: data?.data,
@@ -264,14 +373,20 @@ export function useTilskuddContent(
   tilskuddId: string | null | undefined,
   options: ContentHookOptions = {}
 ): ContentHookResult<TilskuddContent> {
-  const includeDrafts = Boolean(options.includeDrafts);
-  const key = tilskuddId ? (['tilskudd', tilskuddId, includeDrafts] as TilskuddKey) : null;
+  const resolved = useContentFetchOptions(options);
+  const key = tilskuddId
+    ? (['tilskudd', tilskuddId, resolved.includeDrafts, resolved.baseUrl] as TilskuddKey)
+    : null;
 
   const { data, error, mutate } = useSWR<
     ContentFetcherResult<TilskuddContent>,
     Error,
     TilskuddKey | null
-  >(key, ([, id, draft]) => fetchTilskuddContent(id, { includeDrafts: draft }), swrConfig);
+  >(
+    key,
+    ([, id, draft, base]) => fetchTilskuddContent(id, { includeDrafts: draft, baseUrl: base }),
+    swrConfig
+  );
 
   return {
     data: data?.data,
@@ -287,7 +402,7 @@ export function useTilskuddBatch(
   tilskuddIds: string[] | null | undefined,
   options: ContentHookOptions = {}
 ): ContentHookResult<TilskuddContent[]> {
-  const includeDrafts = Boolean(options.includeDrafts);
+  const resolved = useContentFetchOptions(options);
   const sanitisedIds = (tilskuddIds ?? [])
     .map((id) => id?.trim())
     .filter((id): id is string => Boolean(id));
@@ -304,7 +419,7 @@ export function useTilskuddBatch(
 
   const keyPayload = JSON.stringify(uniqueIds);
   const key = uniqueIds.length
-    ? (['tilskudd-batch', keyPayload, includeDrafts] as TilskuddBatchKey)
+    ? (['tilskudd-batch', keyPayload, resolved.includeDrafts, resolved.baseUrl] as TilskuddBatchKey)
     : null;
 
   const { data, error, mutate } = useSWR<
@@ -323,9 +438,9 @@ export function useTilskuddBatch(
         });
       }
 
-      const [, idsJson, draft] = args;
+      const [, idsJson, draft, base] = args;
       const ids = JSON.parse(idsJson) as string[];
-      return fetchTilskuddBatch(ids, draft);
+      return fetchTilskuddBatch(ids, draft, base);
     },
     swrConfig
   );
@@ -343,14 +458,44 @@ export function useTilskuddBatch(
 export function useTiltakCatalog(
   options: ContentHookOptions = {}
 ): ContentHookResult<ContentCatalogResponse<TiltakCatalogItem>> {
-  const includeDrafts = Boolean(options.includeDrafts);
-  const key = ['tiltak-catalog', includeDrafts] as TiltakCatalogKey;
+  const resolved = useContentFetchOptions(options);
+  const key = ['tiltak-catalog', resolved.includeDrafts, resolved.baseUrl] as TiltakCatalogKey;
 
   const { data, error, mutate } = useSWR<
     ContentFetcherResult<ContentCatalogResponse<TiltakCatalogItem>>,
     Error,
     TiltakCatalogKey
-  >(key, ([, draft]) => fetchTiltakCatalog({ includeDrafts: draft }), swrConfig);
+  >(
+    key,
+    ([, draft, base]) => fetchTiltakCatalog({ includeDrafts: draft, baseUrl: base }),
+    swrConfig
+  );
+
+  return {
+    data: data?.data,
+    etag: data?.etag,
+    isLoading: !data && !error,
+    error,
+    mutate,
+    refresh: () => mutate()
+  };
+}
+
+export function useTilskuddCatalog(
+  options: ContentHookOptions = {}
+): ContentHookResult<ContentCatalogResponse<TilskuddCatalogItem>> {
+  const resolved = useContentFetchOptions(options);
+  const key = ['tilskudd-catalog', resolved.includeDrafts, resolved.baseUrl] as TilskuddCatalogKey;
+
+  const { data, error, mutate } = useSWR<
+    ContentFetcherResult<ContentCatalogResponse<TilskuddCatalogItem>>,
+    Error,
+    TilskuddCatalogKey
+  >(
+    key,
+    ([, draft, base]) => fetchTilskuddCatalog({ includeDrafts: draft, baseUrl: base }),
+    swrConfig
+  );
 
   return {
     data: data?.data,
