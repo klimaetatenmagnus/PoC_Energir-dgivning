@@ -13,7 +13,7 @@
     "dev": "cross-env DOTENV_CONFIG_PATH=./.env concurrently -k -n client,server,buildings,solar -c blue,green,yellow,magenta \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:buildings\" \"npm run dev:solar\"",
     "dev:local": "cross-env API_ENV=test concurrently -k -n client,server,buildings,subsidy -c blue,green,yellow,magenta \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:buildings\" \"npm run dev:subsidy\"",
     "start:prod": "cross-env API_ENV=prod ts-node server/index.ts",
-    "sync:punkt-assets": "rsync -a --delete node_modules/@oslokommune/punkt-assets/dist/icons/ public/punkt-assets/icons/",
+    "sync:punkt-assets": "node scripts/sync-punkt-assets.mjs",
     "build": "npm run sync:punkt-assets && tsc && vite build",
     "build:backend": "node scripts/build-backend.mjs",
     "build:prod": "npm run build && npm run build:backend",
