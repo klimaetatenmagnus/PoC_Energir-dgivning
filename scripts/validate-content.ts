@@ -2,10 +2,11 @@ import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { ZodError } from 'zod';
+import { ZodError, type ZodTypeAny } from 'zod';
 
 import { TiltakContentSchema } from '../content/tiltak/schema';
 import { TilskuddContentSchema } from '../content/tilskudd/schema';
+import { ContentDictionarySchema } from '../content/dictionaries/schema';
 
 type ValidationSummary = {
   label: string;
@@ -21,6 +22,42 @@ const repoRoot = path.resolve(__dirname, '..');
 async function readJsonFile(filePath: string) {
   const raw = await readFile(filePath, 'utf-8');
   return JSON.parse(raw);
+}
+
+async function validateFile(
+  relativeFile: string,
+  label: string,
+  schema: ZodTypeAny
+): Promise<ValidationSummary> {
+  const fullPath = path.join(repoRoot, relativeFile);
+  const summary: ValidationSummary = {
+    label,
+    filesChecked: 1,
+    filesValid: 0,
+    errors: [],
+  };
+
+  try {
+    const data = await readJsonFile(fullPath);
+    schema.parse(data);
+    summary.filesValid = 1;
+  } catch (error) {
+    if (error instanceof ZodError) {
+      summary.errors.push({
+        file: relativeFile,
+        issues: error.issues.map(
+          (issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`
+        ),
+      });
+    } else {
+      summary.errors.push({
+        file: relativeFile,
+        issues: [(error as Error).message],
+      });
+    }
+  }
+
+  return summary;
 }
 
 async function validateDirectory(
@@ -90,6 +127,7 @@ async function main() {
   const summaries = await Promise.all([
     validateDirectory('content/tiltak', 'Tiltak', TiltakContentSchema),
     validateDirectory('content/tilskudd', 'Tilskudd', TilskuddContentSchema),
+    validateFile('content/dictionaries/index.json', 'Content dictionary', ContentDictionarySchema),
   ]);
 
   let hasErrors = false;

@@ -18,6 +18,8 @@ await build({
       "services/building-info-service/index.ts"
     ),
     "api-server": resolve(projectRoot, "src/api-server.ts"),
+    "admin-server": resolve(projectRoot, "services/admin-server/index.ts"),
+    "admin-api": resolve(projectRoot, "services/admin-api/index.ts"),
     "solar-service": resolve(
       projectRoot,
       "services/solar-service/index.js"

@@ -3,6 +3,7 @@ node_modules
 soap-dumps/
 dist/
 workspace-archive/
+public/punkt-assets/
 .gcloud/
 # Python
 __pycache__/

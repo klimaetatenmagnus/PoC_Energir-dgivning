@@ -859,7 +859,7 @@
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 48rem) {
   .address-search__form {
     flex-direction: column;
   }

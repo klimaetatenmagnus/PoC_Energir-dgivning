@@ -367,7 +367,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           fontWeight="700"
           fontStyle="normal"
           fontSize="24"
-          lineHeight="36"
+          style={{ lineHeight: '36px' }}
           letterSpacing="-0.2"
           fill="#2A2859"
           dominantBaseline="hanging"
@@ -402,11 +402,11 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
         fontWeight="400"
         fontStyle="normal"
         fontSize="16"
-        lineHeight="24"
+        style={{ lineHeight: '24px', cursor: 'pointer' }}
         letterSpacing="-0.2"
         fill={isActive ? '#000000' : isHovered ? '#1F42AA' : '#666666'}
         dominantBaseline="middle"
-        style={{ cursor: 'pointer' }}
+        
         onClick={() => setActiveTabId(tab.id)}
         onMouseEnter={() => setHoveredTabId(tab.id)}
         onMouseLeave={() => setHoveredTabId(null)}
@@ -510,7 +510,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontSize="14"
-          lineHeight="22"
+          style={{ lineHeight: '22px' }}
           letterSpacing="-0.2"
           fill="#2A2859"
           dominantBaseline="middle"
@@ -535,7 +535,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontSize="14"
-          lineHeight="22"
+          style={{ lineHeight: '22px' }}
           letterSpacing="-0.2"
           fill="#2A2859"
           dominantBaseline="middle"
@@ -561,7 +561,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontSize="14"
-          lineHeight="22"
+          style={{ lineHeight: '22px' }}
           letterSpacing="-0.2"
           fill="#2A2859"
           dominantBaseline="middle"
@@ -601,7 +601,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           fontFamily="Oslo Sans"
           fontWeight="500"
           fontSize="14"
-          lineHeight="22"
+          style={{ lineHeight: '22px' }}
           letterSpacing="-0.2"
           fill="#2A2859"
           dominantBaseline="middle"
@@ -690,7 +690,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
                 fontWeight="100"
                 fontStyle="normal"
                 fontSize="14"
-                lineHeight="22"
+                style={{ lineHeight: '22px' }}
                 letterSpacing="0"
                 fill="#FFFFFF"
                 dominantBaseline="hanging"
@@ -712,7 +712,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
                 fontWeight="100"
                 fontStyle="normal"
                 fontSize="14"
-                lineHeight="22"
+                style={{ lineHeight: '22px' }}
                 letterSpacing="0"
                 fill="#FFFFFF"
                 dominantBaseline="hanging"
@@ -734,7 +734,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
                 fontWeight="100"
                 fontStyle="normal"
                 fontSize="14"
-                lineHeight="22"
+                style={{ lineHeight: '22px' }}
                 letterSpacing="0"
                 fill="#FFFFFF"
                 dominantBaseline="hanging"
@@ -759,7 +759,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
                 fontWeight="100"
                 fontStyle="normal"
                 fontSize="14"
-                lineHeight="22"
+                style={{ lineHeight: '22px' }}
                 letterSpacing="0"
                 fill="#FFFFFF"
                 dominantBaseline="hanging"
@@ -774,7 +774,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
                 fontWeight="100"
                 fontStyle="normal"
                 fontSize="14"
-                lineHeight="22"
+                style={{ lineHeight: '22px' }}
                 letterSpacing="0"
                 fill="#FFFFFF"
                 dominantBaseline="hanging"
@@ -800,7 +800,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           fontWeight="700"
           fontStyle="normal"
           fontSize="18"
-          lineHeight="28"
+          style={{ lineHeight: '28px' }}
           letterSpacing="-0.2"
           fill="#FFFFFF"
           textAnchor="middle"
@@ -817,11 +817,11 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
             fontWeight="300"
             fontStyle="normal"
             fontSize="14"
-            lineHeight="22"
+            style={{ lineHeight: '22px', cursor: 'pointer' }}
             fill="#FFFFFF"
             textAnchor="middle"
             textDecoration="underline"
-            style={{ cursor: 'pointer' }}
+            
             onClick={() => openExternalLink(primaryReadMore.url)}
           >
             {primaryReadMore.label}
@@ -834,7 +834,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
             fontWeight="300"
             fontStyle="normal"
             fontSize="14"
-            lineHeight="22"
+            style={{ lineHeight: '22px' }}
             fill="#FFFFFF"
             textAnchor="middle"
           >
@@ -935,7 +935,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
                       fontWeight="300"
                       fontStyle="normal"
                       fontSize="12"
-                      lineHeight="20"
+                      style={{ lineHeight: '20px' }}
                       letterSpacing="-0.2"
                       fill="#000000"
                       dominantBaseline="middle"
@@ -960,7 +960,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
                       fontWeight="300"
                       fontStyle="normal"
                       fontSize="10"
-                      lineHeight="22"
+                      style={{ lineHeight: '22px' }}
                       letterSpacing="-0.2"
                       fill="#000000"
                       textAnchor="middle"
@@ -977,12 +977,12 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
                       fontWeight="300"
                       fontStyle="normal"
                       fontSize="12"
-                      lineHeight="18.67"
+                      style={{ lineHeight: '18.67px', cursor: 'pointer' }}
                       letterSpacing="-0.13"
                       fill="#000000"
                       textDecoration="underline"
                       dominantBaseline="middle"
-                      style={{ cursor: 'pointer' }}
+                      
                       onClick={() => openExternalLink(ordning.lenke)}
                     >
                       Lenke
@@ -1002,7 +1002,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           fontWeight="500"
           fontStyle="normal"
           fontSize="16"
-          lineHeight="24"
+          style={{ lineHeight: '24px' }}
           letterSpacing="-0.2"
           fill="#000000"
         >
@@ -1017,7 +1017,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           fontWeight="500"
           fontStyle="normal"
           fontSize="16"
-          lineHeight="24"
+          style={{ lineHeight: '24px' }}
           letterSpacing="-0.2"
           fill="#000000"
         >
@@ -1032,7 +1032,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           fontWeight="500"
           fontStyle="normal"
           fontSize="16"
-          lineHeight="24"
+          style={{ lineHeight: '24px' }}
           letterSpacing="-0.2"
           fill="#000000"
         >
@@ -1048,7 +1048,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
             fontWeight="700"
             fontStyle="normal"
             fontSize="18"
-            lineHeight="28"
+            style={{ lineHeight: '28px' }}
             letterSpacing="-0.2"
             fill="#000000"
             dominantBaseline="hanging"

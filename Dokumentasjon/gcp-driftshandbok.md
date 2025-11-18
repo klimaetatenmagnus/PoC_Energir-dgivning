@@ -110,7 +110,7 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 `api-server` leser `/config/app.json` direkte fra bøtten (via `CONTENT_BUCKET`) og faller tilbake til lokale filer hvis objektet ikke finnes. JSON-en caches per GCS-generation, så oppdatering av filen i bøtten blir synlig uten redeploy.
 `deploy/gcp/invalidate-cdn-cache.sh` brukes til å invalidere LB cache etter deploy (via Cloud Build steg).
 
-> Merk: `energinokkelen-content` (staging) og `energinokkelen-content-prod` (prod) er den eneste autoritative lagringen for tiltak- og støtteordningsdata. Alle redaktørendringer må først testes i staging-bøtten og bekreftes via staging-frontend/admin før filene kopieres videre til prod (se pilotkravet i `Dokumentasjon/Utvikling/tiltak-innholdsredigering-plan.md`).
+> Merk: `energinokkelen-content` (staging, opprettet 2025-10-23) og `energinokkelen-content-prod` (prod, opprettet 2025-10-25) er den eneste autoritative lagringen for tiltak- og støtteordningsdata. Begge bøttene har uniform bucket-level access, versjonering og soft delete aktivert. Alle redaktørendringer må først testes i staging-bøtten og bekreftes via staging-frontend/admin før filene kopieres videre til prod (se pilotkravet i `Dokumentasjon/Utvikling/tiltak-innholdsredigering-plan.md`).
 
 ### 4.6 Load balancer, CDN og DNS
 
@@ -120,6 +120,7 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
   - Path rules:
     - `/api/*`, `/metrics`, `/config/*` → serverless backend
     - SPA rewrite: forespørsler med `Accept: text/html` → `index.html`
+- **Staging host:** `staging.energinokkelen.no` peker til LB-IP `34.111.174.210`. Lokale QA-testere kan mappe hosten via `/etc/hosts` før testing (prosessen er dokumentert i `Dokumentasjon/innholdsdrift-tiltak.md`). Husk å kjøre `gcloud compute url-maps import staging-frontend-map ...` etter endringer i `deploy/gcp/staging-frontend-map.yaml` for at host-regelen skal aktiveres.
 - **IP-adresse:** `34.111.174.210`
 - **DNS:** Public sone `energinokkel-no` (`xn--energinkkelen-hnb.no.`) i Cloud DNS. Domeneshop peker NS til Google `ns-cloud-a1…a4`.
 - **Sertifikat:** Managed SSL `energinokkel-20251025` (dekker IDN- og ASCII-varianten). Nye sertifikater må opprettes hvis alias-domene registreres.
@@ -188,6 +189,7 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 - `/config/content/tiltak/index.json` og `/config/content/tilskudd/index.json` genereres on-demand og oppsummerer antall publiserte elementer, samt hvor mange som hoppes over (legacy/ugyldig/upublisert). Admin-løsningen skal benytte disse indeksene fremfor å scanne bøtten manuelt.
 - Alle `/config/content/**`-endepunktene returnerer nå `ETag`-headere basert på GCS `generation` (eller filsystemets mtime/size), og støtter `If-None-Match` slik at admin-klienten kan oppdage race conditions og unngå overstyring.
 - Første pilot med nytt schema (`etterisolering-yttervegg`) er supplert med `etterisolering-kjeller-loft`, `solenergi` og `varmepumpe` som nå brukes direkte i frontenden via `useTiltakContent`/`useGrantAwareStotteordninger`.
+- 2025-11-13: `npm run content:validate` og `npm run content:publish -- <push-staging|promote>` automatiserer schema-validering og staging→prod-synk. Rutinen er beskrevet i `Dokumentasjon/innholdsdrift-tiltak.md`; kjøres før redaktører tester via `staging.energinokkelen.no`.
 
 ### 5.3 CDN-invalidator
 
@@ -225,7 +227,38 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 - Rådata i `energinokkelen-data` bør tas jevnlige eksportkopier (gsutil + Cloud Scheduler/lifecycle).
 - Dokumenter eventuelle Excel/CSV-oppdateringer i `Dokumentasjon/` og hold `data/raw/` under versjonskontroll.
 
-### 5.8 Incident response
+### 5.8 Admin-API og innholdspublisering
+
+- **Kodebase:** `services/admin-api/*` (Express) + `src/admin/*` (frontend). Lokalt startes APIet via `npm run dev:admin-api` (port `4100` som default).
+- **Endepunkt:** `POST /admin/api/publish` (se § 9.7 i `Dokumentasjon/innholdsdrift-tiltak.md`). Prod/staging ligger bak IAP slik at bare gruppen `energinokkelredaktor@klimaoslo.no` kan kalle det.
+- **Cloud Build-kall:** API-et anroper `https://cloudbuild.googleapis.com/v1/projects/$PROJECT/locations/$LOCATION/builds` direkte med `GoogleAuth`. Builden består av 2 steg:
+  1. `gsutil -m rsync -d -r $STAGING_BUCKET $PROD_BUCKET`
+  2. Python-script som skriver `publish-log.json` med metadata (`user`, `changeSummary`, `items`, `gitSha`, `requestId`, `triggeredAt`) til `gs://energinokkelen-content-prod/content/logs/publish-<timestamp>.json`
+- **Servicekontoer/roller:** Cloud Build kjører som `content-admin@energiverktoy-poc-1234.iam.gserviceaccount.com`. Denne har `roles/storage.objectAdmin` på både `energinokkelen-content` og `energinokkelen-content-prod`. Admin-API trenger `roles/cloudbuild.builds.editor` for å opprette jobben.
+- **Konfigurasjon:** styres av
+  | Variabel | Default | Notat |
+  | --- | --- | --- |
+  | `ADMIN_CLOUD_BUILD_PROJECT` | `GOOGLE_CLOUD_PROJECT` | Prosjekt-id for builden |
+  | `ADMIN_CLOUD_BUILD_LOCATION` | `global` | Cloud Build region |
+  | `ADMIN_CONTENT_STAGING_PREFIX` | `gs://energinokkelen-content/content` | Kildebucket |
+  | `ADMIN_CONTENT_PROD_PREFIX` | `gs://energinokkelen-content-prod/content` | Målbucket |
+  | `ADMIN_CONTENT_LOG_PREFIX` | `gs://energinokkelen-content-prod/content/logs` | Audit-logger |
+  | `ADMIN_CONTENT_PUBLISHER_SERVICE_ACCOUNT` | `content-admin@…` | SA for build-stepene |
+- **Monitoring & verifikasjon:**
+  - Cloud Build-tag `content-publish` gjør det enkelt å filtrere i konsollen (`Cloud Build → History → filter tag:content-publish`).
+  - Hvert build-svar inneholder `logUrl` og `buildId` – eksponeres tilbake til frontend slik at redaktørene kan følge jobben.
+  - Publiseringsloggene i `gs://energinokkelen-content-prod/content/logs` inneholder `requestId`, `initiatedBy`, `items[]`, `gitSha` og `dryRun`.
+- **Manuell kjøring:** For hurtigtest uten IAP, bruk servicekonto eller `gcloud auth print-identity-token` og kall API-et direkte:
+  ```bash
+  TOKEN=$(gcloud auth print-identity-token)
+  curl -X POST https://<admin-run-url>/admin/api/publish \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"changeSummary":"Publiserer solenergi + Enova","items":[{"id":"solenergi","collection":"tiltak"},{"id":"enova-solcelleanlegg","collection":"tilskudd"}]}'
+  ```
+- **Feilsøking:** Sjekk Cloud Build-loggen først. Dersom builden ikke opprettes: verifiser at Cloud Run-servicekontoen har `roles/cloudbuild.builds.editor`. Dersom build steg 1 feiler, kjør `gcloud storage cat gs://energinokkelen-content-prod/content/logs/publish-*.json` for å se hvilken bruker/forespørsel som trigget jobben.
+
+### 5.9 Incident response
 
 - Sjekk Cloud Monitoring alert (e-post/Slack).
 - Gå til Cloud Run logs (`gcloud run services logs read energinokkelen --region europe-north1`).
@@ -240,7 +273,7 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 - **Per nå:** Cloud Run-tjenestene ble 2025-10-29 konfigurert med ingress `internal-and-cloud-load-balancing`, og `allUsers`-bindinger ble fjernet (kun LB-servicekontoen står igjen i prod).
 - **Autentisering/sikring (status 2025-10-29):**
 
-  - IAP-brand og klient (`projects/168751968131/brands/168751968131`, klient-ID `168751968131-3rt5l26aj6febgetbtmals5s5rk7gk85.apps.googleusercontent.com`) er opprettet, men IAP er deaktivert for å holde APIet åpent for publikum. OAuth-hemmeligheten ligger i Secret Manager (`IAP_OAUTH_CLIENT_SECRET`) for rask reaktivering.
+  - IAP-brand og klient (`projects/168751968131/brands/168751968131`, klient-ID `168751968131-3rt5l26aj6febgetbtmals5s5rk7gk85.apps.googleusercontent.com`) er opprettet, men IAP er deaktivert for å holde APIet åpent for publikum. OAuth-hemmeligheten ligger i Secret Manager (`IAP_OAUTH_CLIENT_SECRET`) for rask reaktivering. Når admin-UI settes i drift skal tilgang begrenses til Workspace-gruppen *Energinøkkel-redaktør* (`energinokkelredaktor@klimaoslo.no`).
   - Cloud Armor-policy `energinokkelen-armor` er opprettet, men ikke aktiv på backendene ennå (forrige forsøk ga 403 – må feilsøkes før reaktivering). Planlagt kost: ~USD 23/mnd + USD 0.10 per million forespørsler (≈USD 0.005 ved 50 000 kall).
 - **Slack varsler:** Slack-app med incoming webhook er satt opp for `#energinøkkelen-monitor` (notification channel `projects/energiverktoy-poc-1234/notificationChannels/2903429056188648583`). Cloud Monitoring sender nå varsler til både e-post og Slack.
 - **GitHub-integrasjon:** Cloud Build connection `energinokkelen-conn` er satt opp med nødvendige rettigheter.
@@ -339,6 +372,7 @@ gcloud monitoring uptime describe projects/energiverktoy-poc-1234/uptimeCheckCon
 | Dato       | Beskrivelse                                                                                                                                                                      | Utført av |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
 | 2025-11-15 | Temperaturstyring flyttet til `content/tiltak/temperaturstyring.json` med variantdata + nye tilskudd (`klimaoslo-smart-energistyring`, `klimaoslo-pris-effektstyring`) dokumentert i content-/driftsrutinene. | Codex      |
+| 2025-11-13 | Dokumenterte staging-host (`staging.energinokkelen.no`) i LB-oppsettet, og beskrev nye innholdsskript (`content:validate`/`content:publish`) samt driftsrutinen i `Dokumentasjon/innholdsdrift-tiltak.md`. | Codex      |
 | 2025-11-13 | Solenergi/Varmepumpe flyttet til `content/tiltak/*.json` + nye tilskudd (`klimaoslo-solenergitilskudd`, `enova-solcelleanlegg`, `klimaoslo-vaeske-til-vann-varmepumpe`, `klimaoslo-varmepumpebereder`), `useGrantAwareStotteordninger` dokumentert og rutiner for rsync/metadata oppdatert. | Codex      |
 | 2025-11-14 | Tetting/Ventilasjon/Vinduer modellert i `content/tiltak/*.json` (inkl. gul-listevarianter) og nye tilskudd (`klimaoslo-oppgradering-bygningskropp`, `klimaoslo-energitiltak-borettslag`, `klimaoslo-energikartlegging-borettslag`, `klimaoslo-balansert-ventilasjon`, `klimaoslo-vinduer-dorer`, `enova-energiradgivning`, `byantikvaren-istandsetting`) lagt til dokumentasjonen. | Codex      |
 | 2025-11-13 | Lagt til nye content-filer (etterisolering kjeller/loft + to tilskudd), dokumentert at frontend henter støtteordninger via `useTilskuddBatch`, og oppdatert Oppdatert-linjen. | Codex      |
