@@ -14,6 +14,11 @@ const distDir = path.resolve(process.cwd(), "dist");
 const indexHtmlPath = path.join(distDir, "index.html");
 const port = Number(process.env.PORT ?? config.port ?? 8080);
 
+app.use((req, _res, next) => {
+  console.warn("[admin-server] request", req.method, req.path);
+  next();
+});
+
 if (!fs.existsSync(indexHtmlPath)) {
   throw new Error(
     `[admin-server] Fant ikke build-output i ${indexHtmlPath}. Kjør "npm run build" før deploy.`
@@ -31,6 +36,14 @@ app.get("/healthz", (_req: Request, res: Response) => {
     stagingBucket: config.stagingBucket,
     prodBucket: config.prodBucket,
   });
+});
+
+app.get("/_gcp_iap/healthz", (_req: Request, res: Response) => {
+  res.status(200).send("ok");
+});
+
+app.get("/_gcp_iap/clear_login_cookie", (_req: Request, res: Response) => {
+  res.status(200).send("cleared");
 });
 
 app.use("/admin/api", createAdminApiRouter(config));
@@ -88,6 +101,10 @@ if (fs.existsSync(viteSvgPath)) {
     res.sendFile(viteSvgPath);
   });
 }
+
+app.get("/", (_req: Request, res: Response) => {
+  res.redirect("/admin");
+});
 
 app.get(/^\/admin(\/.*)?$/, (_req: Request, res: Response) => {
   res.sendFile(indexHtmlPath);

@@ -17,7 +17,7 @@ Dette dokumentet er **single source of truth** for både dagens innholdsdrift og
 
 ## 1. Roller og tilgang
 
-- **Redaktører:** medlemmer av Google Workspace-gruppen *Energinøkkel-redaktør* (`energinokkelredaktor@klimaoslo.no`). Gruppen gis tilgang til admin-UI, GCS og Cloud Run når disse settes opp.
+- **Redaktører:** medlemmer av Google Workspace-gruppen *Energinøkkel-redaktør* (`energinokkel-redaktor@klimaoslo.no`). Gruppen gis tilgang til admin-UI, GCS og Cloud Run når disse settes opp.
 - **Utviklere/opperativ drift:** ansvarlige for å holde skript og dokumentasjon oppdatert, samt bistå ved feil i schema eller integrasjon.
 - **Servicekontoer:** `content-admin@energiverktoy-poc-1234.iam.gserviceaccount.com` utfører skriptoperasjoner i Cloud Build/Cloud Run. Kontoen må ha `roles/storage.objectAdmin` på begge content-bøtter.
 
@@ -129,7 +129,7 @@ Til vi er der, brukes kommandoene over som “grunnsannhet” for hvordan pipeli
 
 ### 9.1 Mål og scope for UI-klienten
 
-- Erstatte manuelle skript med et selvbetjent, sikkert grensesnitt for Google Workspace-gruppen `energinokkelredaktor@klimaoslo.no`.
+- Erstatte manuelle skript med et selvbetjent, sikkert grensesnitt for Google Workspace-gruppen `energinokkel-redaktor@klimaoslo.no`.
 - Tydeliggjøre de to hovedbrukergruppene (tiltaksredaktører og tilskuddsredaktører) gjennom et dashbord som lar dem velge riktig redigeringsmodus før de ser data.
 - Støtte full CRUD på både tiltak og tilskudd, inkl. relasjonsstyring (tiltak ↔ grants) og variantdata (gul liste).
 - Gi redaktører mulighet til å publisere til staging selv, men kreve vanlig Cloud Build-approval når prod-knappen (“Publiser til energinokkelen.no”) trykkes.
@@ -178,7 +178,7 @@ Til vi er der, brukes kommandoene over som “grunnsannhet” for hvordan pipeli
 
 ### 9.4 Tilgangskontroll, sikkerhet og drift
 
-- IAP håndterer autentisering. Bare `energinokkelredaktor@klimaoslo.no` (og driftsteamet) får tilgang via gruppemedlemskap; andre får 403.
+- IAP håndterer autentisering. Bare `energinokkel-redaktor@klimaoslo.no` (og driftsteamet) får tilgang via gruppemedlemskap; andre får 403.
 - Innenfor gruppen kan vi differensiere roller: “Tiltak”-redaktører og “Tilskudd”-redaktører får standard tilgang til sine respektive moduser, mens drift/administratorer får begge moduser og prod-approval-dashboard.
 - Cloud Run-tjenestene kjøres uten offentlig ingress; all tilgang skjer via load balanceren som allerede beskrives i `Dokumentasjon/gcp-driftshandbok.md`.
 - Servicekontoen som skriver til GCS får kun nødvendige roller. Lesetilgang til `/config/content/**` reiser via API-serveren slik at vi gjenbruker eksisterende caching, rate limits og auditlogging.
@@ -327,6 +327,7 @@ Planen over erstatter ad-hoc-notater rundt admin-klienten og fungerer som aksjon
 | 2025-11-17 | La til fordelseditor i admin-panelet slik at redaktører kan opprette/endre/slette `benefits[]` inkl. `pkt-icon`-valg.                                            | `src/admin/components/BenefitsEditor.tsx`, `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                  |
 | 2025-11-18 | Admin-API kan nå lese/lagre dictionary-oppføringer og `benefitRefs` direkte mot staging-bøtten; fordelseditoren bruker de nye endepunktene med versjonskontroll. | `services/admin-api/*`, `src/admin/components/BenefitsEditor.tsx`, `scripts/start-ui-only.sh`, `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                          |
 | 2025-11-19 | Polerte tiltakskatalog og forhåndsvisning: jevne kort-høyder, inline preview mellom rader og dynamisk høyde i `PreviewPanel`.                                    | `src/admin/components/ContentList.tsx`, `src/admin/components/ContentList.css`, `src/admin/components/PreviewPanel.tsx`                                                                                                                           |
+| 2025-11-18 | Første staging-deploy av `energinokkelen-admin` på Cloud Run med dedikert SA + `admin-server`, `staging-admin-neg`/`staging-admin-backend`, `/admin`-path i LB og aktivert IAP (`group:energinokkel-redaktor@klimaoslo.no`). | `services/admin-server/*`, `scripts/sync-punkt-assets.mjs`, `deploy/gcp/staging-frontend-map.yaml`, Cloud Run/NEG/backend konfig via gcloud |
 | 2025-11-20 | Punkt-breakpoints rullet ut for fordelseditor, preview-panel, katalogvisning og øvrige admin-moduler, samt delt stylesheet for energiverktøyet.                     | `src/admin/components/BenefitsEditor.css`, `src/admin/components/PreviewPanel.css`, `src/admin/components/ContentList.css`, `src/admin/components/ModeCards.css`, `src/admin/components/EnvironmentToggle.css`, `src/styles/components.css` |
 
 Legg til en ny rad hver gang arkitektur, plan eller prosess endres slik at historikk og ansvar er synlig.
@@ -337,7 +338,8 @@ Legg til en ny rad hver gang arkitektur, plan eller prosess endres slik at histo
 
 > **Utviklings- og testfilosofi:** Alle UI-endringer bygges og testes først lokalt (Vite dev-server + mock/BFF). Lesing mot staging (`/config/content/**`) gjøres med konfigurerbare base-URLer, men skrivetilgang holdes lokalt/in-memory til funksjonaliteten er klar for staging-deploy. Først når en milepæl er stabil, deployes den til Cloud Run for helhetlig QA.
 
-1. **IAM og tilgangsstyring (GJENSTÅR):** Admin-UI må låses bak IAP/IAM før staging/prod-bruk. Dette innebærer justering av `EnvironmentToggle`-tilganger, Cloud Run/IAP-konfig og test av `X-Goog-Authenticated-User-Email`-flyten beskrevet i § 9.7.
+1. **Admin-Cloud Run + IAP (PÅGÅR 2025-11-18→):** `energinokkelen-admin` er nå deployet som egen Cloud Run-tjeneste (SA `run-energinokkelen-admin`) med `admin-server` som entrypoint, koblet til HTTPS-lasten via `staging-admin-neg`/`staging-admin-backend` og ny `/admin`-route i `staging-frontend-map`. IAP er aktivert og `group:energinokkel-redaktor@klimaoslo.no` har `roles/iap.httpsResourceAccessor`; neste steg er å bekrefte at `X-Goog-Authenticated-User-Email` når admin-API-et i staging, replikere oppsettet til prod (`energinokkelen-admin-prod`, NEGs/backend/url-map) og fjerne eventuelle midlertidige åpne bindings.
+2. **IAM og tilgangsstyring (GJENSTÅR):** Admin-UI må låses bak IAP/IAM før staging/prod-bruk. Dette innebærer justering av `EnvironmentToggle`-tilganger, Cloud Run/IAP-konfig og test av `X-Goog-Authenticated-User-Email`-flyten beskrevet i § 9.7.
 3. **Redigerbare tiltak/tilskudd (GJENSTÅR):** UI-et er foreløpig “read only” utover fordelseditoren. Vi må bygge skjemaer for tiltak/tilskudd, koble dem til Admin-API for skriving til `content/tiltak/*.json` og `content/tilskudd/*.json`, sørge for schema-validering i UI, samt støtte versjonering/generation-sjekker mot GCS. Dette er siste store funksjon før redaktørene kan jobbe uten Git.
 4. **Tilskudds-workflow og paginering (GJENSTÅR):** Når katalogen vokser må vi legge til server-side filtrering/paginering og eventuelt splitting av tilskudd vs tiltak i egne dashboards. Dette henger sammen med punkt 3 slik at redigeringsopplevelsen skalerer.
 5. **Figma/Tiltak-komponentopprydding (GJENSTÅR):** Tiltakskomponentene under `src/components/FigmaBlokk/**` har fremdeles hardkodede attributter som gir React-warnings. Disse må ryddes i takt med design-polish slik at forhåndsvisningen speiler produksjonskortene uten konsollstøy.

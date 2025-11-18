@@ -62,6 +62,8 @@ Miljøet består i dag av ett GCP-prosjekt (`energiverktoy-poc-1234`) med både 
 | ---------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | Staging    | `energinokkelen`      | 1 CPU / 1 Gi (api + building-info), 0.5 CPU / 512 Mi (solar).`autoscaling.min=0`, `max=4`. Secrets maps via `valueFrom`. | IAM:`roles/run.invoker` midlertidig gitt til `allUsers` for test. Skal fjernes når auth er på plass. |
 | Produksjon | `energinokkelen-prod` | Samme image og env, men `_API_ENV=prod`.                                                                                        | Også åpen for `allUsers` i påvente av Cloud Armor/IAP.                                                |
+| Staging    | `energinokkelen-admin` | Node/Express `admin-server` (static build + admin-API). Ingress `internal-and-cloud-load-balancing`, `min=0`/`max=2`, SA `run-energinokkelen-admin`. | Routing via `staging-admin-neg`/`staging-admin-backend`, `/admin`-path i lb + IAP. |
+| Produksjon | `energinokkelen-admin-prod` *(planlagt)* | Samme oppsett som staging, men peker mot prod-content/-publisering. | Opprettes når staging/IAM er verifisert. |
 
 **Miljøvariabler (utvalg):**
 
@@ -93,6 +95,7 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 
 - **`cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com`**Roller: `cloudbuild.builds.editor`, `run.admin`, `artifactregistry.writer`, `secretmanager.secretAccessor`, `iam.serviceAccountUser`, `logging.logWriter`, `storage.objectAdmin`, `compute.loadBalancerAdmin`.
 - **`run-energinokkelen@energiverktoy-poc-1234.iam.gserviceaccount.com`**Roller: `run.invoker`, `logging.logWriter`, `monitoring.metricWriter`, `secretmanager.secretAccessor`, `storage.objectViewer` (content/data).
+- **`run-energinokkelen-admin@energiverktoy-poc-1234.iam.gserviceaccount.com`**Roller: `logging.logWriter`, `monitoring.metricWriter`, `cloudbuild.builds.editor` (for publish-kall), `storage.objectAdmin` på `energinokkelen-content` og `energinokkelen-content-prod`.
 - Serverless NEG service agent (`service-168751968131@serverless-robot-prod.iam.gserviceaccount.com`) har `roles/run.invoker` for prod/staging API via load balancer.
 - Manuell bruker (Magnus) kjører gcloud-kommandoer; Ocean avhenger av hans IAM (Project Editor).
 
@@ -118,7 +121,8 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
   - Backend bucket `staging-frontend-bucket` (staging) og `prod-frontend-bucket` (prod) med host-regler.
   - Serverless NEG `staging-api-neg` / `prod-api-neg` peker til respektive Cloud Run URLer.
   - Path rules:
-    - `/api/*`, `/metrics`, `/config/*` → serverless backend
+    - `/api/*`, `/metrics`, `/config/*` → `staging-api-backend` / `prod-api-backend`
+    - `/admin` og `/admin/*` → `staging-admin-backend` (staging) og etter hvert `prod-admin-backend`
     - SPA rewrite: forespørsler med `Accept: text/html` → `index.html`
 - **Staging host:** `staging.energinokkelen.no` peker til LB-IP `34.111.174.210`. Lokale QA-testere kan mappe hosten via `/etc/hosts` før testing (prosessen er dokumentert i `Dokumentasjon/innholdsdrift-tiltak.md`). Husk å kjøre `gcloud compute url-maps import staging-frontend-map ...` etter endringer i `deploy/gcp/staging-frontend-map.yaml` for at host-regelen skal aktiveres.
 - **IP-adresse:** `34.111.174.210`
@@ -230,7 +234,7 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 ### 5.8 Admin-API og innholdspublisering
 
 - **Kodebase:** `services/admin-api/*` (Express) + `src/admin/*` (frontend). Lokalt startes APIet via `npm run dev:admin-api` (port `4100` som default).
-- **Endepunkt:** `POST /admin/api/publish` (se § 9.7 i `Dokumentasjon/innholdsdrift-tiltak.md`). Prod/staging ligger bak IAP slik at bare gruppen `energinokkelredaktor@klimaoslo.no` kan kalle det.
+- **Endepunkt:** `POST /admin/api/publish` (se § 9.7 i `Dokumentasjon/innholdsdrift-tiltak.md`). Prod/staging ligger bak IAP slik at bare gruppen `energinokkel-redaktor@klimaoslo.no` kan kalle det.
 - **Cloud Build-kall:** API-et anroper `https://cloudbuild.googleapis.com/v1/projects/$PROJECT/locations/$LOCATION/builds` direkte med `GoogleAuth`. Builden består av 2 steg:
   1. `gsutil -m rsync -d -r $STAGING_BUCKET $PROD_BUCKET`
   2. Python-script som skriver `publish-log.json` med metadata (`user`, `changeSummary`, `items`, `gitSha`, `requestId`, `triggeredAt`) til `gs://energinokkelen-content-prod/content/logs/publish-<timestamp>.json`
@@ -271,9 +275,9 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 
 - **Organisasjon:** Prosjektet er nå knyttet til `organizations/99151267823`, identifisert som Klimaoslo (`displayName: klimaoslo.no`). Organisasjonen ble etablert 2025-10-28 og har kunde-ID `C03q5c8qi`.
 - **Per nå:** Cloud Run-tjenestene ble 2025-10-29 konfigurert med ingress `internal-and-cloud-load-balancing`, og `allUsers`-bindinger ble fjernet (kun LB-servicekontoen står igjen i prod).
-- **Autentisering/sikring (status 2025-10-29):**
+- **Autentisering/sikring (status 2025-11-18):**
 
-  - IAP-brand og klient (`projects/168751968131/brands/168751968131`, klient-ID `168751968131-3rt5l26aj6febgetbtmals5s5rk7gk85.apps.googleusercontent.com`) er opprettet, men IAP er deaktivert for å holde APIet åpent for publikum. OAuth-hemmeligheten ligger i Secret Manager (`IAP_OAUTH_CLIENT_SECRET`) for rask reaktivering. Når admin-UI settes i drift skal tilgang begrenses til Workspace-gruppen *Energinøkkel-redaktør* (`energinokkelredaktor@klimaoslo.no`).
+  - IAP-brand og klient (`projects/168751968131/brands/168751968131`, klient-ID `168751968131-3rt5l26aj6febgetbtmals5s5rk7gk85.apps.googleusercontent.com`) beskytter nå `staging-admin-backend` (Cloud Load Balancer). Tilgang er gitt til Workspace-gruppen *Energinøkkel-redaktør* (`energinokkel-redaktor@klimaoslo.no`). Prod-backendene (`energinokkelen`, `energinokkelen-prod`, `prod-admin-backend`) holder fortsatt `allUsers` inntil IAM/IAP kan strammes.
   - Cloud Armor-policy `energinokkelen-armor` er opprettet, men ikke aktiv på backendene ennå (forrige forsøk ga 403 – må feilsøkes før reaktivering). Planlagt kost: ~USD 23/mnd + USD 0.10 per million forespørsler (≈USD 0.005 ved 50 000 kall).
 - **Slack varsler:** Slack-app med incoming webhook er satt opp for `#energinøkkelen-monitor` (notification channel `projects/energiverktoy-poc-1234/notificationChannels/2903429056188648583`). Cloud Monitoring sender nå varsler til både e-post og Slack.
 - **GitHub-integrasjon:** Cloud Build connection `energinokkelen-conn` er satt opp med nødvendige rettigheter.
