@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, type ReactNode } from 'react';
 import useSWR, { type KeyedMutator } from 'swr';
 import type { TiltakContent } from '../../content/tiltak/schema';
