@@ -4,14 +4,7 @@ import {
   PktCard,
   PktTag,
 } from "@oslokommune/punkt-react";
-import {
-  Fragment,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   AdminCatalogMetadata,
   AdminCatalogStatus,
@@ -69,13 +62,6 @@ export function ContentList({
 }: ContentListProps) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [columnCount, setColumnCount] = useState(1);
-  const previewIndex = useMemo(() => {
-    if (!previewItem) {
-      return -1;
-    }
-    return items.findIndex((entry) => entry.id === previewItem.id);
-  }, [items, previewItem]);
-
   useEffect(() => {
     const element = gridRef.current;
     if (!element) {
