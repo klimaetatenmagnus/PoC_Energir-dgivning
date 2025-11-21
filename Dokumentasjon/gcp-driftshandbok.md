@@ -185,6 +185,11 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
   ```
   (Trigger i GCP bør peke på branch `deploy/gcp` og bruke samme konfig/substitusjoner.)
 - **Routing:** LB path `/admin` går til `staging-admin-backend` (Cloud Run `energinokkelen-admin`). Med `base=/admin/` peker index til `/admin/assets/**`, som serveres fra admin-serveren og unngår 404 mot GCS-bucketen.
+- **Trigger-oppsett:** Trigger `energinokkelen-admin-staging` er opprettet i `europe-north1` med:
+  - Repo-tilkobling: `projects/energiverktoy-poc-1234/locations/europe-north1/connections/energinokkelen-conn/repositories/poc-energiradgivning`
+  - Branch filter: `^deploy/gcp$`
+  - Build config: `deploy/gcp/cloudbuild-admin.yaml`
+  - Substitusjoner: `_TAG=admin-latest` (kan overstyres)
 
 ---
 
