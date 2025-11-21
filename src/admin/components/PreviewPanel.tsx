@@ -11,6 +11,7 @@ import {
   PktAccordionItem,
   PktAlert,
   PktButton,
+  PktTextinput,
   PktModal,
   PktSelect,
   PktRadioButton,
@@ -56,6 +57,10 @@ import type {
   AdminMode,
 } from "../types";
 import type { TilskuddContent } from "../../../content/tilskudd/schema";
+import {
+  fetchTiltakMetadata,
+  updateTiltakBenefitRefs,
+} from "../api/adminApiClient";
 import "./PreviewPanel.css";
 
 type TiltakPreviewComponent = React.ComponentType<
@@ -118,6 +123,9 @@ export function PreviewPanel({
   const [buildingType, setBuildingType] = useState<string>("default");
   const [selectedTiltakId, setSelectedTiltakId] =
     useState<string | null>(null);
+  const { mutate: mutateTiltakPreview } = useTiltakContent(
+    mode === "tiltak" ? item?.id ?? null : null
+  );
   const { data: tilskuddContent } = useTilskuddContent(
     mode === "tilskudd" ? item?.id : null
   );
@@ -357,6 +365,11 @@ export function PreviewPanel({
       <section className="admin-preview__body">
         {mode === "tiltak" ? (
           <div className="admin-preview__stack">
+            <BenefitInlineEditor
+              tiltakId={item.id}
+              benefitsDictionary={dictionary?.benefits ?? []}
+              onRefreshTiltak={() => mutateTiltakPreview?.()}
+            />
             <TiltakPreviewCanvas
               tiltakId={item.id}
               buildingType={buildingType}
@@ -411,6 +424,285 @@ export function PreviewPanel({
     >
       {previewContent}
     </PktModal>
+  );
+}
+
+type BenefitInlineEditorProps = {
+  tiltakId: string;
+  benefitsDictionary: {
+    id: string;
+    title: string;
+    description: string;
+    icon?: string;
+  }[];
+  onRefreshTiltak?: () => Promise<unknown> | unknown;
+};
+
+const MAX_BENEFITS = 4;
+
+function BenefitInlineEditor({
+  tiltakId,
+  benefitsDictionary,
+  onRefreshTiltak,
+}: BenefitInlineEditorProps) {
+  const [benefitRefs, setBenefitRefs] = useState<string[]>([]);
+  const [originalRefs, setOriginalRefs] = useState<string[]>([]);
+  const [generation, setGeneration] = useState<string | null>(null);
+  const [changeSummary, setChangeSummary] = useState(
+    "Oppdatert fordeler i admin UI"
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [pendingAdd, setPendingAdd] = useState<string>("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setIsLoading(true);
+      setError(null);
+      setStatus(null);
+      try {
+        const meta = await fetchTiltakMetadata(tiltakId);
+        if (cancelled) return;
+        setBenefitRefs(meta.benefitRefs ?? []);
+        setOriginalRefs(meta.benefitRefs ?? []);
+        setGeneration(meta.generation);
+      } catch (err) {
+        if (cancelled) return;
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Kunne ikke hente metadata for tiltaket."
+        );
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [tiltakId]);
+
+  const availableOptions = useMemo(
+    () =>
+      benefitsDictionary.filter(
+        (entry) => !benefitRefs.includes(entry.id)
+      ),
+    [benefitsDictionary, benefitRefs]
+  );
+
+  const hasChanges =
+    benefitRefs.length !== originalRefs.length ||
+    benefitRefs.some((ref, idx) => ref !== originalRefs[idx]);
+
+  const handleRemove = (id: string) => {
+    setBenefitRefs((prev) => prev.filter((ref) => ref !== id));
+    setAddOpen(true);
+  };
+
+  const handleAdd = () => {
+    if (!pendingAdd) {
+      setError("Velg en fordel i listen for å legge til.");
+      return;
+    }
+    if (benefitRefs.includes(pendingAdd)) {
+      setError("Fordelen er allerede valgt.");
+      return;
+    }
+    setBenefitRefs((prev) => [...prev, pendingAdd].slice(0, MAX_BENEFITS));
+    setPendingAdd("");
+    setAddOpen(false);
+    setError(null);
+  };
+
+  const handleSave = async () => {
+    if (!generation) {
+      setError("Generation mangler. Oppdater siden og prøv igjen.");
+      return;
+    }
+    setIsSaving(true);
+    setError(null);
+    setStatus(null);
+    try {
+      const response = await updateTiltakBenefitRefs(tiltakId, {
+        benefitRefs,
+        generation,
+        changeSummary: changeSummary.trim() || undefined,
+      });
+      setGeneration(response.generation);
+      setOriginalRefs(response.benefitRefs);
+      setStatus("Fordelene ble oppdatert.");
+      if (onRefreshTiltak) {
+        await onRefreshTiltak();
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Kunne ikke lagre fordelene. Prøv igjen."
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const resetChanges = () => {
+    setBenefitRefs(originalRefs);
+    setPendingAdd("");
+    setAddOpen(false);
+    setStatus(null);
+    setError(null);
+  };
+
+  const slots = Math.max(
+    1,
+    Math.min(MAX_BENEFITS - benefitRefs.length, MAX_BENEFITS)
+  );
+
+  return (
+    <section className="benefit-inline">
+      <header className="benefit-inline__header">
+        <div>
+          <p className="benefit-inline__eyebrow">Fordeler i tiltakskortet</p>
+          <p className="benefit-inline__helper">
+            Fjern med kryss, og legg til via den striplede plussboksen.
+            Maks {MAX_BENEFITS} fordeler vises.
+          </p>
+        </div>
+        <div className="benefit-inline__actions">
+          <PktButton
+            size="small"
+            skin="primary"
+            disabled={!hasChanges || isSaving || isLoading}
+            onClick={handleSave}
+          >
+            {isSaving ? "Lagrer…" : "Lagre endringer"}
+          </PktButton>
+          <PktButton
+            size="small"
+            variant="ghost"
+            disabled={!hasChanges || isSaving}
+            onClick={resetChanges}
+          >
+            Angre endringer
+          </PktButton>
+        </div>
+      </header>
+
+      {isLoading && (
+        <PktAlert skin="info" title="Laster fordeler…" ariaLive="polite">
+          Henter valgt tiltak og metadata.
+        </PktAlert>
+      )}
+      {error && (
+        <PktAlert skin="error" title="Kunne ikke laste" ariaLive="assertive">
+          {error}
+        </PktAlert>
+      )}
+      {status && !hasChanges && (
+        <PktAlert skin="success" title="Lagret" ariaLive="polite">
+          {status}
+        </PktAlert>
+      )}
+
+      <div className="benefit-inline__grid">
+        {benefitRefs.map((id) => {
+          const entry =
+            benefitsDictionary.find((benefit) => benefit.id === id) ?? null;
+          return (
+            <div key={id} className="benefit-inline__card">
+              <div className="benefit-inline__card-head">
+                <span className="benefit-inline__card-title">
+                  {entry?.title ?? id}
+                </span>
+                <button
+                  type="button"
+                  className="benefit-inline__remove"
+                  onClick={() => handleRemove(id)}
+                  aria-label={`Fjern fordelen ${entry?.title ?? id}`}
+                >
+                  ×
+                </button>
+              </div>
+              <p className="benefit-inline__description">
+                {entry?.description ?? "Ingen beskrivelse registrert."}
+              </p>
+            </div>
+          );
+        })}
+
+        {benefitRefs.length < MAX_BENEFITS &&
+          Array.from({ length: slots }).map((_, idx) => (
+            <button
+              key={`placeholder-${idx}`}
+              type="button"
+              className="benefit-inline__placeholder"
+              onClick={() => setAddOpen(true)}
+              aria-label="Legg til fordel"
+            >
+              <span className="benefit-inline__placeholder-icon">+</span>
+              <span className="benefit-inline__placeholder-text">
+                Legg til fordel
+              </span>
+            </button>
+          ))}
+      </div>
+
+      {addOpen && benefitRefs.length < MAX_BENEFITS && (
+        <div className="benefit-inline__add">
+          <PktSelect
+            id="benefit-inline-select"
+            label="Velg fordel (Punkt Selector)"
+            fullwidth
+            value={pendingAdd}
+            onChange={(event) => setPendingAdd(event.target.value)}
+          >
+            <option value="">Velg fordel</option>
+            {availableOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.title}
+              </option>
+            ))}
+          </PktSelect>
+          <div className="benefit-inline__add-actions">
+            <PktButton
+              size="small"
+              skin="secondary"
+              disabled={!pendingAdd || isSaving}
+              onClick={handleAdd}
+            >
+              Legg til
+            </PktButton>
+            <PktButton
+              size="small"
+              variant="ghost"
+              onClick={() => {
+                setAddOpen(false);
+                setPendingAdd("");
+              }}
+            >
+              Avbryt
+            </PktButton>
+          </div>
+        </div>
+      )}
+
+      <div className="benefit-inline__meta">
+        <PktTextinput
+          id="benefit-change-summary"
+          label="Endringsnotat (lagres i metadata.changeSummary)"
+          value={changeSummary}
+          onChange={(event) => setChangeSummary(event.target.value)}
+          placeholder="Kort begrunnelse for endringen"
+        />
+      </div>
+    </section>
   );
 }
 
