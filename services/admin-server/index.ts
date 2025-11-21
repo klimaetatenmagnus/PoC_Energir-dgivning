@@ -71,6 +71,16 @@ registerStatic(
 );
 
 registerStatic(
+  "/admin/assets",
+  "assets",
+  {
+    fallthrough: true,
+    immutable: true,
+    maxAge: "365d",
+  }
+);
+
+registerStatic(
   "/punkt-assets",
   "punkt-assets",
   {
