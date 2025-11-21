@@ -330,6 +330,8 @@ Planen over erstatter ad-hoc-notater rundt admin-klienten og fungerer som aksjon
 | 2025-11-18 | Første staging-deploy av `energinokkelen-admin` på Cloud Run med dedikert SA + `admin-server`, `staging-admin-neg`/`staging-admin-backend`, `/admin`-path i LB og aktivert IAP (`group:energinokkel-redaktor@klimaoslo.no`). | `services/admin-server/*`, `scripts/sync-punkt-assets.mjs`, `deploy/gcp/staging-frontend-map.yaml`, Cloud Run/NEG/backend konfig via gcloud                                                                                                       |
 | 2025-11-20 | Punkt-breakpoints rullet ut for fordelseditor, preview-panel, katalogvisning og øvrige admin-moduler, samt delt stylesheet for energiverktøyet.                                                                                          | `src/admin/components/BenefitsEditor.css`, `src/admin/components/PreviewPanel.css`, `src/admin/components/ContentList.css`, `src/admin/components/ModeCards.css`, `src/admin/components/EnvironmentToggle.css`, `src/styles/components.css` |
 | 2025-11-21 | Feilsøkte IAP error 52 i staging: DNS/SSL for `staging.energinøkkelen.no` manglet. Dokumenterte punycode-host, nødvendige LB hostRules og plan for nytt Managed SSL før videre IAM-arbeid.                                           | `Dokumentasjon/innholdsdrift-tiltak.md`, `deploy/gcp/staging-frontend-map.yaml`, Cloud DNS / SSL-konfig                                                                                                                                             |
+| 2025-11-21 | Opprettet egen Cloud Build-trigger for admin (`energinokkelen-admin-staging`), bygde med `VITE_BASE_PATH=/admin/` og deployet. Admin-lenken fungerer med IAP (kun `energinokkel-redaktor@klimaoslo.no`).                            | `deploy/gcp/cloudbuild-admin.yaml`, `Dokumentasjon/gcp-driftshandbok.md`, Cloud Build trigger                                                                                                                                                      |
+| 2025-11-21 | La til inline fordelsredigering i admin-preview for tiltak: kan fjerne/legge til fordeler via pluss/placeholders, lagre mot Admin-API med `generation`, og auto-oppdatere metadata/changeSummary.                                       | `src/admin/components/PreviewPanel.tsx`, `src/admin/components/PreviewPanel.css`                                                                                                                                                                    |
 
 Legg til en ny rad hver gang arkitektur, plan eller prosess endres slik at historikk og ansvar er synlig.
 
@@ -339,25 +341,12 @@ Legg til en ny rad hver gang arkitektur, plan eller prosess endres slik at histo
 
 > **Utviklings- og testfilosofi:** Alle UI-endringer bygges og testes først lokalt (Vite dev-server + mock/BFF). Lesing mot staging (`/config/content/**`) gjøres med konfigurerbare base-URLer, men skrivetilgang holdes lokalt/in-memory til funksjonaliteten er klar for staging-deploy. Først når en milepæl er stabil, deployes den til Cloud Run for helhetlig QA.
 
-1. **Admin-Cloud Run + IAP (PÅGÅR 2025-11-18→):** `energinokkelen-admin` er nå deployet som egen Cloud Run-tjeneste (SA `run-energinokkelen-admin`) med `admin-server` som entrypoint, koblet til HTTPS-lasten via `staging-admin-neg`/`staging-admin-backend` og ny `/admin`-route i `staging-frontend-map`. IAP er aktivert og `group:energinokkel-redaktor@klimaoslo.no` har `roles/iap.httpsResourceAccessor`, men innlogging stopper fortsatt med IAP feil 52. Feilen skyldes at staging-hostet (`staging.xn--energinkkelen-hnb.no` = `staging.energinøkkelen.no`) ikke har vært eksponert gjennom lastbalanserer/sertifikat – vi har til nå brukt `/etc/hosts`, og Google kan ikke validere sertifikatet. Neste steg er å legge punycode-hostet inn i `staging-frontend-map`, importere url-map på nytt, opprette Managed SSL kun for dette hostet og koble det til HTTPS-proxyen. Når hosten er synlig for Google (DNS + LB), skal IAP slutte å returnere 52 og vi kan replisere oppsettet til prod.
-   Forslag til konkrete neste skritt:
-
-   1. Legg til punycode-hostet i url-map
-      - Legg staging.xn--energinkkelen-hnb.no inn i hostRules i deploy/gcp/staging-frontend-map.yaml under staging, og importer
-        endringen med
-        gcloud compute url-maps import staging-frontend-map --source deploy/gcp/staging-frontend-map.yaml --global.
-   2. Opprett nytt Managed SSL-sertifikat
-      - Slett tidligere mislykkede sertifikatforsøk, og kjør:
-        gcloud compute ssl-certificates create energinokkel-`<dato>` --domains=staging.xn--energinkkelen-hnb.no.
-   3. Vent til sertifikatet blir ACTIVE og koble det til HTTPS-proxyen
-      - Når gcloud compute ssl-certificates describe … viser status: ACTIVE, oppdater proxyen:
-        gcloud compute target-https-proxies update staging-frontend-https-proxy --ssl-certificates=energinokkel-
-        20251025,energinokkel-`<dato>`.
-   4. Retest IAP/Cloud Run
-      - Bruk curl -v https://staging.energinøkkelen.no/_gcp_iap/healthz og logg inn i admin-UI. Når hosten har gyldig DNS og
-        sertifikat, skal IAP error 52 forsvinne.
-2. **IAM og tilgangsstyring (GJENSTÅR):** Admin-UI må låses bak IAP/IAM før staging/prod-bruk. Dette innebærer justering av `EnvironmentToggle`-tilganger, Cloud Run/IAP-konfig og test av `X-Goog-Authenticated-User-Email`-flyten beskrevet i § 9.7.
-3. **Redigerbare tiltak/tilskudd (GJENSTÅR):** UI-et er foreløpig “read only” utover fordelseditoren. Vi må bygge skjemaer for tiltak/tilskudd, koble dem til Admin-API for skriving til `content/tiltak/*.json` og `content/tilskudd/*.json`, sørge for schema-validering i UI, samt støtte versjonering/generation-sjekker mot GCS. Dette er siste store funksjon før redaktørene kan jobbe uten Git.
-4. **Tilskudds-workflow og paginering (GJENSTÅR):** Når katalogen vokser må vi legge til server-side filtrering/paginering og eventuelt splitting av tilskudd vs tiltak i egne dashboards. Dette henger sammen med punkt 3 slik at redigeringsopplevelsen skalerer.
-5. **Figma/Tiltak-komponentopprydding (GJENSTÅR):** Tiltakskomponentene under `src/components/FigmaBlokk/**` har fremdeles hardkodede attributter som gir React-warnings. Disse må ryddes i takt med design-polish slik at forhåndsvisningen speiler produksjonskortene uten konsollstøy.
-6. Status 2025-11-19: Punkt-prototypen og de fleste leseflyter er på plass (forhåndsvisning, katalog, fordeler). Vi mangler fortsatt IAM-forankring, full CRUD for tiltak/tilskudd og opprydding i Figma-komponentene før admin-UI kan tas i bruk av redaktører i staging/prod.
+1. **Full CRUD for tiltak/tilskudd:** Bygg skjemaene ferdig, koble til Admin-API for skriving til `content/tiltak/*.json` og `content/tilskudd/*.json`, legg på schema-validering i UI, og bruk GCS `generation` for konfliktkontroll. (Dette låser opp reell redigering uten Git.)
+   - Delplan for inline fordeler/redigering i forhåndsvisning:
+     - Tiltak: eksisterende `benefitRefs` kan fjernes med kryss; når et kort fjernes, vis en tom, striplet placeholder med samme dimensjoner og et `+`-ikon (Punkt-komponenter) for å legge til ny fordel. Dropdown/autocomplete bygges med Punkt Selector og listes opp fra dictionary (`benefits[]`).
+     - Inlinefelt i preview: tekstbeskrivelser, “Les mer”-lenke (`links[0]`), “Sjekk om du må søke…”-tekst og støtteordninger/`supportTags` kan redigeres direkte i forhåndsvisningen. Bruk Punkt-felter (`Textfield`/`Textarea`, Selector for valg) i edit-modus per seksjon.
+     - Oppdatering mot Admin-API bruker eksisterende JSON-felt (f.eks. `benefitRefs`, `links`, `metadata.changeSummary`) med `generation` for konfliktkontroll. Endringer setter automatisk `metadata.updatedAt/updatedBy/changeSummary`.
+     - Start med tiltak; tilskudd inline-redigering (grants, appliesToTiltak, buildingTypes) tas i neste iterasjon.
+2. **Katalogfilter og paginering:** Aktiver server-side filter/paginering basert på `/config/content/tiltak|tilskudd/index.json`, og del visninger for tiltak vs tilskudd så listene skalerer.
+3. **Prod-klar admin-pipeline:** Etabler prod-trigger/konfig for admin (Cloud Build + Cloud Run) og prod-hostrule/SSL når prod-host er klart, slik at admin kan kjøres i prod med samme base `/admin/` og IAP-policy.
+4. **Komponentopprydding:** Rydd React-warnings/hardkodede props i `src/components/FigmaBlokk/**` slik at admin-preview samsvarer med prod-render og konsollen er ren.
