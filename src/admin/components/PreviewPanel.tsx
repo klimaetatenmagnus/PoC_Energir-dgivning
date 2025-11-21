@@ -621,14 +621,14 @@ function BenefitInlineEditor({
                 <span className="benefit-inline__card-title">
                   {entry?.title ?? id}
                 </span>
-                <button
-                  type="button"
-                  className="benefit-inline__remove"
+                <PktButton
+                  size="xsmall"
+                  variant="ghost"
                   onClick={() => handleRemove(id)}
                   aria-label={`Fjern fordelen ${entry?.title ?? id}`}
                 >
-                  ×
-                </button>
+                  Fjern fordel
+                </PktButton>
               </div>
               <p className="benefit-inline__description">
                 {entry?.description ?? "Ingen beskrivelse registrert."}
