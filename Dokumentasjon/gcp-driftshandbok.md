@@ -167,6 +167,25 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 - `scripts/test-api-smoke.ts` – lokal/staging/prod smoke (brukes i CI og manuelt).
 - Andre scripts for data (Python) – foreløpig manuelt trigget.
 
+### 4.10 Admin-build og deploy (staging)
+
+- **Cloud Build-konfig:** `deploy/gcp/cloudbuild-admin.yaml`
+- **Formål:** Bygger admin-UI med `VITE_BASE_PATH=/admin/` og oppdaterer Cloud Run-tjenesten `energinokkelen-admin`. Beholder eksisterende staging-trigger for bruker-frontend upåvirket.
+- **Standard substitutions:**
+  - `_REGION=europe-north1`
+  - `_REPOSITORY=energinokkelen`
+  - `_SERVICE_NAME=energinokkelen-admin`
+  - `_TAG=admin-latest` (kan overskrives for manuell tagging, f.eks. `_TAG=admin-$(date +%Y%m%d%H%M%S)`)
+  - `_VITE_BASE_PATH=/admin/`
+- **Kjøring (manuell fra repo-root):**
+  ```bash
+  gcloud builds submit \
+    --config deploy/gcp/cloudbuild-admin.yaml \
+    --substitutions _TAG=admin-$(date +%Y%m%d%H%M%S)
+  ```
+  (Trigger i GCP bør peke på branch `deploy/gcp` og bruke samme konfig/substitusjoner.)
+- **Routing:** LB path `/admin` går til `staging-admin-backend` (Cloud Run `energinokkelen-admin`). Med `base=/admin/` peker index til `/admin/assets/**`, som serveres fra admin-serveren og unngår 404 mot GCS-bucketen.
+
 ---
 
 ## 5. Operasjonelle rutiner
