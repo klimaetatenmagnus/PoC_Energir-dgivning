@@ -9,6 +9,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 FROM deps AS build
+ARG VITE_BASE_PATH="/"
+ENV VITE_BASE_PATH=${VITE_BASE_PATH}
 COPY . .
 RUN npm run build:prod
 RUN npm prune --omit=dev

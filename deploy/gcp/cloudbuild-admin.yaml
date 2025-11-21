@@ -1,0 +1,64 @@
+substitutions:
+  _REGION: europe-north1
+  _REPOSITORY: energinokkelen
+  _TAG: admin-latest
+  _VITE_BASE_PATH: /admin/
+
+serviceAccount: projects/$PROJECT_ID/serviceAccounts/cloud-build@$PROJECT_ID.iam.gserviceaccount.com
+logsBucket: gs://energinokkelen-build-logs
+
+options:
+  logging: LEGACY
+
+steps:
+  - name: node:20
+    id: Install dependencies and build admin with base path
+    env:
+      - VITE_BASE_PATH=${_VITE_BASE_PATH}
+    entrypoint: bash
+    args:
+      - "-lc"
+      - |
+        set -eo pipefail
+        npm ci
+        npm run build:prod
+
+    # Note: we do not prune devDeps here; docker build will use package-lock for consistency.
+
+  - name: gcr.io/cloud-builders/docker
+    id: Build container image
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        image_uri="$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/app:${_TAG}"
+        echo "$image_uri" > /workspace/image-uri.txt
+        docker build \
+          --build-arg VITE_BASE_PATH=${_VITE_BASE_PATH} \
+          --tag "$image_uri" .
+
+  - name: gcr.io/cloud-builders/docker
+    id: Push container image
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        image_uri=$(cat /workspace/image-uri.txt)
+        docker push "$image_uri"
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: Update Cloud Run service (energinokkelen-admin)
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        set -eo pipefail
+        image_uri=$(cat /workspace/image-uri.txt)
+        gcloud run services update energinokkelen-admin \
+          --image "$image_uri" \
+          --region "${_REGION}"
+
+images:
+  - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/app:${_TAG}"
