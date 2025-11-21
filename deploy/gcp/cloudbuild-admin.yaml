@@ -2,6 +2,7 @@ substitutions:
   _REGION: europe-north1
   _REPOSITORY: energinokkelen
   _TAG: admin-latest
+  _SERVICE_NAME: energinokkelen-admin
   _VITE_BASE_PATH: /admin/
 
 serviceAccount: projects/$PROJECT_ID/serviceAccounts/cloud-build@$PROJECT_ID.iam.gserviceaccount.com
@@ -56,7 +57,7 @@ steps:
       - |
         set -eo pipefail
         image_uri=$(cat /workspace/image-uri.txt)
-        gcloud run services update energinokkelen-admin \
+        gcloud run services update ${_SERVICE_NAME} \
           --image "$image_uri" \
           --region "${_REGION}"
 
