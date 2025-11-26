@@ -1,0 +1,56 @@
+.tilskudd-editor-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-16, 1rem);
+}
+
+.tilskudd-editor-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pkt-spacing-12, 0.75rem);
+  margin-bottom: var(--pkt-spacing-8, 0.5rem);
+}
+
+.tilskudd-editor-page__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--pkt-spacing-12, 0.75rem);
+}
+
+.tilskudd-editor-page__draft-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--pkt-spacing-4, 0.25rem) var(--pkt-spacing-12, 0.75rem);
+  background-color: #ffe7bc; /* brand-yellow-500 */
+  color: #2a2859; /* brand-dark-blue-1000 */
+  border-radius: 0; /* Punkt bruker ikke avrundede hjørner */
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  font-weight: var(--pkt-font-weight-medium, 500);
+}
+
+.tilskudd-editor-page__published-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--pkt-spacing-4, 0.25rem) var(--pkt-spacing-12, 0.75rem);
+  background-color: #c7f6c9; /* brand-light-green-1000 */
+  color: #034b45; /* brand-dark-green-1000 */
+  border-radius: 0; /* Punkt bruker ikke avrundede hjørner */
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  font-weight: var(--pkt-font-weight-medium, 500);
+}
+
+.tilskudd-editor-page__error-actions {
+  display: flex;
+  gap: var(--pkt-spacing-12, 0.75rem);
+  margin-top: var(--pkt-spacing-12, 0.75rem);
+}
+
+.tilskudd-editor-page__save-error {
+  margin-top: var(--pkt-spacing-16, 1rem);
+}
+
+.tilskudd-editor-page__success {
+  margin-bottom: var(--pkt-spacing-8, 0.5rem);
+}

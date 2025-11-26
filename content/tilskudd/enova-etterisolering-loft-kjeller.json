@@ -89,9 +89,9 @@
     }
   ],
   "metadata": {
-    "status": "draft",
+    "status": "published",
     "updatedBy": "codex",
-    "updatedAt": "2025-11-13T08:32:00Z",
-    "changeSummary": "Ny tilskuddsfil for loft og kjeller som skal publiseres når tiltakskomponenten er migrert."
+    "updatedAt": "2025-11-25T10:00:00Z",
+    "changeSummary": "Publisert tilskudd for å aktivere visning i tiltakskort."
   }
 }

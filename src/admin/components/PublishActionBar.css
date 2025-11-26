@@ -1,0 +1,119 @@
+/* PublishActionBar – Floating action bar for publisering */
+
+.publish-action-bar {
+  position: fixed;
+  bottom: var(--pkt-spacing-6, 1.5rem);
+  right: var(--pkt-spacing-6, 1.5rem);
+  z-index: 1000;
+
+  /* Animasjon */
+  animation: publishActionBarSlideIn 0.25s ease-out;
+}
+
+.publish-action-bar .pkt-card {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--pkt-color-border-subtle, rgba(0, 0, 0, 0.08));
+}
+
+.publish-action-bar__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-3, 0.75rem);
+  padding: var(--pkt-spacing-4, 1rem);
+  min-width: 280px;
+  max-width: 360px;
+}
+
+.publish-action-bar__header {
+  display: flex;
+  align-items: center;
+  gap: var(--pkt-spacing-2, 0.5rem);
+}
+
+.publish-action-bar__label {
+  font-size: 0.9rem;
+  color: var(--pkt-color-text-body-dark, #111827);
+  font-weight: 500;
+}
+
+.publish-action-bar__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-2, 0.5rem);
+}
+
+.publish-action-bar__actions .pkt-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Bekreftelsesdialog */
+.publish-action-bar__confirm-header {
+  display: flex;
+  align-items: center;
+  gap: var(--pkt-spacing-2, 0.5rem);
+}
+
+.publish-action-bar__confirm-header strong {
+  font-size: 0.95rem;
+}
+
+.publish-action-bar__confirm-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--pkt-color-text-secondary, #4c566a);
+  line-height: 1.4;
+}
+
+.publish-action-bar__confirm-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--pkt-color-text-secondary, #4c566a);
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.publish-action-bar__confirm-list li {
+  margin-bottom: 0.25rem;
+}
+
+.publish-action-bar__confirm-actions {
+  display: flex;
+  gap: var(--pkt-spacing-2, 0.5rem);
+  justify-content: flex-end;
+}
+
+/* Mobil */
+@media (max-width: 599px) {
+  .publish-action-bar {
+    left: var(--pkt-spacing-4, 1rem);
+    right: var(--pkt-spacing-4, 1rem);
+    bottom: var(--pkt-spacing-4, 1rem);
+  }
+
+  .publish-action-bar__content {
+    min-width: unset;
+    max-width: unset;
+  }
+
+  .publish-action-bar__confirm-actions {
+    flex-direction: column;
+  }
+
+  .publish-action-bar__confirm-actions .pkt-btn {
+    width: 100%;
+  }
+}
+
+/* Animasjon */
+@keyframes publishActionBarSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

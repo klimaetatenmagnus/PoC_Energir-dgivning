@@ -9,7 +9,7 @@ import {
   openExternalLink
 } from './shared';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
-import { useTiltakContent } from '../../../../hooks/contentHooks';
+import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type {
   TiltakAccordionItem,
@@ -18,7 +18,7 @@ import type {
 } from '../../../../../content/tiltak/schema';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
-import { renderParagraphWithGlossary } from './glossaryHelpers';
+import { renderParagraphWithGlossary, dictionaryTermsToGlossary } from './glossaryHelpers';
 
 type UtskiftningAvVinduProps = TiltakComponentProps;
 type UtskiftningAvVinduComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -44,161 +44,6 @@ type VinduerContentView = {
   accordion: TiltakAccordionItem[];
   tabs: TiltakTabsSection[];
   grants: string[];
-};
-
-const defaultVinduerContent: VinduerContentView = {
-  title: 'Oppgradering av vinduer',
-  introParagraphs: [
-    'Vinduer står for en stor del av varmetapet i en bolig. Med gode vedlikeholds- og oppgraderingsgrep kan du halvere tapet sammenlignet med eldre vinduer og dører.',
-    'Start alltid med de enkleste tiltakene – tetting, justering og varevinduer – før du vurderer full utskifting.'
-  ],
-  buildingTypeParagraphs: {
-    enebolig: [
-      'Eneboliger har ofte vinduer i ulike størrelser og aldre. Kartlegg hvilke som kan repareres, og hvilke som bør skiftes ut for å få ned energibruken.'
-    ],
-    rekkehus: [
-      'I rekkehus og tomannsboliger er uttrykket ofte likt. Koordiner tiltak med naboene for å bevare helheten – spesielt ved utskifting.'
-    ],
-    tomannsbolig: [
-      'I rekkehus og tomannsboliger er uttrykket ofte likt. Koordiner tiltak med naboene for å bevare helheten – spesielt ved utskifting.'
-    ],
-    blokk: [
-      'I blokker og større boligbygg må styret planlegge arbeidet samlet slik at fasaden og lydkravene ivaretas.'
-    ],
-    default: [
-      'Velg løsninger som passer bygningens uttrykk og energibehov, og dokumenter hvilken effekt tiltaket har på varmetapet.'
-    ]
-  },
-  benefits: [
-    { title: 'Mindre trekk', description: 'Tettere vinduer og dører gir varmere rom og mindre støy.' },
-    { title: 'Redusert støy', description: 'Moderne vinduer skjermer mot trafikk og vær.' },
-    {
-      title: 'Høyere boligverdi',
-      description: 'Oppgraderte vinduer og fasader gir bedre energimerke og attraktivitet.'
-    },
-    { title: 'Redusert energibehov', description: 'Lavere U-verdi betyr lavere varmetap og strømregning.' }
-  ],
-  readMore: [
-    {
-      id: 'dibk-velg-vinduer',
-      label: 'DiBK – bytte vinduer, velg vinduer som gir deg lys og varme',
-      url: 'https://www.dibk.no/bygge-eller-endre/puss-opp-energismart/bytte-vinduer-velg-vinduer-som-gir-deg-lys-og-varme/'
-    }
-  ],
-  accordion: [
-    {
-      id: 'soknadsplikt',
-      title: 'Søknadsplikt og fagansvar',
-      body: [
-        'Vindusutskifting påvirker fasaden og er ofte søknadspliktig. Ta tidlig dialog med Plan- og bygningsetaten, spesielt dersom bygget er bevaringsverdig eller flere boenheter må koordinere arbeidet.',
-        'I større prosjekter krever kommunen ansvarlige foretak for prosjektering og utførelse.'
-      ],
-      links: [
-        {
-          id: 'dibk-soknadsplikt',
-          label: 'Direktoratet for byggkvalitet – hva er søknadsplikt?',
-          url: 'https://www.dibk.no/regelverk/sak/2/2/innledning'
-        },
-        {
-          id: 'dibk-ansvar',
-          label: 'Tiltakshaver og ansvarlige foretak',
-          url: 'https://www.dibk.no/regelverk/sak/3/12/innledning'
-        }
-      ],
-      glossary: [
-        {
-          term: 'U-verdi',
-          definition: [
-            'U-verdien forteller hvor godt vinduet isolerer. Jo lavere verdi, jo mindre varme slipper ut og jo bedre er vinduet for energibruken.'
-          ],
-          links: [
-            {
-              label: 'Les mer hos DiBK',
-              url: 'https://www.dibk.no/regelverk/byggteknisk-forskrift-tek17/14/14-2'
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  tabs: [
-    {
-      type: 'tabs',
-      title: 'Tiltak du kan vurdere',
-      tabs: [
-        {
-          id: 'generelt',
-          title: 'Generelt',
-          body: [
-            'Vinduer har mye å si for både komfort og energibruk. Godt isolerte vinduer og dører kan halvere varmetapet sammenlignet med eldre løsninger, og er derfor et naturlig startpunkt når du oppgraderer boligen.'
-          ],
-          readMore: []
-        },
-        {
-          id: 'vedlikehold',
-          title: 'Vedlikehold',
-          body: [
-            'Vinduer i tre kan få nytt liv med maling, kitting, justering av hengsler og tetting. Plast- og aluminiumsvinduer trenger rengjøring og smurte beslag for å holde seg tette.'
-          ],
-          buildingTypeBody: {
-            blokk: [
-              'I eldre flermannsboliger kan originale trevinduer ofte repareres. Fjerning av løs maling, utskifting av råteskadde deler og nye tetningslister gir lavere varmetap og bevarer uttrykket.'
-            ]
-          },
-          readMore: []
-        },
-        {
-          id: 'oppgradering',
-          title: 'Oppgradering',
-          body: [
-            'Hvis rammene er solide kan du oppgradere med nye glass eller varevinduer. Det gir bedre isolasjon, mindre trekk og bevarer utseendet.'
-          ],
-          buildingTypeBody: {
-            rekkehus: [
-              'Koordiner oppgraderinger med naboen. Like varevinduer eller glass gjør det enklere å bevare symmetrien og få gunstige priser.'
-            ],
-            tomannsbolig: [
-              'Koordiner oppgraderinger med naboen. Like varevinduer eller glass gjør det enklere å bevare symmetrien og få gunstige priser.'
-            ]
-          },
-          readMore: []
-        },
-        {
-          id: 'utskiftning',
-          title: 'Utskiftning',
-          body: [
-            'Når vinduene ikke lar seg reparere kan utskifting gi den største energibesparelsen. Velg produkter med lav U-verdi og sørg for god tetting rundt karmen for å få full effekt.'
-          ],
-          buildingTypeBody: {
-            enebolig: [
-              'Eneboliger kan ofte bytte vinduer rom for rom. Planlegg rekkefølgen og kombiner utskiftingen med god tetting rundt vindusåpningen.',
-              'Velg produkter med lav U-verdi; trelags vinduer holder mer varme enn tolags.'
-            ],
-            rekkehus: [
-              'I rekkehus lønner det seg å koordinere utskiftingen slik at alle boliger får likt uttrykk. Del gjerne på prosjektering og innkjøp.',
-              'Når flere går sammen kan dere stille krav til både energiytelse og estetikk.'
-            ],
-            tomannsbolig: [
-              'I rekkehus lønner det seg å koordinere utskiftingen slik at alle boliger får likt uttrykk. Del gjerne på prosjektering og innkjøp.',
-              'Når flere går sammen kan dere stille krav til både energiytelse og estetikk.'
-            ],
-            blokk: [
-              'I blokker må utskiftingen planlegges og søkes om av styret. Velg løsninger som ivaretar både fasade, lydkrav og energi.'
-            ]
-          },
-          readMore: []
-        }
-      ]
-    }
-  ],
-  grants: [
-    'klimaoslo-vinduer-dorer',
-    'klimaoslo-oppgradering-bygningskropp',
-    'klimaoslo-energitiltak-borettslag',
-    'klimaoslo-energikartlegging-borettslag',
-    'byantikvaren-istandsetting',
-    'enova-energiradgivning'
-  ]
 };
 
 function mapVinduerContent(content?: TiltakContent): VinduerContentView | null {
@@ -241,20 +86,24 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
   const { data: tiltakContent } = useTiltakContent('vinduer');
+  const { data: dictionary } = useContentDictionary();
   const resolvedTiltakContent = useMemo(
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
   );
-  const mappedContent = useMemo(
+  const content = useMemo(
     () => mapVinduerContent(resolvedTiltakContent),
     [resolvedTiltakContent]
   );
-  const content = mappedContent ?? defaultVinduerContent;
 
-  const tabsSection = useMemo(
-    () => content.tabs[0] ?? defaultVinduerContent.tabs[0],
-    [content]
+  const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
+  const glossaryEntries = useMemo(
+    () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? []),
+    [dictionary?.glossaryTerms]
   );
+
+  // Derive values from content (use empty defaults when loading)
+  const tabsSection = content?.tabs[0];
   const resolvedTabs = useMemo(() => tabsSection?.tabs ?? [], [tabsSection]);
   const displayedTabs = useMemo(
     () => resolvedTabs.slice(0, TAB_BUTTON_SLOTS.length),
@@ -276,46 +125,46 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
 
   const activeTab =
     displayedTabs.find((tab) => tab.id === activeTabId) ?? displayedTabs[0] ?? null;
-  const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
-  const introParagraphs = content.introParagraphs.length
-    ? content.introParagraphs
-    : defaultVinduerContent.introParagraphs;
+  const introParagraphs = content?.introParagraphs ?? [];
   const baseBuildingParagraphs =
-    content.buildingTypeParagraphs[buildingTypeKey] ??
-    content.buildingTypeParagraphs.default ??
-    defaultVinduerContent.buildingTypeParagraphs.default;
+    content?.buildingTypeParagraphs[buildingTypeKey] ??
+    content?.buildingTypeParagraphs.default ??
+    [];
   const tabBody = activeTab?.body?.length ? activeTab.body : introParagraphs;
   const tabBuildingParagraphs =
     activeTab?.buildingTypeBody?.[buildingTypeKey] ??
     activeTab?.buildingTypeBody?.default ??
     baseBuildingParagraphs;
-
-  const benefits = [...(content.benefits.length ? content.benefits : defaultVinduerContent.benefits)];
-  while (benefits.length < 4) {
-    benefits.push(defaultVinduerContent.benefits[benefits.length]);
-  }
-
-  const readMoreLinks = (content.readMore.length ? content.readMore : defaultVinduerContent.readMore).slice(0, 3);
+  const benefits = content?.benefits ?? [];
+  const readMoreLinks = (content?.readMore ?? []).slice(0, 3);
   const [primaryReadMore, ...secondaryReadMoreLinks] = readMoreLinks;
-
-  const accordionItem = content.accordion[0] ?? defaultVinduerContent.accordion[0];
+  const accordionItem = content?.accordion[0];
   const accordionBody = accordionItem?.body ?? [];
   const accordionLinks = accordionItem?.links ?? [];
-  const glossaryEntries = accordionItem?.glossary ?? [];
-  const resolvedAccordionBody = accordionBody.length ? accordionBody : defaultVinduerContent.accordion[0].body;
-  const accordionIntroParagraph = resolvedAccordionBody.length > 1 ? resolvedAccordionBody[0] : null;
+  const accordionIntroParagraph = accordionBody.length > 1 ? accordionBody[0] : null;
   const accordionDetailParagraphs =
-    resolvedAccordionBody.length > 1 ? resolvedAccordionBody.slice(1) : resolvedAccordionBody;
+    accordionBody.length > 1 ? accordionBody.slice(1) : accordionBody;
+  const grantIds = content?.grants ?? [];
 
+  // All hooks must be called before any early return
   const {
     stotteordninger,
     intendedSource,
     isLoading: grantsLoading
   } = useGrantAwareStotteordninger({
-    grantIds: content.grants,
+    grantIds,
     legacyTiltakSlug: 'vinduer',
     buildingType
   });
+
+  // Show loading state after all hooks have been called
+  if (!content) {
+    return (
+      <div style={{ padding: '60px', fontFamily: 'Oslo Sans', color: '#2A2859' }}>
+        Laster innhold...
+      </div>
+    );
+  }
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
@@ -515,7 +364,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[0]?.title ?? defaultVinduerContent.benefits[0].title}
+          {benefits[0]?.title ?? 'Mindre trekk'}
         </text>
         <rect
           x="565"
@@ -540,7 +389,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[1]?.title ?? defaultVinduerContent.benefits[1].title}
+          {benefits[1]?.title ?? 'Redusert støy'}
         </text>
         <rect
           x="565"
@@ -566,7 +415,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[2]?.title ?? defaultVinduerContent.benefits[2].title}
+          {benefits[2]?.title ?? 'Høyere boligverdi'}
         </text>
         <rect
           x="565"
@@ -606,7 +455,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[3]?.title ?? defaultVinduerContent.benefits[3].title}
+          {benefits[3]?.title ?? 'Redusert energibehov'}
         </text>
         
         {/* Dark green box below the list */}
@@ -1176,7 +1025,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
                   color: '#FFFFFF',
                   margin: '0 0 12px 0'
                 }}>
-                  {accordionItem?.title ?? defaultVinduerContent.accordion[0].title}
+                  {accordionItem?.title ?? 'Søknadsplikt og fagansvar'}
                 </h3>
                 {accordionDetailParagraphs.map((paragraph, index) => (
                   <p

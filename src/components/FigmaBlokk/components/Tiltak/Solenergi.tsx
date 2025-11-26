@@ -22,58 +22,6 @@ type SolenergiContent = {
   grants: string[];
 };
 
-const defaultSolenergiContent: SolenergiContent = {
-  title: 'Solenergi',
-  introParagraphs: [
-    'Solcelleanlegg er et effektivt og stadig mer lønnsomt tiltak for boligeiere i Oslo. Du kan produsere egen strøm og bruke mindre fra strømnettet – samtidig som du bidrar til lavere utslipp.',
-    'Har du overskuddsproduksjon, kan du få lavere nettleie ved å registrere deg som plusskunde hos nettselskapet. I Oslos solkart kan du sjekke hvor mye sol taket ditt får gjennom året og vurdere om tiltaket er aktuelt.'
-  ],
-  buildingTypeParagraphs: {
-    default: [
-      'Blokker har ofte store flater som fanger opp mye sol. Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. Fasader og tak med markerte detaljer bør som regel ikke endres, og det kan være lurt å plassere anlegget slik at det ikke er synlig fra gaten.'
-    ],
-    enebolig: [
-      'Eneboliger har ofte gode forhold for solenergi, særlig om takflatene vender mot sør, øst eller vest. Anlegget bør tilpasses husets uttrykk – alternativt kan garasje, uthus eller tilbygg brukes for å oppnå et mer diskret uttrykk.'
-    ],
-    rekkehus: [
-      'Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. I flermannsboliger bør anlegget planlegges i dialog med naboen. Mange av disse husene har symmetrisk utforming eller felles tak, og ved å samarbeide kan dere finne løsninger som både ser helhetlige ut og enklere får byggetillatelse.'
-    ],
-    tomannsbolig: [
-      'Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. I flermannsboliger bør anlegget planlegges i dialog med naboen for å sikre et helhetlig uttrykk og lettere behandling av søknaden.'
-    ]
-  },
-  benefits: [
-    {
-      title: 'Høyere boligverdi',
-      description: 'Egen strømproduksjon og bedre energimerke gjør boligen mer attraktiv.'
-    },
-    {
-      title: 'Bedre strømstyring',
-      description: 'Du ser når du produserer og bruker strøm og kan styre forbruket smartere.'
-    },
-    {
-      title: 'Lavere strømregning',
-      description: 'Strømmen du produserer selv erstatter dyrere energi fra nettet.'
-    },
-    {
-      title: 'Egenprodusert strøm',
-      description: 'Overskudd kan selges tilbake til nettet eller brukes lokalt.'
-    }
-  ],
-  readMore: [
-    { label: 'Enova', url: 'https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/solcelleanlegg' },
-    {
-      label: 'Plusskundeordning',
-      url: 'https://www.nve.no/reguleringsmyndigheten/regulering/nettvirksomhet/nettleie/tariffer-for-produksjon/plusskunder/'
-    },
-    { label: 'Solkartet', url: 'https://od2.pbe.oslo.kommune.no/solkart/' }
-  ],
-  grants: [
-    'klimaoslo-solenergitilskudd',
-    'enova-solcelleanlegg'
-  ]
-};
-
 function mapTiltakContentToSolenergi(content?: TiltakContent): SolenergiContent | null {
   if (!content) {
     return null;
@@ -115,37 +63,20 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
-  const { data: tiltakContent } = useTiltakContent('solenergi');
+  const { data: tiltakContent, isLoading } = useTiltakContent('solenergi');
   const resolvedTiltakContent = useMemo(
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
   );
-  const mappedContent = useMemo(
+  const content = useMemo(
     () => mapTiltakContentToSolenergi(resolvedTiltakContent),
     [resolvedTiltakContent]
   );
-  const content = mappedContent ?? defaultSolenergiContent;
-
-  const introParagraphs = content.introParagraphs.length
-    ? content.introParagraphs
-    : defaultSolenergiContent.introParagraphs;
 
   const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
-  const buildingParagraphs =
-    content.buildingTypeParagraphs[buildingTypeKey] ??
-    content.buildingTypeParagraphs.default ??
-    defaultSolenergiContent.buildingTypeParagraphs.default;
 
-  const benefitSlots = [0, 1, 2, 3] as const;
-  const benefits = benefitSlots.map(
-    (slot) => content.benefits[slot] ?? defaultSolenergiContent.benefits[slot]
-  );
-  const readMoreLinks = (content.readMore.length ? content.readMore : defaultSolenergiContent.readMore).slice(
-    0,
-    3
-  );
-
-  const grantIds = content.grants.length ? content.grants : defaultSolenergiContent.grants;
+  // Hooks for støtteordninger - må være før tidlig return (React rules of hooks)
+  const grantIds = content?.grants ?? [];
   const {
     stotteordninger,
     isLoading: stotteordningerLoading,
@@ -155,6 +86,27 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
     legacyTiltakSlug: 'solenergi',
     buildingType
   });
+
+  // Tidlig return etter alle hooks
+  if (isLoading || !content) {
+    return (
+      <div style={{ padding: '60px', fontFamily: 'Oslo Sans', color: '#2A2859' }}>
+        Laster innhold...
+      </div>
+    );
+  }
+
+  const introParagraphs = content.introParagraphs;
+  const buildingParagraphs =
+    content.buildingTypeParagraphs[buildingTypeKey] ??
+    content.buildingTypeParagraphs.default ??
+    [];
+
+  const benefits = content.benefits.slice(0, 4).map((b) => ({
+    title: b.title || 'Fordel',
+    description: b.description
+  }));
+  const readMoreLinks = content.readMore.slice(0, 3);
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
@@ -304,7 +256,7 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[0]?.title ?? defaultSolenergiContent.benefits[0].title}
+          {benefits[0]?.title ?? 'Fordel'}
         </text>
         <rect
           x="565"
@@ -331,7 +283,7 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[1]?.title ?? defaultSolenergiContent.benefits[1].title}
+          {benefits[1]?.title ?? 'Fordel'}
         </text>
         <rect
           x="565"
@@ -357,7 +309,7 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[2]?.title ?? defaultSolenergiContent.benefits[2].title}
+          {benefits[2]?.title ?? 'Fordel'}
         </text>
         <rect
           x="565"
@@ -382,7 +334,7 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[3]?.title ?? defaultSolenergiContent.benefits[3].title}
+          {benefits[3]?.title ?? 'Fordel'}
         </text>
         
         {/* Dark green box below the list */}

@@ -4,8 +4,7 @@
   "title": "Varmepumpe",
   "summary": "Velg riktig varmepumpeløsning for boligen din og få lavere energibruk, jevnere temperatur og bedre komfort.",
   "introParagraphs": [
-    "Varmepumper henter energi fra luft, jord eller berg og gir mer varme enn de bruker strøm til. Riktig type og plassering er avgjørende for å få god effekt, lite støy og et uttrykk som passer huset.",
-    "Det finnes løsninger for alt fra små eneboliger til store borettslag. Start med å kartlegge varmebehov, fasadeuttrykk og hvilke tekniske føringer (ventilasjon, vannbåren varme) du allerede har."
+    "Varmepumpe er en effektiv måte å senke strømforbruket, få jevnere temperatur og bedre inneklima. Riktig type og plassering er viktig for at anlegget skal fungere godt og ikke gi unødig støy eller visuell påvirkning. Det finnes løsninger for de fleste boligtyper."
   ],
   "buildingTypeParagraphs": {
     "default": [
@@ -13,16 +12,14 @@
       "Ved luft-til-luft varmepumper med utedel må dere ta hensyn til støy og visuell påvirkning. Ta tidlig dialog i styret og med naboene, så finner dere løsninger som fungerer for alle."
     ],
     "enebolig": [
-      "I eneboliger har du ofte stor frihet til å velge plassering av inne- og utedel. Luft-til-luft er vanligst, men luft- eller væske-til-vann kan være aktuelt ved vannbåren varme.",
-      "Plasser utedelen slik at støy ikke plager deg selv eller naboene, og vurder eksisterende tekniske gjennomføringer for å unngå nye hull i fasaden."
+      "Ved montering av varmepumpe i enebolig bør du vurdere både innendørs og utendørs plassering nøye. Utedelen bør plasseres slik at den ikke er til sjenanse, og at støyen ikke forstyrrer oppholdssoner eller naboer. Mange benytter eksisterende tekniske gjennomføringer, som gamle ventiler, for å unngå nye inngrep i fasaden. Luft-til-luft varmepumpe er det vanligste alternativet, men luft-til-vann kan være aktuelt for større oppvarmingsbehov."
     ],
     "rekkehus": [
       "I rekkehus og tomannsboliger deler man gjerne fasadeuttrykk og taklinjer. Koordiner plassering av utedeler slik at dere beholder et helhetlig uttrykk og møter kravene i reguleringsplanen.",
       "Har dere felles varmeanlegg eller balansert ventilasjon, kan luft-til-vann eller ventilasjonsvarmepumpe gi større besparelser enn enkelte luft-til-luft-enheter."
     ],
     "tomannsbolig": [
-      "I rekkehus og tomannsboliger deler man gjerne fasadeuttrykk og taklinjer. Koordiner plassering av utedeler slik at dere beholder et helhetlig uttrykk og møter kravene i reguleringsplanen.",
-      "Har dere felles varmeanlegg eller balansert ventilasjon, kan luft-til-vann eller ventilasjonsvarmepumpe gi større besparelser enn enkelte luft-til-luft-enheter."
+      "Luft-til-luft varmepumpe er ofte den enkleste løsningen på rekkehus og flermannsboliger. Det kan gi god effekt uten store inngrep. Har dere vannbåren varme, kan luft-til-vann være mer aktuelt. I hus med felles tak eller like fasader er det lurt å planlegge varmepumpene i dialog med naboen. Da er det enklere å finne løsninger som fungerer både teknisk og visuelt. Gjerne bruk eksisterende tekniske føringer som gamle ventiler og åpninger."
     ]
   },
   "benefits": [
@@ -56,32 +53,28 @@
           "id": "luft-luft",
           "title": "Luft-luft",
           "body": [
-            "Luft-til-luft varmepumper henter varme fra uteluften og blåser den direkte inn som varm luft i oppholdsrom. De er rimelige, raske å installere og passer godt i mindre boliger eller åpne planløsninger.",
-            "Planlegg plasseringen av inne- og utedel nøye – særlig i verneverdige bygg hvor visuelle hensyn er viktige. Velg en installatør som kan dokumentere lydnivå og riktig kondensavløp."
+            "Luft-til-luft varmepumper henter varme fra uteluften og blåser den direkte inn som varm luft i boligen. Den er rimelig, enkel å installere og passer godt for mindre boliger eller åpne planløsninger. Inne- og utedelen er synlige, så plassering bør planlegges nøye – særlig i verneverdige bygg hvor visuelle hensyn er viktige."
           ]
         },
         {
           "id": "luft-vann",
           "title": "Luft-vann",
           "body": [
-            "Luft-til-vann-systemer bruker varmen i uteluften til å varme opp vann som sirkulerer i radiatorer, gulvvarme eller tappevann. Løsningen krever et vannbårent system, men gir helhetlig oppvarming.",
-            "Installasjonen er mer omfattende enn luft-til-luft og passer best i boliger med jevnt varmebehov og plass til akkumulatortank."
+            "Luft-til-vann-systemer bruker varmen i uteluften til å varme opp vann, som sirkulerer i radiatorer, gulvvarme eller brukes til tappevann. Dette gir en jevn og behagelig oppvarming, men krever at huset har et vannbårent system. Det er en mer omfattende installasjon enn luft-til-luft, og passer godt i boliger der man ønsker en helhetlig løsning."
           ]
         },
         {
           "id": "vaeske-vann",
           "title": "Væske-vann",
           "body": [
-            "Væske-til-vann varmepumper henter varme fra berg, jord eller sjø via nedgravde kollektorer eller borehull. De har høy effektivitet selv på kalde vinterdager og kan dekke både oppvarming og tappevann.",
-            "Løsningen krever prosjektering og boring, men gir skjulte installasjoner og passer godt ved rehabilitering eller i større boliger og borettslag."
+            "Væske-til-vann varmepumper henter varme fra fjell, jord eller sjø via nedgravde rør eller borehull. Den har høy effektivitet, også på kalde vinterdager, og gir varme til både oppvarming og tappevann. Dette er den mest omfattende og kostbare løsningen, men den egner seg godt for større boliger, blokker eller ved rehabilitering der man ønsker et robust og skjult system."
           ]
         },
         {
           "id": "ventilasjon",
           "title": "Ventilasjon",
           "body": [
-            "Ventilasjonsvarmepumper gjenvinner varme fra brukt luft og bruker den til å varme opp tilluft, tappevann eller vannbåren varme. De forutsetter balansert ventilasjon med kanalnett.",
-            "Dette er mest aktuelt i nyere boliger eller når man likevel skal installere et nytt ventilasjonsanlegg."
+            "Ventilasjonsvarmepumper gjenvinner varme fra brukt luft som ventileres ut av boligen, og bruker den til å varme opp tilluft, tappevann eller vannbåren varme. Ventilasjonsvarmepumper krever balansert ventilasjon (altså at både tilluft og avtrekk går i kanalnett), og er derfor mest egnet i nyere hus eller når det etableres nytt ventilasjonsanlegg."
           ]
         }
       ]
@@ -149,20 +142,18 @@
     {
       "audience": "gulliste",
       "introParagraphs": [
-        "Varmepumpe kan være en god løsning for oppvarming, bedre inneklima og en effektiv måte å spare energi og redusere strømregningen på – også i verneverdige bygninger.",
-        "Det er viktig å velge riktig type og plassering av hensyn til byggets historiske verdier. I mange tilfeller finnes det gode løsninger, så lenge de planlegges og utføres på riktig måte."
+        "Varmepumpe kan være en god løsning for oppvarming, bedre inneklima samt en effektiv måte å spare energi og redusere strømregningen på - også i verneverdige bygninger. Det er viktig å velge riktig type og plassering av hensyn til byggets historiske verdier. I mange tilfeller finnes det gode løsninger, så lenge de gjøres på riktig måte."
       ],
       "buildingTypeParagraphs": {
         "enebolig": [
-          "På murhus, laftede hus, bindingsverk og reisverk anbefales det å unngå plassering av varmepumpe mot gaten. Tenk på at naboer ikke forstyrres av støy og visuell påvirkning, og bruk gjerne eksisterende hull og åpninger der det er mulig.",
-          "Luft-til-luft varmepumpe er det vanligste alternativet, men luft-til-vann kan være aktuelt for større oppvarmingsbehov."
+          "På murhus, laftede hus, bindingsverk og reisverk anbefales det å unngå plassering av varmepumpe mot gaten. Tenk også på at naboer ikke forstyrres med støy og visuell påvirkning. Det kan være lurt å benytte eksisterende hull og åpninger. Luft-til-luft varmepumpe er det vanligste alternativet, men luft-til-vann kan være aktuelt for større oppvarmingsbehov."
         ],
         "rekkehus": [
           "På murhus, laftede hus, bindingsverk og reisverk anbefales det å unngå plassering av varmepumpe mot gaten. Tenk på støy og visuell påvirkning, og benytt eksisterende hull, ventiler og pipegjennomføringer. Dersom bygget har originale eller sjeldne fasadedetaljer må det tas særskilt hensyn.",
           "Siden mange tomannsboliger og rekkehus har like fasader, bør du samarbeide med naboen. Da er det enklere å finne løsninger som fungerer både teknisk og visuelt."
         ],
         "tomannsbolig": [
-          "På murhus, laftede hus, bindingsverk og reisverk anbefales det å unngå plassering av varmepumpe mot gaten. Tenk på støy og visuell påvirkning, og benytt eksisterende hull, ventiler og pipegjennomføringer. Dersom bygget har originale eller sjeldne fasadedetaljer må det tas særskilt hensyn.",
+          "På murhus, laftede hus, bindingsverk og reisverk anbefales det å unngå plassering av varmepumpe mot gaten. Tenk også på at naboer ikke forstyrres med støy og visuell påvirkning. Det er lurt å benytte eksisterende hull og åpninger, ventiler og pipegjeonnomføringer. Dersom bygget har originale og sjeldne elementer i fasaden må det særlig tas hensyn til disse.",
           "Siden mange tomannsboliger og rekkehus har like fasader, bør du samarbeide med naboen. Da er det enklere å finne løsninger som fungerer både teknisk og visuelt."
         ],
         "blokk": [

@@ -576,6 +576,7 @@ async function listLocalContentFiles(collection: ContentCollection): Promise<str
 
   return results
     .filter((filePath) => !filePath.endsWith('/index.json'))
+    .filter((filePath) => !filePath.endsWith('.draft.json'))
     .sort((a, b) => a.localeCompare(b));
 }
 
@@ -594,6 +595,7 @@ async function listBucketContentFiles(collection: ContentCollection): Promise<st
     .map((file) => file.name)
     .filter((name): name is string => typeof name === 'string' && name.startsWith(prefix))
     .filter((name) => name.endsWith('.json') && !name.endsWith('/index.json'))
+    .filter((name) => !name.endsWith('.draft.json'))
     .sort((a, b) => a.localeCompare(b));
 }
 
@@ -604,11 +606,53 @@ async function listContentFiles(collection: ContentCollection): Promise<string[]
   return listLocalContentFiles(collection);
 }
 
+/**
+ * Bygger sti til draft-fil basert på hovedfilens sti
+ * tiltak/foo.json -> tiltak/foo.draft.json
+ */
+function buildDraftPath(relativePath: string): string | null {
+  if (!relativePath.endsWith('.json')) {
+    return null;
+  }
+  return relativePath.replace(/\.json$/, '.draft.json');
+}
+
 async function loadContentDocument(
   relativePath: string,
   options: { includeDrafts?: boolean } = {}
 ): Promise<LoadedContentDocument> {
-  const { data, etag } = await loadJsonFile(relativePath);
+  const includeDrafts = Boolean(options.includeDrafts);
+
+  // Hvis draft-modus er aktivert, sjekk om det finnes en draft-fil
+  let pathToLoad = relativePath;
+  if (includeDrafts) {
+    const draftPath = buildDraftPath(relativePath);
+    if (draftPath) {
+      try {
+        // Prøv å laste draft-filen først
+        const draftResult = await loadJsonFile(draftPath);
+        debugLog(`Loaded draft file: ${draftPath}`);
+        pathToLoad = draftPath;
+        // Fortsett med draft-data
+        const { data, etag } = draftResult;
+        return processLoadedContent(draftPath, data, etag, { includeDrafts: true });
+      } catch {
+        // Draft-fil eksisterer ikke, fall tilbake til hovedfilen
+        debugLog(`No draft file found at ${draftPath}, using main file`);
+      }
+    }
+  }
+
+  const { data, etag } = await loadJsonFile(pathToLoad);
+  return processLoadedContent(relativePath, data, etag, options);
+}
+
+function processLoadedContent(
+  relativePath: string,
+  data: JsonObject,
+  etag: string | null,
+  options: { includeDrafts?: boolean } = {}
+): LoadedContentDocument | Promise<LoadedContentDocument> {
   const collection = detectContentCollection(relativePath);
   if (!collection) {
     return { kind: 'generic', collection: null, data, etag };
@@ -638,12 +682,16 @@ async function loadContentDocument(
     throw new ContentAccessError(relativePath, status);
   }
 
-  let resolvedData = parsed.data;
   if (collection === 'tiltak') {
-    resolvedData = await resolveTiltakBenefits(parsed.data);
+    return resolveTiltakBenefits(parsed.data as TiltakContent).then((resolvedData) => ({
+      kind: 'validated',
+      collection: 'tiltak',
+      data: resolvedData,
+      etag
+    } as ValidatedTiltakDocument));
   }
 
-  return { kind: 'validated', collection, data: resolvedData, etag } as ValidatedContentDocument;
+  return { kind: 'validated', collection, data: parsed.data, etag } as ValidatedContentDocument;
 }
 
 function createTiltakCatalogItem(

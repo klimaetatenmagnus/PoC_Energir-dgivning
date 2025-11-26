@@ -6,6 +6,7 @@ export interface TiltakComponentProps {
   onBack?: () => void;
   buildingType?: string;
   buildingData?: AddressLookupResponse;
+  className?: string;
 }
 
 export type BuildingCategory = 'enebolig' | 'rekkehus' | 'blokk';

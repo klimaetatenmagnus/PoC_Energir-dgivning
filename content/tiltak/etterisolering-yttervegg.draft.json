@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "id": "etterisolering-yttervegg",
+  "title": "Etterisolering av yttervegg",
+  "summary": "Bedre komfort, lavere energibruk og oppgradert fasade når du etterisolerer veggene.",
+  "introParagraphs": [
+    "YOLO- Etterisolering av fasaden er svært effektivt for å spare strømutgifter, skape bedre inneklima med mindre trekk, og få mer kontroll over temperaturen inne.",
+    "Hvis du uansett må skifte kledning, altså fasadematerialet, lønner det seg å etterisolere samtidig."
+  ],
+  "buildingTypeParagraphs": {
+    "default": [
+      "Blokker med store, flate fasader har godt potensial for etterisolering. Ved å etterisolere hele veggflater eller bare utvalgte partier kan dere redusere energiforbruket og oppgradere byggets uttrykk."
+    ],
+    "enebolig": [
+      "Har huset ditt en enkel fasade uten mye detaljer, er det som regel uproblematisk å etterisolere utvendig og kle med nytt materiale i ønsket stil.",
+      "Skal du bevare dagens uttrykk, kan innvendig isolasjon eller forbedret tetting være alternativer."
+    ],
+    "rekkehus": [
+      "I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader.",
+      "Det gir et helhetlig resultat og gjør det enklere å gjennomføre."
+    ],
+    "tomannsbolig": [
+      "I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader.",
+      "Det gir et helhetlig resultat og gjør det enklere å gjennomføre."
+    ]
+  },
+  "benefitRefs": [
+    "mindre-trekk",
+    "ivaretar-boligen",
+    "hoyere-boligverdi",
+    "redusert-energibehov"
+  ],
+  "benefits": [
+    {
+      "id": "mindre-trekk",
+      "title": "Mindre trekk",
+      "description": "Oppgraderte bygg stopper kald luft og gir jevnere temperatur.",
+      "icon": "snow"
+    },
+    {
+      "id": "ivaretar-boligen",
+      "title": "Ivaretar boligen",
+      "description": "Bedre isolasjon beskytter konstruksjoner mot fukt og raate.",
+      "icon": "home"
+    },
+    {
+      "id": "hoyere-boligverdi",
+      "title": "Hoyere boligverdi",
+      "description": "Oppgraderte fasader, betre energimerke og eigen stromproduksjon gjer boligen meir attraktiv.",
+      "icon": "graph"
+    },
+    {
+      "id": "redusert-energibehov",
+      "title": "Redusert energibehov",
+      "description": "Mindre varmetap og smartere styring gir lavere energibruk og kostnader.",
+      "icon": "nature-plant"
+    }
+  ],
+  "glossaryTermRefs": [],
+  "readMore": [
+    {
+      "id": "dibk-fasade",
+      "label": "Direktoratet for byggkvalitet om fasadeendringer",
+      "url": "https://www.dibk.no/smartere-oppussing/artikler/yttertak-og-vegger"
+    },
+    {
+      "id": "enova-etterisolering",
+      "label": "Enova – slik etterisolerer du fasaden",
+      "url": "https://www.enova.no/privat/alle-energitiltak/etterisolering/"
+    },
+    {
+      "id": "sintef-detaljer",
+      "label": "SINTEF – detaljer for etterisolering",
+      "url": "https://www.sintef.no/siste-nytt/etterisolering/"
+    }
+  ],
+  "callsToAction": [],
+  "customSections": [],
+  "tabs": [],
+  "accordion": [],
+  "stats": [],
+  "grants": [
+    "enova-etterisolering",
+    "klimaoslo-fasadefond"
+  ],
+  "relatedTiltak": [],
+  "supportTags": [
+    "etterisolering",
+    "fasade",
+    "isolasjon"
+  ],
+  "audiences": [
+    "standard",
+    "gulliste"
+  ],
+  "metadata": {
+    "status": "draft",
+    "updatedBy": "local-redaktor@energinokkelen.dev",
+    "updatedAt": "2025-11-26T12:03:15.595Z",
+    "changeSummary": "Redigert via admin-UI"
+  },
+  "variants": [
+    {
+      "audience": "gulliste",
+      "introParagraphs": [
+        "Fasaden er ansiktet utad på huset – og ofte en viktig del av bygningens særpreg og identitet. Selv om bygget står på gul liste finnes det gode muligheter for å forbedre komforten og redusere varmetapet, så lenge tiltakene er tilpasset konstruksjonen og historien."
+      ],
+      "buildingTypeParagraphs": {
+        "enebolig": [
+          "Eldre eneboliger har stor variasjon i både byggemåte og fasadeuttrykk, og løsningene må tilpasses hvert enkelt hus.",
+          "Har huset trekledning og tydelige bygningsdetaljer, bør fasaden som hovedregel bevares slik den er. Innvendig etterisolering eller forbedret tetting kan likevel gi stor effekt. Dersom kledningen er i dårlig stand eller tidligere er byttet ut, kan du vurdere utvendig etterisolering med ny kledning i samme stil.",
+          "Har huset mur- eller betongfasade uten særlige detaljer, er handlingsrommet større – for eksempel på gavlvegger eller fasader mot bakgård og portrom."
+        ],
+        "rekkehus": [
+          "Mange tomannsboliger og rekkehus har symmetrisk oppbygning og felles fasadepreg. Samarbeid med naboen slik at helheten ivaretas – det gir både bedre visuelle løsninger og større sjanse for byggetillatelse.",
+          "Er fasaden enkel og uten detaljer, for eksempel på bakvegg eller gavl, kan utvendig etterisolering være mulig med ny kledning i tilsvarende uttrykk. Er huset i mur eller pusset tegl, må du bruke løsninger som lar fukt bevege seg naturlig.",
+          "Er fasaden profilert treverk eller historisk murarbeid, anbefales heller forbedret tetting, vindusforbedring og innvendig isolasjon med pustende materialer. Et møte med Byantikvaren er gratis og gir nyttige råd."
+        ],
+        "tomannsbolig": [
+          "Mange tomannsboliger og rekkehus har symmetrisk oppbygning og felles fasadepreg. Samarbeid med naboen slik at helheten ivaretas – det gir både bedre visuelle løsninger og større sjanse for byggetillatelse.",
+          "Er fasaden enkel og uten detaljer, for eksempel på bakvegg eller gavl, kan utvendig etterisolering være mulig med ny kledning i tilsvarende uttrykk. Er huset i mur eller pusset tegl, må du bruke løsninger som lar fukt bevege seg naturlig.",
+          "Er fasaden profilert treverk eller historisk murarbeid, anbefales heller forbedret tetting, vindusforbedring og innvendig isolasjon med pustende materialer. Et møte med Byantikvaren er gratis og gir nyttige råd."
+        ],
+        "blokk": [
+          "Blokker har ofte felleseide fasader og stor variasjon i byggestil. En godt planlagt oppgradering kan gi både energigevinst og løfte helhetsinntrykket.",
+          "På enkle, flate fasader, gavlvegger, portrom eller fasader mot bakgård kan utvendig etterisolering være aktuelt. Fasader mot gate, spesielt med utsmykninger, bør bevares. Da kan tetting, balansert ventilasjon og vindusforbedring være bedre løsninger."
+        ],
+        "default": [
+          "Blokker har ofte felleseide fasader og stor variasjon i byggestil. En godt planlagt oppgradering kan gi både energigevinst og løfte helhetsinntrykket.",
+          "På enkle, flate fasader, gavlvegger, portrom eller fasader mot bakgård kan utvendig etterisolering være aktuelt. Fasader mot gate, spesielt med utsmykninger, bør bevares. Da kan tetting, balansert ventilasjon og vindusforbedring være bedre løsninger."
+        ]
+      },
+      "benefitRefs": [],
+      "readMore": [
+        {
+          "id": "dibk-fasade-gulliste",
+          "label": "Direktoratet for byggkvalitet – yttervegger",
+          "url": "https://www.dibk.no/smartere-oppussing/artikler/yttertak-og-vegger"
+        },
+        {
+          "id": "fortidsminneforeningen-tiltak",
+          "label": "Fortidsminneforeningen – tiltak i gamle hus",
+          "url": "https://issuu.com/fortidsminneforeningen/docs/en_k-tiltak_i_gamle_hus/7"
+        },
+        {
+          "id": "byantikvaren-murgard",
+          "label": "Byantikvaren – bevaringsverdige murgårdsfasader",
+          "url": "https://www.oslo.kommune.no/getfile.php/1315761-1444138762/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Bevaringsverdige%20murg%C3%A5rdsfasader%20-%20Informasjonsark.pdf"
+        },
+        {
+          "id": "riksantikvaren-energisparing",
+          "label": "Riksantikvaren – energisparing i gamle hus",
+          "url": "https://riksantikvaren.no/veileder/rad-om-energisparing-i-gamle-hus/#72aa0e54-2678-43a1-8fd2-f4f2f7697e46"
+        },
+        {
+          "id": "enova-boligtyper",
+          "label": "Enova – energitiltak per boligtype",
+          "url": "https://www.enova.no/nb/privat/bolig/boligtyper"
+        }
+      ],
+      "grants": [
+        "enova-etterisolering",
+        "klimaoslo-fasadefond",
+        "byantikvaren-istandsetting"
+      ],
+      "supportTags": [
+        "etterisolering",
+        "fasade",
+        "gulliste",
+        "vern"
+      ]
+    }
+  ]
+}

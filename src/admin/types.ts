@@ -61,11 +61,24 @@ export interface AdminSupportTagDictionaryEntry {
   category?: string;
 }
 
+export interface AdminGlossaryLink {
+  label: string;
+  url: string;
+}
+
+export interface AdminGlossaryTermDictionaryEntry {
+  id: string;
+  term: string;
+  definition: string[];
+  links: AdminGlossaryLink[];
+}
+
 export interface AdminContentDictionary {
   schemaVersion: number;
   buildingTypes: AdminBuildingTypeDictionaryEntry[];
   benefits: AdminBenefitDictionaryEntry[];
   supportTags: AdminSupportTagDictionaryEntry[];
+  glossaryTerms: AdminGlossaryTermDictionaryEntry[];
 }
 
 export interface AdminDictionaryContextValue {
@@ -93,6 +106,32 @@ export interface AdminDictionaryResponse {
   etag: string | null;
   schemaVersion: number;
 }
+
+export interface AdminCatalogFilters {
+  status: AdminStatus | "all";
+  audience: "all" | "standard" | "gulliste";
+  buildingType: string | "all";
+  search: string;
+}
+
+export interface AdminPaginationState {
+  page: number;
+  pageSize: number;
+}
+
+export const DEFAULT_CATALOG_FILTERS: AdminCatalogFilters = {
+  status: "all",
+  audience: "all",
+  buildingType: "all",
+  search: "",
+};
+
+export const DEFAULT_PAGINATION: AdminPaginationState = {
+  page: 1,
+  pageSize: 12,
+};
+
+export const PAGE_SIZE_OPTIONS = [6, 12, 24, 48] as const;
 
 export interface AdminTiltakMetadata {
   id: string;

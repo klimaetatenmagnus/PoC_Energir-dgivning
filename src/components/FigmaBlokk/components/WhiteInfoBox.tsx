@@ -1,6 +1,7 @@
 import React from 'react';
 import { LocationPin } from './LocationPin';
-import * as EnergySolutions from './Tiltak/index';
+import { TiltakCardRenderer } from './Tiltak/TiltakCardRenderer';
+import { getLegacyTiltakComponent } from './Tiltak/legacyComponents';
 import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../../utils/tekEnergyCalculations';
 import { convertKwhToNok, formatCurrency, formatNumberWithSpaces } from '../../../utils/energy';
 import { AddressLookupResponse } from '../../../services/buildingApi';
@@ -38,6 +39,88 @@ const EDIT_BUTTON_TEXT_Y = SECTION_TITLE_Y + EDIT_BUTTON_TEXT_OFFSET;
 const INFO_ROW_GAP = 28;
 const INPUT_BASELINE_OFFSET = 18;
 
+type TiltakSolutionSlug = {
+  slug: string;
+};
+
+const TILTAK_SOLUTION_SLUGS: Record<string, TiltakSolutionSlug> = {
+  Varmepumpe: { slug: 'varmepumpe' },
+  Solenergi: { slug: 'solenergi' },
+  Tetting: { slug: 'tetting' },
+  Temperaturstyring: { slug: 'temperaturstyring' },
+  'Oppgradering av vindu': { slug: 'vinduer' },
+  'Isolering av kjeller og loft': { slug: 'etterisolering-kjeller-loft' },
+  'Etterisolering av yttervegg': { slug: 'etterisolering-yttervegg' },
+  Ventilasjon: { slug: 'ventilasjon' }
+};
+
+function resolveTiltakSlug(solution: string | null): string | null {
+  if (!solution) {
+    return null;
+  }
+  return TILTAK_SOLUTION_SLUGS[solution]?.slug ?? null;
+}
+
+function resolveTiltakBuildingType(
+  buildingData: AddressLookupResponse,
+  fallbackName?: string
+): string | undefined {
+  const resolveFromName = (name?: string | null): string | undefined => {
+    if (!name) {
+      return undefined;
+    }
+    const normalised = name.toLowerCase();
+    if (normalised.includes('enebolig')) {
+      return 'enebolig';
+    }
+    if (normalised.includes('tomanns')) {
+      return 'tomannsbolig';
+    }
+    if (normalised.includes('rekke')) {
+      return 'rekkehus';
+    }
+    if (normalised.includes('småhus')) {
+      return 'enebolig';
+    }
+    if (
+      normalised.includes('blokk') ||
+      normalised.includes('leilig') ||
+      normalised.includes('boligbygg')
+    ) {
+      return 'blokk';
+    }
+    return undefined;
+  };
+
+  const codeCandidate =
+    buildingData?.bygningstypeKode ||
+    buildingData?.csvData?.bygningstypekode ||
+    buildingData?.csvData?.bygningstypeKode;
+
+  if (codeCandidate && codeCandidate.length >= 2) {
+    const prefix = codeCandidate.slice(0, 2);
+    if (['11'].includes(prefix)) {
+      return 'enebolig';
+    }
+    if (['12', '13'].includes(prefix)) {
+      return 'rekkehus';
+    }
+    if (['14', '15', '16', '17'].includes(prefix)) {
+      return 'blokk';
+    }
+  }
+
+  const fromNames =
+    resolveFromName(buildingData?.bygningstype) ||
+    resolveFromName(buildingData?.bygningstypeNavn) ||
+    resolveFromName(buildingData?.csvData?.bygningstype) ||
+    resolveFromName(buildingData?.csvData?.bygningstypeNavn) ||
+    resolveFromName(fallbackName);
+
+  return fromNames ?? undefined;
+}
+
+
 const roundToNearestThousandValue = (value: number): number => {
   if (!Number.isFinite(value)) {
     return 0;
@@ -59,18 +142,13 @@ interface WhiteInfoBoxProps {
   mapCoordinates: { lat: number; lng: number } | null;
   buildingData: AddressLookupResponse;
   onExpand?: (expanded: boolean) => void;
+  onBackToSolutions?: () => void;
   showYellowBox?: boolean;
   onUpdateBuildingData?: (byggeaar: string, areal: string, arealLeilighet: string, energiforbruk: string) => void;
   totalEnergySavings?: number;
   gulListeLoading?: boolean;
   energyPricePerKwh?: number;
   animateSavings?: boolean;
-}
-
-interface EnergySolutionProps {
-  onBack?: () => void;
-  buildingType?: string;
-  buildingData?: AddressLookupResponse;
 }
 
 export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
@@ -83,6 +161,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   mapCoordinates,
   buildingData,
   onExpand,
+  onBackToSolutions,
   showYellowBox = true,
   onUpdateBuildingData,
   totalEnergySavings = 0,
@@ -409,6 +488,21 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
           Math.ceil(calculateTextWidth(displayBuildingTypeName) + 43) // 14 (left padding) + 15 (icon) + 7 (gap) + text + 7 (right padding)
         );
 
+  const tiltakBuildingType = React.useMemo(
+    () => resolveTiltakBuildingType(buildingData, buildingTypeName),
+    [buildingData, buildingTypeName]
+  );
+  const selectedTiltakSlug = React.useMemo(
+    () => resolveTiltakSlug(selectedSolution),
+    [selectedSolution]
+  );
+const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
+
+  const handleTiltakBack = React.useCallback(() => {
+    onExpand?.(false);
+    onBackToSolutions?.();
+  }, [onBackToSolutions, onExpand]);
+
   const [savedByggeaar, setSavedByggeaar] = React.useState(
     String(buildingData?.byggeaar || '')
   );
@@ -653,31 +747,49 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   // Total container height is 900px, current bottom is 55px
   const expandedBottom = 55; // Keep same bottom position
   
-  // Get the component for the selected solution
-  const getSolutionComponent = () => {
-    if (!selectedSolution) return null;
-    
-  const componentMap: Record<string, React.ComponentType<EnergySolutionProps>> = {
-    'Varmepumpe': (shouldShowYellowBox ? EnergySolutions.VarmepumpeGul : EnergySolutions.Varmepumpe) as React.ComponentType<EnergySolutionProps>,
-    'Solenergi': (shouldShowYellowBox ? EnergySolutions.SolenergiGul : EnergySolutions.Solenergi) as React.ComponentType<EnergySolutionProps>,
-    'Tetting': (shouldShowYellowBox ? EnergySolutions.TettingGul : EnergySolutions.Tetting) as React.ComponentType<EnergySolutionProps>,
-    'Temperaturstyring': (shouldShowYellowBox ? EnergySolutions.TemperaturstyringGul : EnergySolutions.Temperaturstyring) as React.ComponentType<EnergySolutionProps>,
-    'Oppgradering av vindu': (shouldShowYellowBox ? EnergySolutions.UtskiftningAvVinduGul : EnergySolutions.UtskiftningAvVindu) as React.ComponentType<EnergySolutionProps>,
-    'Isolering av kjeller og loft': (shouldShowYellowBox ? EnergySolutions.IsoleringAvKjellerOgLoftGul : EnergySolutions.IsoleringAvKjellerOgLoft) as React.ComponentType<EnergySolutionProps>,
-    'Etterisolering av yttervegg': (shouldShowYellowBox ? EnergySolutions.EtterisoleringYtterveggGul : EnergySolutions.EtterisoleringYttervegg) as React.ComponentType<EnergySolutionProps>,
-    'Ventilasjon': (shouldShowYellowBox ? EnergySolutions.VentilasjonGul : EnergySolutions.Ventilasjon) as React.ComponentType<EnergySolutionProps>
-  };
-    
-    const Component = componentMap[selectedSolution];
-    if (!Component) return null;
-    
-    // Pass onBack prop to Tetting, Temperaturstyring, Solenergi, Oppgradering av vindu, Etterisolering av yttervegg, Isolering av kjeller og loft, Ventilasjon, and Varmepumpe
-    if (selectedSolution === 'Tetting' || selectedSolution === 'Temperaturstyring' || selectedSolution === 'Solenergi' || selectedSolution === 'Oppgradering av vindu' || selectedSolution === 'Etterisolering av yttervegg' || selectedSolution === 'Isolering av kjeller og loft' || selectedSolution === 'Ventilasjon' || selectedSolution === 'Varmepumpe') {
-      return <Component onBack={() => onExpand && onExpand(false)} buildingType={buildingTypeName} buildingData={buildingData} />;
-    }
-    
-    return <Component />;
-  };
+const enableRefactoredTiltakCards =
+  typeof import.meta !== 'undefined' &&
+  import.meta.env?.VITE_ENABLE_REFACTORED_TILTAK === 'true';
+
+const legacyTiltakComponent = React.useMemo(
+  () =>
+    enableRefactoredTiltakCards
+      ? undefined
+      : getLegacyTiltakComponent(selectedTiltakSlug ?? undefined, tiltakAudience),
+  [selectedTiltakSlug, tiltakAudience]
+);
+
+const isLegacyTiltak = Boolean(legacyTiltakComponent);
+const previewWrapperStyle: React.CSSProperties = {
+  width: '100%',
+  height: '100%',
+  boxSizing: 'border-box',
+  padding: isLegacyTiltak ? 0 : '2rem 1.5rem',
+  overflowX: 'hidden',
+  overflowY: isLegacyTiltak ? 'hidden' : 'auto'
+};
+
+const tiltakPreview = selectedTiltakSlug ? (
+    <div style={previewWrapperStyle}>
+      {legacyTiltakComponent ? (
+        React.createElement(legacyTiltakComponent, {
+          audience: tiltakAudience,
+          buildingType: tiltakBuildingType,
+          buildingData,
+          className: 'white-info-box__tiltak-card',
+          onBack: handleTiltakBack
+        })
+      ) : (
+        <TiltakCardRenderer
+          slug={selectedTiltakSlug}
+          audience={tiltakAudience}
+          buildingType={tiltakBuildingType}
+          className="white-info-box__tiltak-card"
+          onBack={handleTiltakBack}
+        />
+      )}
+    </div>
+  ) : null;
   
   return (
     <div
@@ -1574,17 +1686,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
         
       </g>
       
-      {/* Tiltak content that appears when expanded */}
-      {selectedSolution !== 'Tetting' && selectedSolution !== 'Solenergi' && selectedSolution !== 'Temperaturstyring' && selectedSolution !== 'Oppgradering av vindu' && selectedSolution !== 'Etterisolering av yttervegg' && selectedSolution !== 'Isolering av kjeller og loft' && selectedSolution !== 'Ventilasjon' && selectedSolution !== 'Varmepumpe' && (
-        <g style={{ 
-          opacity: isExpanded && selectedSolution ? 1 : 0, 
-          transition: isExpanded ? 'opacity 0.5s ease-in-out 1s' : 'opacity 0.2s ease-out',
-          pointerEvents: isExpanded ? 'auto' : 'none'
-        }}>
-          {getSolutionComponent()}
-        </g>
-      )}
-        
       <defs>
         <clipPath id="clip0_325_12689">
           <rect width="336" height="760" fill="white"/>
@@ -1593,7 +1694,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     </svg>
       </div>
       
-      {/* Render Tetting, Temperaturstyring, Solenergi, Oppgradering av vindu, Etterisolering av yttervegg, Isolering av kjeller og loft, Ventilasjon, and Varmepumpe outside SVG */}
+      {/* Render tiltak preview outside SVG when expanded */}
       <div style={{ 
         position: 'absolute',
         top: 0,
@@ -1603,16 +1704,9 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
         opacity: isExpanded && selectedSolution ? 1 : 0, 
         transition: isExpanded ? 'opacity 0.5s ease-in-out 1s' : 'opacity 0.3s ease-in-out',
         pointerEvents: isExpanded ? 'auto' : 'none',
-        visibility: (selectedSolution === 'Tetting' || 
-          selectedSolution === 'Temperaturstyring' ||
-          selectedSolution === 'Solenergi' ||
-          selectedSolution === 'Oppgradering av vindu' ||
-          selectedSolution === 'Etterisolering av yttervegg' ||
-          selectedSolution === 'Isolering av kjeller og loft' ||
-          selectedSolution === 'Ventilasjon' ||
-          selectedSolution === 'Varmepumpe') ? 'visible' : 'hidden'
+        visibility: selectedTiltakSlug ? 'visible' : 'hidden'
       }}>
-        {getSolutionComponent()}
+        {tiltakPreview}
       </div>
     </div>
   );

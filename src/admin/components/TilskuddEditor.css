@@ -1,0 +1,132 @@
+.tilskudd-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-24, 1.5rem);
+  padding: var(--pkt-spacing-24, 1.5rem);
+  background: var(--pkt-color-surface-default, #fff);
+  border-radius: 0; /* Punkt bruker ikke avrundede hjørner */
+  max-width: 900px;
+}
+
+.tilskudd-editor__header {
+  border-bottom: 1px solid var(--pkt-color-border-subtle, #e0e0e0);
+  padding-bottom: var(--pkt-spacing-16, 1rem);
+}
+
+.tilskudd-editor__title {
+  font-family: var(--pkt-font-family-heading, "Oslo Sans", sans-serif);
+  font-size: var(--pkt-font-size-24, 1.5rem);
+  font-weight: 700;
+  color: var(--pkt-color-text-default, #2a2859);
+  margin: 0 0 var(--pkt-spacing-8, 0.5rem) 0;
+}
+
+.tilskudd-editor__subtitle {
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  color: var(--pkt-color-text-subtle, #666);
+  margin: 0;
+}
+
+.tilskudd-editor__error {
+  margin-bottom: var(--pkt-spacing-16, 1rem);
+}
+
+/* Seksjoner */
+.tilskudd-editor__section {
+  border: 1px solid var(--pkt-color-border-subtle, #e0e0e0);
+  border-radius: 0; /* Punkt bruker ikke avrundede hjørner */
+  padding: var(--pkt-spacing-16, 1rem);
+}
+
+.tilskudd-editor__section-title {
+  font-family: var(--pkt-font-family-heading, "Oslo Sans", sans-serif);
+  font-size: var(--pkt-font-size-18, 1.125rem);
+  font-weight: 600;
+  color: var(--pkt-color-text-default, #2a2859);
+  margin: 0 0 var(--pkt-spacing-12, 0.75rem) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--pkt-spacing-12, 0.75rem);
+}
+
+.tilskudd-editor__section-helptext {
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  color: var(--pkt-color-text-subtle, #666);
+  margin: 0 0 var(--pkt-spacing-12, 0.75rem) 0;
+}
+
+/* Tellere */
+.tilskudd-editor__counter {
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  font-weight: 500;
+  color: #2a2859; /* brand-dark-blue-1000 */
+  background: #b3f5ff; /* brand-blue-500 */
+  padding: 0.2rem 0.6rem;
+  border-radius: 0; /* Punkt bruker ikke avrundede hjørner */
+}
+
+/* Checkbox-grupper */
+.tilskudd-editor__checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-8, 0.5rem);
+}
+
+.tilskudd-editor__checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--pkt-spacing-8, 0.5rem);
+}
+
+@media (max-width: 600px) {
+  .tilskudd-editor__checkbox-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tilskudd-editor__select-all {
+  margin-bottom: var(--pkt-spacing-12, 0.75rem);
+}
+
+/* Finansiering */
+.tilskudd-editor__funding-item {
+  background: var(--pkt-color-surface-subtle, #f9f9f9);
+  padding: var(--pkt-spacing-16, 1rem);
+  margin-bottom: var(--pkt-spacing-12, 0.75rem);
+  border: 1px solid var(--pkt-color-border-subtle, #e6e6e6);
+}
+
+.tilskudd-editor__funding-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--pkt-spacing-12, 0.75rem);
+}
+
+.tilskudd-editor__funding-type {
+  font-weight: 600;
+  color: #2a2859; /* brand-dark-blue-1000 */
+  font-size: var(--pkt-font-size-14, 0.875rem);
+}
+
+.tilskudd-editor__funding-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--pkt-spacing-12, 0.75rem);
+}
+
+.tilskudd-editor__funding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pkt-spacing-8, 0.5rem);
+  margin-top: var(--pkt-spacing-12, 0.75rem);
+}
+
+/* Footer */
+.tilskudd-editor__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--pkt-spacing-12, 0.75rem);
+  padding-top: var(--pkt-spacing-16, 1rem);
+  border-top: 1px solid var(--pkt-color-border-subtle, #e0e0e0);
+}

@@ -56,6 +56,7 @@ const BenefitSchema = z
   .strict();
 
 const BenefitReferenceSchema = z.string().regex(/^[a-z0-9-]+$/);
+const GlossaryTermReferenceSchema = z.string().regex(/^[a-z0-9-]+$/);
 
 const ContentBlockSchema = z
   .object({
@@ -172,6 +173,7 @@ export const TiltakContentSchema = z
     buildingTypeParagraphs: BuildingParagraphsSchema,
     benefitRefs: z.array(BenefitReferenceSchema).max(4).default([]),
     benefits: z.array(BenefitSchema).default([]),
+    glossaryTermRefs: z.array(GlossaryTermReferenceSchema).default([]),
     readMore: z.array(LinkSchema).default([]),
     callsToAction: z.array(CallToActionSchema).default([]),
     customSections: z.array(SectionSchema).default([]),

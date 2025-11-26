@@ -5,7 +5,7 @@ import {
   TiltakComponentProps
 } from './shared';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
-import { useTiltakContent } from '../../../../hooks/contentHooks';
+import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type {
   TiltakAccordionItem,
@@ -13,7 +13,7 @@ import type {
 } from '../../../../../content/tiltak/schema';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
-import { renderParagraphWithGlossary } from './glossaryHelpers';
+import { renderParagraphWithGlossary, dictionaryTermsToGlossary } from './glossaryHelpers';
 
 type TemperaturstyringProps = TiltakComponentProps;
 type TemperaturstyringComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -31,64 +31,6 @@ type TemperaturstyringContentView = {
   readMore: ReadMoreLink[];
   accordion: TiltakAccordionItem[];
   grants: string[];
-};
-
-const defaultTemperaturstyringContent: TemperaturstyringContentView = {
-  title: 'Temperaturstyring',
-  introParagraphs: [
-    'Temperaturstyring handler om å bruke varmen smartere – til riktig tid og på riktig sted. Med enkle grep kan du varme opp rom du bruker, og senke temperaturen der det står tomt. Systemene spenner fra manuelle termostater til automatiske løsninger som følger døgnrytme, strømpris eller effektbelastning i boligen.',
-    'Tiltaket gir best effekt når du kombinerer styringen med god oversikt over strømforbruket ditt. Da ser du raskt hva som trekker mest, og kan styre eller planlegge lastene slik at de flyttes til rimeligere timer.'
-  ],
-  buildingTypeParagraphs: {
-    default: [
-      'I leiligheter og blokkbygg er varmeanlegget ofte felles. Likevel kan du gjøre mye i egen bolig gjennom panelovner, intelligente stikkontakter eller styring av varmekabler. Har borettslaget felles laster som elbillading eller varmtvannsberedere, bør du ta opp effekt- og prisstyring med styret slik at tiltakene koordineres.'
-    ],
-    enebolig: [
-      'I eneboliger har du gjerne full kontroll på oppvarmingen i hvert rom. Smarte termostater eller styring via app gjør det enkelt å senke temperaturen om natten eller når boligen står tom. Har du elbillader, varmtvannsbereder eller solceller, kan du også bruke effektstyring for å forebygge høye effekttopper.'
-    ],
-    rekkehus: [
-      'I rekkehus og tomannsboliger opplever mange at enkelte rom blir kaldere enn andre. Rom-for-rom-styring lar deg holde det lunt i oppholdsrom, mens du senker temperaturen i rom som ikke er i bruk. Deles hovedsikringen med naboene, kan felles effektstyring sikre jevnere belastning gjennom døgnet.'
-    ],
-    tomannsbolig: [
-      'I rekkehus og tomannsboliger opplever mange at enkelte rom blir kaldere enn andre. Rom-for-rom-styring lar deg holde det lunt i oppholdsrom, mens du senker temperaturen i rom som ikke er i bruk. Deles hovedsikringen med naboene, kan felles effektstyring sikre jevnere belastning gjennom døgnet.'
-    ],
-    blokk: [
-      'I blokker har beboere ofte mindre innflytelse på varmeanlegget, men du kan likevel redusere forbruket lokalt. Panelovner med døgnstyring, styring av gulvvarme på bad eller tidsstyrt komfortvarme gir bedre kontroll. Har dere felles tekniske anlegg bør tiltak koordineres med styret slik at ventilasjon, varme og eventuelt solstrøm jobber sammen.'
-    ]
-  },
-  benefits: [
-    { title: 'Redusert energibehov', description: 'Automatiserte regler kutter unødvendig oppvarming og gir lavere forbruk.' },
-    { title: 'Bedre bokvalitet', description: 'Jevnere temperatur og styring fra app eller panel gir økt komfort.' },
-    { title: 'Lavere strømregning', description: 'Flytt forbruk til billige timer og unngå høye effekttopper.' },
-    { title: 'Bedre strømstyring', description: 'Koble styringen til elbillader, varmtvann eller solceller for å bruke strømmen smartere.' }
-  ],
-  readMore: [
-    {
-      label: 'Enova – varmestyringssystem',
-      url: 'https://www.enova.no/nb/privat/bolig/tema-redusere-eller-styre-stromforbruket/varmestyringssystem/'
-    },
-    {
-      label: 'Slik virker effekt- og prisstyring',
-      url: 'https://www.klimaoslo.no/tilskudd/smart-energistyring-for-boliger/'
-    }
-  ],
-  accordion: [
-    {
-      id: 'soknadsplikt',
-      title: 'Søknadsplikt er ikke en stopper, men en støtte',
-      body: [
-        'Temperaturstyring og styring av elektriske laster handler ofte om å montere termostater, sensorer eller styrebokser. Det er vanligvis ikke søknadspliktig, men alt fast elektrisk arbeid må gjøres av registrert installatør. Er du i tvil, ta kontakt med Plan- og bygningsetaten for veiledning.',
-        'Søknadsplikten skal hjelpe deg som tiltakshaver med å få et trygt og dokumentert resultat. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak for prosjektering eller utførelse. Avklar rollen til fagpersoner tidlig slik at prosjektet går smidig.'
-      ],
-      links: [],
-      glossary: []
-    }
-  ],
-  grants: [
-    'enova-energiradgivning',
-    'klimaoslo-smart-energistyring',
-    'klimaoslo-pris-effektstyring'
-  ]
 };
 
 function mapTemperaturstyringContent(content?: TiltakContent): TemperaturstyringContentView | null {
@@ -119,50 +61,60 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
   const [hoveredGlossaryTerm, setHoveredGlossaryTerm] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
-  const { data: tiltakContent } = useTiltakContent('temperaturstyring');
+  const { data: tiltakContent, isLoading } = useTiltakContent('temperaturstyring');
+  const { data: dictionary } = useContentDictionary();
   const resolvedTiltakContent = useMemo(
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
   );
-  const mappedContent = useMemo(
+  const content = useMemo(
     () => mapTemperaturstyringContent(resolvedTiltakContent),
     [resolvedTiltakContent]
   );
-  const content = mappedContent ?? defaultTemperaturstyringContent;
-
-  const introParagraphs = content.introParagraphs.length
-    ? content.introParagraphs
-    : defaultTemperaturstyringContent.introParagraphs;
 
   const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
-  const buildingParagraphs =
-    content.buildingTypeParagraphs[buildingTypeKey] ??
-    content.buildingTypeParagraphs.default ??
-    defaultTemperaturstyringContent.buildingTypeParagraphs.default;
+  const glossaryEntries = useMemo(
+    () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? []),
+    [dictionary?.glossaryTerms]
+  );
 
-  const benefits = [
-    ...(content.benefits.length ? content.benefits : defaultTemperaturstyringContent.benefits)
-  ];
-  while (benefits.length < 4) {
-    benefits.push(defaultTemperaturstyringContent.benefits[benefits.length]);
-  }
-
-  const readMoreLinks = (content.readMore.length ? content.readMore : defaultTemperaturstyringContent.readMore).slice(0, 3);
-
-  const accordionItem = content.accordion[0] ?? defaultTemperaturstyringContent.accordion[0];
-  const accordionBody = accordionItem?.body ?? [];
-  const accordionLinks = accordionItem?.links ?? [];
-  const glossaryEntries = accordionItem?.glossary ?? [];
-
+  // Hooks for støtteordninger - må være før tidlig return (React rules of hooks)
+  const grantIds = content?.grants ?? [];
   const {
     stotteordninger,
     intendedSource,
     isLoading: grantLoading
   } = useGrantAwareStotteordninger({
-    grantIds: content.grants,
+    grantIds,
     legacyTiltakSlug: 'smart_energistyring',
     buildingType
   });
+
+  // Tidlig return etter alle hooks
+  if (isLoading || !content) {
+    return (
+      <div style={{ padding: '60px', fontFamily: 'Oslo Sans', color: '#2A2859' }}>
+        Laster innhold...
+      </div>
+    );
+  }
+
+  const introParagraphs = content.introParagraphs;
+  const buildingParagraphs =
+    content.buildingTypeParagraphs[buildingTypeKey] ??
+    content.buildingTypeParagraphs.default ??
+    [];
+
+  const benefits = content.benefits.slice(0, 4).map((b) => ({
+    title: b.title || 'Fordel',
+    description: b.description
+  }));
+
+  const readMoreLinks = content.readMore.slice(0, 3);
+
+  const accordionItem = content.accordion[0];
+  const accordionBody = accordionItem?.body ?? [];
+  const accordionLinks = accordionItem?.links ?? [];
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
@@ -214,7 +166,7 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
           fill="#2A2859"
           dominantBaseline="hanging"
         >
-          {content.title ?? defaultTemperaturstyringContent.title}
+          {content.title}
         </text>
 
         <g
@@ -308,7 +260,7 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[0]?.title ?? defaultTemperaturstyringContent.benefits[0].title}
+          {benefits[0]?.title ?? 'Fordel'}
         </text>
 
         <rect x="565" y="106" width="155" height="30" fill="#C7F6C9" />
@@ -337,7 +289,7 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[1]?.title ?? defaultTemperaturstyringContent.benefits[1].title}
+          {benefits[1]?.title ?? 'Fordel'}
         </text>
 
         <rect x="565" y="152" width="183" height="30" fill="#C7F6C9" />
@@ -366,7 +318,7 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[2]?.title ?? defaultTemperaturstyringContent.benefits[2].title}
+          {benefits[2]?.title ?? 'Fordel'}
         </text>
 
         <rect x="565" y="198" width="172" height="30" fill="#C7F6C9" />
@@ -389,7 +341,7 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[3]?.title ?? defaultTemperaturstyringContent.benefits[3].title}
+          {benefits[3]?.title ?? 'Fordel'}
         </text>
 
         <rect x="565" y="260" width="211" height="124" fill="#034B45" />
@@ -762,7 +714,7 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
                         margin: '0 0 12px 0'
                       }}
                     >
-                      {accordionItem?.title ?? defaultTemperaturstyringContent.accordion[0].title}
+                      {accordionItem?.title ?? 'Søknadsplikt'}
                     </h3>
                     {accordionBody.map((paragraph, index) => (
                       <p

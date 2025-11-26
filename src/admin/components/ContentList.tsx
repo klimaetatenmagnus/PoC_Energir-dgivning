@@ -6,13 +6,19 @@ import {
 } from "@oslokommune/punkt-react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AdminCatalogFilters,
   AdminCatalogMetadata,
   AdminCatalogStatus,
   AdminContentItem,
   AdminEnvironment,
   AdminMode,
+  AdminPaginationState,
+  DEFAULT_CATALOG_FILTERS,
+  DEFAULT_PAGINATION,
 } from "../types";
 import { PreviewPanel } from "./PreviewPanel";
+import { CatalogFilters } from "./CatalogFilters";
+import { CatalogPagination } from "./CatalogPagination";
 import "./ContentList.css";
 
 interface ContentListProps {
@@ -24,10 +30,13 @@ interface ContentListProps {
   error?: string | null;
   onReload?: () => void;
   onPreview?: (item: AdminContentItem) => void;
+  onEdit?: (item: AdminContentItem) => void;
   previewItem: AdminContentItem | null;
   previewMode: AdminMode | null;
   onClosePreview: () => void;
   onOpenBenefits?: () => void;
+  onOpenGlossary?: () => void;
+  onBack?: () => void;
 }
 
 const statusLabel: Record<string, string> = {
@@ -46,6 +55,58 @@ const statusSkin: Record<string, "yellow" | "blue" | "green" | "grey"> = {
 
 const MIN_CARD_WIDTH = 320;
 
+function filterItems(
+  items: AdminContentItem[],
+  filters: AdminCatalogFilters
+): AdminContentItem[] {
+  return items.filter((item) => {
+    // Status filter
+    if (filters.status !== "all" && item.status !== filters.status) {
+      return false;
+    }
+
+    // Audience filter
+    if (filters.audience !== "all") {
+      const audiences = item.audiences ?? [];
+      const variantAudiences = item.variantAudiences ?? [];
+      const allAudiences = [...audiences, ...variantAudiences];
+      if (!allAudiences.includes(filters.audience)) {
+        return false;
+      }
+    }
+
+    // Building type filter
+    if (filters.buildingType !== "all") {
+      const buildingTypes = item.buildingTypes ?? [];
+      if (!buildingTypes.includes(filters.buildingType)) {
+        return false;
+      }
+    }
+
+    // Search filter
+    if (filters.search.trim()) {
+      const searchLower = filters.search.toLowerCase().trim();
+      const titleMatch = item.title.toLowerCase().includes(searchLower);
+      const summaryMatch = item.summary?.toLowerCase().includes(searchLower);
+      const idMatch = item.id.toLowerCase().includes(searchLower);
+      if (!titleMatch && !summaryMatch && !idMatch) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
+function paginateItems(
+  items: AdminContentItem[],
+  pagination: AdminPaginationState
+): AdminContentItem[] {
+  const { page, pageSize } = pagination;
+  const startIndex = (page - 1) * pageSize;
+  return items.slice(startIndex, startIndex + pageSize);
+}
+
 export function ContentList({
   mode,
   environment,
@@ -55,13 +116,42 @@ export function ContentList({
   error,
   onReload,
   onPreview,
+  onEdit,
   previewItem,
   previewMode,
   onClosePreview,
   onOpenBenefits,
+  onOpenGlossary,
+  onBack,
 }: ContentListProps) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [columnCount, setColumnCount] = useState(1);
+  const [filters, setFilters] = useState<AdminCatalogFilters>(DEFAULT_CATALOG_FILTERS);
+  const [pagination, setPagination] = useState<AdminPaginationState>(DEFAULT_PAGINATION);
+
+  // Nullstill filtre og paginering når mode endres
+  useEffect(() => {
+    setFilters(DEFAULT_CATALOG_FILTERS);
+    setPagination(DEFAULT_PAGINATION);
+  }, [mode]);
+
+  // Filtrer og paginer items
+  const filteredItems = useMemo(
+    () => filterItems(items, filters),
+    [items, filters]
+  );
+
+  const paginatedItems = useMemo(
+    () => paginateItems(filteredItems, pagination),
+    [filteredItems, pagination]
+  );
+
+  // Nullstill til side 1 når filtre endres
+  const handleFiltersChange = (newFilters: AdminCatalogFilters) => {
+    setFilters(newFilters);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
   useEffect(() => {
     const element = gridRef.current;
     if (!element) {
@@ -102,7 +192,7 @@ export function ContentList({
       0);
 
   const rows = useMemo(() => {
-    if (!items.length) {
+    if (!paginatedItems.length) {
       return [];
     }
 
@@ -111,8 +201,8 @@ export function ContentList({
       hasPreview: boolean;
     }> = [];
 
-    for (let index = 0; index < items.length; index += chunkSize) {
-      const cards = items.slice(index, index + chunkSize);
+    for (let index = 0; index < paginatedItems.length; index += chunkSize) {
+      const cards = paginatedItems.slice(index, index + chunkSize);
       const hasPreview =
         !!previewItem &&
         !!previewMode &&
@@ -121,7 +211,7 @@ export function ContentList({
     }
 
     return slices;
-  }, [chunkSize, items, previewItem, previewMode]);
+  }, [chunkSize, paginatedItems, previewItem, previewMode]);
 
   const renderCard = (item: AdminContentItem) => (
     <PktCard key={item.id} className="admin-content__card" skin="outlined">
@@ -173,8 +263,14 @@ export function ContentList({
             >
               Forhåndsvis
             </PktButton>
-            <PktButton size="small" skin="primary" variant="label-only">
-              Åpne
+            <PktButton
+              size="small"
+              skin="primary"
+              variant="label-only"
+              onClick={() => onEdit?.(item)}
+              disabled={environment === "prod"}
+            >
+              Endre
             </PktButton>
           </div>
         </footer>
@@ -185,6 +281,17 @@ export function ContentList({
   return (
     <section className="admin-content">
       <header className="admin-content__header">
+        {onBack && (
+          <PktButton
+            skin="secondary"
+            size="medium"
+            variant="icon-left"
+            iconName="arrow-return"
+            onClick={onBack}
+          >
+            <span>Tilbake</span>
+          </PktButton>
+        )}
         <div className="admin-content__heading">
           <div className="admin-content__heading-row">
             <h2>
@@ -193,13 +300,22 @@ export function ContentList({
                 : "Tilskuddsordninger"}
             </h2>
             {mode === "tiltak" && (
-              <PktButton
-                skin="secondary"
-                variant="label-only"
-                onClick={() => onOpenBenefits?.()}
-              >
-                Rediger fordeler
-              </PktButton>
+              <div className="admin-content__dictionary-buttons">
+                <PktButton
+                  skin="secondary"
+                  variant="label-only"
+                  onClick={() => onOpenBenefits?.()}
+                >
+                  Rediger fordeler
+                </PktButton>
+                <PktButton
+                  skin="secondary"
+                  variant="label-only"
+                  onClick={() => onOpenGlossary?.()}
+                >
+                  Rediger ordliste
+                </PktButton>
+              </div>
             )}
           </div>
           <div className="admin-content__primary-action">
@@ -249,9 +365,19 @@ export function ContentList({
           ariaLive="off"
         >
           Gjør endringer i staging først. Når QA er ferdig trykker du
-          “Publiser til energinokkelen.no” for å sende en Cloud Build job til
+          "Publiser til energinokkelen.no" for å sende en Cloud Build job til
           godkjenning.
         </PktAlert>
+      )}
+
+      {status === "ready" && items.length > 0 && (
+        <CatalogFilters
+          mode={mode}
+          filters={filters}
+          onChange={handleFiltersChange}
+          resultCount={filteredItems.length}
+          totalCount={items.length}
+        />
       )}
 
       <div className="admin-content__grid" ref={gridRef}>
@@ -281,17 +407,36 @@ export function ContentList({
             </Fragment>
           );
         })}
-        {items.length === 0 && (
+        {items.length === 0 && status === "ready" && (
           <PktAlert
             className="admin-content__empty"
             skin="info"
-            title="Ingen elementer matcher filtrene"
+            title="Ingen elementer"
             ariaLive="off"
           >
-            Ingen elementer tilgjengelig ennå.
+            Ingen {mode === "tiltak" ? "tiltak" : "tilskudd"} er tilgjengelig ennå.
+          </PktAlert>
+        )}
+        {items.length > 0 && filteredItems.length === 0 && (
+          <PktAlert
+            className="admin-content__empty"
+            skin="info"
+            title="Ingen treff"
+            ariaLive="off"
+          >
+            Ingen {mode === "tiltak" ? "tiltak" : "tilskudd"} matcher de valgte filtrene.
+            Prøv å endre søkekriteriene.
           </PktAlert>
         )}
       </div>
+
+      {filteredItems.length > 0 && (
+        <CatalogPagination
+          pagination={pagination}
+          totalItems={filteredItems.length}
+          onChange={setPagination}
+        />
+      )}
 
       {metadata && status !== "loading" && (
         <div className="admin-content__catalog-meta">

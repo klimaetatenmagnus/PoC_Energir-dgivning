@@ -4,36 +4,50 @@
   "title": "Tetting",
   "summary": "Stopp trekk og varmetap med enkle tiltak rundt vinduer, dører og gulv.",
   "introParagraphs": [
-    "Trekker det rundt vinduer, dører eller gulv? Tetting er ofte det raskeste grepet for å få et jevnere inneklima og lavere strømforbruk. Små tiltak som tettelister, dyttestrimmel eller isolering bak listverk gir rask effekt og krever lite verktøy.",
-    "De fleste boliger har områder der luft slipper inn eller varme lekker ut. Ved å gå systematisk over overganger mellom bygningsdeler, kan du få mye igjen for en liten innsats før du vurderer større arbeider som vindusbytte eller etterisolering."
+    "Trekker det rundt vinduer, dører eller gulv? Da kan tetting være et av de enkleste grepene du gjør for å få bedre komfort og lavere strømforbruk. Små tiltak som tettelister og isolering bak listverk kan ofte gi stor forskjell – og det meste kan du gjøre selv.",
+    "Tetting passer i alle typer bygg og krever sjelden store inngrep."
   ],
   "buildingTypeParagraphs": {
     "default": [
-      "I leiligheter er det vanlig at trekken kommer fra eldre vinduer eller overganger mot fellesarealer som trapperom, kjeller og loft. Tetting rundt egne vinduer og dører kan du som regel gjøre selv. Hvis lekkasjene gjelder felles konstruksjoner, bør du ta det opp med styret slik at tiltaket samordnes.",
-      "Kombiner gjerne tetting med annet vedlikehold – for eksempel maling av vinduer eller oppgradering av gulvlister – så får du mer igjen for tiden du bruker."
+      "I leiligheter er det vanlig at trekk kommer fra gamle vinduer eller overganger mot fellesarealer som trapperom og kjeller. Tetting rundt egne vinduer og dører kan du som regel gjøre selv. Hvis lekkasjene gjelder deler av bygget som flere beboere deler, bør tiltaket tas opp med styret. Tetting er også lurt å gjøre sammen med annet vedlikehold for å få mer igjen for innsatsen."
     ],
     "enebolig": [
-      "I eneboliger oppstår trekken ofte rundt vinduer, dører, overganger mellom etasjer eller der tak og vegger møtes. Bruk et stearinlys eller hånden for å finne lekkasjene. Tettelister, dyttestrimmel eller isolasjon bak listverk gir stor effekt når du tar punktene systematisk.",
-      "Har du kjeller eller kaldt loft, bør du sjekke overgangen mellom bolig og kalde soner. Tetting her kan redusere både støy og varmetap."
+      "I eneboliger oppstår trekken ofte rundt vinduer, dører, ved overganger mellom etasjer eller der tak og vegger møtes. Du kan enkelt finne lekkasjer ved å kjenne etter trekk med hånden eller bruke et stearinlys. Mange av tiltakene kan du gjøre selv, og resultatet merkes både på komfort og strømregning."
     ],
     "rekkehus": [
       "I rekkehus og tomannsboliger deler du ofte både konstruksjoner og fasader med naboen. Koordiner arbeidet med de andre slik at dere tetter like punkter og bevarer et helhetlig uttrykk.",
-      "Start med egne vinduer og dører, og vurder felles tiltak i trapperom, kjeller og loft dersom flere opplever trekk." 
+      "Start med egne vinduer og dører, og vurder felles tiltak i trapperom, kjeller og loft dersom flere opplever trekk."
     ],
     "tomannsbolig": [
       "I rekkehus og tomannsboliger deler du ofte både konstruksjoner og fasader med naboen. Koordiner arbeidet med de andre slik at dere tetter like punkter og bevarer et helhetlig uttrykk.",
-      "Start med egne vinduer og dører, og vurder felles tiltak i trapperom, kjeller og loft dersom flere opplever trekk." 
+      "Start med egne vinduer og dører, og vurder felles tiltak i trapperom, kjeller og loft dersom flere opplever trekk."
     ],
     "blokk": [
       "I blokker er det vanlig at trekken kommer fra felles konstruksjoner: overgangen mellom leilighet og trapperom, gamle sjakter eller ubrukte ventiler. Tetting rundt egne vinduer og innvendige overflater kan du gjøre selv, men tiltak som berører fasaden bør tas opp med styret.",
-      "Be om at tetting samordnes med annet vedlikehold, slik at dere opprettholder uttrykket mot gata." 
+      "Be om at tetting samordnes med annet vedlikehold, slik at dere opprettholder uttrykket mot gata."
     ]
   },
   "benefits": [
-    { "id": "mindre-trekk", "title": "Mindre trekk", "description": "Lukk luftlekkasjer og få et mer komfortabelt inneklima året rundt." },
-    { "id": "ivaretar-boligen", "title": "Ivaretar boligen", "description": "Tettere overganger beskytter konstruksjoner mot fukt og råte." },
-    { "id": "bedre-bokvalitet", "title": "Bedre bokvalitet", "description": "Jevnere temperatur og mindre støy fra vinduer og dører." },
-    { "id": "redusert-energibehov", "title": "Redusert energibehov", "description": "Mindre varmetap betyr lavere strømforbruk og kostnader." }
+    {
+      "id": "mindre-trekk",
+      "title": "Mindre trekk",
+      "description": "Lukk luftlekkasjer og få et mer komfortabelt inneklima året rundt."
+    },
+    {
+      "id": "ivaretar-boligen",
+      "title": "Ivaretar boligen",
+      "description": "Tettere overganger beskytter konstruksjoner mot fukt og råte."
+    },
+    {
+      "id": "bedre-bokvalitet",
+      "title": "Bedre bokvalitet",
+      "description": "Jevnere temperatur og mindre støy fra vinduer og dører."
+    },
+    {
+      "id": "redusert-energibehov",
+      "title": "Redusert energibehov",
+      "description": "Mindre varmetap betyr lavere strømforbruk og kostnader."
+    }
   ],
   "readMore": [
     {
@@ -72,44 +86,6 @@
           "label": "Plan- og bygningsloven §20-3",
           "url": "https://lovdata.no/dokument/NL/lov/2008-06-27-71/KAPITTEL_4-1#%C2%A720-3"
         }
-      ],
-      "glossary": [
-        {
-          "term": "søknadspliktig",
-          "definition": [
-            "Søknadsplikt betyr at du må ha tillatelse fra Plan- og bygningsetaten før du gjør fysiske endringer på bygningen eller eiendommen."
-          ],
-          "links": [
-            {
-              "label": "Les mer hos DiBK",
-              "url": "https://www.dibk.no/regelverk/sak/2/2/innledning"
-            }
-          ]
-        },
-        {
-          "term": "tiltakshaver",
-          "definition": [
-            "Tiltakshaver er personen eller virksomheten som utfører – eller bestiller – et tiltak som krever søknad og tillatelse."
-          ],
-          "links": [
-            {
-              "label": "Tiltakshavers ansvar",
-              "url": "https://www.dibk.no/regelverk/sak/3/12/12-1"
-            }
-          ]
-        },
-        {
-          "term": "ansvarlig foretak",
-          "definition": [
-            "Et ansvarlig foretak er et firma med riktig kompetanse som tar ansvar for bestemte deler av et byggeprosjekt, for eksempel prosjektering eller utførelse."
-          ],
-          "links": [
-            {
-              "label": "Når kreves ansvarsrett?",
-              "url": "https://www.dibk.no/regelverk/sak/3/12/innledning"
-            }
-          ]
-        }
       ]
     }
   ],
@@ -120,25 +96,30 @@
     "klimaoslo-vinduer-dorer",
     "enova-energiradgivning"
   ],
-  "supportTags": ["tetting", "klimaskall", "energieffektivisering"],
-  "audiences": ["standard"],
+  "supportTags": [
+    "tetting",
+    "klimaskall",
+    "energieffektivisering"
+  ],
+  "audiences": [
+    "standard"
+  ],
   "metadata": {
-    "status": "draft",
-    "updatedBy": "codex",
-    "updatedAt": "2025-11-14T09:45:00Z",
-    "changeSummary": "Første versjon av Tetting-innholdet i content/" 
+    "status": "published",
+    "updatedBy": "claude",
+    "updatedAt": "2025-11-25T21:00:00Z",
+    "changeSummary": "Publisert tetting-innhold - endret status fra draft til published"
   },
   "variants": [
     {
       "audience": "gulliste",
       "introParagraphs": [
-        "I bevaringsverdige bygg handler tetting om å stoppe trekk uten å skade originale detaljer. Bruk materialer og metoder som lar listverk, vinduer og døromramminger beholde uttrykket sitt.",
-        "Ta vare på gamle ventiler og lufteluker. De kan renses, repareres eller suppleres slik at huset fortsatt \"puster\" når du tetter rundt vinduer og dører."
+        "Tetting er et enkelt og effektivt tiltak som kan gi stor forskjell i både komfort og strømforbruk. Ofte holder det å tette rundt vinduer, dører og lister for å stoppe trekken og få lunere rom. Tiltaket krever lite inngrep, koster lite – og passer godt til eldre bygg.",
+        "For å få et varig og trygt resultat, bør du bruke materialer og metoder som er tilpasset bygningens alder og konstruksjon."
       ],
       "buildingTypeParagraphs": {
         "enebolig": [
-          "I eldre eneboliger er lekkasjene ofte knyttet til vinduer og overgangen mot kjeller eller loft. Tetting med naturvennlige materialer (lin, hamp eller dyttestrimmel) bevarer treverket og kan reverseres ved behov.",
-          "Planlegger du inngrep i originale vinduer eller dører, bør du kontakte Byantikvaren for å avklare tilstanden og hvilke løsninger som er akseptable."
+          "Trekken i eldre eneboliger kommer ofte fra vinduer, dører og overganger mellom etasjer. I murhus er det ofte gulv, hjørner og overgangen mot kjeller og loft som lekker. I trehus kan det være rundt dører og vinduer, der materialene har beveget seg over tid. Tetting med tettelister, dyttestrimmel eller isolering bak listverk er enkle tiltak som raskt gir effekt."
         ],
         "rekkehus": [
           "I verneverdige rekkehus deler dere gjerne fasadeuttrykk. Avklar tiltak i styret slik at tetting, maling og eventuelle reparasjoner gjennomføres likt.",
@@ -150,7 +131,10 @@
         ],
         "blokk": [
           "I bygårder er det vanlig at trekk kommer fra eldre vinduer, trapperom og loft. Samarbeid med styret og Byantikvaren før du tetter mot felles konstruksjoner, slik at ventilasjon og uttrykk ivaretas.",
-          "Behov for større inngrep – som utskifting av vinduer eller nye beslag – må prosjekteres samlet og avklares i søknad." 
+          "Behov for større inngrep – som utskifting av vinduer eller nye beslag – må prosjekteres samlet og avklares i søknad."
+        ],
+        "default": [
+          "I blokker er det vanlig at trekken kommer rundt eldre vinduer eller i overgangen mot fellesarealer som trapperom, kjeller eller loft. Tetting rundt egne vinduer og inne i leiligheten kan du ofte gjøre selv, så lenge det ikke berører fasade eller felleskonstruksjoner. Hvis lekkasjen gjelder deler av bygget som deles av flere, bør tiltakene vurderes i fellesskap med styret. Tetting er også lurt å gjøre sammen med annet vedlikehold for å få mer igjen for innsatsen."
         ]
       },
       "readMore": [
@@ -193,7 +177,11 @@
         "klimaoslo-oppgradering-bygningskropp",
         "enova-energiradgivning"
       ],
-      "supportTags": ["tetting", "gulliste", "vern"]
+      "supportTags": [
+        "tetting",
+        "gulliste",
+        "vern"
+      ]
     }
   ]
 }

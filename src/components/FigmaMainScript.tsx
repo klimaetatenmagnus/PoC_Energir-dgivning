@@ -240,6 +240,11 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     }));
     setEnergiforbruk(energiforbruk);
   }, []);
+
+  const handleTiltakBack = React.useCallback(() => {
+    setIsExpanded(false);
+    setSelectedSolution(null);
+  }, []);
   
   // Track if solar data has been fetched
   const [hasFetchedSolarData, setHasFetchedSolarData] = React.useState(false);
@@ -618,6 +623,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         mapCoordinates={mapCoordinates}
         buildingData={updatedBuildingData}
         onExpand={setIsExpanded}
+        onBackToSolutions={handleTiltakBack}
         showYellowBox={showYellowBox}
         gulListeLoading={gulListeLoading}
         onUpdateBuildingData={handleUpdateBuildingData}

@@ -5,7 +5,7 @@ import {
   TiltakComponentProps
 } from './shared';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
-import { useTiltakContent } from '../../../../hooks/contentHooks';
+import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type {
   TiltakAccordionItem,
@@ -13,7 +13,7 @@ import type {
 } from '../../../../../content/tiltak/schema';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
-import { renderParagraphWithGlossary } from './glossaryHelpers';
+import { renderParagraphWithGlossary, dictionaryTermsToGlossary } from './glossaryHelpers';
 
 type TettingProps = TiltakComponentProps;
 type TettingComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -31,120 +31,6 @@ type TettingContentView = {
   readMore: ReadMoreLink[];
   accordion: TiltakAccordionItem[];
   grants: string[];
-};
-
-const defaultTettingContent: TettingContentView = {
-  title: 'Tetting',
-  introParagraphs: [
-    'Trekker det rundt vinduer, dører eller gulv? Da kan tetting være et av de enkleste grepene du gjør for å få bedre komfort og lavere strømforbruk. Små tiltak som tettelister og isolering bak listverk kan ofte gi stor forskjell – og det meste kan du gjøre selv.',
-    'Tetting passer i alle typer bygg og krever sjelden store inngrep.'
-  ],
-  buildingTypeParagraphs: {
-    default: [
-      'I leiligheter er det vanlig at trekken kommer fra gamle vinduer eller overganger mot fellesarealer som trapperom og kjeller. Tetting rundt egne vinduer og dører kan du som regel gjøre selv. Hvis lekkasjene gjelder deler av bygget som flere beboere deler, bør tiltaket tas opp med styret. Tetting er også lurt å gjøre sammen med annet vedlikehold for å få mer igjen for innsatsen.'
-    ],
-    enebolig: [
-      'I eneboliger oppstår trekken ofte rundt vinduer, dører, ved overganger mellom etasjer eller der tak og vegger møtes. Du kan enkelt finne lekkasjer ved å kjenne etter trekk med hånden eller bruke et stearinlys. Mange av tiltakene kan du gjøre selv, og resultatet merkes både på komfort og strømregning.'
-    ],
-    rekkehus: [
-      'I rekkehus og tomannsboliger deler du ofte både konstruksjoner og fasader med naboen. Koordiner arbeidet med de andre slik at dere tetter like punkter og bevarer et helhetlig uttrykk.'
-    ],
-    tomannsbolig: [
-      'I rekkehus og tomannsboliger deler du ofte både konstruksjoner og fasader med naboen. Koordiner arbeidet med de andre slik at dere tetter like punkter og bevarer et helhetlig uttrykk.'
-    ],
-    blokk: [
-      'I blokker er det vanlig at trekken kommer fra felles konstruksjoner: overgangen mellom leilighet og trapperom, gamle sjakter eller ubrukte ventiler. Tetting rundt egne vinduer og innvendige overflater kan du gjøre selv, men tiltak som berører fasaden bør tas opp med styret.'
-    ]
-  },
-  benefits: [
-    { title: 'Mindre trekk', description: 'Lukk luftlekkasjer og få et mer komfortabelt inneklima året rundt.' },
-    { title: 'Ivaretar boligen', description: 'Tettere overganger beskytter konstruksjoner mot fukt og råte.' },
-    { title: 'Bedre bokvalitet', description: 'Jevnere temperatur og mindre støy fra vinduer og dører.' },
-    { title: 'Redusert energibehov', description: 'Mindre varmetap betyr lavere strømforbruk og kostnader.' }
-  ],
-  readMore: [
-    {
-      label: 'Bygg og Bevar – tetting rundt vinduer og dører',
-      url: 'https://byggogbevar.no/enoek/artikler/tiltak/tetting-rundt-vinduer-og-doerer/'
-    },
-    {
-      label: 'Plan- og bygningsetaten – trenger du veiledning?',
-      url: 'https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/'
-    }
-  ],
-  accordion: [
-    {
-      id: 'soknadsplikt',
-      title: 'Søknadsplikt er ikke en stopper, men en støtte',
-      body: [
-        'Er tiltaket ditt søknadspliktig betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.',
-        'Søknadsplikten skal hjelpe deg som tiltakshaver med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak som tar faglig ansvar for prosjektering og utførelse.',
-        'Selv om du må søke, kan selve tettingen fortsatt være enkel å gjennomføre. Ta dialogen tidlig og bruk veiledningstilbudene dersom du er usikker.'
-      ],
-      links: [
-        {
-          id: 'dibk-soknadsplikt',
-          label: 'Direktoratet for byggkvalitet – hva er søknadsplikt?',
-          url: 'https://www.dibk.no/regelverk/sak/2/2/innledning'
-        },
-        {
-          id: 'dibk-ansvar',
-          label: 'Tiltakshaver og ansvarlige foretak',
-          url: 'https://www.dibk.no/regelverk/sak/3/12/innledning'
-        },
-        {
-          id: 'lovdata-ansvar',
-          label: 'Plan- og bygningsloven §20-3',
-          url: 'https://lovdata.no/dokument/NL/lov/2008-06-27-71/KAPITTEL_4-1#%C2%A720-3'
-        }
-      ],
-      glossary: [
-        {
-          term: 'søknadspliktig',
-          definition: [
-            'Søknadsplikt betyr at du må ha tillatelse fra Plan- og bygningsetaten før du gjør fysiske endringer på bygningen eller eiendommen.'
-          ],
-          links: [
-            {
-              label: 'Les mer hos DiBK',
-              url: 'https://www.dibk.no/regelverk/sak/2/2/innledning'
-            }
-          ]
-        },
-        {
-          term: 'tiltakshaver',
-          definition: [
-            'Tiltakshaver er personen eller virksomheten som utfører – eller bestiller – et tiltak som krever søknad og tillatelse.'
-          ],
-          links: [
-            {
-              label: 'Tiltakshavers ansvar',
-              url: 'https://www.dibk.no/regelverk/sak/3/12/12-1'
-            }
-          ]
-        },
-        {
-          term: 'ansvarlige foretak',
-          definition: [
-            'Et ansvarlig foretak er et firma med riktig kompetanse som tar ansvar for bestemte deler av et byggeprosjekt.'
-          ],
-          links: [
-            {
-              label: 'Når kreves ansvarsrett?',
-              url: 'https://www.dibk.no/regelverk/sak/3/12/innledning'
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  grants: [
-    'klimaoslo-oppgradering-bygningskropp',
-    'klimaoslo-energitiltak-borettslag',
-    'klimaoslo-energikartlegging-borettslag',
-    'klimaoslo-vinduer-dorer',
-    'enova-energiradgivning'
-  ]
 };
 
 function mapTettingContent(content?: TiltakContent): TettingContentView | null {
@@ -176,47 +62,54 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
   const { data: tiltakContent } = useTiltakContent('tetting');
+  const { data: dictionary } = useContentDictionary();
   const resolvedTiltakContent = useMemo(
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
   );
-  const mappedContent = useMemo(
+  const content = useMemo(
     () => mapTettingContent(resolvedTiltakContent),
     [resolvedTiltakContent]
   );
-  const content = mappedContent ?? defaultTettingContent;
-
-  const introParagraphs = content.introParagraphs.length
-    ? content.introParagraphs
-    : defaultTettingContent.introParagraphs;
 
   const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
+
+  // Derive values from content (use empty defaults when loading)
+  const introParagraphs = content?.introParagraphs ?? [];
   const buildingParagraphs =
-    content.buildingTypeParagraphs[buildingTypeKey] ??
-    content.buildingTypeParagraphs.default ??
-    defaultTettingContent.buildingTypeParagraphs.default;
-
-  const benefits = [...(content.benefits.length ? content.benefits : defaultTettingContent.benefits)];
-  while (benefits.length < 4) {
-    benefits.push(defaultTettingContent.benefits[benefits.length]);
-  }
-
-  const readMoreLinks = (content.readMore.length ? content.readMore : defaultTettingContent.readMore).slice(0, 3);
-
-  const accordionItem = content.accordion[0] ?? defaultTettingContent.accordion[0];
+    content?.buildingTypeParagraphs[buildingTypeKey] ??
+    content?.buildingTypeParagraphs.default ??
+    [];
+  const benefits = content?.benefits ?? [];
+  const readMoreLinks = (content?.readMore ?? []).slice(0, 3);
+  const accordionItem = content?.accordion[0];
   const accordionBody = accordionItem?.body ?? [];
   const accordionLinks = accordionItem?.links ?? [];
-  const glossaryEntries = accordionItem?.glossary ?? [];
+  const glossaryEntries = useMemo(
+    () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? []),
+    [dictionary?.glossaryTerms]
+  );
+  const grantIds = content?.grants ?? [];
 
+  // All hooks must be called before any early return
   const {
     stotteordninger,
     intendedSource,
     isLoading: grantLoading
   } = useGrantAwareStotteordninger({
-    grantIds: content.grants,
+    grantIds,
     legacyTiltakSlug: 'tetting',
     buildingType
   });
+
+  // Show loading state after all hooks have been called
+  if (!content) {
+    return (
+      <div style={{ padding: '60px', fontFamily: 'Oslo Sans', color: '#2A2859' }}>
+        Laster innhold...
+      </div>
+    );
+  }
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
@@ -352,7 +245,7 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[0]?.title ?? defaultTettingContent.benefits[0].title}
+          {benefits[0]?.title ?? 'Mindre trekk'}
         </text>
         <rect
           x="565"
@@ -378,7 +271,7 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[1]?.title ?? defaultTettingContent.benefits[1].title}
+          {benefits[1]?.title ?? 'Ivaretar boligen'}
         </text>
         <rect
           x="565"
@@ -404,7 +297,7 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[2]?.title ?? defaultTettingContent.benefits[2].title}
+          {benefits[2]?.title ?? 'Bedre bokvalitet'}
         </text>
         <rect
           x="565"
@@ -444,7 +337,7 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[3]?.title ?? defaultTettingContent.benefits[3].title}
+          {benefits[3]?.title ?? 'Redusert energibehov'}
         </text>
         
         {/* Dark green box below the list */}
@@ -907,7 +800,7 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
                   color: '#FFFFFF',
                   margin: '0 0 12px 0'
                 }}>
-                  {accordionItem?.title ?? defaultTettingContent.accordion[0].title}
+                  {accordionItem?.title ?? 'Søknadsplikt'}
                 </h3>
                 {accordionBody.map((paragraph, index) => (
                   <p

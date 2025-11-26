@@ -4,21 +4,22 @@
   "title": "Solenergi",
   "summary": "Produser din egen strøm med solceller eller solfangere og få bedre kontroll på energibruken.",
   "introParagraphs": [
-    "Hahaha - Solcelleanlegg er et effektivt og stadig mer lønnsomt tiltak for boligeiere i Oslo. Du kan produsere egen strøm, bruke mindre fra strømnettet og samtidig bidra til lavere utslipp.",
-    "Har du overskuddsproduksjon, kan du få lavere nettleie ved å registrere deg som plusskunde. Sjekk Solkartet for å se hvor mye sol taket ditt får gjennom året og hvor godt egnet huset er."
+    "Solcelleanlegg er et effektivt og stadig mer lønnsomt tiltak for boligeiere i Oslo. Du kan produsere egen strøm og bruke mindre fra strømnettet – samtidig som du bidrar til lavere utslipp.",
+    "Har du overskuddsproduksjon, kan du få lavere nettleie ved å registrere deg som plusskunde hos nettselskapet.",
+    "I Oslos solkart kan du sjekke hvor mye sol taket ditt får gjennom året – og vurdere om tiltaket er aktuelt for deg."
   ],
   "buildingTypeParagraphs": {
     "default": [
-      "Blokker og større leilighetsbygg har ofte store takflater som fanger opp mye sol. Fasader og tak med markerte arkitektoniske detaljer må vurderes varsomt, og solcellefelt bør legges slik at de ikke bryter med uttrykket mot gaten. Planlegg tiltaket som et felles prosjekt i borettslaget eller sameiet for å sikre helhetlige løsninger."
+      "Blokker har ofte store flater som fanger opp mye sol. Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. Fasader og tak med arkitektoniske markerte deler bør som regel ikke endres, og det kan være lurt å plassere anlegget slik at det ikke er synlig fra gaten. Tiltaket må planlegges som et felles prosjekt i borettslaget eller sameiet, og dere kan få til gode løsninger som både gir energigevinst og tar vare på byggets uttrykk."
     ],
     "enebolig": [
-      "Eneboliger har ofte gode forhold for solenergi, særlig når takflatene vender mot sør, øst eller vest. Tilpass anlegget til husets uttrykk – eventuelt ved å bruke garasje, uthus eller tilbygg – dersom du ønsker et mer diskret resultat."
+      "Eneboliger har ofte gode forhold for solenergi, særlig om takflatene vender mot sør, øst eller vest. Anlegget bør tilpasses husets uttrykk - alternativt kan garasje, uthus eller tilbygg brukes for å oppnå et mer diskret uttrykk."
     ],
     "rekkehus": [
       "I rekkehus og tomannsboliger deler du gjerne takflater med naboen. Samordn planene slik at dere får et helhetlig uttrykk og enklere behandling av byggesøknad."
     ],
     "tomannsbolig": [
-      "I rekkehus og tomannsboliger deler du gjerne takflater med naboen. Samordn planene slik at dere får et helhetlig uttrykk og enklere behandling av byggesøknad."
+      "Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. I flermannsboliger burde anlegget planlegges i dialog med naboen. Mange av disse husene har symmetrisk utforming eller felles tak, og ved å samarbeide kan dere finne løsninger som både ser helhetlige ut og som enklere får byggetillatelse."
     ]
   },
   "benefits": [
@@ -116,24 +117,21 @@
       ],
       "buildingTypeParagraphs": {
         "enebolig": [
-          "Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. På hus med markerte takdetaljer eller fremtredende arkitektonisk uttrykk er det ofte bedre å plassere anlegget på garasje, uthus eller tilbygg for å bevare fasaden mot gata.",
-          "Et møte med Byantikvaren kan hjelpe deg å finne løsninger som både ivaretar bygget og gir ønsket energigevinst."
+          "Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. På hus med markerte takdetaljer eller fremtredende arkitektonisk uttrykk, vurderes det ofte som bedre å plassere anlegget på garasje, uthus eller et tilbygg. Et møte med Byantikvaren kan hjelpe deg å finne gode løsninger."
         ],
         "rekkehus": [
           "Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi, men i flermannsboliger bør anlegget planlegges i dialog med naboen. Mange hus har symmetrisk utforming eller felles tak, og ved å samarbeide får dere et helhetlig uttrykk som enklere får byggetillatelse.",
           "Bakside, bod eller tilbygg egner seg ofte best for diskrete løsninger med lav visuell påvirkning. Et møte med Byantikvaren kan hjelpe dere å finne gode alternativer."
         ],
         "tomannsbolig": [
-          "Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi, men i flermannsboliger bør anlegget planlegges i dialog med naboen. Mange hus har symmetrisk utforming eller felles tak, og ved å samarbeide får dere et helhetlig uttrykk som enklere får byggetillatelse.",
-          "Bakside, bod eller tilbygg egner seg ofte best for diskrete løsninger med lav visuell påvirkning. Et møte med Byantikvaren kan hjelpe dere å finne gode alternativer."
+          "Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. I flermannsboliger burde anlegget planlegges i dialog med naboen. Mange av disse husene har symmetrisk utforming eller felles tak, og ved å samarbeide kan dere finne løsninger som både ser helhetlige ut og som enklere får byggetillatelse. Bakside, bod eller tilbygg egner seg ofte best for diskré løsninger med lav visuell påvirkning. Et møte med Byantikvaren kan hjelpe dere å finne gode løsninger."
         ],
         "blokk": [
           "Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. I eldre blokker er flate tak og bakgårdsfasader ofte best egnet, mens fasader og tak med tydelige arkitektoniske detaljer som regel bør bevares.",
           "Når tiltak planlegges som et felles prosjekt i borettslaget eller sameiet, kan dere få til løsninger som både gir energigevinst og ivaretar byggets uttrykk. Et møte med Byantikvaren kan hjelpe dere å finne gode løsninger."
         ],
         "default": [
-          "Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. I eldre blokker er flate tak og bakgårdsfasader ofte best egnet, mens fasader og tak med arkitektoniske detaljer bør bevares.",
-          "Planlegg tiltaket som et felles prosjekt slik at dere både får energigevinst og ivaretar byggets uttrykk. Byantikvaren kan bidra med råd dersom dere er usikre."
+          "Takflater som vender mot sør, øst eller vest kan egne seg godt for solenergi. I eldre blokker er flate tak og bakgårdsfasader ofte best egnet. Fasader og tak med arkitektoniske markerte deler bør som regel ikke endres. Når tiltak planlegges som et felles prosjekt i borettslaget eller sameiet, kan dere få til gode løsninger som både gir energigevinst og ivaretar byggets uttrykk. Et møte med Byantikvaren kan hjelpe dere å finne gode løsninger."
         ]
       },
       "grants": [

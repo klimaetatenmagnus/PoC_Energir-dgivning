@@ -1,6 +1,6 @@
 # Driftsrutine for tiltak- og tilskuddsinnhold
 
-Oppdatert: 2025-11-13 (Codex)
+Oppdatert: 2025-11-25 (Codex)
 
 Dette dokumentet er **single source of truth** for både dagens innholdsdrift og utviklingen av admin-UI-et. Her finner utviklere all nødvendig informasjon om dataflyt, filstruktur, rutiner og fremdriftsplaner. Rutinen dekker variant-/gul-liste-data, schema-validering, staging→prod-synk og auditlogging i GCS. Når admin-UI lanseres skal den følge samme prosess under panseret, og alle endringer i arkitektur eller arbeidsprosess må gjenspeiles her før implementering.
 
@@ -266,15 +266,17 @@ Planen over erstatter ad-hoc-notater rundt admin-klienten og fungerer som aksjon
 ### 9.8 Dictionary-endepunkt
 
 - **Kilde:** `content/dictionaries/index.json` (+ `schema.ts`). Filen versjoneres med `schemaVersion` og ligger i `content/` slik at den alltid blir med når `content:publish` synker staging/prod. `npm run content:validate` validerer filen på linje med tiltak/tilskudd.
-- **Struktur:** JSON inneholder tre lister som admin-UI kan bygge dropdowns/autocomplete fra:
+- **Struktur:** JSON inneholder fire lister som admin-UI kan bygge dropdowns/autocomplete fra:
 
   - `buildingTypes[]`: `{ id, label, description?, aliases[], internalOnly }`. `id` matcher `buildingTypeParagraphs`-nøkler. `internalOnly=true` brukes for `default` slik at UI kan skjule fallback-valget for redaktører men fremdeles forstå eksisterende JSON.
   - `benefits[]`: `{ id, title, description, icon?, tags[] }`. `id` gjenbrukes i `benefitRefs[]` i tiltak. `icon` beskriver anbefalt Punkt-ikon (`pkt-icon`), mens `tags` brukes til å gruppere/prefiltrere forslag basert på støtteordning/tema. Admin-UI har et eget skjema for å lage/oppdatere disse oppføringene før de publiseres i dictionary-filen.
   - `supportTags[]`: `{ id, label, description?, synonyms[], category? }`. `id` matcher slugene i `supportTags`. `synonyms` gjør det mulig å søke på flere uttrykk i UI, mens `category` lar vi gruppere taggene i UI-spesifikke seksjoner.
+  - `glossaryTerms[]`: `{ id, term, definition[], links[] }`. Sentral ordliste for ordforklaringer som vises som tooltips i tiltakskortene. Frontend matcher automatisk ord i teksten mot `term`-feltet og viser tooltip med `definition` og eventuelle `links`. Admin-UI har egen "Rediger ordliste"-side for CRUD på disse oppføringene.
 - **Endepunkt:**
 
   - **Lesing:** `GET /config/dictionaries/index.json` leveres av `src/api-server.ts` for frontend, mens `GET /admin/api/dictionary` (nytt) brukes av admin-UI for å hente dictionary + GCS `generation`/`etag` til optimistisk låsing.
-  - **Skriving:** `POST /admin/api/dictionary/benefits`, `PUT /admin/api/dictionary/benefits/:id` og `DELETE /admin/api/dictionary/benefits/:id` oppdaterer `content/dictionaries/index.json` via servicekontoen. Alle kall må inkludere `generation`-verdien fra forrige `GET /admin/api/dictionary` slik at GCS avviser konflikter.
+  - **Skriving (fordeler):** `POST /admin/api/dictionary/benefits`, `PUT /admin/api/dictionary/benefits/:id` og `DELETE /admin/api/dictionary/benefits/:id` oppdaterer `content/dictionaries/index.json` via servicekontoen. Alle kall må inkludere `generation`-verdien fra forrige `GET /admin/api/dictionary` slik at GCS avviser konflikter.
+  - **Skriving (ordliste):** `POST /admin/api/dictionary/glossary-terms`, `PUT /admin/api/dictionary/glossary-terms/:id` og `DELETE /admin/api/dictionary/glossary-terms/:id` oppdaterer `glossaryTerms[]` i dictionary-filen. Samme generasjonskontroll som for fordeler.
     Eksempel:
 
   ```bash
@@ -292,8 +294,9 @@ Planen over erstatter ad-hoc-notater rundt admin-klienten og fungerer som aksjon
   - `ContentList` og tilhørende CSS (`src/admin/components/ContentList.tsx` / `.css`) beregner nå reelt antall kolonner per rad, sørger for like høye kort (tittel + sammendrag line-clampes) og injiserer inline forhåndsvisning som et eget gridelement mellom radene. Dette gjør at previewen legger seg rett under riktig rad og at tre kort fortsatt vises i bredden på store skjermer.
   - `PreviewPanel` måler SVG-høyden til tiltakskomponentene og setter panelets høyde dynamisk, med fornuftige min-/maksgrenser. Dermed slipper redaktørene store “dead space”-felt selv om tiltakene har ulik høyde, og scrollingen blir kortere.
   - Tilskuddsmodus i panelet lar redaktøren velge et tiltak fra `appliesToTiltak`, byggtype og målgruppe. UI-et henter tilknyttede `grants[]`, filtrerer tilskuddsfilene basert på valgt kombinasjon og viser hvilke ordninger som faktisk renderes i tiltakskortet (inkl. avsender, beløp og “Les mer”-lenke). Dersom et tilskudd ikke treffer kombinasjonen, vises en advarsel slik at redaktøren kan oppdatere `buildingTypes`/`audiences`/`appliesToTiltak`.
-  - Fordelseditoren under forhåndsvisningen lar redaktører lese, opprette, redigere og slette de globale dictionary-oppføringene (`content/dictionaries/index.json`) samt velge hvilke IDs (`benefitRefs[]`) et tiltak skal bruke. UI-et viser alle forslag med `pkt-icon`-navn (samme som `pkt-icon`-webkomponenten) og sender endringene direkte til Admin-API-et slik at staging-bøtten oppdateres uten manuell JSON-kopi.
-- **Konsekvenser/refaktorer:** Frontendkomponentene for tiltak krevde ingen kodeendringer fordi de allerede eksponerer `...ContentComponent` og gjenbruker `useTiltakContent`. Det eneste vi måtte gjøre var å utvide hooken med context-støtte slik at den respekterer valgt miljø. På sikt bør kataloglistene bytte fra mock til ekte katalog-endepunkt (`/config/content/tiltak/index.json`) – provideren er allerede klar for dette.
+  - Fordelseditoren lever som en dedikert skjema-modul (`src/admin/components/BenefitsEditor.tsx`) og håndterer hele livssyklusen for dictionary-oppføringer (`content/dictionaries/index.json`). Redaktørene gjør endringer via skjemaet (inkl. valg av `benefitRefs[]`), og resultatet sendes til Admin-API-et etter validering slik at staging-bøtten oppdateres uten manuell JSON-kopi.
+  - Forhåndsvisningen i admin er skrivebeskyttet. Inline-redigering (f.eks. `TiltakBenefitInlineEditor.tsx`) fases ut til fordel for skjemaene, men preview-panelet beholdes for visuell QA og reflekterer alltid sist lagrede versjon av tiltaket.
+- **Konsekvenser:** Frontendkomponentene for tiltak krevde ingen kodeendringer fordi de allerede eksponerer `...ContentComponent` og gjenbruker `useTiltakContent`. Det eneste vi måtte gjøre var å utvide hooken med context-støtte slik at den respekterer valgt miljø. Legacy-komponentene forblir kilden både i frontend og i admin-previewen (feature-flagget `VITE_ENABLE_REFACTORED_TILTAK` skal stå på `false` inntil ny vurdering). På sikt bør kataloglistene bytte fra mock til ekte katalog-endepunkt (`/config/content/tiltak/index.json`) – provideren er allerede klar for dette.
 - **Konfig:**
   - `VITE_ADMIN_PROD_CONTENT_BASE` (valgfri) peker på produksjons-endpointet når admin UI kjører i staging/dev men skal vise prod-data i lesevisning.
   - `ContentFetchProvider` kan gjenbrukes i andre deler av koden (f.eks. egne forhåndsvisninger i frontend) dersom vi trenger å simulere staging/prod i samme app.
@@ -313,25 +316,45 @@ Planen over erstatter ad-hoc-notater rundt admin-klienten og fungerer som aksjon
 
 ## 10. Utviklingslogg
 
-| Dato       | Aktivitet                                                                                                                                                                                                                                  | Referanse                                                                                                                                                                                                                                               |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2025-11-13 | Dokumentert ny tiltak-/tilskuddsprosess og første plan for admin-UI.                                                                                                                                                                      | `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                                                               |
-| 2025-11-14 | Oppdatert UI-plan med modussvalg, staging/publisering, Punkt-krav og Cloud Build-integrasjon.                                                                                                                                              | `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                                                               |
-| 2025-11-15 | Gjort dokumentet til single source: la til repooversikt, dataflyt, logg- og neste-steg-seksjoner.                                                                                                                                          | `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                                                               |
-| 2025-11-15 | Opprettet lokal admin-prototype (`/admin`) med Punkt-baserte dashbord- og listemoduler for Design/Punkt-iterasjoner.                                                                                                                     | `src/admin/*`                                                                                                                                                                                                                                         |
-| 2025-11-16 | La til Admin-API med Cloud Build-publisering (`POST /admin/api/publish`) og beskrev API-kontrakten.                                                                                                                                      | `services/admin-api/*`, `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                                     |
-| 2025-11-16 | Etablerte dictionary-ordbok (`content/dictionaries`) og `GET /config/dictionaries/index.json` for boligtyper/fordeler/supportTags.                                                                                                     | `content/dictionaries/*`, `src/api-server.ts`                                                                                                                                                                                                       |
-| 2025-11-16 | Første versjon av tiltak-preview i admin +`ContentFetchProvider` for å styre staging/prod/draft i gjenbrukte hooks.                                                                                                                    | `src/admin/AdminApp.tsx`, `src/admin/components/PreviewPanel.tsx`, `src/hooks/contentHooks.ts`                                                                                                                                                    |
-| 2025-11-16 | Admin-UI henter nå dictionary-data via `/config/dictionaries/index.json` og eksponerer status/feil i dashbordet.                                                                                                                        | `src/admin/AdminApp.tsx`, `src/admin/context/*`                                                                                                                                                                                                     |
-| 2025-11-17 | Bygget katalog mot index-endepunktene og la til tilskudd-preview for å teste tiltak/byggtype-kombinasjoner.                                                                                                                               | `src/admin/*`, `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                                              |
-| 2025-11-17 | La til fordelseditor i admin-panelet slik at redaktører kan opprette/endre/slette `benefits[]` inkl. `pkt-icon`-valg.                                                                                                                 | `src/admin/components/BenefitsEditor.tsx`, `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                  |
-| 2025-11-18 | Admin-API kan nå lese/lagre dictionary-oppføringer og `benefitRefs` direkte mot staging-bøtten; fordelseditoren bruker de nye endepunktene med versjonskontroll.                                                                      | `services/admin-api/*`, `src/admin/components/BenefitsEditor.tsx`, `scripts/start-ui-only.sh`, `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                          |
-| 2025-11-19 | Polerte tiltakskatalog og forhåndsvisning: jevne kort-høyder, inline preview mellom rader og dynamisk høyde i `PreviewPanel`.                                                                                                         | `src/admin/components/ContentList.tsx`, `src/admin/components/ContentList.css`, `src/admin/components/PreviewPanel.tsx`                                                                                                                           |
-| 2025-11-18 | Første staging-deploy av `energinokkelen-admin` på Cloud Run med dedikert SA + `admin-server`, `staging-admin-neg`/`staging-admin-backend`, `/admin`-path i LB og aktivert IAP (`group:energinokkel-redaktor@klimaoslo.no`). | `services/admin-server/*`, `scripts/sync-punkt-assets.mjs`, `deploy/gcp/staging-frontend-map.yaml`, Cloud Run/NEG/backend konfig via gcloud                                                                                                       |
-| 2025-11-20 | Punkt-breakpoints rullet ut for fordelseditor, preview-panel, katalogvisning og øvrige admin-moduler, samt delt stylesheet for energiverktøyet.                                                                                          | `src/admin/components/BenefitsEditor.css`, `src/admin/components/PreviewPanel.css`, `src/admin/components/ContentList.css`, `src/admin/components/ModeCards.css`, `src/admin/components/EnvironmentToggle.css`, `src/styles/components.css` |
-| 2025-11-21 | Feilsøkte IAP error 52 i staging: DNS/SSL for `staging.energinøkkelen.no` manglet. Dokumenterte punycode-host, nødvendige LB hostRules og plan for nytt Managed SSL før videre IAM-arbeid.                                           | `Dokumentasjon/innholdsdrift-tiltak.md`, `deploy/gcp/staging-frontend-map.yaml`, Cloud DNS / SSL-konfig                                                                                                                                             |
-| 2025-11-21 | Opprettet egen Cloud Build-trigger for admin (`energinokkelen-admin-staging`), bygde med `VITE_BASE_PATH=/admin/` og deployet. Admin-lenken fungerer med IAP (kun `energinokkel-redaktor@klimaoslo.no`).                            | `deploy/gcp/cloudbuild-admin.yaml`, `Dokumentasjon/gcp-driftshandbok.md`, Cloud Build trigger                                                                                                                                                      |
-| 2025-11-21 | La til inline fordelsredigering i admin-preview for tiltak: kan fjerne/legge til fordeler via pluss/placeholders, lagre mot Admin-API med `generation`, og auto-oppdatere metadata/changeSummary.                                       | `src/admin/components/PreviewPanel.tsx`, `src/admin/components/PreviewPanel.css`                                                                                                                                                                    |
+| Dato       | Aktivitet                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Referanse                                                                                                                                                                                                                                               |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2025-11-13 | Dokumentert ny tiltak-/tilskuddsprosess og første plan for admin-UI.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                                                               |
+| 2025-11-14 | Oppdatert UI-plan med modussvalg, staging/publisering, Punkt-krav og Cloud Build-integrasjon.                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                                                               |
+| 2025-11-15 | Gjort dokumentet til single source: la til repooversikt, dataflyt, logg- og neste-steg-seksjoner.                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                                                               |
+| 2025-11-15 | Opprettet lokal admin-prototype (`/admin`) med Punkt-baserte dashbord- og listemoduler for Design/Punkt-iterasjoner.                                                                                                                                                                                                                                                                                                                                                                                                                               | `src/admin/*`                                                                                                                                                                                                                                         |
+| 2025-11-16 | La til Admin-API med Cloud Build-publisering (`POST /admin/api/publish`) og beskrev API-kontrakten.                                                                                                                                                                                                                                                                                                                                                                                                                                                | `services/admin-api/*`, `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                                     |
+| 2025-11-16 | Etablerte dictionary-ordbok (`content/dictionaries`) og `GET /config/dictionaries/index.json` for boligtyper/fordeler/supportTags.                                                                                                                                                                                                                                                                                                                                                                                                               | `content/dictionaries/*`, `src/api-server.ts`                                                                                                                                                                                                       |
+| 2025-11-16 | Første versjon av tiltak-preview i admin +`ContentFetchProvider` for å styre staging/prod/draft i gjenbrukte hooks.                                                                                                                                                                                                                                                                                                                                                                                                                              | `src/admin/AdminApp.tsx`, `src/admin/components/PreviewPanel.tsx`, `src/hooks/contentHooks.ts`                                                                                                                                                    |
+| 2025-11-16 | Admin-UI henter nå dictionary-data via `/config/dictionaries/index.json` og eksponerer status/feil i dashbordet.                                                                                                                                                                                                                                                                                                                                                                                                                                  | `src/admin/AdminApp.tsx`, `src/admin/context/*`                                                                                                                                                                                                     |
+| 2025-11-17 | Bygget katalog mot index-endepunktene og la til tilskudd-preview for å teste tiltak/byggtype-kombinasjoner.                                                                                                                                                                                                                                                                                                                                                                                                                                         | `src/admin/*`, `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                                              |
+| 2025-11-17 | La til fordelseditor i admin-panelet slik at redaktører kan opprette/endre/slette `benefits[]` inkl. `pkt-icon`-valg.                                                                                                                                                                                                                                                                                                                                                                                                                           | `src/admin/components/BenefitsEditor.tsx`, `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                  |
+| 2025-11-18 | Admin-API kan nå lese/lagre dictionary-oppføringer og `benefitRefs` direkte mot staging-bøtten; fordelseditoren bruker de nye endepunktene med versjonskontroll.                                                                                                                                                                                                                                                                                                                                                                                | `services/admin-api/*`, `src/admin/components/BenefitsEditor.tsx`, `scripts/start-ui-only.sh`, `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                          |
+| 2025-11-19 | Polerte tiltakskatalog og forhåndsvisning: jevne kort-høyder, inline preview mellom rader og dynamisk høyde i `PreviewPanel`.                                                                                                                                                                                                                                                                                                                                                                                                                   | `src/admin/components/ContentList.tsx`, `src/admin/components/ContentList.css`, `src/admin/components/PreviewPanel.tsx`                                                                                                                           |
+| 2025-11-18 | Første staging-deploy av `energinokkelen-admin` på Cloud Run med dedikert SA + `admin-server`, `staging-admin-neg`/`staging-admin-backend`, `/admin`-path i LB og aktivert IAP (`group:energinokkel-redaktor@klimaoslo.no`).                                                                                                                                                                                                                                                                                                           | `services/admin-server/*`, `scripts/sync-punkt-assets.mjs`, `deploy/gcp/staging-frontend-map.yaml`, Cloud Run/NEG/backend konfig via gcloud                                                                                                       |
+| 2025-11-20 | Punkt-breakpoints rullet ut for fordelseditor, preview-panel, katalogvisning og øvrige admin-moduler, samt delt stylesheet for energiverktøyet.                                                                                                                                                                                                                                                                                                                                                                                                    | `src/admin/components/BenefitsEditor.css`, `src/admin/components/PreviewPanel.css`, `src/admin/components/ContentList.css`, `src/admin/components/ModeCards.css`, `src/admin/components/EnvironmentToggle.css`, `src/styles/components.css` |
+| 2025-11-21 | Feilsøkte IAP error 52 i staging: DNS/SSL for `staging.energinøkkelen.no` manglet. Dokumenterte punycode-host, nødvendige LB hostRules og plan for nytt Managed SSL før videre IAM-arbeid.                                                                                                                                                                                                                                                                                                                                                     | `Dokumentasjon/innholdsdrift-tiltak.md`, `deploy/gcp/staging-frontend-map.yaml`, Cloud DNS / SSL-konfig                                                                                                                                             |
+| 2025-11-21 | Opprettet egen Cloud Build-trigger for admin (`energinokkelen-admin-staging`), bygde med `VITE_BASE_PATH=/admin/` og deployet. Admin-lenken fungerer med IAP (kun `energinokkel-redaktor@klimaoslo.no`).                                                                                                                                                                                                                                                                                                                                       | `deploy/gcp/cloudbuild-admin.yaml`, `Dokumentasjon/gcp-driftshandbok.md`, Cloud Build trigger                                                                                                                                                       |
+| 2025-11-21 | La til inline fordelsredigering i admin-preview for tiltak: kan fjerne/legge til fordeler via pluss/placeholders, lagre mot Admin-API med `generation`, og auto-oppdatere metadata/changeSummary.                                                                                                                                                                                                                                                                                                                                                  | `src/admin/components/PreviewPanel.tsx`, `src/admin/components/PreviewPanel.css`                                                                                                                                                                    |
+| 2025-11-22 | Første parity-pass på TiltakCardRenderer: gjeninnførte to-kolonners layout, fordelschips, interaktive tabs og støtte for stats/accordion slik at admin-previewen matcher legacy-kortene.                                                                                                                                                                                                                                                                                                                                                         | `src/components/FigmaBlokk/components/Tiltak/TiltakCardRenderer.tsx`, `src/components/FigmaBlokk/components/Tiltak/TiltakCardRenderer.css`, `src/components/FigmaBlokk/components/Tiltak/shared.ts`                                               |
+| 2025-11-25 | Implementerte `TiltakEditor` – skjemabasert redigering av tiltak med støtte for audience-valg (standard/gulliste), byggtype-selector, tekstfelter for intro/byggtype/søknadsplikt, Les mer-URL-redigering og fordel-velger fra dictionary. Endret "Åpne"-knapp til "Endre" i tiltakslisten.                                                                                                                                                                                                                                                    | `src/admin/components/TiltakEditor.tsx`, `src/admin/components/TiltakEditorPage.tsx`, `src/admin/components/ContentList.tsx`, `src/admin/AdminApp.tsx`                                                                                          |
+| 2025-11-25 | La til API-endepunkter for full tiltak-oppdatering:`GET /admin/api/content/tiltak/:id` og `PUT /admin/api/content/tiltak/:id` med schema-validering og generation-håndtering.                                                                                                                                                                                                                                                                                                                                                                   | `services/admin-api/contentRouter.ts`, `src/admin/api/adminApiClient.ts`                                                                                                                                                                            |
+| 2025-11-25 | Migrerte `IsoleringAvKjellerOgLoft.tsx` til å lese fra JSON som eneste kilde (fjernet `defaultKjellerLoftContent` hardkodet fallback). Fikset React hooks-rekkefølge ved å flytte alle hooks før tidlig return. Verifisert at endringer i JSON vises i frontend.                                                                                                                                                                                                                                                                             | `src/components/FigmaBlokk/components/Tiltak/IsoleringAvKjellerOgLoft.tsx`                                                                                                                                                                            |
+| 2025-11-25 | Identifisert kritisk problem: tiltak med `status: "draft"` blokkeres av API-serveren og viser "Laster innhold..." i frontend. Besluttet å implementere to-fil-strategi (draft-filer) før videre migrering.                                                                                                                                                                                                                                                                                                                                       | `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                                                               |
+| 2025-11-25 | **Implementert to-fil-strategi for draft/published.** Admin-API skriver nå til `*.draft.json` ved lagring, og publiser-endepunkt kopierer draft til hovedfil. API-server støtter `?draft=1` for å hente draft-filer. Admin-UI viser "Upubliserte endringer"-badge og har knapper for "Publiser" og "Forkast utkast".                                                                                                                                                                                                                    | `services/admin-api/contentRouter.ts`, `services/admin-api/contentStorage.ts`, `src/api-server.ts`, `src/admin/components/TiltakEditorPage.tsx`, `src/admin/api/adminApiClient.ts`                                                            |
+| 2025-11-25 | Migrerte `Ventilasjon.tsx` til JSON som eneste kilde. Fjernet `defaultVentilasjonContent`, flyttet hooks før tidlig return, la til inline fallback for benefits-titler. GulListe-variant fungerer via `variants[]` i JSON.                                                                                                                                                                                                                                                                                                                    | `src/components/FigmaBlokk/components/Tiltak/Ventilasjon.tsx`, `content/tiltak/ventilasjon.json`                                                                                                                                                    |
+| 2025-11-25 | Migrerte `Varmepumpe.tsx` til JSON som eneste kilde. Fjernet `defaultVarmepumpeContent`, flyttet hooks før tidlig return. Tabs-funksjonalitet bevart. GulListe-variant med Riksantikvaren-lenke og ekstra byggtype-tekster.                                                                                                                                                                                                                                                                                                                     | `src/components/FigmaBlokk/components/Tiltak/Varmepumpe.tsx`, `content/tiltak/varmepumpe.json`                                                                                                                                                      |
+| 2025-11-25 | **Migrering fullført:** Migrerte `Solenergi.tsx` og `Temperaturstyring.tsx` til JSON som eneste kilde. Fjernet `defaultSolenergiContent` og `defaultTemperaturstyringContent`. Alle 8 tiltakskomponenter bruker nå JSON-filer som kilde; hardkodede fallback-objekter er eliminert.                                                                                                                                                                                                                                                  | `src/components/FigmaBlokk/components/Tiltak/Solenergi.tsx`, `src/components/FigmaBlokk/components/Tiltak/Temperaturstyring.tsx`                                                                                                                    |
+| 2025-11-25 | **Ekte preview-paritet (delvis):** Admin-previewen bruker nå de faktiske legacy-komponentene (Varmepumpe, Solenergi, etc.) i stedet for generisk `TiltakCardRenderer`. Mapping fra slug til komponent i `PreviewPanel.tsx`. Grønn "Ekte komponent"-tag viser når legacy brukes. **Gjenstår:** Fjerne `TiltakBenefitInlineEditor` som fortsatt vises under preview-canvaset.                                                                                                                                                    | `src/admin/components/PreviewPanel.tsx`                                                                                                                                                                                                               |
+| 2025-11-25 | **Ekte preview-paritet ferdigstilt:** Fjernet `TiltakBenefitInlineEditor` fra `TiltakPreviewCanvas` i preview-panelet. Fordeler redigeres nå kun via `TiltakEditor`-skjemaet. Preview-panelet viser nå kun kontroller (variant, byggtype) og selve tiltakskortet.                                                                                                                                                                                                                                                                      | `src/admin/components/PreviewPanel.tsx`                                                                                                                                                                                                               |
+| 2025-11-25 | **Preview-opprydding:** Fjernet debug-tags (base/fallback/grants/supportTags/komponenttype) fra preview-canvaset. Satt fast høyde på preview-området (900px / `90vh - 200px`) slik at hele tiltakskortet kan forhåndsvises.                                                                                                                                                                                                                                                                                                              | `src/admin/components/PreviewPanel.tsx`, `src/admin/components/PreviewPanel.css`                                                                                                                                                                    |
+| 2025-11-25 | **Forbedret fordelsvelger i TiltakEditor:** Alle fordeler vises i én liste. Aktive fordeler har grønn bakgrunn (#c7f6c9), ikke-aktive er grå. Teller (x/4) vises i seksjonsoverskriften. Klikk direkte på chips for å toggle aktiv/inaktiv. Chips har firkantede hjørner som matcher frontend SVG-rektanglene.                                                                                                                                                                                                                           | `src/admin/components/TiltakEditor.tsx`, `src/admin/components/TiltakEditor.css`                                                                                                                                                                    |
+| 2025-11-25 | **Tabs-redigering i TiltakEditor:** Lagt til redigering av tab-innhold via `PktTabs`-navigasjon. Redaktører kan velge en fane og redigere body-teksten direkte. Seksjonen vises kun for tiltak som har tabs (varmepumpe, vinduer). Fjernet ubrukte `"tabs": []` fra `etterisolering-kjeller-loft.json` og tilhørende draft-fil.                                                                                                                                                                                                        | `src/admin/components/TiltakEditor.tsx`, `src/admin/components/TiltakEditor.css`, `content/tiltak/etterisolering-kjeller-loft.json`                                                                                                               |
+| 2025-11-25 | **Sentral ordliste implementert:** Utvidet dictionary-schema med `glossaryTerms[]` for sentrale ordforklaringer. Lagt til 5 begreper (søknadspliktig, tiltakshaver, ansvarlig foretak, U-verdi, reversibel) i `content/dictionaries/index.json`. Opprettet `GlossaryEditor`-komponent og `GlossaryPage` i admin med full CRUD-støtte. Backend API-endepunkter for glossary i `dictionaryRouter.ts`. "Rediger ordliste"-knapp plassert ved siden av "Rediger fordeler" i tiltakslisten.                                             | `content/dictionaries/schema.ts`, `content/dictionaries/index.json`, `src/admin/components/GlossaryEditor.tsx`, `src/admin/components/GlossaryPage.tsx`, `services/admin-api/dictionaryRouter.ts`                                             |
+| 2025-11-25 | **Grants-velger implementert i TiltakEditor:** Redaktører kan nå velge hvilke støtteordninger som skal vises for en spesifikk kombinasjon av audience (standard/gulliste) og byggtype. Velgeren henter tilskuddskatalogen via `useTilskuddCatalog`, filtrerer basert på `appliesToTiltak`, `audiences` og `buildingTypes`, og lagrer valgte grants til riktig sted (`grants[]` for standard, `variants[].grants` for gulliste). Viser også "andre tilskudd" som ikke matcher valgt kombinasjon og varsler om orphaned grants. | `src/admin/components/TiltakEditor.tsx`, `src/admin/components/TiltakEditor.css`                                                                                                                                                                    |
+| 2025-11-26 | **Forenklet TilskuddEditor:** Fjernet felter som ikke brukes i frontend: beskrivelse, tilbydernavn (kun selector), tilbyders nettside, kontakt-epost, veilednings-URL og hele finansierings-seksjonen. Endret "Målgrupper" til "Liste-status" med oppdatert beskrivelse. Fjernet "(alle boliger)" fra Standard-checkboxen.                                                                                                                                                                                                                    | `src/admin/components/TilskuddEditor.tsx`, `Dokumentasjon/innholdsdrift-tiltak.md`                                                                                                                                                                  |
+| 2025-11-26 | **Automatisk ordliste-matching implementert:** Frontend-komponentene bruker nå sentral ordliste fra dictionary (`glossaryTerms[]`) i stedet for lokale `accordion[].glossary[]`-arrays. `useContentDictionary()`-hook henter ordlisten, og `dictionaryTermsToGlossary()` konverterer til riktig format for `renderParagraphWithGlossary()`. Legacy glossary-oppføringer fjernet fra tetting.json, ventilasjon.json, temperaturstyring.json og vinduer.json.                                                                        | `src/hooks/contentHooks.tsx`, `src/components/FigmaBlokk/components/Tiltak/glossaryHelpers.tsx`, `content/tiltak/*.json`                                                                                                                          |
+| 2025-11-26 | **Katalogfilter og paginering implementert:** Admin-UI har nå klient-side filtrering (status, målgruppe, byggtype, fritekst) og paginering med konfigurerbar sidestørrelse (6/12/24/48). Filtrene nullstilles ved modus-bytte og side resettes ved filter-endring. Nye komponenter: `CatalogFilters`, `CatalogPagination`. Nye typer: `AdminCatalogFilters`, `AdminPaginationState`. Bruker Punkt-komponenter (`PktSelect`, `PktTextinput`, `PktButton`, `PktTag`).                                                                        | `src/admin/components/CatalogFilters.tsx`, `src/admin/components/CatalogPagination.tsx`, `src/admin/components/ContentList.tsx`, `src/admin/types.ts`                                                                                           |
+| 2025-11-26 | **Publiserings-wizard planlagt:** Designet komplett brukerreise for innholdsoppdatering: Endre → Forhåndsvis → Staging → Visuell QA → Prod. Wizarden bruker `PktStepper` og `PktStep` fra Punkt designsystem. Nye API-endepunkter (`/admin/api/drafts`, `/admin/api/drafts/sync-staging`, `/admin/api/drafts/discard-all`) og React-komponenter (`PublishWizard`, `DraftsSummary`, `QAChecklist`, `PublishButton`). Knapper "Oppdater Energinøkkelen" og "Nullstill endringer" vises når det finnes upubliserte endringer. | `Dokumentasjon/innholdsdrift-tiltak.md` § 11.7                                                                                                                                                                                                     |
 
 Legg til en ny rad hver gang arkitektur, plan eller prosess endres slik at historikk og ansvar er synlig.
 
@@ -341,12 +364,274 @@ Legg til en ny rad hver gang arkitektur, plan eller prosess endres slik at histo
 
 > **Utviklings- og testfilosofi:** Alle UI-endringer bygges og testes først lokalt (Vite dev-server + mock/BFF). Lesing mot staging (`/config/content/**`) gjøres med konfigurerbare base-URLer, men skrivetilgang holdes lokalt/in-memory til funksjonaliteten er klar for staging-deploy. Først når en milepæl er stabil, deployes den til Cloud Run for helhetlig QA.
 
-1. **Full CRUD for tiltak/tilskudd:** Bygg skjemaene ferdig, koble til Admin-API for skriving til `content/tiltak/*.json` og `content/tilskudd/*.json`, legg på schema-validering i UI, og bruk GCS `generation` for konfliktkontroll. (Dette låser opp reell redigering uten Git.)
-   - Delplan for inline fordeler/redigering i forhåndsvisning:
-     - Tiltak: eksisterende `benefitRefs` kan fjernes med kryss; når et kort fjernes, vis en tom, striplet placeholder med samme dimensjoner og et `+`-ikon (Punkt-komponenter) for å legge til ny fordel. Dropdown/autocomplete bygges med Punkt Selector og listes opp fra dictionary (`benefits[]`).
-     - Inlinefelt i preview: tekstbeskrivelser, “Les mer”-lenke (`links[0]`), “Sjekk om du må søke…”-tekst og støtteordninger/`supportTags` kan redigeres direkte i forhåndsvisningen. Bruk Punkt-felter (`Textfield`/`Textarea`, Selector for valg) i edit-modus per seksjon.
-     - Oppdatering mot Admin-API bruker eksisterende JSON-felt (f.eks. `benefitRefs`, `links`, `metadata.changeSummary`) med `generation` for konfliktkontroll. Endringer setter automatisk `metadata.updatedAt/updatedBy/changeSummary`.
-     - Start med tiltak; tilskudd inline-redigering (grants, appliesToTiltak, buildingTypes) tas i neste iterasjon.
-2. **Katalogfilter og paginering:** Aktiver server-side filter/paginering basert på `/config/content/tiltak|tilskudd/index.json`, og del visninger for tiltak vs tilskudd så listene skalerer.
-3. **Prod-klar admin-pipeline:** Etabler prod-trigger/konfig for admin (Cloud Build + Cloud Run) og prod-hostrule/SSL når prod-host er klart, slik at admin kan kjøres i prod med samme base `/admin/` og IAP-policy.
-4. **Komponentopprydding:** Rydd React-warnings/hardkodede props i `src/components/FigmaBlokk/**` slik at admin-preview samsvarer med prod-render og konsollen er ren.
+### 11.1 ✅ FERDIG: To-fil-strategi for draft/published
+
+**Status (2025-11-25):** Implementert og klar for testing.
+
+**Bakgrunn:** Under migrering av `IsoleringAvKjellerOgLoft.tsx` til JSON-innhold oppdaget vi at `status: "draft"` blokkerte API-serveren og fikk frontend til å vise "Laster innhold...". To-fil-strategien løser dette.
+
+**Implementert løsning:**
+
+| Fil                                        | Innhold                         | Hvem leser             |
+| ------------------------------------------ | ------------------------------- | ---------------------- |
+| `etterisolering-kjeller-loft.json`       | Sist publiserte versjon         | Frontend (alltid)      |
+| `etterisolering-kjeller-loft.draft.json` | Arbeidsversjon under redigering | Admin-UI via Admin-API |
+
+**Admin-API endepunkter:**
+
+| Endepunkt                                 | Metode | Beskrivelse                                                                                                 |
+| ----------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
+| `/admin/api/content/tiltak/:id`         | GET    | Returnerer draft hvis den finnes, ellers publisert versjon. Response inkluderer `hasDraft` og `source`. |
+| `/admin/api/content/tiltak/:id`         | PUT    | Skriver alltid til `*.draft.json`. Setter `status: "draft"` automatisk.                                 |
+| `/admin/api/content/tiltak/:id/publish` | POST   | Kopierer draft til hovedfil med `status: "published"`, sletter draft-filen.                               |
+| `/admin/api/content/tiltak/:id/draft`   | DELETE | Forkaster draft uten å publisere.                                                                          |
+
+**API-server endringer:**
+
+- `/config/content/tiltak/:id.json` returnerer alltid hovedfilen (frontend)
+- `/config/content/tiltak/:id.json?draft=1` leter etter `*.draft.json` først, faller tilbake til hovedfil
+
+**Admin-UI endringer:**
+
+- `TiltakEditorPage` viser "Upubliserte endringer"-badge når `hasDraft=true`
+- "Publiser endringer"-knapp kaller publish-endepunktet
+- "Forkast utkast"-knapp sletter draft uten å publisere
+- Suksess-/feilmeldinger vises med `PktAlert`
+
+**Arbeidsflyt for redaktører:**
+
+1. Åpne tiltak i editoren → Admin-API henter draft eller publisert versjon
+2. Gjør endringer → "Lagre endringer" skriver til `*.draft.json`
+3. "Upubliserte endringer"-badge vises
+4. Test i admin-preview (bruker draft)
+5. Klikk "Publiser endringer" når klar → draft kopieres til hovedfil
+6. Frontend viser oppdatert innhold (uten noen "Laster innhold..."-problemer)
+
+---
+
+### 11.2 Migrere legacy-komponenter til JSON-innhold
+
+**Status (2025-11-25):** ✅ Alle 8 tiltakskomponenter er nå migrert til JSON som eneste kilde.
+
+**Ferdig migrert:**
+
+| # | Komponent                        | JSON-fil                             | Status    | Notater                                                                                                                                                           |
+| - | -------------------------------- | ------------------------------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 | `IsoleringAvKjellerOgLoft.tsx` | `etterisolering-kjeller-loft.json` | ✅ Ferdig | Fjernet `defaultKjellerLoftContent`. Hooks flyttes før tidlig return. GulListe-variant fungerer automatisk.                                                    |
+| 2 | `EtterisoleringYttervegg.tsx`  | `etterisolering-yttervegg.json`    | ✅ Ferdig | Fjernet `defaultEtterisoleringContent`. Hooks før tidlig return. GulListe-variant fungerer.                                                                    |
+| 3 | `Tetting.tsx`                  | `tetting.json`                     | ✅ Ferdig | Fjernet `defaultTettingContent`. Inline fallback-verdier for benefits-titler. GulListe-variant i JSON.                                                          |
+| 4 | `UtskiftningAvVindu.tsx`       | `vinduer.json`                     | ✅ Ferdig | Fjernet `defaultVinduerContent`. Tabs-funksjonalitet bevart. GulListe-variant i JSON.                                                                           |
+| 5 | `Ventilasjon.tsx`              | `ventilasjon.json`                 | ✅ Ferdig | Fjernet `defaultVentilasjonContent`. Hooks før tidlig return. Inline fallback for benefits-titler. GulListe-variant i JSON.                                    |
+| 6 | `Varmepumpe.tsx`               | `varmepumpe.json`                  | ✅ Ferdig | Fjernet `defaultVarmepumpeContent`. Hooks før tidlig return. Tabs-funksjonalitet bevart. GulListe-variant i JSON.                                              |
+| 7 | `Solenergi.tsx`                | `solenergi.json`                   | ✅ Ferdig | Fjernet `defaultSolenergiContent`. Hooks før tidlig return. Inline fallback for benefits-titler. GulListe-variant i JSON.                                      |
+| 8 | `Temperaturstyring.tsx`        | `temperaturstyring.json`           | ✅ Ferdig | Fjernet `defaultTemperaturstyringContent`. Hooks før tidlig return. Inline fallback for benefits/accordion-titler. GulListe-variant i JSON med egen accordion. |
+
+**Migreringssteg per komponent (referanse):**
+
+1. Les komponenten og identifiser `defaultXxxContent`-objektet
+2. Verifiser at tilsvarende JSON-fil har alle nødvendige felter
+3. Fjern fallback-logikken (`?? defaultXxxContent`)
+4. Flytt alle hooks før eventuell tidlig return (React rules of hooks)
+5. Test lokalt:
+   - Rediger i admin-UI → verifiser at draft lagres (`*.draft.json`)
+   - Sjekk at admin-preview viser endringen
+   - Verifiser at frontend fortsatt viser publisert versjon (`*.json`)
+   - Publiser endringen og verifiser at frontend oppdateres
+6. Gjenta for GulListe-varianten (`*Gul.tsx`)
+
+---
+
+### 11.2.1 ✅ FERDIG: Ekte preview-paritet
+
+**Status (2025-11-25):** Ferdig. Preview-panelet viser nå kun legacy-komponenter og forhåndsvisningskontroller.
+
+**Bakgrunn:** Admin-previewen brukte tidligere `TiltakCardRenderer` – en generisk komponent som viser JSON-innhold. Dette ga funksjonell forhåndsvisning, men så ikke identisk ut med tiltakskortene i tjenesten, som bruker de spesifikke legacy-komponentene (`Varmepumpe.tsx`, `IsoleringAvKjellerOgLoft.tsx`, etc.).
+
+**Hva er implementert:**
+
+1. **`useTiltakContent` støttet allerede draft via `ContentFetchProvider`:**
+
+   - `ContentFetchProvider` setter `includeDrafts` som respekteres av alle content-hooks
+   - Admin-UI wrapper sin app i `ContentFetchProvider` med `includeDrafts={true}` for staging-miljøet
+   - Legacy-komponentene bruker `useTiltakContent` internt og arver draft-innstillingen automatisk
+2. **Mapping fra slug til legacy-komponent i `PreviewPanel.tsx`:**
+
+   ```tsx
+   const TILTAK_COMPONENT_MAP: Record<string, LegacyTiltakComponent> = {
+     'varmepumpe': VarmepumpeContentComponent,
+     'solenergi': SolenergiContentComponent,
+     'tetting': TettingContentComponent,
+     'temperaturstyring': TemperaturstyringContentComponent,
+     'vinduer': UtskiftningAvVinduContentComponent,
+     'etterisolering-kjeller-loft': IsoleringAvKjellerOgLoftContentComponent,
+     'etterisolering-yttervegg': EtterisoleringYtterveggContentComponent,
+     'ventilasjon': VentilasjonContentComponent,
+   };
+   ```
+3. **`TiltakPreviewCanvas` bruker nå legacy-komponenten hvis tilgjengelig:**
+
+   - Faller tilbake til `TiltakCardRenderer` for ukjente slugs
+   - Legacy-komponentene får `buildingType` og `audience` props fra preview-kontrollene
+4. **Fjernet overflødig inline-redigering og debug-info (2025-11-25):**
+
+   - `TiltakBenefitInlineEditor` er fjernet fra `TiltakPreviewCanvas` i `PreviewPanel.tsx`
+   - Fordeler redigeres nå via `TiltakEditor`-skjemaet, ikke inline i preview
+   - Debug-tags (base/fallback/grants/supportTags/komponenttype) er fjernet fra preview-canvaset
+   - Preview-området har fast høyde (900px / `90vh - 200px`) for å vise hele tiltakskortet
+   - Preview-panelet viser kun: kontroller (variant-radioknapper, byggtype-dropdown) + selve tiltakskortet
+
+---
+
+### 11.3 ✅ FERDIG: Preview-stabilitet
+
+**Status (2025-11-25):** Ferdig. Preview-panelet har allerede tydelige indikatorer:
+
+- **Miljø:** `PktTag` viser "Produksjonsdata" (rød) eller "Stagingdata (draft)" (blå)
+- **Draft-status:** Gul tag "Viser upubliserte endringer" når `includeDrafts` er aktivt
+- **Audience:** Radioknapper (Standard / Gulliste) for tiltak-preview
+- **Byggtype:** Dropdown med alle tilgjengelige byggtyper fra dictionary
+
+Tilskudd-preview viser også valgt kombinasjon eksplisitt i resultat-seksjonen.
+
+---
+
+### 11.4 Skjema-basert tiltak- og tilskuddsredigering (ferdigstilt grunnfunksjonalitet)
+
+**Status (2025-11-25):** `TiltakEditor` er implementert med støtte for:
+
+- Audience-valg (standard / gulliste) via radioknapper
+- Byggtype-selector fra dictionary
+- Tekstfelter for intro, byggtype-avsnitt og søknadspliktseksjon
+- Les mer-URL-redigering (legge til/fjerne/endre)
+- Fordel-velger fra dictionary (maks 4 fordeler)
+- **Grants-velger med filtrering på audience og byggtype**
+
+   Tilgang til editoren via "Endre"-knappen i tiltakslisten. API-et (`PUT /admin/api/content/tiltak/:id`) validerer mot `TiltakContentSchema` og oppdaterer `metadata` automatisk.
+
+- **Arbeidsflyt:** Velg tiltak i katalogen → klikk "Endre" → velg audience og byggtype → rediger felter → "Lagre endringer". Lagring kjører schema-validering og oppdaterer `metadata.updatedAt`/`updatedBy`/`changeSummary`.
+- **Videre håndtering av refaktor:** `Dokumentasjon/Utvikling/tiltakskort-paritet.md` beholder historikken fra refaktor-forsøket. Den refaktorerte rendereren (`TiltakCardRenderer.tsx`) blir liggende i repoet, men inngår ikke i build eller QA-løpet.
+
+   **Grants-velger (implementert 2025-11-25):**
+
+   Grants-velgeren i `TiltakEditor` lar redaktører velge hvilke støtteordninger som skal vises for en spesifikk kombinasjon av **audience** (standard/gulliste) og **byggtype**. Funksjonaliteten:
+
+- Henter tilskuddskatalogen via `useTilskuddCatalog` og filtrerer basert på:
+  - `appliesToTiltak` – tilskudd som er relevante for dette tiltaket
+  - `audiences` – matcher valgt audience (standard eller gulliste)
+  - `buildingTypes` – matcher valgt byggtype (eller alle hvis "default")
+- Viser matchende tilskudd som klikkbare kort med toggle-funksjon
+- Aktive grants vises med grønn bakgrunn og mørk grønn ramme (Punkt-farger), inaktive med nøytral bakgrunn
+- Tilskudd som er relevante for tiltaket men ikke matcher valgt kombinasjon vises separat som "Andre tilskudd" (deaktivert)
+- Orphaned grants (gamle referanser som ikke finnes i katalogen) vises med advarsel og kan fjernes
+- Valgte grants lagres til `grants[]` (standard) eller `variants[].grants` (gulliste) avhengig av valgt audience
+
+   **Neste del-leveranser:**
+
+1. ~~**Full feltdekning i skjemaene:**~~ Grunnleggende feltdekning er på plass (intro, byggtype, søknadsplikt, les-mer, fordeler, grants). Fordelsvelgeren er forbedret med frontend-stil (grønne chips for aktive, grå for inaktive, x/4-teller). ~~Tabs-redigering~~ er implementert via `PktTabs`-navigasjon. ~~Ordliste-editor~~ er implementert som egen side i admin (sentral ordliste i dictionary). ~~Grants-velger~~ er implementert med filtrering på audience/byggtype.
+2. ~~**Opprydding av inline-komponenter:**~~ `TiltakBenefitInlineEditor.tsx` er fjernet fra preview-panelet. Fordeler vedlikeholdes nå via `BenefitsEditor` (dictionary) + tiltak-skjemaet (referanser).
+3. ~~**Preview-stabilitet:**~~ Se § 11.3. Indikatorer er allerede implementert i PreviewPanel.
+4. ~~**Tilskudd-editor:**~~ Se § 11.5 nedenfor.
+5. **Dokumentasjon:** Hold denne rutinen og `Dokumentasjon/gcp-driftshandbok.md` i takt med den skjema-baserte arbeidsflyten.
+6. ~~**Automatisk ordliste-matching i frontend:**~~ Implementert 2025-11-26. `glossaryHelpers.tsx` bruker nå sentral ordliste fra dictionary (`glossaryTerms[]`). Tiltakskomponentene henter dictionary via `useContentDictionary()` og konverterer termene med `dictionaryTermsToGlossary()`.
+7. ~~**Fjern legacy accordion-glossary:**~~ Implementert 2025-11-26. Legacy `glossary[]`-arrays er fjernet fra alle accordion-items i tiltak-JSON-filene (tetting, ventilasjon, temperaturstyring, vinduer).
+
+---
+
+### 11.5 Tilskudd-editor (implementert 2025-11-25, under arbeid)
+
+**Status:** Grunnfunksjonalitet ferdig. Full CRUD-støtte for tilskuddsordninger via admin-UI. **Neste arbeidspunkt:** Justering av felter i editoren basert på tilbakemelding.
+
+**Nye filer:**
+
+- `src/admin/components/TilskuddEditor.tsx` – Skjema-basert editor for tilskudd
+- `src/admin/components/TilskuddEditor.css` – Styling (Punkt-kompatibel)
+- `src/admin/components/TilskuddEditorPage.tsx` – Wrapper med draft/publish-workflow
+- `src/admin/components/TilskuddEditorPage.css` – Styling for editor-siden
+
+**API-endepunkter (i `contentRouter.ts`):**
+
+- `GET /admin/api/content/tilskudd/:id` – Hent tilskudd (draft-prioritert)
+- `PUT /admin/api/content/tilskudd/:id` – Lagre endringer som draft
+- `POST /admin/api/content/tilskudd/:id/publish` – Publiser draft til hovedfil
+- `DELETE /admin/api/content/tilskudd/:id/draft` – Forkast upubliserte endringer
+
+**Funksjonalitet i editoren:**
+
+1. **Grunnleggende informasjon:**
+
+   - Tittel og sammendrag (maks 280 tegn)
+2. **Tilbyder-valg:**
+
+   - Dropdown med kjente tilbydere: Enova, Klima- og energifondet (Oslo kommune), Byantikvaren i Oslo
+3. **Søknadslenke:**
+
+   - URL til søknadsskjema (påkrevd)
+4. **Liste-status:**
+
+   - Checkboxer for "Standard" og "Gul liste (vernede/bevaringsverdige bygg)"
+   - Velg hvilke listestatuser tilskuddsordningen skal vises for
+5. **Byggtyper:**
+
+   - Checkboxer for alle byggtyper fra dictionary
+   - "Velg alle"-knapp for å raskt aktivere alle
+6. **Tilknyttede tiltak:**
+
+   - Checkboxer for alle tiltak fra katalogen
+   - Ordningen vises kun i tiltakskort der den er valgt
+
+**Arbeidsflyt:**
+
+1. Velg "Tilskudd" i admin-dashbordet
+2. Klikk "Endre" på en tilskuddsordning i listen
+3. Rediger felter (alle endringer lagres som draft)
+4. Klikk "Lagre endringer" for å lagre draft
+5. Klikk "Publiser endringer" for å gjøre endringene synlige i prod
+6. Eventuelt klikk "Forkast utkast" for å tilbakestille til publisert versjon
+
+**Punkt-komponenter brukt:**
+
+- `PktTextinput`, `PktTextarea` – Tekstfelt
+- `PktSelect` – Dropdown for tilbyder
+- `PktCheckbox` – Flervalg for liste-status, byggtyper, tiltak
+- `PktInputWrapper` – Gruppering av checkboxer med label/helptext
+- `PktButton` – Handlingsknapper
+- `PktAlert` – Feil- og suksessmeldinger
+
+---
+
+### 11.6 Legacy-referanser for QA
+
+| Tiltak (slug)                                                 | Legacy-fil                                                                   | Elementer legacy-komponenten viser                                                                                                                                                                                                                       |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Varmepumpe (`varmepumpe`)                                   | `src/components/FigmaBlokk/components/Tiltak/Varmepumpe.tsx`               | Interaktiv fanerad (Generelt + fire teknologier), fire grønne fordelbokser med ikon/tekst, "Årlig besparelse"-kort med tooltip og placeholder-data, søknadspliktseksjon, grantkort via `useGrantAwareStotteordninger`, byggtype-spesifikke avsnitt. |
+| Solenergi (`solenergi`)                                     | `src/components/FigmaBlokk/components/Tiltak/Solenergi.tsx`                | To-kolonners hero med intro og byggtype-tekst, fordelbokser, lenkeliste (maks tre), støtteordninger, søknadsplikt-toggle og energi-/kost-kort for "Årlig besparelse".                                                                                 |
+| Etterisolering yttervegg (`etterisolering-yttervegg`)       | `src/components/FigmaBlokk/components/Tiltak/EtterisoleringYttervegg.tsx`  | TEK-/byggeårsbaserte energiberegninger, lang les-mer-liste, søknadsplikt, grantkort og byggtypeavsnitt uten fordelsbokser.                                                                                                                             |
+| Etterisolering kjeller/loft (`etterisolering-kjeller-loft`) | `src/components/FigmaBlokk/components/Tiltak/IsoleringAvKjellerOgLoft.tsx` | Samme energi- og TEK-logikk som yttervegg, byggtypeavsnitt, søknadsplikt, grantkort og les-mer-liste (ingen fordelsbokser).                                                                                                                             |
+| Oppgradering av vindu (`vinduer`)                           | `src/components/FigmaBlokk/components/Tiltak/UtskiftningAvVindu.tsx`       | Fanestruktur for "Generelt/vedlikehold/oppgradering/utskiftning", fordelsbokser, accordion med glossary og lenker, byggtype-styret tab-innhold, energi-/kost-kort, dobbel CTA (knapper og lenker).                                                       |
+| Tetting (`tetting`)                                         | `src/components/FigmaBlokk/components/Tiltak/Tetting.tsx`                  | Tekstavsnitt med inline-glossar (hover), fordelsbokser, søknadsplikt-accordion m/glossary-liste, støtteordninger og lenkeliste.                                                                                                                        |
+| Temperaturstyring (`temperaturstyring`)                     | `src/components/FigmaBlokk/components/Tiltak/Temperaturstyring.tsx`        | Fordelsbokser, søknadsplikt-accordion med glossary, inline-glossar i tekst, buildingType-paragrafer og støtteordningskort.                                                                                                                             |
+| Ventilasjon (`ventilasjon`)                                 | `src/components/FigmaBlokk/components/Tiltak/Ventilasjon.tsx`              | Likt oppsett som tetting/temperaturstyring: fordelsbokser, søknadsplikt-accordion, glossary-lenker, støtteordninger og byggtypeavsnitt.                                                                                                                |
+
+   Gul-liste-versjonene under `src/components/FigmaBlokk/components/Tiltak/GulListeTiltak/*` gjenbruker samme layout per tiltak, men med alternative tekster/farger. QA skal derfor bekrefte tekstinnholdet via skjemaene, mens layouten verifiseres i preview-panelet eller sluttbruker-frontend.
+
+---
+
+### 11.7 Publiserings-wizard ("Oppdater Energinøkkelen")
+
+**Status:** Under planlegging. Dokumentasjon flyttet til eget dokument.
+
+> **Single source of truth:** [`Dokumentasjon/Utvikling/ui/publiserings-wizard.md`](Utvikling/ui/publiserings-wizard.md)
+
+Wizarden gir redaktører en steg-for-steg-flyt for å publisere innholdsendringer:
+1. Gjennomgå endringer (liste over draft-filer)
+2. Send til staging (synk til staging-bøtten)
+3. Visuell QA (sjekkliste + lenke til staging.energinokkelen.no)
+4. Publiser til prod (trigger Cloud Build)
+
+---
+
+### 11.8 Øvrige oppgaver
+
+1. ~~**Katalogfilter og paginering:**~~ ✅ Implementert klient-side filtrering (status, målgruppe, byggtype, fritekst) og paginering (6/12/24/48 elementer per side) med Punkt-komponenter. Filtre nullstilles ved modus-bytte og paginering resettes ved filter-endring.
+2. **Prod-klar admin-pipeline:** Etabler prod-trigger/konfig for admin (Cloud Build + Cloud Run) og prod-hostrule/SSL når prod-host er klart, slik at admin kan kjøres i prod med samme base `/admin/` og IAP-policy.
+3. **Komponentopprydding:** Rydd React-warnings/hardkodede props i `src/components/FigmaBlokk/**` slik at admin-preview samsvarer med prod-render og konsollen er ren.

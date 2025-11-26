@@ -33,6 +33,12 @@
   flex-wrap: wrap;
 }
 
+.admin-content__dictionary-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .admin-content__heading-row h2 {
   margin: 0;
   font-size: clamp(1.6rem, 2.5vw, 2rem);
