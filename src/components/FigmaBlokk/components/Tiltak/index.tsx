@@ -14,3 +14,4 @@ export { EtterisoleringYttervegg } from './EtterisoleringYttervegg';
 export { EtterisoleringYtterveggGul } from './GulListeTiltak/EtterisoleringYtterveggGul';
 export { Ventilasjon } from './Ventilasjon';
 export { VentilasjonGul } from './GulListeTiltak/VentilasjonGul';
+export { TiltakCardRenderer } from './TiltakCardRenderer';

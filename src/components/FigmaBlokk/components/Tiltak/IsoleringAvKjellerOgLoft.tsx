@@ -31,44 +31,6 @@ type KjellerLoftContentView = {
   grants: string[];
 };
 
-const defaultKjellerLoftContent: KjellerLoftContentView = {
-  title: 'Etterisolering av kjeller og loft',
-  introParagraphs: [
-    'Etterisolering av loft og gulv er en effektiv måte å redusere varmetap, få et lunere inneklima og kutte strømregningen. Mange boliger har lite eller utdatert isolasjon – og her kan selv enkle tiltak gjøre stor forskjell.',
-    'Når du legger inn ny isolasjon samtidig som du sikrer god ventilasjon og fukthåndtering, får du bedre komfort og lavere kostnader.'
-  ],
-  buildingTypeParagraphs: {
-    default: [
-      'I blokker er etterisolering vanligvis et felles tiltak som må planlegges gjennom styret eller borettslaget. Loft og kjeller er ofte fellesarealer, og tiltak her kan gi store energibesparelser for hele bygget. Gulv mot uoppvarmet kjeller kan isoleres nedenfra, og loftsgulvet ovenfra. Dette må alltid vurderes opp mot fuktsikring og tekniske forhold.'
-    ],
-    blokk: [
-      'I blokker er etterisolering vanligvis et felles tiltak som må planlegges gjennom styret eller borettslaget. Loft og kjeller er ofte fellesarealer, og tiltak her kan gi store energibesparelser for hele bygget. Gulv mot uoppvarmet kjeller kan isoleres nedenfra, og loftsgulvet ovenfra. Dette må alltid vurderes opp mot fuktsikring og tekniske forhold.'
-    ],
-    enebolig: [
-      'I eneboliger er det vanlig med tilgjengelig loft og kjeller, noe som gir gode muligheter for etterisolering. Loftet kan isoleres i gulvet med for eksempel trefiber eller cellulose – gjerne 20 cm eller mer – slik at varmen holdes inne uten å måtte endre taket på utsiden.',
-      'I kjelleren kan det isoleres fra undersiden eller mellom bjelkelag, og i noen tilfeller blåses inn isolasjon uten å åpne gulvet. Det er viktig å sikre ventilasjon slik at det ikke oppstår fukt.'
-    ],
-    rekkehus: [
-      'I rekkehus og flermannsboliger kan loft og kjeller være felles eller nært knyttet til naboens del. Da kan det være lurt å samarbeide, særlig hvis dere deler bjelkelag eller fellesarealer.',
-      'Loftsgulv isoleres enkelt fra oversiden, og gulv mot kjeller kan etterisoleres nedenfra eller ved å blåse isolasjon inn i etasjeskillet. Vurder fuktsikring og ventilasjon for best resultat.'
-    ],
-    tomannsbolig: [
-      'I rekkehus og flermannsboliger kan loft og kjeller være felles eller nært knyttet til naboens del. Da kan det være lurt å samarbeide, særlig hvis dere deler bjelkelag eller fellesarealer.',
-      'Loftsgulv isoleres enkelt fra oversiden, og gulv mot kjeller kan etterisoleres nedenfra eller ved å blåse isolasjon inn i etasjeskillet. Vurder fuktsikring og ventilasjon for best resultat.'
-    ]
-  },
-  readMore: [
-    {
-      label: 'Enova – etterisolering',
-      url: 'https://www.enova.no/privat/alle-energitiltak/etterisolering/'
-    },
-    {
-      label: 'Direktoratet for byggkvalitet – krav ved etterisolering',
-      url: 'https://www.dibk.no/smartere-oppussing/etterisolering/'
-    }
-  ],
-  grants: ['enova-etterisolering-loft-kjeller']
-};
 
 function mapTiltakContentToKjellerLoft(
   content: TiltakContent | undefined
@@ -112,33 +74,41 @@ const IsoleringAvKjellerOgLoftContentComponent: React.FC<IsoleringAvKjellerOgLof
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
   );
-  const mappedContent = useMemo(
+  const content = useMemo(
     () => mapTiltakContentToKjellerLoft(resolvedTiltakContent),
     [resolvedTiltakContent]
   );
-  const content = mappedContent ?? defaultKjellerLoftContent;
-
-  const introParagraphs = content.introParagraphs.length
-    ? content.introParagraphs
-    : defaultKjellerLoftContent.introParagraphs;
 
   const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
+
+  // Derive values from content (use empty defaults when loading)
+  const introParagraphs = content?.introParagraphs ?? [];
   const buildingParagraphs =
-    content.buildingTypeParagraphs[buildingTypeKey] ??
-    content.buildingTypeParagraphs.default ??
-    defaultKjellerLoftContent.buildingTypeParagraphs.default;
+    content?.buildingTypeParagraphs[buildingTypeKey] ??
+    content?.buildingTypeParagraphs.default ??
+    [];
+  const readMoreLinks = (content?.readMore ?? []).slice(0, 4);
+  const grantIds = content?.grants ?? [];
 
-  const readMoreLinks = (content.readMore.length ? content.readMore : defaultKjellerLoftContent.readMore).slice(0, 4);
-
+  // All hooks must be called before any early return
   const {
     stotteordninger,
     intendedSource,
     isLoading: grantsLoading
   } = useGrantAwareStotteordninger({
-    grantIds: content.grants,
+    grantIds,
     legacyTiltakSlug: 'etterisolering_kjeller_loft',
     buildingType
   });
+
+  // Show loading state after all hooks have been called
+  if (!content) {
+    return (
+      <div style={{ padding: '60px', fontFamily: 'Oslo Sans', color: '#2A2859' }}>
+        Laster innhold...
+      </div>
+    );
+  }
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger

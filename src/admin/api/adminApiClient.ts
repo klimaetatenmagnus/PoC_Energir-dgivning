@@ -1,8 +1,11 @@
 import type {
   AdminBenefitDictionaryEntry,
   AdminDictionaryResponse,
+  AdminGlossaryTermDictionaryEntry,
   AdminTiltakMetadata,
 } from "../types";
+import type { TiltakContent } from "../../../content/tiltak/schema";
+import type { TilskuddContent } from "../../../content/tilskudd/schema";
 
 const ADMIN_API_BASE =
   import.meta.env.VITE_ADMIN_API_BASE?.trim() || "/admin/api";
@@ -39,6 +42,85 @@ export type DictionaryMutationResponse = {
   generation: string | null;
 };
 
+export type FetchTiltakResponse = {
+  tiltak: TiltakContent;
+  generation: string | null;
+  etag: string | null;
+  hasDraft: boolean;
+  source: "draft" | "published";
+};
+
+export type UpdateTiltakPayload = {
+  tiltak: TiltakContent;
+  generation: string;
+  changeSummary?: string;
+};
+
+export type UpdateTiltakResponse = {
+  id: string;
+  path: string;
+  tiltak: TiltakContent;
+  metadata: TiltakContent["metadata"];
+  generation: string | null;
+  hasDraft: boolean;
+  hasPublished: boolean;
+  source: "draft" | "published";
+};
+
+export type PublishTiltakResponse = {
+  id: string;
+  path: string;
+  tiltak: TiltakContent;
+  metadata: TiltakContent["metadata"];
+  generation: string | null;
+  message: string;
+};
+
+export type DiscardDraftResponse = {
+  id: string;
+  message: string;
+};
+
+// Tilskudd types
+export type FetchTilskuddResponse = {
+  tilskudd: TilskuddContent;
+  generation: string | null;
+  etag: string | null;
+  hasDraft: boolean;
+  source: "draft" | "published";
+};
+
+export type UpdateTilskuddPayload = {
+  tilskudd: TilskuddContent;
+  generation: string;
+  changeSummary?: string;
+};
+
+export type UpdateTilskuddResponse = {
+  id: string;
+  path: string;
+  tilskudd: TilskuddContent;
+  metadata: TilskuddContent["metadata"];
+  generation: string | null;
+  hasDraft: boolean;
+  hasPublished: boolean;
+  source: "draft" | "published";
+};
+
+export type PublishTilskuddResponse = {
+  id: string;
+  path: string;
+  tilskudd: TilskuddContent;
+  metadata: TilskuddContent["metadata"];
+  generation: string | null;
+  message: string;
+};
+
+export type DiscardTilskuddDraftResponse = {
+  id: string;
+  message: string;
+};
+
 export async function fetchDictionary(
   signal?: AbortSignal
 ): Promise<AdminDictionaryResponse> {
@@ -49,6 +131,71 @@ export async function fetchTiltakMetadata(
   tiltakId: string
 ): Promise<AdminTiltakMetadata> {
   return request<AdminTiltakMetadata>(`/content/tiltak/${tiltakId}/metadata`);
+}
+
+export async function fetchTiltak(
+  tiltakId: string
+): Promise<FetchTiltakResponse> {
+  return request<FetchTiltakResponse>(`/content/tiltak/${tiltakId}`);
+}
+
+export async function updateTiltak(
+  tiltakId: string,
+  payload: UpdateTiltakPayload
+): Promise<UpdateTiltakResponse> {
+  return request<UpdateTiltakResponse>(`/content/tiltak/${tiltakId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function publishTiltak(
+  tiltakId: string
+): Promise<PublishTiltakResponse> {
+  return request<PublishTiltakResponse>(`/content/tiltak/${tiltakId}/publish`, {
+    method: "POST",
+  });
+}
+
+export async function discardTiltakDraft(
+  tiltakId: string
+): Promise<DiscardDraftResponse> {
+  return request<DiscardDraftResponse>(`/content/tiltak/${tiltakId}/draft`, {
+    method: "DELETE",
+  });
+}
+
+// Tilskudd API functions
+export async function fetchTilskudd(
+  tilskuddId: string
+): Promise<FetchTilskuddResponse> {
+  return request<FetchTilskuddResponse>(`/content/tilskudd/${tilskuddId}`);
+}
+
+export async function updateTilskudd(
+  tilskuddId: string,
+  payload: UpdateTilskuddPayload
+): Promise<UpdateTilskuddResponse> {
+  return request<UpdateTilskuddResponse>(`/content/tilskudd/${tilskuddId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function publishTilskudd(
+  tilskuddId: string
+): Promise<PublishTilskuddResponse> {
+  return request<PublishTilskuddResponse>(`/content/tilskudd/${tilskuddId}/publish`, {
+    method: "POST",
+  });
+}
+
+export async function discardTilskuddDraft(
+  tilskuddId: string
+): Promise<DiscardTilskuddDraftResponse> {
+  return request<DiscardTilskuddDraftResponse>(`/content/tilskudd/${tilskuddId}/draft`, {
+    method: "DELETE",
+  });
 }
 
 export async function updateTiltakBenefitRefs(
@@ -95,6 +242,97 @@ export async function deleteDictionaryEntry(
       body: JSON.stringify({ generation }),
     }
   );
+}
+
+// Glossary term mutations
+type GlossaryTermMutationPayload = {
+  entry: AdminGlossaryTermDictionaryEntry;
+  generation: string;
+};
+
+export type GlossaryTermMutationResponse = {
+  glossaryTerm: AdminGlossaryTermDictionaryEntry;
+  generation: string | null;
+};
+
+export async function upsertGlossaryTerm(
+  payload: GlossaryTermMutationPayload,
+  mode: "create" | "update"
+): Promise<GlossaryTermMutationResponse> {
+  if (mode === "create") {
+    return request<GlossaryTermMutationResponse>("/dictionary/glossary-terms", {
+      method: "POST",
+      body: JSON.stringify({ generation: payload.generation, glossaryTerm: payload.entry }),
+    });
+  }
+
+  return request<GlossaryTermMutationResponse>(
+    `/dictionary/glossary-terms/${payload.entry.id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ generation: payload.generation, glossaryTerm: payload.entry }),
+    }
+  );
+}
+
+export async function deleteGlossaryTerm(
+  termId: string,
+  generation: string
+): Promise<{ generation: string | null; deletedId: string }> {
+  return request<{ generation: string | null; deletedId: string }>(
+    `/dictionary/glossary-terms/${termId}`,
+    {
+      method: "DELETE",
+      body: JSON.stringify({ generation }),
+    }
+  );
+}
+
+// ===== DRAFTS API =====
+
+export type DraftSummary = {
+  id: string;
+  collection: "tiltak" | "tilskudd";
+  title: string;
+  changeSummary?: string;
+  updatedAt: string;
+  updatedBy?: string;
+};
+
+export type DraftsListResponse = {
+  drafts: DraftSummary[];
+  count: number;
+};
+
+export type SyncStagingResponse = {
+  success: boolean;
+  synced: Array<{ id: string; collection: "tiltak" | "tilskudd" }>;
+  stagingUrl: string;
+};
+
+export type DiscardAllDraftsResponse = {
+  success: boolean;
+  discarded: Array<{ id: string; collection: "tiltak" | "tilskudd" }>;
+  count: number;
+  message: string;
+};
+
+export async function fetchDrafts(
+  signal?: AbortSignal
+): Promise<DraftsListResponse> {
+  return request<DraftsListResponse>("/drafts", { signal });
+}
+
+export async function syncDraftsToStaging(): Promise<SyncStagingResponse> {
+  return request<SyncStagingResponse>("/drafts/sync-staging", {
+    method: "POST",
+  });
+}
+
+export async function discardAllDrafts(): Promise<DiscardAllDraftsResponse> {
+  return request<DiscardAllDraftsResponse>("/drafts/discard-all", {
+    method: "DELETE",
+  });
 }
 
 async function request<T>(

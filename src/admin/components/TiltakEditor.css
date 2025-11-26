@@ -1,0 +1,351 @@
+.tiltak-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-24, 1.5rem);
+  padding: var(--pkt-spacing-24, 1.5rem);
+  background: var(--pkt-color-surface-default, #fff);
+  border-radius: var(--pkt-border-radius-medium, 8px);
+  max-width: 900px;
+}
+
+.tiltak-editor__header {
+  border-bottom: 1px solid var(--pkt-color-border-subtle, #e0e0e0);
+  padding-bottom: var(--pkt-spacing-16, 1rem);
+}
+
+.tiltak-editor__title {
+  font-family: var(--pkt-font-family-heading, "Oslo Sans", sans-serif);
+  font-size: var(--pkt-font-size-24, 1.5rem);
+  font-weight: 700;
+  color: var(--pkt-color-text-default, #2a2859);
+  margin: 0 0 var(--pkt-spacing-8, 0.5rem) 0;
+}
+
+.tiltak-editor__subtitle {
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  color: var(--pkt-color-text-subtle, #666);
+  margin: 0;
+}
+
+.tiltak-editor__error {
+  margin-bottom: var(--pkt-spacing-16, 1rem);
+}
+
+/* Kontekst-velgere */
+.tiltak-editor__context {
+  background: var(--pkt-color-surface-subtle, #f5f5f5);
+  padding: var(--pkt-spacing-16, 1rem);
+  border-radius: var(--pkt-border-radius-small, 4px);
+}
+
+.tiltak-editor__context-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--pkt-spacing-24, 1.5rem);
+  align-items: start;
+}
+
+@media (max-width: 600px) {
+  .tiltak-editor__context-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tiltak-editor__radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-8, 0.5rem);
+}
+
+/* Seksjoner */
+.tiltak-editor__section {
+  border: 1px solid var(--pkt-color-border-subtle, #e0e0e0);
+  border-radius: var(--pkt-border-radius-small, 4px);
+  padding: var(--pkt-spacing-16, 1rem);
+}
+
+.tiltak-editor__section-title {
+  font-family: var(--pkt-font-family-heading, "Oslo Sans", sans-serif);
+  font-size: var(--pkt-font-size-18, 1.125rem);
+  font-weight: 600;
+  color: var(--pkt-color-text-default, #2a2859);
+  margin: 0 0 var(--pkt-spacing-12, 0.75rem) 0;
+}
+
+.tiltak-editor__subsection-title {
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  font-weight: 600;
+  color: var(--pkt-color-text-default, #2a2859);
+  margin: var(--pkt-spacing-16, 1rem) 0 var(--pkt-spacing-8, 0.5rem) 0;
+}
+
+.tiltak-editor__section-helptext {
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  color: var(--pkt-color-text-subtle, #666);
+  margin: 0 0 var(--pkt-spacing-12, 0.75rem) 0;
+}
+
+/* Lenke-redigering */
+.tiltak-editor__links-section {
+  margin-top: var(--pkt-spacing-16, 1rem);
+  padding-top: var(--pkt-spacing-16, 1rem);
+  border-top: 1px solid var(--pkt-color-border-subtle, #e0e0e0);
+}
+
+.tiltak-editor__link-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: var(--pkt-spacing-12, 0.75rem);
+  align-items: end;
+  margin-bottom: var(--pkt-spacing-12, 0.75rem);
+}
+
+@media (max-width: 600px) {
+  .tiltak-editor__link-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Fordeler - matcher frontend-stilen */
+.tiltak-editor__section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--pkt-spacing-12, 0.75rem);
+}
+
+.tiltak-editor__benefit-counter {
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  font-weight: 500;
+  color: #2a2859;
+  background: #f4f5ff;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+}
+
+.tiltak-editor__benefits-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Base chip-stil (matcher frontend SVG rects - firkantede, ikke avrundede) */
+.tiltak-editor__benefit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 0;
+  font-family: "Oslo Sans", "Oslo Sans Text", "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 21px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: #2a2859;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.tiltak-editor__benefit-chip:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.tiltak-editor__benefit-chip:focus-visible {
+  outline: 2px solid #2a2859;
+  outline-offset: 2px;
+}
+
+/* Aktiv fordel - grønn som i frontend (#C7F6C9) */
+.tiltak-editor__benefit-chip--active {
+  background: #c7f6c9;
+}
+
+/* Inaktiv fordel - grå */
+.tiltak-editor__benefit-chip--inactive {
+  background: #f0f0f0;
+  color: #61648a;
+}
+
+.tiltak-editor__benefit-chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tiltak-editor__benefit-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.tiltak-editor__benefit-title {
+  font-weight: 500;
+  letter-spacing: -0.2px;
+}
+
+/* Grants/tilskudd-velger - Punkt designsystem-kompatibel */
+.tiltak-editor__grants-counter {
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  font-weight: 500;
+  color: #2a2859; /* brand-dark-blue-1000 */
+  background: #b3f5ff; /* brand-blue-500 */
+  padding: 0.2rem 0.6rem;
+  border-radius: 0; /* Punkt bruker ikke avrundede hjørner */
+}
+
+.tiltak-editor__grants-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: var(--pkt-spacing-12, 0.75rem);
+}
+
+.tiltak-editor__grant-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 16px;
+  border: 2px solid transparent;
+  border-radius: 0; /* Punkt bruker ikke avrundede hjørner */
+  font-family: "Oslo Sans", arial, sans-serif;
+  font-size: 1rem;
+  font-weight: 300;
+  letter-spacing: normal;
+  line-height: 1.5em;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.tiltak-editor__grant-chip:hover:not(:disabled) {
+  border-color: #2a2859; /* brand-dark-blue-1000 */
+}
+
+.tiltak-editor__grant-chip:focus-visible {
+  outline: 2px solid #2a2859;
+  outline-offset: 2px;
+}
+
+/* Aktiv grant - grønn bakgrunn (Punkt light-green) */
+.tiltak-editor__grant-chip--active {
+  background: #c7f6c9; /* brand-light-green-1000 */
+  border-color: #034b45; /* brand-dark-green-1000 */
+  color: #2a2859; /* brand-dark-blue-1000 */
+}
+
+/* Inaktiv grant - nøytral bakgrunn */
+.tiltak-editor__grant-chip--inactive {
+  background: #f9f9f9; /* brand-neutrals-100 */
+  border-color: #e6e6e6; /* grays-gray-100 */
+  color: #2a2859; /* brand-dark-blue-1000 */
+}
+
+/* Deaktivert (ikke-matchende) */
+.tiltak-editor__grant-chip--disabled {
+  background: #f2f2f2; /* brand-neutrals-200 */
+  border-color: #e6e6e6; /* grays-gray-100 */
+  color: #808080; /* grays-gray-500 */
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.tiltak-editor__grant-chip--disabled:hover {
+  border-color: #e6e6e6;
+}
+
+/* Orphaned grants (finnes ikke i katalogen) - gul advarsel */
+.tiltak-editor__grant-chip--orphaned {
+  background: #ffe7bc; /* brand-yellow-500 */
+  border-color: #f9c66b; /* brand-yellow-1000 */
+  color: #2a2859; /* brand-dark-blue-1000 */
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.tiltak-editor__grant-title {
+  font-weight: 500;
+  line-height: 1.3;
+  color: #2a2859; /* brand-dark-blue-1000 */
+}
+
+.tiltak-editor__grant-audiences {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.tiltak-editor__grant-audience-tag {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 0; /* Punkt bruker ikke avrundede hjørner */
+  font-weight: 500;
+}
+
+.tiltak-editor__grant-audience-tag--standard {
+  background: #c7f6c9; /* brand-light-green-1000 */
+  color: #034b45; /* brand-dark-green-1000 */
+}
+
+.tiltak-editor__grant-audience-tag--gulliste {
+  background: #ffe7bc; /* brand-yellow-500 */
+  color: #2a2859; /* brand-dark-blue-1000 */
+}
+
+.tiltak-editor__grant-meta {
+  font-size: 0.875rem;
+  color: #6a698b; /* brand-dark-blue-700 */
+}
+
+.tiltak-editor__grant-remove {
+  font-size: 14px;
+  font-weight: bold;
+  margin-left: 8px;
+  color: #2a2859;
+}
+
+.tiltak-editor__grants-other {
+  margin-top: var(--pkt-spacing-24, 1.5rem);
+  padding-top: var(--pkt-spacing-16, 1rem);
+  border-top: 1px dashed #cccccc; /* grays-gray-200 */
+}
+
+.tiltak-editor__grants-orphaned {
+  margin-top: var(--pkt-spacing-16, 1rem);
+  padding: var(--pkt-spacing-12, 0.75rem);
+  background: #ffe7bc; /* brand-yellow-500 */
+  border-radius: 0; /* Punkt bruker ikke avrundede hjørner */
+}
+
+.tiltak-editor__loading {
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  color: #6a698b; /* brand-dark-blue-700 */
+  font-style: italic;
+}
+
+.tiltak-editor__empty-message {
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  color: var(--pkt-color-text-subtle, #666);
+  font-style: italic;
+}
+
+/* Tabs-redigering */
+.tiltak-editor__tab-content {
+  margin-top: var(--pkt-spacing-16, 1rem);
+  padding-top: var(--pkt-spacing-16, 1rem);
+  border-top: 1px solid var(--pkt-color-border-subtle, #e0e0e0);
+}
+
+/* Footer */
+.tiltak-editor__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--pkt-spacing-12, 0.75rem);
+  padding-top: var(--pkt-spacing-16, 1rem);
+  border-top: 1px solid var(--pkt-color-border-subtle, #e0e0e0);
+}

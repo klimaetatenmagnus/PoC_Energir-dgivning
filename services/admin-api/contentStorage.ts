@@ -23,11 +23,93 @@ export type StoredJson<T = unknown> = {
 
 const storage = new Storage();
 
+export type FileInfo = {
+  path: string;
+  updatedAt: Date | null;
+};
+
 export class ContentStorage {
   private readonly backend: ContentBackend;
 
   constructor(uri: string) {
     this.backend = parseContentTarget(uri);
+  }
+
+  /**
+   * Lister filer som matcher et glob-pattern (f.eks. "tiltak/*.draft.json")
+   */
+  async listFiles(pattern: string): Promise<FileInfo[]> {
+    if (this.backend.kind === "gcs") {
+      return this.listFilesInBucket(this.backend, pattern);
+    }
+    return this.listFilesOnDisk(this.backend, pattern);
+  }
+
+  private async listFilesInBucket(
+    backend: GcsBackend,
+    pattern: string
+  ): Promise<FileInfo[]> {
+    // Konverter glob til prefix (alt før første wildcard)
+    const prefix = pattern.split("*")[0];
+    const fullPrefix = joinBucketPath(backend.prefix, prefix);
+
+    // Hent filene
+    const [files] = await storage.bucket(backend.bucket).getFiles({
+      prefix: fullPrefix,
+    });
+
+    // Filtrer basert på pattern (enkel .draft.json-sjekk)
+    const suffix = pattern.includes("*") ? pattern.split("*").pop() || "" : "";
+
+    return files
+      .filter((file) => file.name.endsWith(suffix))
+      .map((file) => ({
+        path: backend.prefix
+          ? file.name.slice(backend.prefix.length + 1)
+          : file.name,
+        updatedAt: file.metadata.updated
+          ? new Date(file.metadata.updated as string)
+          : null,
+      }));
+  }
+
+  private async listFilesOnDisk(
+    backend: LocalBackend,
+    pattern: string
+  ): Promise<FileInfo[]> {
+    // For lokal disk: finn directory og filtrer
+    const dir = pattern.split("*")[0].replace(/\/$/, "") || ".";
+    const suffix = pattern.includes("*") ? pattern.split("*").pop() || "" : "";
+    const absoluteDir = buildAbsolutePath(backend.root, dir);
+
+    try {
+      const entries = await fs.readdir(absoluteDir);
+      const results: FileInfo[] = [];
+
+      for (const entry of entries) {
+        if (suffix && !entry.endsWith(suffix)) {
+          continue;
+        }
+        const filePath = path.join(dir, entry);
+        const absolutePath = buildAbsolutePath(backend.root, filePath);
+        try {
+          const stat = await fs.stat(absolutePath);
+          if (stat.isFile()) {
+            results.push({
+              path: filePath,
+              updatedAt: stat.mtime,
+            });
+          }
+        } catch {
+          // Ignorer filer som ikke kan leses
+        }
+      }
+
+      return results;
+    } catch {
+      // Directory eksisterer ikke
+      return [];
+    }
   }
 
   async readJson<T = unknown>(relativePath: string): Promise<StoredJson<T>> {
@@ -38,6 +120,90 @@ export class ContentStorage {
     }
 
     return this.readFromDisk<T>(this.backend, safePath);
+  }
+
+  /**
+   * Sjekker om en fil eksisterer
+   */
+  async exists(relativePath: string): Promise<boolean> {
+    const safePath = ensureSafeRelativePath(relativePath);
+
+    if (this.backend.kind === "gcs") {
+      return this.existsInBucket(this.backend, safePath);
+    }
+
+    return this.existsOnDisk(this.backend, safePath);
+  }
+
+  /**
+   * Sletter en fil hvis den eksisterer
+   */
+  async deleteJson(relativePath: string): Promise<void> {
+    const safePath = ensureSafeRelativePath(relativePath);
+
+    if (this.backend.kind === "gcs") {
+      return this.deleteFromBucket(this.backend, safePath);
+    }
+
+    return this.deleteFromDisk(this.backend, safePath);
+  }
+
+  private async existsInBucket(
+    backend: GcsBackend,
+    relativePath: string
+  ): Promise<boolean> {
+    const objectPath = joinBucketPath(backend.prefix, relativePath);
+    const file = storage.bucket(backend.bucket).file(objectPath);
+    try {
+      const [exists] = await file.exists();
+      return exists;
+    } catch {
+      return false;
+    }
+  }
+
+  private async existsOnDisk(
+    backend: LocalBackend,
+    relativePath: string
+  ): Promise<boolean> {
+    const absolutePath = buildAbsolutePath(backend.root, relativePath);
+    try {
+      await fs.stat(absolutePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async deleteFromBucket(
+    backend: GcsBackend,
+    relativePath: string
+  ): Promise<void> {
+    const objectPath = joinBucketPath(backend.prefix, relativePath);
+    const file = storage.bucket(backend.bucket).file(objectPath);
+    try {
+      await file.delete();
+    } catch (error) {
+      if (!isGcsError(error, 404)) {
+        throw error;
+      }
+      // Ignorer 404 - filen eksisterte ikke
+    }
+  }
+
+  private async deleteFromDisk(
+    backend: LocalBackend,
+    relativePath: string
+  ): Promise<void> {
+    const absolutePath = buildAbsolutePath(backend.root, relativePath);
+    try {
+      await fs.unlink(absolutePath);
+    } catch (error) {
+      if (!isNodeError(error) || error.code !== "ENOENT") {
+        throw error;
+      }
+      // Ignorer ENOENT - filen eksisterte ikke
+    }
   }
 
   async writeJson(

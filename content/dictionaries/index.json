@@ -351,5 +351,62 @@
       ],
       "category": "bygg"
     }
+  ],
+  "glossaryTerms": [
+    {
+      "id": "soknadsplikt",
+      "term": "søknadspliktig",
+      "definition": [
+        "Søknadsplikt betyr at du må ha tillatelse fra Plan- og bygningsetaten før du gjør fysiske endringer på bygningen eller eiendommen."
+      ],
+      "links": [
+        {
+          "label": "Les mer hos DiBK",
+          "url": "https://www.dibk.no/regelverk/sak/2/2/innledning"
+        }
+      ]
+    },
+    {
+      "id": "tiltakshaver",
+      "term": "tiltakshaver",
+      "definition": [
+        "Tiltakshaver er personen eller virksomheten som utfører – eller bestiller – et tiltak som krever søknad og tillatelse. Du har ansvar for at arbeidene utføres lovlig og med riktig kompetanse."
+      ],
+      "links": [
+        {
+          "label": "Tiltakshavers ansvar",
+          "url": "https://www.dibk.no/regelverk/sak/3/12/12-1"
+        }
+      ]
+    },
+    {
+      "id": "ansvarlig-foretak",
+      "term": "ansvarlig foretak",
+      "definition": [
+        "Et ansvarlig foretak er et firma med riktig kompetanse som tar ansvar for bestemte deler av et byggeprosjekt, for eksempel prosjektering eller utførelse."
+      ],
+      "links": [
+        {
+          "label": "Når kreves ansvarsrett?",
+          "url": "https://www.dibk.no/regelverk/sak/3/12/innledning"
+        }
+      ]
+    },
+    {
+      "id": "u-verdi",
+      "term": "U-verdi",
+      "definition": [
+        "U-verdien forteller hvor godt vinduet isolerer. Jo lavere verdi, jo mindre varme slipper ut og jo bedre er vinduet for energibruken."
+      ],
+      "links": []
+    },
+    {
+      "id": "reversibel",
+      "term": "reversibel",
+      "definition": [
+        "Et tiltak er reversibelt når det kan fjernes og byggverket tilbakeføres uten varige spor. Slike tiltak er ofte lettere å få godkjent i verneverdige bygg."
+      ],
+      "links": []
+    }
   ]
 }

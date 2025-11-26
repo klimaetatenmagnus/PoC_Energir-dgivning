@@ -1,0 +1,56 @@
+.tiltak-editor-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-16, 1rem);
+}
+
+.tiltak-editor-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pkt-spacing-12, 0.75rem);
+  margin-bottom: var(--pkt-spacing-8, 0.5rem);
+}
+
+.tiltak-editor-page__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--pkt-spacing-12, 0.75rem);
+}
+
+.tiltak-editor-page__draft-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--pkt-spacing-4, 0.25rem) var(--pkt-spacing-12, 0.75rem);
+  background-color: var(--pkt-color-surface-warning, #fff3cd);
+  color: var(--pkt-color-text-warning, #856404);
+  border-radius: var(--pkt-border-radius-small, 4px);
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  font-weight: var(--pkt-font-weight-medium, 500);
+}
+
+.tiltak-editor-page__published-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--pkt-spacing-4, 0.25rem) var(--pkt-spacing-12, 0.75rem);
+  background-color: var(--pkt-color-surface-success, #d4edda);
+  color: var(--pkt-color-text-success, #155724);
+  border-radius: var(--pkt-border-radius-small, 4px);
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  font-weight: var(--pkt-font-weight-medium, 500);
+}
+
+.tiltak-editor-page__error-actions {
+  display: flex;
+  gap: var(--pkt-spacing-12, 0.75rem);
+  margin-top: var(--pkt-spacing-12, 0.75rem);
+}
+
+.tiltak-editor-page__save-error {
+  margin-top: var(--pkt-spacing-16, 1rem);
+}
+
+.tiltak-editor-page__success {
+  margin-bottom: var(--pkt-spacing-8, 0.5rem);
+}

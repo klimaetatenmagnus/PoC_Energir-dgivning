@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { TilskuddContent } from '../../../../../content/tilskudd/schema';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
 import { useTilskuddBatch } from '../../../../hooks/contentHooks';
@@ -84,6 +84,12 @@ export function useGrantAwareStotteordninger({
   legacyTiltakSlug,
   buildingType
 }: UseGrantAwareStotteordningerOptions): UseGrantAwareStotteordningerResult {
+  const forceLegacyGrants = import.meta.env.VITE_FORCE_LEGACY_GRANTS === '1';
+  const minGrantCount =
+    Number.parseInt(import.meta.env.VITE_MIN_GRANT_COUNT ?? '', 10) || 2;
+  const debugGrants =
+    import.meta.env.VITE_DEBUG_GRANTS === '1' ||
+    import.meta.env.VITE_DEBUG_GRANTS === 'true';
   const sanitisedIds = (grantIds ?? [])
     .map((id) => id?.trim())
     .filter((id): id is string => Boolean(id));
@@ -116,6 +122,8 @@ export function useGrantAwareStotteordninger({
   const shouldEnableLegacyFallback =
     !hasGrantOverrides ||
     Boolean(grantError) ||
+    (grantData !== undefined &&
+      grantBasedStotteordninger.length < minGrantCount) ||
     (grantData !== undefined && grantBasedStotteordninger.length === 0);
 
   const {
@@ -128,8 +136,13 @@ export function useGrantAwareStotteordninger({
     enabled: shouldEnableLegacyFallback
   });
 
-  const useGrantSource = hasGrantOverrides && grantBasedStotteordninger.length > 0 && !grantError;
-  const intendedSource: 'grants' | 'legacy' = hasGrantOverrides && !grantError ? 'grants' : 'legacy';
+  const useGrantSource =
+    !forceLegacyGrants &&
+    hasGrantOverrides &&
+    grantBasedStotteordninger.length >= minGrantCount &&
+    !grantError;
+  const intendedSource: 'grants' | 'legacy' =
+    useGrantSource && hasGrantOverrides ? 'grants' : 'legacy';
 
   const stotteordninger = useGrantSource ? grantBasedStotteordninger : legacyStotteordninger;
   const source: 'grants' | 'legacy' = useGrantSource ? 'grants' : 'legacy';
@@ -140,6 +153,38 @@ export function useGrantAwareStotteordninger({
       : shouldEnableLegacyFallback
         ? isLegacyLoading
         : isGrantLoading;
+
+  useEffect(() => {
+    if (!debugGrants) {
+      return;
+    }
+    // Log a compact snapshot for troubleshooting in devtools console
+    // Includes counts and which source is used.
+    console.info('[grants-debug]', {
+      legacyTiltakSlug,
+      forceLegacyGrants,
+      minGrantCount,
+      grantIds: uniqueGrantIds,
+      grantCount: grantBasedStotteordninger.length,
+      legacyCount: legacyStotteordninger.length,
+      source,
+      intendedSource,
+      grantError: grantError?.message,
+      legacyError
+    });
+  }, [
+    debugGrants,
+    forceLegacyGrants,
+    minGrantCount,
+    uniqueGrantIds,
+    grantBasedStotteordninger.length,
+    legacyStotteordninger.length,
+    source,
+    intendedSource,
+    grantError,
+    legacyError,
+    legacyTiltakSlug
+  ]);
 
   return {
     stotteordninger,

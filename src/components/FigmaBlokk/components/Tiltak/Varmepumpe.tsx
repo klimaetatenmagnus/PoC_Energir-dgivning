@@ -29,100 +29,6 @@ type VarmepumpeContent = {
   grants: string[];
 };
 
-const defaultVarmepumpeContent: VarmepumpeContent = {
-  title: 'Varmepumpe',
-  introParagraphs: [
-    'Varmepumpe er en effektiv måte å senke strømforbruket, få jevnere temperatur og bedre inneklima. Riktig type og plassering er viktig for at anlegget skal fungere godt og ikke gi unødig støy eller visuell påvirkning. Det finnes løsninger for de fleste boligtyper.'
-  ],
-  buildingTypeParagraphs: {
-    default: [
-      'I blokker med felles tekniske systemer kan det være aktuelt å installere luft-til-vann eller væske-til-vann varmepumpe, koblet til et felles varmeanlegg. Dette krever planlegging, men gir skjulte installasjoner og energisparing for hele bygget.',
-      'Ved luft-til-luft varmepumper med utedel må dere ta hensyn til støy og visuell påvirkning. Ta tidlig dialog i styret og med naboene, så finner dere løsninger som fungerer for alle.'
-    ],
-    enebolig: [
-      'Ved montering av varmepumpe i enebolig bør du vurdere både innendørs og utendørs plassering nøye. Utedelen bør plasseres slik at den ikke er til sjenanse, og at støyen ikke forstyrrer oppholdssoner eller naboer.',
-      'Luft-til-luft varmepumpe er det vanligste alternativet, men luft-til-vann kan være aktuelt for større oppvarmingsbehov.'
-    ],
-    rekkehus: [
-      'Luft-til-luft varmepumpe er ofte den enkleste løsningen på rekkehus og flermannsboliger. Har dere vannbåren varme, kan luft-til-vann være aktuelt.',
-      'I hus med felles tak eller like fasader er det lurt å planlegge varmepumpene i dialog med naboen for å finne løsninger som fungerer teknisk og visuelt.'
-    ],
-    tomannsbolig: [
-      'Luft-til-luft varmepumpe er ofte den enkleste løsningen på rekkehus og flermannsboliger. Har dere vannbåren varme, kan luft-til-vann være aktuelt.',
-      'I hus med felles tak eller like fasader er det lurt å planlegge varmepumpene i dialog med naboen for å finne løsninger som fungerer teknisk og visuelt.'
-    ]
-  },
-  tabs: [
-    {
-      id: 'luft-luft',
-      title: 'Luft-luft',
-      body: [
-        'Luft-til-luft varmepumper henter varme fra uteluften og blåser den direkte inn som varm luft i boligen. Den er rimelig, enkel å installere og passer godt for mindre boliger eller åpne planløsninger.',
-        'Inne- og utedelen er synlige, så plassering bør planlegges nøye – særlig i verneverdige bygg hvor visuelle hensyn er viktige.'
-      ]
-    },
-    {
-      id: 'luft-vann',
-      title: 'Luft-vann',
-      body: [
-        'Luft-til-vann-systemer bruker varmen i uteluften til å varme opp vann, som sirkulerer i radiatorer, gulvvarme eller brukes til tappevann. Dette gir en jevn og behagelig oppvarming, men krever at huset har et vannbårent system.',
-        'Det er en mer omfattende installasjon enn luft-til-luft, og passer godt i boliger der man ønsker en helhetlig løsning.'
-      ]
-    },
-    {
-      id: 'vaeske-vann',
-      title: 'Væske-vann',
-      body: [
-        'Væske-til-vann varmepumper henter varme fra fjell, jord eller sjø via nedgravde rør eller borehull. Den har høy effektivitet også på kalde vinterdager og gir varme til både oppvarming og tappevann.',
-        'Dette er den mest omfattende og kostbare løsningen, men den egner seg godt for større boliger, blokker eller ved rehabilitering der man ønsker et robust og skjult system.'
-      ]
-    },
-    {
-      id: 'ventilasjon',
-      title: 'Ventilasjon',
-      body: [
-        'Ventilasjonsvarmepumper gjenvinner varme fra brukt luft som ventileres ut av boligen, og bruker den til å varme opp tilluft, tappevann eller vannbåren varme.',
-        'Ventilasjonsvarmepumper krever balansert ventilasjon (altså at både tilluft og avtrekk går i kanalnett), og er derfor mest egnet i nyere hus eller når det etableres nytt ventilasjonsanlegg.'
-      ]
-    }
-  ],
-  benefits: [
-    {
-      title: 'Redusert støy',
-      description: 'Riktig plassering og moderne teknologi gir stillegående drift.'
-    },
-    {
-      title: 'Ivaretar boligen',
-      description: 'Jeven varme beskytter konstruksjoner og innemiljø.'
-    },
-    {
-      title: 'Bedre bokvalitet',
-      description: 'Stabil temperatur og filtrert luft gir bedre komfort.'
-    },
-    {
-      title: 'Lavere strømregning',
-      description: 'Hver kWh strøm gir flere kWh varme tilbake.'
-    }
-  ],
-  readMore: [
-    {
-      label: 'Sintef',
-      url: 'https://www.sintef.no/ekspertise/sintef-energi/varmepumpeteknologi/'
-    },
-    {
-      label: 'Enova – væske-til-vann',
-      url: 'https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/vaeske-til-vann-varmepumpe'
-    },
-    {
-      label: 'Enova – varmepumpebereder',
-      url: 'https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/varmepumpebereder'
-    }
-  ],
-  grants: [
-    'klimaoslo-vaeske-til-vann-varmepumpe',
-    'klimaoslo-varmepumpebereder'
-  ]
-};
 
 function mapTiltakContentToVarmepumpe(content?: TiltakContent): VarmepumpeContent | null {
   if (!content) {
@@ -178,58 +84,56 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
-  const { data: tiltakContent } = useTiltakContent('varmepumpe');
+  const { data: tiltakContent, isLoading } = useTiltakContent('varmepumpe');
   const resolvedTiltakContent = useMemo(
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
   );
-  const mappedContent = useMemo(
+  const content = useMemo(
     () => mapTiltakContentToVarmepumpe(resolvedTiltakContent),
     [resolvedTiltakContent]
   );
-  const content = mappedContent ?? defaultVarmepumpeContent;
-
-  const tabsFromContent = content.tabs.length ? content.tabs : defaultVarmepumpeContent.tabs;
-  const tabBodies = useMemo(() => {
-    const entries: Record<string, string[]> = {};
-    tabsFromContent.forEach((tab) => {
-      entries[tab.title] = tab.body;
-      entries[tab.id] = tab.body;
-    });
-    return entries;
-  }, [tabsFromContent]);
-
-  const introParagraphs = content.introParagraphs.length
-    ? content.introParagraphs
-    : defaultVarmepumpeContent.introParagraphs;
 
   const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
-  const buildingParagraphs =
-    content.buildingTypeParagraphs[buildingTypeKey] ??
-    content.buildingTypeParagraphs.default ??
-    defaultVarmepumpeContent.buildingTypeParagraphs.default;
 
-  const generalBody = [...introParagraphs, ...buildingParagraphs];
-
-  const benefitSlots = [0, 1, 2, 3] as const;
-  const benefits = benefitSlots.map(
-    (slot) => content.benefits[slot] ?? defaultVarmepumpeContent.benefits[slot]
-  );
-  const readMoreLinks = (content.readMore.length ? content.readMore : defaultVarmepumpeContent.readMore).slice(
-    0,
-    3
-  );
-
-  const grantIds = content.grants.length ? content.grants : defaultVarmepumpeContent.grants;
   const {
     stotteordninger,
     isLoading: stotteordningerLoading,
     intendedSource
   } = useGrantAwareStotteordninger({
-    grantIds,
+    grantIds: content?.grants ?? [],
     legacyTiltakSlug: 'varmepumpe',
     buildingType
   });
+
+  const tabBodies = useMemo(() => {
+    const entries: Record<string, string[]> = {};
+    (content?.tabs ?? []).forEach((tab) => {
+      entries[tab.title] = tab.body;
+      entries[tab.id] = tab.body;
+    });
+    return entries;
+  }, [content?.tabs]);
+
+  // Early return after all hooks
+  if (isLoading || !content) {
+    return (
+      <div style={{ padding: '60px', fontFamily: 'Oslo Sans', color: '#2A2859' }}>
+        Laster innhold...
+      </div>
+    );
+  }
+
+  const introParagraphs = content.introParagraphs;
+  const buildingParagraphs =
+    content.buildingTypeParagraphs[buildingTypeKey] ??
+    content.buildingTypeParagraphs.default ??
+    [];
+
+  const generalBody = [...introParagraphs, ...buildingParagraphs];
+
+  const benefits = content.benefits.slice(0, 4);
+  const readMoreLinks = content.readMore.slice(0, 3);
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
@@ -598,7 +502,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[0]?.title ?? defaultVarmepumpeContent.benefits[0].title}
+          {benefits[0]?.title ?? 'Fordel'}
         </text>
         <rect
           x="565"
@@ -624,7 +528,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[1]?.title ?? defaultVarmepumpeContent.benefits[1].title}
+          {benefits[1]?.title ?? 'Fordel'}
         </text>
         <rect
           x="565"
@@ -650,7 +554,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[2]?.title ?? defaultVarmepumpeContent.benefits[2].title}
+          {benefits[2]?.title ?? 'Fordel'}
         </text>
         <rect
           x="565"
@@ -676,7 +580,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[3]?.title ?? defaultVarmepumpeContent.benefits[3].title}
+          {benefits[3]?.title ?? 'Fordel'}
         </text>
         
         {/* Dark green box below the list */}

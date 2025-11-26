@@ -23,7 +23,7 @@ type ReadMoreLink = {
   url: string;
 };
 
-type EtterisoleringYtterveggContent = {
+type EtterisoleringYtterveggContentView = {
   title: string;
   introParagraphs: string[];
   buildingTypeParagraphs: Record<string, string[]>;
@@ -31,52 +31,9 @@ type EtterisoleringYtterveggContent = {
   grants: string[];
 };
 
-const defaultEtterisoleringContent: EtterisoleringYtterveggContent = {
-  title: 'Etterisolering av yttervegg',
-  introParagraphs: [
-    'Etterisolering av fasaden er svært effektivt for å spare strømutgifter, skape bedre inneklima med mindre trekk, og få mer kontroll over temperaturen inne.',
-    'Hvis du uansett må skifte kledning, altså fasadematerialet, lønner det seg å etterisolere samtidig.'
-  ],
-  buildingTypeParagraphs: {
-    enebolig: [
-      'Har huset ditt en enkel fasade uten mye detaljer, er det som regel uproblematisk å etterisolere utvendig og kle med nytt materiale i ønsket stil.',
-      'Skal du bevare dagens uttrykk, kan innvendig isolasjon eller forbedret tetting være alternativer.'
-    ],
-    rekkehus: [
-      'I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader.',
-      'Det gir et helhetlig resultat og gjør det enklere å gjennomføre.'
-    ],
-    tomannsbolig: [
-      'I tomannsboliger og rekkehus kan det være lurt å samkjøre etterisoleringen med naboen – spesielt ved speilvendte eller sammenhengende fasader.',
-      'Det gir et helhetlig resultat og gjør det enklere å gjennomføre.'
-    ],
-    default: [
-      'Blokker med store, flate fasader har godt potensial for etterisolering. Ved å etterisolere hele veggflater eller bare utvalgte partier kan dere redusere energiforbruket og oppgradere byggets uttrykk.'
-    ]
-  },
-  readMore: [
-    {
-      label: 'Direktoratet for byggkvalitet om fasadeendringer',
-      url: 'https://www.dibk.no/smartere-oppussing/artikler/yttertak-og-vegger'
-    },
-    {
-      label: 'Enova – slik etterisolerer du fasaden',
-      url: 'https://www.enova.no/privat/alle-energitiltak/etterisolering/'
-    },
-    {
-      label: 'SINTEF – detaljer for etterisolering',
-      url: 'https://www.sintef.no/siste-nytt/etterisolering/'
-    }
-  ],
-  grants: [
-    'enova-etterisolering',
-    'klimaoslo-fasadefond'
-  ]
-};
-
 function mapTiltakContentToLegacy(
   content: TiltakContent | undefined
-): EtterisoleringYtterveggContent | null {
+): EtterisoleringYtterveggContentView | null {
   if (!content) {
     return null;
   }
@@ -116,39 +73,45 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
   );
-  const mappedContent = useMemo(
+  const content = useMemo(
     () => mapTiltakContentToLegacy(resolvedTiltakContent),
     [resolvedTiltakContent]
   );
-  const content = mappedContent ?? defaultEtterisoleringContent;
-
-  const introParagraphs = content.introParagraphs.length
-    ? content.introParagraphs
-    : defaultEtterisoleringContent.introParagraphs;
 
   const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
+
+  // Derive values from content (use empty defaults when loading)
+  const introParagraphs = content?.introParagraphs ?? [];
   const buildingParagraphs =
-    content.buildingTypeParagraphs[buildingTypeKey] ??
-    content.buildingTypeParagraphs.default ??
-    defaultEtterisoleringContent.buildingTypeParagraphs.default;
+    content?.buildingTypeParagraphs[buildingTypeKey] ??
+    content?.buildingTypeParagraphs.default ??
+    [];
+  const readMoreLinks = (content?.readMore ?? []).slice(0, 5);
+  const grantIds = content?.grants ?? [];
 
-  const readMoreLinks = (content.readMore.length ? content.readMore : defaultEtterisoleringContent.readMore).slice(0, 5);
-
-  const grantIds = content.grants.length ? content.grants : defaultEtterisoleringContent.grants;
-
+  // All hooks must be called before any early return
   const {
     stotteordninger,
-    isLoading: stotteordningerLoading,
-    intendedSource
+    intendedSource,
+    isLoading: grantsLoading
   } = useGrantAwareStotteordninger({
     grantIds,
     legacyTiltakSlug: 'etterisolering_fasade',
     buildingType
   });
 
+  // Show loading state after all hooks have been called
+  if (!content) {
+    return (
+      <div style={{ padding: '60px', fontFamily: 'Oslo Sans', color: '#2A2859' }}>
+        Laster innhold...
+      </div>
+    );
+  }
+
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
-    : intendedSource === 'grants' && stotteordningerLoading
+    : intendedSource === 'grants' && grantsLoading
       ? [
           {
             ordning: 'Henter støtteordninger …',

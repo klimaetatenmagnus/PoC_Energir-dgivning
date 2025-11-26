@@ -126,13 +126,10 @@
 }
 
 .admin-preview__body {
-  flex: 1;
-  min-height: 300px;
   background: var(--pkt-color-background-card, #fff);
   border-radius: 16px;
   padding: 1rem;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: visible;
 }
 
 .admin-preview__canvas {
@@ -140,7 +137,8 @@
   border-radius: 12px;
   padding: 1rem;
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
-  overflow: hidden;
+  overflow: visible;
+  min-height: 800px;
 }
 
 .admin-preview__canvas svg {
@@ -151,6 +149,7 @@
   position: relative;
   width: min(880px, 100%);
   margin: 0 auto;
+  overflow: visible;
 }
 
 .admin-preview__stack {

@@ -1,12 +1,28 @@
 import React from 'react';
-import type { TiltakGlossaryEntry } from '../../../../../content/tiltak/schema';
+import type { GlossaryTermDictionaryEntry } from '../../../../../content/dictionaries/schema';
+
+export type GlossaryEntry = {
+  term: string;
+  definition: string[];
+  links?: { label: string; url: string }[];
+};
 
 export type GlossaryRenderOptions = {
   paragraph: string;
-  glossary: TiltakGlossaryEntry[];
+  glossary: GlossaryEntry[];
   hoveredTerm: string | null;
   setHoveredTerm: (term: string | null) => void;
 };
+
+export function dictionaryTermsToGlossary(
+  terms: GlossaryTermDictionaryEntry[]
+): GlossaryEntry[] {
+  return terms.map((entry) => ({
+    term: entry.term,
+    definition: entry.definition,
+    links: entry.links
+  }));
+}
 
 export function renderParagraphWithGlossary({
   paragraph,
@@ -63,7 +79,7 @@ export function renderParagraphWithGlossary({
 type GlossaryTooltipParams = {
   key: string;
   term: string;
-  entry: TiltakGlossaryEntry;
+  entry: GlossaryEntry;
   hoveredTerm: string | null;
   setHoveredTerm: (term: string | null) => void;
 };

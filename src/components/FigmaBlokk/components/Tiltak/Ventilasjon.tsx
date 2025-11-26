@@ -5,7 +5,7 @@ import {
   TiltakComponentProps
 } from './shared';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
-import { useTiltakContent } from '../../../../hooks/contentHooks';
+import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type {
   TiltakAccordionItem,
@@ -13,7 +13,7 @@ import type {
 } from '../../../../../content/tiltak/schema';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
-import { renderParagraphWithGlossary } from './glossaryHelpers';
+import { renderParagraphWithGlossary, dictionaryTermsToGlossary } from './glossaryHelpers';
 
 type VentilasjonProps = TiltakComponentProps;
 type VentilasjonComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -33,117 +33,6 @@ type VentilasjonContentView = {
   grants: string[];
 };
 
-const defaultVentilasjonContent: VentilasjonContentView = {
-  title: 'Ventilasjon',
-  introParagraphs: [
-    'God ventilasjon er viktig for inneklima, helse og effekten av andre energitiltak. Når du tetter og isolerer blir boligen tettere – uten friskluft kan det gi fukt, dårlig luft og høyere varmebehov.'
-  ],
-  buildingTypeParagraphs: {
-    enebolig: [
-      'Mange eneboliger har ventiler som er tettet igjen eller ikke i bruk. Ved å åpne eller erstatte disse får du bedre luftkvalitet uten store inngrep. På bad og kjøkken kan avtrekksvifter være tilstrekkelig, mens balansert ventilasjon gir jevn temperatur og varmegjenvinning i hele huset.'
-    ],
-    rekkehus: [
-      'I rekkehus og tomannsboliger deler du ofte konstruksjoner med naboen. Start med å åpne, rense og vedlikeholde eksisterende ventiler. Dersom flere i rekken har samme utfordring kan dere planlegge felles tiltak, for eksempel balansert ventilasjon eller nye avtrekksvifter.'
-    ],
-    tomannsbolig: [
-      'I rekkehus og tomannsboliger deler du ofte konstruksjoner med naboen. Start med å åpne, rense og vedlikeholde eksisterende ventiler. Dersom flere i rekken har samme utfordring kan dere planlegge felles tiltak, for eksempel balansert ventilasjon eller nye avtrekksvifter.'
-    ],
-    blokk: [
-      'I leilighetsbygg er det vanlig med naturlig ventilasjon gjennom sjakter og lufteluker. Mange slike løsninger er tettet eller fjernet, og resultatet er dårlig luft – særlig på bad og kjøkken. Få renset og åpnet ventiler i egen bolig, og ta saken opp med styret dersom hele bygget trenger balansert ventilasjon eller nye avtrekk.'
-    ],
-    default: [
-      'I leilighetsbygg er det vanlig med naturlig ventilasjon gjennom sjakter og lufteluker. Mange slike løsninger er tettet eller fjernet, og resultatet er dårlig luft – særlig på bad og kjøkken. Få renset og åpnet ventiler i egen bolig, og ta saken opp med styret dersom hele bygget trenger balansert ventilasjon eller nye avtrekk.'
-    ]
-  },
-  benefits: [
-    { title: 'Redusert støy', description: 'Moderne anlegg gir bedre luft uten trekk og sus.' },
-    { title: 'Ivaretar boligen', description: 'Riktig ventilasjon beskytter mot fukt og mugg.' },
-    { title: 'Bedre bokvalitet', description: 'Jevn temperatur og filtrert luft gir mer komfort.' },
-    { title: 'Redusert energibehov', description: 'Varmegjenvinning tar vare på energien du allerede har betalt for.' }
-  ],
-  readMore: [
-    {
-      label: 'Enova – balansert ventilasjon',
-      url: 'https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/balansert-ventilasjon'
-    },
-    {
-      label: 'SINTEF – slik virker balansert ventilasjon',
-      url: 'https://www.sintef.no/fagomrader/energieffektivisering-bygg/slik-virker-balansert-ventilasjon-i-boliger/'
-    }
-  ],
-  accordion: [
-    {
-      id: 'soknadsplikt',
-      title: 'Søknadsplikt er ikke en stopper, men en støtte',
-      body: [
-        'Er tiltaket ditt søknadspliktig betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.',
-        'Søknadsplikten skal hjelpe deg som tiltakshaver med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak som tar faglig ansvar for prosjektering og utførelse.',
-        'Selv om du må søke, kan selve ventilasjonstiltaket fortsatt være enkelt å gjennomføre. Ta dialogen tidlig og bruk veiledningstilbudene dersom du er usikker.'
-      ],
-      links: [
-        {
-          id: 'dibk-soknadsplikt',
-          label: 'Direktoratet for byggkvalitet – hva er søknadsplikt?',
-          url: 'https://www.dibk.no/regelverk/sak/2/2/innledning'
-        },
-        {
-          id: 'dibk-ansvar',
-          label: 'Tiltakshaver og ansvarlige foretak',
-          url: 'https://www.dibk.no/regelverk/sak/3/12/innledning'
-        },
-        {
-          id: 'lovdata-ansvar',
-          label: 'Plan- og bygningsloven §20-3',
-          url: 'https://lovdata.no/dokument/NL/lov/2008-06-27-71/KAPITTEL_4-1#%C2%A720-3'
-        }
-      ],
-      glossary: [
-        {
-          term: 'søknadspliktig',
-          definition: [
-            'Søknadsplikt betyr at du må ha tillatelse fra Plan- og bygningsetaten før du gjør fysiske endringer på bygningen eller eiendommen.'
-          ],
-          links: [
-            {
-              label: 'Les mer hos DiBK',
-              url: 'https://www.dibk.no/regelverk/sak/2/2/innledning'
-            }
-          ]
-        },
-        {
-          term: 'tiltakshaver',
-          definition: [
-            'Tiltakshaver er personen eller virksomheten som utfører – eller bestiller – et tiltak som krever søknad og tillatelse.'
-          ],
-          links: [
-            {
-              label: 'Tiltakshavers ansvar',
-              url: 'https://www.dibk.no/regelverk/sak/3/12/12-1'
-            }
-          ]
-        },
-        {
-          term: 'ansvarlige foretak',
-          definition: [
-            'Et ansvarlig foretak er et firma med riktig kompetanse som tar ansvar for bestemte deler av et byggeprosjekt.'
-          ],
-          links: [
-            {
-              label: 'Når kreves ansvarsrett?',
-              url: 'https://www.dibk.no/regelverk/sak/3/12/innledning'
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  grants: [
-    'klimaoslo-balansert-ventilasjon',
-    'klimaoslo-energitiltak-borettslag',
-    'klimaoslo-energikartlegging-borettslag',
-    'enova-energiradgivning'
-  ]
-};
 
 function mapVentilasjonContent(content?: TiltakContent): VentilasjonContentView | null {
   if (!content) {
@@ -173,48 +62,55 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
   const [hoveredGlossaryTerm, setHoveredGlossaryTerm] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
-  const { data: tiltakContent } = useTiltakContent('ventilasjon');
+  const { data: tiltakContent, isLoading } = useTiltakContent('ventilasjon');
+  const { data: dictionary } = useContentDictionary();
   const resolvedTiltakContent = useMemo(
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
   );
-  const mappedContent = useMemo(
+  const content = useMemo(
     () => mapVentilasjonContent(resolvedTiltakContent),
     [resolvedTiltakContent]
   );
-  const content = mappedContent ?? defaultVentilasjonContent;
-
-  const introParagraphs = content.introParagraphs.length
-    ? content.introParagraphs
-    : defaultVentilasjonContent.introParagraphs;
 
   const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
-  const buildingParagraphs =
-    content.buildingTypeParagraphs[buildingTypeKey] ??
-    content.buildingTypeParagraphs.default ??
-    defaultVentilasjonContent.buildingTypeParagraphs.default;
-
-  const benefits = [...(content.benefits.length ? content.benefits : defaultVentilasjonContent.benefits)];
-  while (benefits.length < 4) {
-    benefits.push(defaultVentilasjonContent.benefits[benefits.length]);
-  }
-
-  const readMoreLinks = (content.readMore.length ? content.readMore : defaultVentilasjonContent.readMore).slice(0, 3);
-
-  const accordionItem = content.accordion[0] ?? defaultVentilasjonContent.accordion[0];
-  const accordionBody = accordionItem?.body ?? [];
-  const accordionLinks = accordionItem?.links ?? [];
-  const glossaryEntries = accordionItem?.glossary ?? [];
+  const glossaryEntries = useMemo(
+    () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? []),
+    [dictionary?.glossaryTerms]
+  );
 
   const {
     stotteordninger,
     intendedSource,
     isLoading: grantLoading
   } = useGrantAwareStotteordninger({
-    grantIds: content.grants,
+    grantIds: content?.grants ?? [],
     legacyTiltakSlug: 'ventilasjon',
     buildingType
   });
+
+  // Early return after all hooks
+  if (isLoading || !content) {
+    return (
+      <div style={{ padding: '60px', fontFamily: 'Oslo Sans', color: '#2A2859' }}>
+        Laster innhold...
+      </div>
+    );
+  }
+
+  const introParagraphs = content.introParagraphs;
+  const buildingParagraphs =
+    content.buildingTypeParagraphs[buildingTypeKey] ??
+    content.buildingTypeParagraphs.default ??
+    [];
+
+  const benefits = content.benefits.slice(0, 4);
+
+  const readMoreLinks = content.readMore.slice(0, 3);
+
+  const accordionItem = content.accordion[0];
+  const accordionBody = accordionItem?.body ?? [];
+  const accordionLinks = accordionItem?.links ?? [];
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
@@ -351,7 +247,7 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[0]?.title ?? defaultVentilasjonContent.benefits[0].title}
+          {benefits[0]?.title ?? 'Fordel'}
         </text>
         <rect
           x="565"
@@ -377,7 +273,7 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[1]?.title ?? defaultVentilasjonContent.benefits[1].title}
+          {benefits[1]?.title ?? 'Fordel'}
         </text>
         <rect
           x="565"
@@ -403,7 +299,7 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[2]?.title ?? defaultVentilasjonContent.benefits[2].title}
+          {benefits[2]?.title ?? 'Fordel'}
         </text>
         <rect
           x="565"
@@ -443,7 +339,7 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
           fill="#2A2859"
           dominantBaseline="middle"
         >
-          {benefits[3]?.title ?? defaultVentilasjonContent.benefits[3].title}
+          {benefits[3]?.title ?? 'Fordel'}
         </text>
         
         {/* Dark green box below the list */}

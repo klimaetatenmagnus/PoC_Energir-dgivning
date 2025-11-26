@@ -23,7 +23,7 @@ export function BenefitsPage({ onBack }: BenefitsPageProps) {
               iconName="arrow-return"
               onClick={onBack}
             >
-              <span>Tilbake til tiltak</span>
+              <span>Tilbake</span>
             </PktButton>
           </div>
           <div className="admin-content__primary-action">

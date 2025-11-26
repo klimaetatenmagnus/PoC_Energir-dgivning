@@ -4,8 +4,7 @@
   "title": "Oppgradering av vinduer",
   "summary": "Reduser varmetap og ta vare på fasaden med riktige vindus- og dørløsninger.",
   "introParagraphs": [
-    "Vinduer står for en stor del av varmetapet i en bolig. Med gode vedlikeholds- og oppgraderingsgrep kan du halvere tapet sammenlignet med eldre vinduer og dører.",
-    "Start alltid med de enkleste tiltakene – tetting, justering og varevinduer – før du vurderer full utskifting."
+    "Vinduer har mye å si for både komfort og energibruk i boligen. Så mye som 40 % av varmetapet kan komme herfra. Dette betyr stort potensial for å spare strøm og få et bedre inneklima. Godt isolerte vinduer og dører kan halvere varmetapet sammenlignet med vanlige vinduer og dører. Det finnes det flere måter å forbedre dem på, og det er lurt å starte med de enkleste løsningene først, før du vurderer større arbeider."
   ],
   "buildingTypeParagraphs": {
     "enebolig": [
@@ -21,14 +20,30 @@
       "I blokker og større boligbygg må styret planlegge arbeidet samlet slik at fasaden og lydkravene ivaretas."
     ],
     "default": [
-      "Velg løsninger som passer bygningens uttrykk og energibehov, og dokumenter hvilken effekt tiltaket har på varmetapet." 
+      "Velg løsninger som passer bygningens uttrykk og energibehov, og dokumenter hvilken effekt tiltaket har på varmetapet."
     ]
   },
   "benefits": [
-    { "id": "mindre-trekk", "title": "Mindre trekk", "description": "Tettere vinduer og dører gir varmere rom og mindre støy." },
-    { "id": "redusert-stoy", "title": "Redusert støy", "description": "Moderne vinduer skjermer mot trafikk og vær." },
-    { "id": "hoyere-boligverdi", "title": "Høyere boligverdi", "description": "Oppgraderte vinduer og fasader gir bedre energimerke og attraktivitet." },
-    { "id": "redusert-energibehov", "title": "Redusert energibehov", "description": "Lavere U-verdi betyr lavere varmetap og strømregning." }
+    {
+      "id": "mindre-trekk",
+      "title": "Mindre trekk",
+      "description": "Tettere vinduer og dører gir varmere rom og mindre støy."
+    },
+    {
+      "id": "redusert-stoy",
+      "title": "Redusert støy",
+      "description": "Moderne vinduer skjermer mot trafikk og vær."
+    },
+    {
+      "id": "hoyere-boligverdi",
+      "title": "Høyere boligverdi",
+      "description": "Oppgraderte vinduer og fasader gir bedre energimerke og attraktivitet."
+    },
+    {
+      "id": "redusert-energibehov",
+      "title": "Redusert energibehov",
+      "description": "Lavere U-verdi betyr lavere varmetap og strømregning."
+    }
   ],
   "readMore": [
     {
@@ -46,18 +61,25 @@
           "id": "generelt",
           "title": "Generelt",
           "body": [
-            "Vinduer har mye å si for både komfort og energibruk. Godt isolerte vinduer og dører kan halvere varmetapet sammenlignet med eldre løsninger, og er derfor et naturlig startpunkt når du oppgraderer boligen."
+            "Vinduer har mye å si for både komfort og energibruk i boligen. Så mye som 40 % av varmetapet kan komme herfra. Dette betyr stort potensial for å spare strøm og få et bedre inneklima. Godt isolerte vinduer og dører kan halvere varmetapet sammenlignet med vanlige vinduer og dører. Det finnes det flere måter å forbedre dem på, og det er lurt å starte med de enkleste løsningene først, før du vurderer større arbeider."
           ]
         },
         {
           "id": "vedlikehold",
           "title": "Vedlikehold",
           "body": [
-            "Vinduer i tre kan få nytt liv med maling, kitting, justering av hengsler og tetting. Plast- og aluminiumsvinduer trenger rengjøring og smurte beslag for å holde seg tette."
+            "I mange eldre flermannsboliger er vinduene laget av solid treverk og passer godt til bygningens stil. Ofte kan de repareres og brukes videre i mange år. Typiske oppgaver er å fjerne maling og kitt, skifte ut deler som har fått råte, justere hengsler og legge på tetningslister.",
+            "Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette.",
+            "Ved å holde vinduene i god stand, reduserer du varmetap og bevarer utseendet på huset."
           ],
           "buildingTypeBody": {
-            "blokk": [
-              "I eldre flermannsboliger kan originale trevinduer ofte repareres. Fjerning av løs maling, utskifting av råteskadde deler og nye tetningslister gir lavere varmetap og bevarer uttrykket."
+            "enebolig": [
+              "Vinduer i tre kan forbedres med enkle grep som maling, kitting, justering og tetting. Dette gir bedre komfort og forlenger levetiden.",
+              "Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette. Enkle vedlikeholdsoppgaver kan redusere varmetap og utsette behovet for utskifting."
+            ],
+            "tomannsbolig": [
+              "Vinduer i tre kan forbedres med enkle grep som maling, kitting, justering og tetting. Dette gir bedre komfort og forlenger levetiden.",
+              "Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette. Enkle vedlikeholdsoppgaver kan redusere varmetap og utsette behovet for utskifting."
             ]
           }
         },
@@ -65,14 +87,19 @@
           "id": "oppgradering",
           "title": "Oppgradering",
           "body": [
-            "Hvis rammene er solide kan du oppgradere med nye glass eller varevinduer. Det gir bedre isolasjon, mindre trekk og bevarer utseendet."
+            "Om vindusrammen er i god nok stand, og tåler økt vekt fra glasset, kan du bytte ut det gamle glasset med et som isolerer bedre.",
+            "En annen vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer vinduets utseende.",
+            "Det er lurt å samarbeide med naboen for å finne de beste tekniske og visuelle løsningene."
           ],
           "buildingTypeBody": {
-            "rekkehus": [
-              "Koordiner oppgraderinger med naboen. Like varevinduer eller glass gjør det enklere å bevare symmetrien og få gunstige priser."
+            "enebolig": [
+              "Om vindusrammen er i god nok stand, og tåler økt vekt fra glasset, kan du bytte ut det gamle glasset med et som isolerer bedre.",
+              "En annen vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer vinduets utseende."
             ],
             "tomannsbolig": [
-              "Koordiner oppgraderinger med naboen. Like varevinduer eller glass gjør det enklere å bevare symmetrien og få gunstige priser."
+              "Om vindusrammen er i god nok stand, og tåler økt vekt fra glasset, kan du bytte ut det gamle glasset med et som isolerer bedre.",
+              "En annen vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer vinduets utseende.",
+              "Hvis flere boliger i rekken har like vinduer, kan det være smart å samarbeide for å bevare helheten og oppnå bedre pris."
             ]
           }
         },
@@ -80,23 +107,19 @@
           "id": "utskiftning",
           "title": "Utskiftning",
           "body": [
-            "Når vinduene ikke lar seg reparere kan utskifting gi den største energibesparelsen. Velg produkter med lav U-verdi og sørg for god tetting rundt karmen for å få full effekt."
+            "Dersom vinduene er dårlige og ikke lar seg reparere, vil det ofte lønne seg å bytte dem ut. Nye vinduer med god isolasjon kan gi lavere strømforbruk og bedre inneklima – spesielt i kombinasjon med god tetting rundt vindusåpningen.",
+            "Velg vinduer med lav setHoveredWord('U-verdi')} onMouseLeave= > U-verdi onMouseLeave= style=}> Ordforklaring U-verdien sier hvor godt vinduet isolerer. Jo lavere tall, jo mindre varme slipper ut – og jo bedre er vinduet for energibruken. Les mer om U-verdi her.",
+            "Det er lurt å samarbeide med naboen for å finne de beste tekniske og visuelle løsningene."
           ],
           "buildingTypeBody": {
             "enebolig": [
-              "Eneboliger kan ofte bytte vinduer rom for rom. Planlegg rekkefølgen og kombiner utskiftingen med god tetting rundt vindusåpningen.",
-              "Velg produkter med lav U-verdi; trelags vinduer holder mer varme enn tolags." 
-            ],
-            "rekkehus": [
-              "I rekkehus lønner det seg å koordinere utskiftingen slik at alle boliger får likt uttrykk. Del gjerne på prosjektering og innkjøp.",
-              "Når flere går sammen kan dere stille krav til både energiytelse og estetikk." 
+              "Dersom vinduene er dårlige og ikke lar seg reparere, vil det ofte lønne seg å bytte dem ut. Nye vinduer med god isolasjon kan gi lavere strømforbruk og bedre inneklima – spesielt i kombinasjon med god tetting rundt vindusåpningen.",
+              "Velg vinduer med lav setHoveredWord('U-verdi')} onMouseLeave= > U-verdi onMouseLeave= style=}> Ordforklaring U-verdien sier hvor godt vinduet isolerer. Jo lavere tall, jo mindre varme slipper ut – og jo bedre er vinduet for energibruken. Les mer om U-verdi her."
             ],
             "tomannsbolig": [
-              "I rekkehus lønner det seg å koordinere utskiftingen slik at alle boliger får likt uttrykk. Del gjerne på prosjektering og innkjøp.",
-              "Når flere går sammen kan dere stille krav til både energiytelse og estetikk." 
-            ],
-            "blokk": [
-              "I blokker må utskiftingen planlegges og søkes om av styret. Velg løsninger som ivaretar både fasade, lydkrav og energi." 
+              "Dersom vinduene er dårlige og ikke lar seg reparere, vil det ofte lønne seg å bytte dem ut. Nye vinduer med god isolasjon kan gi lavere strømforbruk og bedre inneklima – spesielt i kombinasjon med god tetting rundt vindusåpningen.",
+              "Velg vinduer med lav setHoveredWord('U-verdi')} onMouseLeave= > U-verdi onMouseLeave= style=}> Ordforklaring U-verdien sier hvor godt vinduet isolerer. Jo lavere tall, jo mindre varme slipper ut – og jo bedre er vinduet for energibruken. Les mer om U-verdi her.",
+              "Hvis flere boliger i rekken har like vinduer, kan det være smart å samarbeide for å bevare helheten og oppnå bedre pris."
             ]
           }
         }
@@ -122,20 +145,6 @@
           "label": "Tiltakshaver og ansvarlige foretak",
           "url": "https://www.dibk.no/regelverk/sak/3/12/innledning"
         }
-      ],
-      "glossary": [
-        {
-          "term": "U-verdi",
-          "definition": [
-            "U-verdien forteller hvor godt vinduet isolerer. Jo lavere verdi, jo mindre varme slipper ut og jo bedre er vinduet for energibruken."
-          ],
-          "links": [
-            {
-              "label": "Les mer hos DiBK",
-              "url": "https://www.dibk.no/regelverk/byggteknisk-forskrift-tek17/14/14-2"
-            }
-          ]
-        }
       ]
     }
   ],
@@ -147,20 +156,28 @@
     "byantikvaren-istandsetting",
     "enova-energiradgivning"
   ],
-  "supportTags": ["vinduer", "fasade", "klimaskall"],
-  "audiences": ["standard", "gulliste"],
+  "supportTags": [
+    "vinduer",
+    "fasade",
+    "klimaskall"
+  ],
+  "audiences": [
+    "standard",
+    "gulliste"
+  ],
   "metadata": {
-    "status": "draft",
-    "updatedBy": "codex",
-    "updatedAt": "2025-11-14T09:55:00Z",
-    "changeSummary": "Første JSON-versjon av vindu-tiltaket."
+    "status": "published",
+    "updatedBy": "claude",
+    "updatedAt": "2025-11-25T21:00:00Z",
+    "changeSummary": "Publisert vinduer-innhold - endret status fra draft til published"
   },
   "variants": [
     {
       "audience": "gulliste",
       "introParagraphs": [
-        "I bevaringsverdige bygg må vinduer og dører repareres før de eventuelt skiftes ut. Små grep som tetting, justering og varevinduer gir stor effekt og bevarer detaljer.",
-        "Dersom utskifting er eneste løsning, må du dokumentere tilstanden og avtale materiale, profil og glass med Byantikvaren før bestilling."
+        "Vinduer har mye å si for både komfort og energibruk i boligen. I eldre hus kan så mye som 40 % av varmetapet komme herfra – noe som også gir stort potensial for å spare energi.",
+        "Vinduene er også en viktig del av bygningens uttrykk. På bygg som står på Gul liste må du ta hensyn til at arbeidene du utfører ikke endrer fasaden for mye. Heldigvis finnes det flere løsninger som både bedrer isolasjonen og bevarer utseendet. Det er lurt å starte med de enkleste tiltakene først før du vurderer større arbeider.",
+        "Byantikvaren tilbyr gratis veiledning og kan hjelpe deg å finne den beste løsningen for din bolig."
       ],
       "tabs": [
         {
@@ -171,29 +188,78 @@
               "id": "generelt",
               "title": "Generelt",
               "body": [
-                "Start alltid med en tilstandsvurdering. Mange gamle vinduer kan restaureres og gi like god energiytelse med varevinduer som et nytt vindu – samtidig som du bevarer uttrykket."
+                "Vinduer har mye å si for både komfort og energibruk i boligen. I eldre hus kan så mye som 40 % av varmetapet komme herfra – noe som også gir stort potensial for å spare energi.",
+                "Vinduene er også en viktig del av bygningens uttrykk. På bygg som står på Gul liste må du ta hensyn til at arbeidene du utfører ikke endrer fasaden for mye. Heldigvis finnes det flere løsninger som både bedrer isolasjonen og bevarer utseendet. Det er lurt å starte med de enkleste tiltakene først før du vurderer større arbeider.",
+                "Byantikvaren tilbyr gratis veiledning og kan hjelpe deg å finne den beste løsningen for din bolig."
               ]
             },
             {
               "id": "vedlikehold",
               "title": "Vedlikehold",
               "body": [
-                "Skrap, puss og mal treverket med tradisjonelle produkter. Skift ut råteskadde deler og etterse kittfalsen. Tetningslister kan legges på innsiden slik at det ikke synes."
-              ]
+                "I mange eldre blokker er vinduene laget av solid treverk og passer godt til bygningens stil. Ofte kan de repareres og brukes videre i mange år.",
+                "Typiske oppgaver er å fjerne maling og kitt, skifte ut deler som har fått råte, justere hengsler og legge på tetningslister.",
+                "Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette.",
+                "Ved å holde vinduene i god stand, reduserer du varmetap og bevarer utseendet på huset."
+              ],
+              "buildingTypeBody": {
+                "enebolig": [
+                  "I mange eldre eneboliger er vinduene laget av solid treverk og passer godt til bygningens stil. Ofte kan de repareres og brukes videre i mange år.",
+                  "Typiske oppgaver er å fjerne maling og kitt, skifte ut deler som har fått råte, justere hengsler og legge på tetningslister.",
+                  "Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette.",
+                  "Ved å holde vinduene i god stand, reduserer du varmetap og bevarer utseendet på huset."
+                ],
+                "tomannsbolig": [
+                  "I mange eldre flermannsboliger er vinduene laget av solid treverk og passer godt til bygningens stil. Ofte kan de repareres og brukes videre i mange år.",
+                  "Typiske oppgaver er å fjerne maling og kitt, skifte ut deler som har fått råte, justere hengsler og legge på tetningslister.",
+                  "Har du nyere vinduer i plast eller metall, er det viktig å holde dem rene, smøre beslag og sjekke at tetningslistene er myke og tette.",
+                  "Ved å holde vinduene i god stand, reduserer du varmetap og bevarer utseendet på huset."
+                ]
+              }
             },
             {
               "id": "oppgradering",
               "title": "Oppgradering",
               "body": [
-                "Varevinduer eller energiglass kan monteres på innsiden uten å endre fasaden. Husk å dokumentere hvordan løsningen kan reverseres ved behov."
-              ]
+                "En vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer fasadens utseende.",
+                "Om vindusrammen er i god nok stand kan du også bytte ut det gamle glasset med et bedre isolerende glass.",
+                "Det er lurt å samarbeide med naboen for å finne de beste tekniske og visuelle løsningene."
+              ],
+              "buildingTypeBody": {
+                "enebolig": [
+                  "En vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer fasadens utseende.",
+                  "Om vindusrammen er i god nok stand, og tåler økt vekt, kan du også bytte ut det gamle glasset med et bedre som isolerer bedre.",
+                  "Det er lurt å samarbeide med naboen for å finne de beste tekniske og visuelle løsningene."
+                ],
+                "tomannsbolig": [
+                  "En vanlig og effektiv måte å oppgradere vinduet på er å sette inn et varevindu. Det er et vindu som monteres på innsiden av det eksisterende. Det gir bedre isolasjon, reduserer trekk og bevarer fasadens utseende.",
+                  "Om vindusrammen er i god nok stand, og tåler økt vekt, kan du også bytte ut det gamle glasset med et bedre som isolerer bedre.",
+                  "Det er lurt å samarbeide med naboen for å finne de beste tekniske og visuelle løsningene."
+                ]
+              }
             },
             {
               "id": "utskiftning",
               "title": "Utskiftning",
               "body": [
-                "Når vinduene er for dårlige til å reddes, må nye produkter skreddersys til byggets uttrykk. Ta mål og detaljer sammen med fagperson og Byantikvaren før du bestiller."
-              ]
+                "Hvis vinduet er i svært dårlig stand, ikke lar seg reparere, eller har blitt skiftet tidligere til en dårligere kopi, kan det være aktuelt å bytte det ut. Et nytt vindu med god isolasjon kan gi både bedre komfort og lavere varmetap.",
+                "Skal du først bytte vinduet, er det viktig å velge en løsning som varer lenge og som passer til huset. På bygg som står på Gul liste bør det nye vinduet lages som en kopi av det gamle, med samme utforming, materialer og detaljer.",
+                "Byantikvarens momentliste for gode vinduskopier viser hva som skal til for at vinduskopien blir best mulig.",
+                "Det er lurt å samarbeide med med hele blokka for å finne de beste tekniske og visuelle løsningene."
+              ],
+              "buildingTypeBody": {
+                "enebolig": [
+                  "Hvis vinduet er i svært dårlig stand, ikke lar seg reparere, eller har blitt skiftet tidligere til en dårligere kopi, kan det være aktuelt å bytte det ut. Et nytt vindu med god isolasjon kan gi både bedre komfort og lavere varmetap.",
+                  "Skal du først bytte vinduet, er det viktig å velge en løsning som varer lenge og som passer til huset. På bygg som står på Gul liste bør det nye vinduet lages som en kopi av det gamle, med samme utforming, materialer og detaljer.",
+                  "Byantikvarens momentliste for gode vinduskopier viser hva som skal til for at vinduskopien blir best mulig."
+                ],
+                "tomannsbolig": [
+                  "Hvis vinduet er i svært dårlig stand, ikke lar seg reparere, eller har blitt skiftet tidligere til en dårligere kopi, kan det være aktuelt å bytte det ut. Et nytt vindu med god isolasjon kan gi både bedre komfort og lavere varmetap.",
+                  "Skal du først bytte vinduet, er det viktig å velge en løsning som varer lenge og som passer til huset. På bygg som står på Gul liste bør det nye vinduet lages som en kopi av det gamle, med samme utforming, materialer og detaljer.",
+                  "Byantikvarens momentliste for gode vinduskopier viser hva som skal til for at vinduskopien blir best mulig.",
+                  "Det er lurt å samarbeide med naboen for å finne de beste tekniske og visuelle løsningene."
+                ]
+              }
             }
           ]
         }
@@ -211,7 +277,11 @@
         "klimaoslo-oppgradering-bygningskropp",
         "enova-energiradgivning"
       ],
-      "supportTags": ["vinduer", "gulliste", "vern"]
+      "supportTags": [
+        "vinduer",
+        "gulliste",
+        "vern"
+      ]
     }
   ]
 }

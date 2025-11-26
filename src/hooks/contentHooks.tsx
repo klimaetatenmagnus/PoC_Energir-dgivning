@@ -8,6 +8,7 @@ import type {
   TiltakCatalogItem,
   TilskuddCatalogItem
 } from '../types/contentCatalog';
+import type { ContentDictionary } from '../../content/dictionaries/schema';
 
 type ContentFetcherResult<T> = {
   data: T;
@@ -34,11 +35,13 @@ export type ContentHookResult<T> = {
 export type ContentHookOptions = {
   includeDrafts?: boolean;
   baseUrl?: string;
+  fallbackBaseUrl?: string;
 };
 
 type ResolvedContentHookOptions = {
   includeDrafts: boolean;
   baseUrl: string;
+  fallbackBaseUrl: string | null;
 };
 
 type ContentFetchContextValue = ResolvedContentHookOptions;
@@ -47,21 +50,25 @@ const DEFAULT_CONTENT_BASE_URL = '/config/content';
 
 const ContentFetchContext = createContext<ContentFetchContextValue>({
   includeDrafts: false,
-  baseUrl: DEFAULT_CONTENT_BASE_URL
+  baseUrl: DEFAULT_CONTENT_BASE_URL,
+  fallbackBaseUrl: null
 });
 
 export function ContentFetchProvider({
   includeDrafts,
   baseUrl,
+  fallbackBaseUrl,
   children
 }: {
   includeDrafts?: boolean;
   baseUrl?: string;
+  fallbackBaseUrl?: string;
   children: ReactNode;
 }) {
   const value: ContentFetchContextValue = {
     includeDrafts: Boolean(includeDrafts),
-    baseUrl: normaliseContentBaseUrl(baseUrl)
+    baseUrl: normaliseContentBaseUrl(baseUrl),
+    fallbackBaseUrl: fallbackBaseUrl ? normaliseContentBaseUrl(fallbackBaseUrl) : null
   };
 
   return <ContentFetchContext.Provider value={value}>{children}</ContentFetchContext.Provider>;
@@ -77,14 +84,20 @@ function useContentFetchOptions(options: ContentHookOptions = {}): ResolvedConte
     options.includeDrafts !== undefined ? Boolean(options.includeDrafts) : context.includeDrafts;
   return {
     includeDrafts,
-    baseUrl: normaliseContentBaseUrl(options.baseUrl ?? context.baseUrl)
+    baseUrl: normaliseContentBaseUrl(options.baseUrl ?? context.baseUrl),
+    fallbackBaseUrl: options.fallbackBaseUrl
+      ? normaliseContentBaseUrl(options.fallbackBaseUrl)
+      : context.fallbackBaseUrl
   };
 }
 
 function resolveContentFetchOptions(options: ContentHookOptions = {}): ResolvedContentHookOptions {
   return {
     includeDrafts: Boolean(options.includeDrafts),
-    baseUrl: normaliseContentBaseUrl(options.baseUrl)
+    baseUrl: normaliseContentBaseUrl(options.baseUrl),
+    fallbackBaseUrl: options.fallbackBaseUrl
+      ? normaliseContentBaseUrl(options.fallbackBaseUrl)
+      : null
   };
 }
 
@@ -156,102 +169,111 @@ async function parseErrorBody(response: Response): Promise<string | null> {
   }
 }
 
+type ContentResourceOptions = {
+  includeDrafts: boolean;
+  baseUrl: string;
+  fallbackBaseUrl?: string | null;
+  primaryBaseUrl?: string;
+};
+
 async function fetchContentResource<T>(
   relativePath: string,
-  includeDrafts: boolean,
-  baseUrl: string
+  opts: ContentResourceOptions
 ): Promise<ContentFetcherResult<T>> {
-  const resourceKey = buildResourceCacheKey(relativePath, includeDrafts, baseUrl);
-  const cached = resourceCache.get(resourceKey) as ContentResourceCacheEntry<T> | undefined;
+  const {
+    includeDrafts,
+    baseUrl,
+    fallbackBaseUrl = null,
+    primaryBaseUrl = baseUrl
+  } = opts;
 
-  const headers: Record<string, string> = {};
-  if (cached?.rawEtag) {
-    headers['If-None-Match'] = cached.rawEtag;
-  }
+  const tryFetch = async (
+    currentBase: string,
+    allowFallback: boolean
+  ): Promise<ContentFetcherResult<T>> => {
+    const resourceKey = buildResourceCacheKey(relativePath, includeDrafts, currentBase);
+    const cached = resourceCache.get(resourceKey) as ContentResourceCacheEntry<T> | undefined;
 
-  const url = buildContentUrl(relativePath, includeDrafts, baseUrl);
-  const response = await fetch(url, {
-    headers,
-    cache: 'no-store'
-  });
-
-  if (response.status === 304) {
-    if (cached) {
-      return {
-        data: cached.data,
-        etag: cached.etag,
-        fetchedAt: new Date().toISOString(),
-        fromCache: true
-      };
+    const headers: Record<string, string> = {};
+    if (cached?.rawEtag) {
+      headers['If-None-Match'] = cached.rawEtag;
     }
 
-    // Retry once without conditional headers if cache entry is missing
-    resourceCache.delete(resourceKey);
-    return fetchContentResourceWithoutCache<T>(relativePath, includeDrafts, baseUrl);
-  }
+    const url = buildContentUrl(relativePath, includeDrafts, currentBase);
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        headers,
+        cache: 'no-store'
+      });
+    } catch (err) {
+      if (
+        allowFallback &&
+        fallbackBaseUrl &&
+        fallbackBaseUrl !== currentBase
+      ) {
+        return tryFetch(fallbackBaseUrl, false);
+      }
+      throw err instanceof Error
+        ? err
+        : new Error(`Failed to fetch ${url}: ${String(err)}`);
+    }
 
-  if (!response.ok) {
-    const errorBody = await parseErrorBody(response);
-    throw new Error(
-      `Failed to load ${relativePath}: ${response.status} ${response.statusText}${
-        errorBody ? ` – ${errorBody}` : ''
-      }`
-    );
-  }
+    if (response.status === 304) {
+      if (cached) {
+        return {
+          data: cached.data,
+          etag: cached.etag,
+          fetchedAt: new Date().toISOString(),
+          fromCache: true
+        };
+      }
+      resourceCache.delete(resourceKey);
+      return tryFetch(currentBase, allowFallback);
+    }
 
-  const rawEtag = response.headers.get('ETag');
-  const { raw, clean } = normaliseEtag(rawEtag);
-  const json = (await response.json()) as T;
-  const cacheEntry: ContentResourceCacheEntry<T> = {
-    data: json,
-    etag: clean,
-    rawEtag: raw
+    if (!response.ok) {
+      if (
+        (response.status === 404 || response.status === 403) &&
+        allowFallback &&
+        fallbackBaseUrl &&
+        fallbackBaseUrl !== currentBase
+      ) {
+        return tryFetch(fallbackBaseUrl, false);
+      }
+
+      const errorBody = await parseErrorBody(response);
+      throw new Error(
+        `Failed to load ${relativePath}: ${response.status} ${response.statusText}${
+          errorBody ? ` – ${errorBody}` : ''
+        }`
+      );
+    }
+
+    const rawEtag = response.headers.get('ETag');
+    const { raw, clean } = normaliseEtag(rawEtag);
+    const json = (await response.json()) as T;
+    const cacheEntry: ContentResourceCacheEntry<T> = {
+      data: json,
+      etag: clean,
+      rawEtag: raw
+    };
+
+    resourceCache.set(resourceKey, cacheEntry);
+    if (currentBase !== primaryBaseUrl) {
+      const primaryKey = buildResourceCacheKey(relativePath, includeDrafts, primaryBaseUrl);
+      resourceCache.set(primaryKey, cacheEntry);
+    }
+
+    return {
+      data: json,
+      etag: clean,
+      fetchedAt: new Date().toISOString(),
+      fromCache: false
+    };
   };
-  resourceCache.set(resourceKey, cacheEntry);
 
-  return {
-    data: json,
-    etag: clean,
-    fetchedAt: new Date().toISOString(),
-    fromCache: false
-  };
-}
-
-async function fetchContentResourceWithoutCache<T>(
-  relativePath: string,
-  includeDrafts: boolean,
-  baseUrl: string
-): Promise<ContentFetcherResult<T>> {
-  const url = buildContentUrl(relativePath, includeDrafts, baseUrl);
-  const response = await fetch(url, { cache: 'no-store' });
-
-  if (!response.ok) {
-    const errorBody = await parseErrorBody(response);
-    throw new Error(
-      `Failed to load ${relativePath}: ${response.status} ${response.statusText}${
-        errorBody ? ` – ${errorBody}` : ''
-      }`
-    );
-  }
-
-  const rawEtag = response.headers.get('ETag');
-  const { raw, clean } = normaliseEtag(rawEtag);
-  const json = (await response.json()) as T;
-  const cacheEntry: ContentResourceCacheEntry<T> = {
-    data: json,
-    etag: clean,
-    rawEtag: raw
-  };
-
-  const resourceKey = buildResourceCacheKey(relativePath, includeDrafts, baseUrl);
-  resourceCache.set(resourceKey, cacheEntry);
-
-  return {
-    data: json,
-    etag: clean,
-    fetchedAt: new Date().toISOString(),
-    fromCache: false
-  };
+  return tryFetch(baseUrl, true);
 }
 
 export async function fetchTiltakContent(
@@ -261,8 +283,11 @@ export async function fetchTiltakContent(
   const resolved = resolveContentFetchOptions(options);
   return fetchContentResource<TiltakContent>(
     `tiltak/${tiltakId}.json`,
-    resolved.includeDrafts,
-    resolved.baseUrl
+    {
+      includeDrafts: resolved.includeDrafts,
+      baseUrl: resolved.baseUrl,
+      fallbackBaseUrl: resolved.fallbackBaseUrl
+    }
   );
 }
 
@@ -273,15 +298,19 @@ export async function fetchTilskuddContent(
   const resolved = resolveContentFetchOptions(options);
   return fetchContentResource<TilskuddContent>(
     `tilskudd/${tilskuddId}.json`,
-    resolved.includeDrafts,
-    resolved.baseUrl
+    {
+      includeDrafts: resolved.includeDrafts,
+      baseUrl: resolved.baseUrl,
+      fallbackBaseUrl: resolved.fallbackBaseUrl
+    }
   );
 }
 
 async function fetchTilskuddBatch(
   tilskuddIds: string[],
   includeDrafts: boolean,
-  baseUrl: string
+  baseUrl: string,
+  fallbackBaseUrl: string | null
 ): Promise<ContentFetcherResult<TilskuddContent[]>> {
   if (!tilskuddIds.length) {
     return {
@@ -293,7 +322,9 @@ async function fetchTilskuddBatch(
   }
 
   const results = await Promise.all(
-    tilskuddIds.map((id) => fetchTilskuddContent(id, { includeDrafts, baseUrl }))
+    tilskuddIds.map((id) =>
+      fetchTilskuddContent(id, { includeDrafts, baseUrl, fallbackBaseUrl: fallbackBaseUrl ?? undefined })
+    )
   );
 
   return {
@@ -314,8 +345,11 @@ export async function fetchTiltakCatalog(
   const resolved = resolveContentFetchOptions(options);
   return fetchContentResource<ContentCatalogResponse<TiltakCatalogItem>>(
     'tiltak/index.json',
-    resolved.includeDrafts,
-    resolved.baseUrl
+    {
+      includeDrafts: resolved.includeDrafts,
+      baseUrl: resolved.baseUrl,
+      fallbackBaseUrl: resolved.fallbackBaseUrl
+    }
   );
 }
 
@@ -325,8 +359,11 @@ export async function fetchTilskuddCatalog(
   const resolved = resolveContentFetchOptions(options);
   return fetchContentResource<ContentCatalogResponse<TilskuddCatalogItem>>(
     'tilskudd/index.json',
-    resolved.includeDrafts,
-    resolved.baseUrl
+    {
+      includeDrafts: resolved.includeDrafts,
+      baseUrl: resolved.baseUrl,
+      fallbackBaseUrl: resolved.fallbackBaseUrl
+    }
   );
 }
 
@@ -441,7 +478,7 @@ export function useTilskuddBatch(
 
       const [, idsJson, draft, base] = args;
       const ids = JSON.parse(idsJson) as string[];
-      return fetchTilskuddBatch(ids, draft, base);
+      return fetchTilskuddBatch(ids, draft, base, resolved.fallbackBaseUrl);
     },
     swrConfig
   );
@@ -495,6 +532,57 @@ export function useTilskuddCatalog(
   >(
     key,
     ([, draft, base]) => fetchTilskuddCatalog({ includeDrafts: draft, baseUrl: base }),
+    swrConfig
+  );
+
+  return {
+    data: data?.data,
+    etag: data?.etag,
+    isLoading: !data && !error,
+    error,
+    mutate,
+    refresh: () => mutate()
+  };
+}
+
+const DEFAULT_DICTIONARY_BASE_URL = '/config/dictionaries';
+
+type DictionaryKey = ['dictionary', string];
+
+async function fetchContentDictionary(
+  baseUrl: string = DEFAULT_DICTIONARY_BASE_URL
+): Promise<ContentFetcherResult<ContentDictionary>> {
+  const url = `${baseUrl}/index.json`;
+  const response = await fetch(url, { cache: 'no-store' });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load dictionary: ${response.status} ${response.statusText}`);
+  }
+
+  const rawEtag = response.headers.get('ETag');
+  const { clean } = normaliseEtag(rawEtag);
+  const json = (await response.json()) as ContentDictionary;
+
+  return {
+    data: json,
+    etag: clean,
+    fetchedAt: new Date().toISOString(),
+    fromCache: false
+  };
+}
+
+export function useContentDictionary(
+  baseUrl: string = DEFAULT_DICTIONARY_BASE_URL
+): ContentHookResult<ContentDictionary> {
+  const key = ['dictionary', baseUrl] as DictionaryKey;
+
+  const { data, error, mutate } = useSWR<
+    ContentFetcherResult<ContentDictionary>,
+    Error,
+    DictionaryKey
+  >(
+    key,
+    ([, base]) => fetchContentDictionary(base),
     swrConfig
   );
 

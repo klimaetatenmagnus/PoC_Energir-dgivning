@@ -300,25 +300,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       return 0;
     }
     
-    // Get TEK key for the data structure
-    if (measure === 'Varmepumpe') {
-      // For heat pump, we'll estimate 30% savings
-      const consumptionNum = parseFloat(yearlyConsumption);
-      return (consumptionNum * 30) / 100;
-    } else if (measure === 'Tetting') {
-      // Simple 5% for tetting
-      const consumptionNum = parseFloat(yearlyConsumption);
-      return (consumptionNum * 5) / 100;
-    } else if (measure === 'Temperaturstyring') {
-      // Simple 10% for temperature control
-      const consumptionNum = parseFloat(yearlyConsumption);
-      return (consumptionNum * 10) / 100;
-    } else if (measure === 'Ventilasjon') {
-      // Simple 10% for ventilation
-      const consumptionNum = parseFloat(yearlyConsumption);
-      return (consumptionNum * 10) / 100;
-    }
-    
+    // Only return savings for measures that have actual calculations implemented
     const savings = calculateSavingsForCategory(buildingCategory, measure, tek);
     if (savings > 0) {
       return savings;

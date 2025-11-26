@@ -9,6 +9,10 @@ import {
   type TiltakBenefit,
   type TiltakContent,
 } from "../../content/tiltak/schema";
+import {
+  TilskuddContentSchema,
+  type TilskuddContent,
+} from "../../content/tilskudd/schema";
 import { SlugSchema } from "../../content/schema-helpers";
 import { resolveUserContext } from "./auth.js";
 import type { AdminApiConfig } from "./config.js";
@@ -31,6 +35,47 @@ const BenefitRefsPayloadSchema = z.object({
     .max(280)
     .optional(),
 });
+
+const UpdateTiltakPayloadSchema = z.object({
+  generation: z.string().min(1, { message: "Generation må oppgis" }),
+  tiltak: TiltakContentSchema,
+  changeSummary: z
+    .string()
+    .trim()
+    .min(5, { message: "Bruk en kort oppsummering av endringen" })
+    .max(280)
+    .optional(),
+});
+
+const UpdateTilskuddPayloadSchema = z.object({
+  generation: z.string().min(1, { message: "Generation må oppgis" }),
+  tilskudd: TilskuddContentSchema,
+  changeSummary: z
+    .string()
+    .trim()
+    .min(5, { message: "Bruk en kort oppsummering av endringen" })
+    .max(280)
+    .optional(),
+});
+
+/**
+ * Hjelpefunksjoner for draft-filer
+ */
+function buildTiltakPath(id: string): string {
+  return `tiltak/${id}.json`;
+}
+
+function buildTiltakDraftPath(id: string): string {
+  return `tiltak/${id}.draft.json`;
+}
+
+function buildTilskuddPath(id: string): string {
+  return `tilskudd/${id}.json`;
+}
+
+function buildTilskuddDraftPath(id: string): string {
+  return `tilskudd/${id}.draft.json`;
+}
 
 export function createContentRouter(
   _config: AdminApiConfig,
@@ -111,11 +156,392 @@ export function createContentRouter(
     }
   });
 
-  return router;
-}
+  // Full tiltak-oppdatering - skriver til draft-fil
+  router.put("/content/tiltak/:id", async (req, res, next) => {
+    try {
+      const tiltakId = SlugSchema.parse(req.params.id?.trim());
+      const body = UpdateTiltakPayloadSchema.parse(req.body ?? {});
+      const actor = resolveUserContext(req);
+      const draftPath = buildTiltakDraftPath(tiltakId);
+      const publishedPath = buildTiltakPath(tiltakId);
 
-function buildTiltakPath(id: string): string {
-  return `tiltak/${id}.json`;
+      // Verifiser at ID matcher
+      if (body.tiltak.id !== tiltakId) {
+        throw new HttpError(400, `Tiltak-ID i URL (${tiltakId}) matcher ikke ID i body (${body.tiltak.id})`);
+      }
+
+      // Hent dictionary for å bygge benefits fra refs
+      const { dictionary } = await loadDictionary(storage);
+
+      // Valider benefitRefs hvis de finnes
+      const refs = dedupeRefs(body.tiltak.benefitRefs ?? []);
+      if (refs.length > 0) {
+        validateBenefitRefs(refs, dictionary);
+      }
+
+      const now = new Date().toISOString();
+      const summary =
+        body.changeSummary?.trim() ||
+        body.tiltak.metadata.changeSummary ||
+        "Oppdatert via admin-UI";
+
+      // Draft-innhold holder status som "draft" for å markere at det er en arbeidsversjon
+      const updatedContent: TiltakContent = {
+        ...body.tiltak,
+        benefitRefs: refs,
+        benefits: buildBenefitsFromRefs(refs, dictionary),
+        metadata: {
+          ...body.tiltak.metadata,
+          status: "draft", // Alltid draft når vi lagrer til draft-fil
+          updatedAt: now,
+          updatedBy: actor.email,
+          changeSummary: summary.slice(0, 500),
+        },
+      };
+
+      // Sjekk om dette er første draft (ny fil) eller oppdatering av eksisterende draft
+      const hasDraft = await storage.exists(draftPath);
+
+      // Hvis det ikke finnes en draft fra før, sjekk at generation matcher publisert versjon
+      // Hvis det allerede finnes en draft, bruk draft's generation for optimistisk låsing
+      let writeOptions: { expectedGeneration?: string } = {};
+      if (hasDraft) {
+        // Vi har allerede en draft - bruk generation fra draft
+        writeOptions = { expectedGeneration: body.generation };
+      }
+      // Hvis ingen draft fra før, skriv ny fil uten generation-sjekk
+      // (første gang vi lager draft fra publisert versjon)
+
+      const result = await storage.writeJson(draftPath, updatedContent, writeOptions);
+
+      console.warn(
+        `[admin-api] ${actor.email} lagret draft for tiltak ${tiltakId} (generation=${result.generation ?? "ukjent"})`
+      );
+
+      // Sjekk om publisert versjon finnes for å kunne gi hasDraft-info
+      const hasPublished = await storage.exists(publishedPath);
+
+      res.json({
+        id: updatedContent.id,
+        path: draftPath,
+        tiltak: updatedContent,
+        metadata: updatedContent.metadata,
+        generation: result.generation,
+        hasDraft: true,
+        hasPublished,
+        source: "draft",
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Hent fullstendig tiltak-innhold (for editor)
+  // Returnerer draft hvis den finnes, ellers publisert versjon
+  router.get("/content/tiltak/:id", async (req, res, next) => {
+    try {
+      const tiltakId = SlugSchema.parse(req.params.id?.trim());
+      const draftPath = buildTiltakDraftPath(tiltakId);
+      const publishedPath = buildTiltakPath(tiltakId);
+
+      // Sjekk om draft eksisterer
+      const hasDraft = await storage.exists(draftPath);
+      const pathToRead = hasDraft ? draftPath : publishedPath;
+
+      const { data, generation, etag } =
+        await storage.readJson<TiltakContent>(pathToRead);
+      const parsed = TiltakContentSchema.parse(data);
+
+      res.json({
+        tiltak: parsed,
+        generation,
+        etag,
+        hasDraft,
+        source: hasDraft ? "draft" : "published",
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Publiser draft til hovedfil
+  router.post("/content/tiltak/:id/publish", async (req, res, next) => {
+    try {
+      const tiltakId = SlugSchema.parse(req.params.id?.trim());
+      const actor = resolveUserContext(req);
+      const draftPath = buildTiltakDraftPath(tiltakId);
+      const publishedPath = buildTiltakPath(tiltakId);
+
+      // Sjekk at draft eksisterer
+      const hasDraft = await storage.exists(draftPath);
+      if (!hasDraft) {
+        throw new HttpError(
+          404,
+          `Ingen draft-versjon funnet for tiltak ${tiltakId}. Ingenting å publisere.`
+        );
+      }
+
+      // Les draft-innholdet
+      const { data: draftData } = await storage.readJson<TiltakContent>(draftPath);
+      const parsed = TiltakContentSchema.parse(draftData);
+
+      // Oppdater metadata for publisering
+      const now = new Date().toISOString();
+      const publishedContent: TiltakContent = {
+        ...parsed,
+        metadata: {
+          ...parsed.metadata,
+          status: "published",
+          updatedAt: now,
+          updatedBy: actor.email,
+          changeSummary: `Publisert av ${actor.email}`,
+        },
+      };
+
+      // Skriv til hovedfilen (publisert versjon)
+      const result = await storage.writeJson(publishedPath, publishedContent);
+
+      // Slett draft-filen
+      await storage.deleteJson(draftPath);
+
+      console.warn(
+        `[admin-api] ${actor.email} publiserte tiltak ${tiltakId} (generation=${result.generation ?? "ukjent"})`
+      );
+
+      res.json({
+        id: publishedContent.id,
+        path: publishedPath,
+        tiltak: publishedContent,
+        metadata: publishedContent.metadata,
+        generation: result.generation,
+        message: `Tiltak "${publishedContent.title}" er nå publisert`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Forkast draft (slett draft-filen uten å publisere)
+  router.delete("/content/tiltak/:id/draft", async (req, res, next) => {
+    try {
+      const tiltakId = SlugSchema.parse(req.params.id?.trim());
+      const actor = resolveUserContext(req);
+      const draftPath = buildTiltakDraftPath(tiltakId);
+
+      // Sjekk at draft eksisterer
+      const hasDraft = await storage.exists(draftPath);
+      if (!hasDraft) {
+        throw new HttpError(
+          404,
+          `Ingen draft-versjon funnet for tiltak ${tiltakId}`
+        );
+      }
+
+      // Slett draft-filen
+      await storage.deleteJson(draftPath);
+
+      console.warn(
+        `[admin-api] ${actor.email} forkastet draft for tiltak ${tiltakId}`
+      );
+
+      res.json({
+        id: tiltakId,
+        message: `Draft for tiltak ${tiltakId} er forkastet`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // ===== TILSKUDD ENDPOINTS =====
+
+  // Hent fullstendig tilskudd-innhold (for editor)
+  // Returnerer draft hvis den finnes, ellers publisert versjon
+  router.get("/content/tilskudd/:id", async (req, res, next) => {
+    try {
+      const tilskuddId = SlugSchema.parse(req.params.id?.trim());
+      const draftPath = buildTilskuddDraftPath(tilskuddId);
+      const publishedPath = buildTilskuddPath(tilskuddId);
+
+      // Sjekk om draft eksisterer
+      const hasDraft = await storage.exists(draftPath);
+      const pathToRead = hasDraft ? draftPath : publishedPath;
+
+      const { data, generation, etag } =
+        await storage.readJson<TilskuddContent>(pathToRead);
+      const parsed = TilskuddContentSchema.parse(data);
+
+      res.json({
+        tilskudd: parsed,
+        generation,
+        etag,
+        hasDraft,
+        source: hasDraft ? "draft" : "published",
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Full tilskudd-oppdatering - skriver til draft-fil
+  router.put("/content/tilskudd/:id", async (req, res, next) => {
+    try {
+      const tilskuddId = SlugSchema.parse(req.params.id?.trim());
+      const body = UpdateTilskuddPayloadSchema.parse(req.body ?? {});
+      const actor = resolveUserContext(req);
+      const draftPath = buildTilskuddDraftPath(tilskuddId);
+      const publishedPath = buildTilskuddPath(tilskuddId);
+
+      // Verifiser at ID matcher
+      if (body.tilskudd.id !== tilskuddId) {
+        throw new HttpError(400, `Tilskudd-ID i URL (${tilskuddId}) matcher ikke ID i body (${body.tilskudd.id})`);
+      }
+
+      const now = new Date().toISOString();
+      const summary =
+        body.changeSummary?.trim() ||
+        body.tilskudd.metadata.changeSummary ||
+        "Oppdatert via admin-UI";
+
+      // Draft-innhold holder status som "draft" for å markere at det er en arbeidsversjon
+      const updatedContent: TilskuddContent = {
+        ...body.tilskudd,
+        metadata: {
+          ...body.tilskudd.metadata,
+          status: "draft", // Alltid draft når vi lagrer til draft-fil
+          updatedAt: now,
+          updatedBy: actor.email,
+          changeSummary: summary.slice(0, 500),
+        },
+      };
+
+      // Sjekk om dette er første draft (ny fil) eller oppdatering av eksisterende draft
+      const hasDraft = await storage.exists(draftPath);
+
+      // Hvis det ikke finnes en draft fra før, sjekk at generation matcher publisert versjon
+      // Hvis det allerede finnes en draft, bruk draft's generation for optimistisk låsing
+      let writeOptions: { expectedGeneration?: string } = {};
+      if (hasDraft) {
+        // Vi har allerede en draft - bruk generation fra draft
+        writeOptions = { expectedGeneration: body.generation };
+      }
+      // Hvis ingen draft fra før, skriv ny fil uten generation-sjekk
+      // (første gang vi lager draft fra publisert versjon)
+
+      const result = await storage.writeJson(draftPath, updatedContent, writeOptions);
+
+      console.warn(
+        `[admin-api] ${actor.email} lagret draft for tilskudd ${tilskuddId} (generation=${result.generation ?? "ukjent"})`
+      );
+
+      // Sjekk om publisert versjon finnes for å kunne gi hasDraft-info
+      const hasPublished = await storage.exists(publishedPath);
+
+      res.json({
+        id: updatedContent.id,
+        path: draftPath,
+        tilskudd: updatedContent,
+        metadata: updatedContent.metadata,
+        generation: result.generation,
+        hasDraft: true,
+        hasPublished,
+        source: "draft",
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Publiser tilskudd draft til hovedfil
+  router.post("/content/tilskudd/:id/publish", async (req, res, next) => {
+    try {
+      const tilskuddId = SlugSchema.parse(req.params.id?.trim());
+      const actor = resolveUserContext(req);
+      const draftPath = buildTilskuddDraftPath(tilskuddId);
+      const publishedPath = buildTilskuddPath(tilskuddId);
+
+      // Sjekk at draft eksisterer
+      const hasDraft = await storage.exists(draftPath);
+      if (!hasDraft) {
+        throw new HttpError(
+          404,
+          `Ingen draft-versjon funnet for tilskudd ${tilskuddId}. Ingenting å publisere.`
+        );
+      }
+
+      // Les draft-innholdet
+      const { data: draftData } = await storage.readJson<TilskuddContent>(draftPath);
+      const parsed = TilskuddContentSchema.parse(draftData);
+
+      // Oppdater metadata for publisering
+      const now = new Date().toISOString();
+      const publishedContent: TilskuddContent = {
+        ...parsed,
+        metadata: {
+          ...parsed.metadata,
+          status: "published",
+          updatedAt: now,
+          updatedBy: actor.email,
+          changeSummary: `Publisert av ${actor.email}`,
+        },
+      };
+
+      // Skriv til hovedfilen (publisert versjon)
+      const result = await storage.writeJson(publishedPath, publishedContent);
+
+      // Slett draft-filen
+      await storage.deleteJson(draftPath);
+
+      console.warn(
+        `[admin-api] ${actor.email} publiserte tilskudd ${tilskuddId} (generation=${result.generation ?? "ukjent"})`
+      );
+
+      res.json({
+        id: publishedContent.id,
+        path: publishedPath,
+        tilskudd: publishedContent,
+        metadata: publishedContent.metadata,
+        generation: result.generation,
+        message: `Tilskudd "${publishedContent.title}" er nå publisert`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Forkast tilskudd draft (slett draft-filen uten å publisere)
+  router.delete("/content/tilskudd/:id/draft", async (req, res, next) => {
+    try {
+      const tilskuddId = SlugSchema.parse(req.params.id?.trim());
+      const actor = resolveUserContext(req);
+      const draftPath = buildTilskuddDraftPath(tilskuddId);
+
+      // Sjekk at draft eksisterer
+      const hasDraft = await storage.exists(draftPath);
+      if (!hasDraft) {
+        throw new HttpError(
+          404,
+          `Ingen draft-versjon funnet for tilskudd ${tilskuddId}`
+        );
+      }
+
+      // Slett draft-filen
+      await storage.deleteJson(draftPath);
+
+      console.warn(
+        `[admin-api] ${actor.email} forkastet draft for tilskudd ${tilskuddId}`
+      );
+
+      res.json({
+        id: tilskuddId,
+        message: `Draft for tilskudd ${tilskuddId} er forkastet`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  return router;
 }
 
 async function loadDictionary(storage: ContentStorage): Promise<{

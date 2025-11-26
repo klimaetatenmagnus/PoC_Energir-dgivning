@@ -10,6 +10,7 @@ import type { AdminApiConfig } from "./config.js";
 import { ContentStorage } from "./contentStorage.js";
 import { createContentRouter } from "./contentRouter.js";
 import { createDictionaryRouter } from "./dictionaryRouter.js";
+import { createDraftsRouter } from "./draftsRouter.js";
 import { createPublishRouter } from "./publishRouter.js";
 import { HttpError } from "./httpError.js";
 
@@ -19,6 +20,7 @@ export function createAdminApiRouter(config: AdminApiConfig): Router {
 
   router.use(createContentRouter(config, contentStorage));
   router.use(createDictionaryRouter(contentStorage));
+  router.use(createDraftsRouter(contentStorage));
   router.use(createPublishRouter(config));
 
   return router;

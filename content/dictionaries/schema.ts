@@ -33,16 +33,34 @@ export const SupportTagDictionaryEntrySchema = z
   })
   .strict();
 
+const GlossaryLinkSchema = z
+  .object({
+    label: NonEmptyStringSchema,
+    url: z.string().url()
+  })
+  .strict();
+
+export const GlossaryTermDictionaryEntrySchema = z
+  .object({
+    id: SlugSchema,
+    term: NonEmptyStringSchema,
+    definition: z.array(NonEmptyStringSchema).min(1),
+    links: z.array(GlossaryLinkSchema).default([])
+  })
+  .strict();
+
 export const ContentDictionarySchema = z
   .object({
     schemaVersion: z.literal(dictionarySchemaVersion),
     buildingTypes: z.array(BuildingTypeDictionaryEntrySchema),
     benefits: z.array(BenefitDictionaryEntrySchema),
-    supportTags: z.array(SupportTagDictionaryEntrySchema)
+    supportTags: z.array(SupportTagDictionaryEntrySchema),
+    glossaryTerms: z.array(GlossaryTermDictionaryEntrySchema).default([])
   })
   .strict();
 
 export type BuildingTypeDictionaryEntry = z.infer<typeof BuildingTypeDictionaryEntrySchema>;
 export type BenefitDictionaryEntry = z.infer<typeof BenefitDictionaryEntrySchema>;
 export type SupportTagDictionaryEntry = z.infer<typeof SupportTagDictionaryEntrySchema>;
+export type GlossaryTermDictionaryEntry = z.infer<typeof GlossaryTermDictionaryEntrySchema>;
 export type ContentDictionary = z.infer<typeof ContentDictionarySchema>;
