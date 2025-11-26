@@ -30,7 +30,7 @@ export function PublishWizard({ open, onClose }: PublishWizardProps) {
   const [stagingSynced, setStagingSynced] = useState(false);
   const [stagingSyncing, setStagingSyncing] = useState(false);
   const [stagingError, setStagingError] = useState<string | null>(null);
-  const [qaConfirmed, setQaConfirmed] = useState(false);
+  const [_qaConfirmed, setQaConfirmed] = useState(false);
   const [changeSummary, setChangeSummary] = useState("");
   const [publishStatus, setPublishStatus] = useState<
     "idle" | "publishing" | "success" | "error"

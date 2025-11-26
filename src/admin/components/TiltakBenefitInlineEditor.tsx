@@ -11,10 +11,7 @@ import {
   fetchTiltakMetadata,
   updateTiltakBenefitRefs,
 } from "../api/adminApiClient";
-import type {
-  AdminBenefitDictionaryEntry,
-  AdminTiltakMetadata,
-} from "../types";
+import type { AdminTiltakMetadata } from "../types";
 
 const MAX_BENEFITS = 4;
 
