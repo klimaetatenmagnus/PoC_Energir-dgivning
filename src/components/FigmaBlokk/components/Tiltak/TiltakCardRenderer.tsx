@@ -182,8 +182,8 @@ export const TiltakCardRenderer: React.FC<TiltakCardRendererProps> = ({
   const benefits = resolveBenefits(resolvedContent);
   const readMore = resolvedContent?.readMore ?? [];
   const callsToAction = resolvedContent?.callsToAction ?? [];
-  const baseAccordion = resolvedContent?.accordion ?? [];
   const { permitItem, generalAccordion } = useMemo(() => {
+    const baseAccordion = resolvedContent?.accordion ?? [];
     const permit = baseAccordion.find((item) => item.id === "soknadsplikt");
     if (!permit) {
       return { permitItem: null, generalAccordion: baseAccordion };
@@ -192,7 +192,7 @@ export const TiltakCardRenderer: React.FC<TiltakCardRendererProps> = ({
       permitItem: permit,
       generalAccordion: baseAccordion.filter((item) => item !== permit),
     };
-  }, [baseAccordion]);
+  }, [resolvedContent?.accordion]);
   const permitHighlightEntry =
     glossaryEntries.length > 0 ? glossaryEntries[0] : null;
   const stats = resolvedContent?.stats ?? [];
