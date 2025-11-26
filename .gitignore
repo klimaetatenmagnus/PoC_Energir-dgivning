@@ -34,6 +34,9 @@ node_modules/
 .next/
 coverage/
 
+# Lokale draft-filer (admin-UI lagrer til GCS i staging/prod)
+*.draft.json
+
 # Editor/OS
 .DS_Store
 .idea/
