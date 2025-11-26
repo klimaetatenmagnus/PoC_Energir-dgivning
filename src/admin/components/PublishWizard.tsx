@@ -45,11 +45,12 @@ export function PublishWizard({ open, onClose, onPublishSuccess }: PublishWizard
     if (!modal) return;
 
     const restoreScroll = () => {
-      document.documentElement.style.overflow = "";
-      document.body.style.overflow = "";
+      document.body.classList.add("admin-scroll-enabled");
     };
 
     if (open) {
+      // Fjern klassen når modal åpnes (lar PktModal håndtere overflow)
+      document.body.classList.remove("admin-scroll-enabled");
       modal.showModal();
     } else {
       modal.close();
@@ -85,9 +86,8 @@ export function PublishWizard({ open, onClose, onPublishSuccess }: PublishWizard
   }, [open]);
 
   const handleClose = () => {
-    // Fjern overflow-begrensninger fra både html og body
-    document.documentElement.style.overflow = "";
-    document.body.style.overflow = "";
+    // Legg til klasse som overstyre PktModal sin overflow:hidden
+    document.body.classList.add("admin-scroll-enabled");
     onClose();
   };
 

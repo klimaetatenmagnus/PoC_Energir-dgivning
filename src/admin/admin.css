@@ -2,6 +2,11 @@
   --admin-bg: var(--pkt-color-background-card, #fff);
 }
 
+/* Overstyr PktModal som setter overflow:hidden på body når modal er åpen */
+body.admin-scroll-enabled {
+  overflow: auto !important;
+}
+
 .admin-shell {
   min-height: 100vh;
   background: var(--admin-bg);
