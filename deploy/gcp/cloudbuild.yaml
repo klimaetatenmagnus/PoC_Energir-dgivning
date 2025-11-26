@@ -98,16 +98,18 @@ steps:
         docker push "$image_uri"
 
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
-    id: Sync frontend & content buckets
+    id: Sync frontend bucket
     entrypoint: bash
     args:
       - "-c"
       - |
         set -eo pipefail
         frontend_bucket="${_FRONTEND_BUCKET}"
-        content_bucket="${_CONTENT_BUCKET}"
         gsutil -m rsync -d -r dist "${frontend_bucket}"
-        gsutil -m rsync -d -r content "${content_bucket}"
+        # NB: Content synkes IKKE fra git til GCS.
+        # GCS-bøtten (energinokkelen-content) er "master" for innhold.
+        # Endringer gjøres via admin-UI og publiseres via wizarden.
+        # Se Dokumentasjon/Utvikling/ui/publiserings-wizard.md
 
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     id: Invalidate CDN cache
