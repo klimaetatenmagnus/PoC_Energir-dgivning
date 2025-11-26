@@ -271,7 +271,7 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
   | `ADMIN_CONTENT_STAGING_PREFIX` | `gs://energinokkelen-content/content` | Kildebucket |
   | `ADMIN_CONTENT_PROD_PREFIX` | `gs://energinokkelen-content-prod/content` | Målbucket |
   | `ADMIN_CONTENT_LOG_PREFIX` | `gs://energinokkelen-content-prod/content/logs` | Audit-logger |
-  | `ADMIN_CONTENT_PUBLISHER_SERVICE_ACCOUNT` | `content-admin@…` | SA for build-stepene |
+  | `ADMIN_CONTENT_PUBLISHER_SERVICE_ACCOUNT` | `cloud-build@…` | SA for build-stepene |
 - **Monitoring & verifikasjon:**
   - Cloud Build-tag `content-publish` gjør det enkelt å filtrere i konsollen (`Cloud Build → History → filter tag:content-publish`).
   - Hvert build-svar inneholder `logUrl` og `buildId` – eksponeres tilbake til frontend slik at redaktørene kan følge jobben.

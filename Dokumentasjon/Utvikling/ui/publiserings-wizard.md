@@ -87,7 +87,7 @@ Cloud Build-jobben kjører:
 
 | Servicekonto | Rolle | Beskrivelse |
 |--------------|-------|-------------|
-| `content-admin@energiverktoy-poc-1234.iam.gserviceaccount.com` | `storage.objectAdmin` | Kjører Cloud Build-stegene for staging→prod sync |
+| `cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com` | `storage.objectAdmin` | Kjører Cloud Build-stegene for staging→prod sync |
 | `run-energinokkelen-admin@energiverktoy-poc-1234.iam.gserviceaccount.com` | `cloudbuild.builds.editor`, `storage.objectAdmin` | Kjører Admin-API på Cloud Run |
 
 **IAP-beskyttelse:** Admin-UI (`/admin/*`) er beskyttet av Identity-Aware Proxy. Kun medlemmer av Workspace-gruppen `energinokkel-redaktor@klimaoslo.no` har tilgang.
@@ -531,8 +531,8 @@ interface PublishWizardState {
 
 > Oppdateres fortløpende. Viser de 3-5 neste konkrete utviklingsoppgavene.
 
-1. **Fiks: Tiltakskort laster ikke i staging** – `/config/content/tiltak/*.json` returnerer 404 i staging-miljøet. Må undersøke om innholdet mangler i GCS-bøtten eller om URL-mapping/routing er feil.
-2. **Testing og QA** – Test hele wizard-flyten ende-til-ende i staging-miljøet.
+1. **Feilsøking: Cloud Build 500-feil ved publisering til prod** – `POST /admin/api/publish` returnerer 500. Cloud Build-jobben feiler pga. substitution/miljøvariabel-konfigurasjon. Undersøker escaping av `$`-tegn i bash-skript (`$$` vs `$`).
+2. **Testing og QA** – Test hele wizard-flyten ende-til-ende i staging-miljøet når Cloud Build-feilen er løst.
 3. **Eventuelt: Forbedre feilhåndtering** – Vurdere retry-logikk ved nettverksfeil.
 4. **Eventuelt: Legge til publiseringslogg-visning** – Vise tidligere publiseringer i admin-UI.
 
@@ -562,6 +562,10 @@ interface PublishWizardState {
 
 | Dato | Aktivitet | Referanse |
 |------|-----------|-----------|
+| 2025-11-26 | **Feilsøking pågår:** Cloud Build feiler ved prod-publisering. Fikset: (1) `ADMIN_CONTENT_STAGING_PREFIX` miljøvariabel fjernet `/content`-prefiks, (2) `sync-staging` setter nå `status: "published"`, (3) `logging: "CLOUD_LOGGING_ONLY"` lagt til, (4) `$$`-escaping for miljøvariabler i bash-skript. Fortsatt 500-feil – undersøkes. | §8, `cloudBuild.ts` |
+| 2025-11-26 | Fikset modal-lukking bug i `PublishWizard` – la til event listener for native `close`-event fra `<dialog>` | `PublishWizard.tsx` |
+| 2025-11-26 | Fikset staging-URL fra `staging.energinokkelen.no` til `staging.energinøkkelen.no` (SSL-sertifikat matcher kun IDN-varianten) | Flere filer |
+| 2025-11-26 | Lagt til 5-tegn minimumskrav for publiseringsbeskrivelse i UI (matcher backend-validering) | `PublishWizard.tsx` |
 | 2025-11-26 | Implementert `PublishWizard` med `PktStepper`, `PktStep`, `PktModal`. Inkluderer `DraftsList`, `QAChecklist`, staging-sync UI og prod-publisering. Integrert i `AdminApp.tsx` | #6-#12 |
 | 2025-11-26 | Implementert `PublishActionBar` med `PktCard`, `PktButton`, `PktTag`, integrert i `AdminApp.tsx` | #5 |
 | 2025-11-26 | Implementert `DraftsProvider` context og API-funksjoner i `adminApiClient.ts` | #4 |

@@ -86,7 +86,7 @@ export function loadAdminApiConfig(): AdminApiConfig {
   const serviceAccountEmail =
     requireString(
       process.env.ADMIN_CONTENT_PUBLISHER_SERVICE_ACCOUNT ??
-        `content-admin@${projectId}.iam.gserviceaccount.com`,
+        `cloud-build@${projectId}.iam.gserviceaccount.com`,
       "ADMIN_CONTENT_PUBLISHER_SERVICE_ACCOUNT"
     );
 
