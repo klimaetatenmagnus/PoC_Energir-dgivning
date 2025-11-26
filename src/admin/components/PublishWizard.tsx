@@ -48,16 +48,21 @@ export function PublishWizard({ open, onClose, onPublishSuccess }: PublishWizard
       modal.showModal();
     } else {
       modal.close();
+      // Fjern overflow:hidden fra body som modalen kan ha satt
+      document.body.style.overflow = "";
     }
 
     // Lytt på native close-event (X-knapp, Escape, etc.)
     const handleNativeClose = () => {
+      document.body.style.overflow = "";
       onClose();
     };
     modal.addEventListener("close", handleNativeClose);
 
     return () => {
       modal.removeEventListener("close", handleNativeClose);
+      // Cleanup: sørg for at scroll er aktivert når komponenten unmountes
+      document.body.style.overflow = "";
     };
   }, [open, onClose]);
 
