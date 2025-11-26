@@ -82,6 +82,7 @@ export function PublishWizard({ open, onClose, onPublishSuccess }: PublishWizard
   }, [open]);
 
   const handleClose = () => {
+    document.body.style.overflow = "";
     onClose();
   };
 
