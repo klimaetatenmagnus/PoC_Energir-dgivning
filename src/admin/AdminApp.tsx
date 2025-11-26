@@ -16,6 +16,7 @@ import {
   AdminMode,
 } from "./types";
 import { useAdminCatalog } from "./hooks/useAdminCatalog";
+import { useDrafts } from "./context/DraftsContext";
 import { PktHeading } from "@oslokommune/punkt-react";
 
 const DEFAULT_CONTENT_BASE = "/config/content";
@@ -58,6 +59,7 @@ function AdminShell() {
     metadata: catalogMetadata,
     reload: reloadCatalog,
   } = useAdminCatalog(mode);
+  const { refresh: refreshDrafts } = useDrafts();
 
   useEffect(() => {
     if (!mode) {
@@ -100,11 +102,12 @@ function AdminShell() {
   }, []);
 
   const handleEditorSave = useCallback(() => {
-    // Oppdater katalogen etter lagring
+    // Oppdater katalogen og draft-listen etter lagring
     reloadCatalog();
+    refreshDrafts();
     setEditItem(null);
     setActiveView("dashboard");
-  }, [reloadCatalog]);
+  }, [reloadCatalog, refreshDrafts]);
 
   return (
     <div className="admin-shell">
