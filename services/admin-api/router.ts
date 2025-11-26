@@ -21,7 +21,7 @@ export function createAdminApiRouter(config: AdminApiConfig): Router {
   router.use(createContentRouter(config, contentStorage));
   router.use(createDictionaryRouter(contentStorage));
   router.use(createDraftsRouter(contentStorage));
-  router.use(createPublishRouter(config));
+  router.use(createPublishRouter(config, contentStorage));
 
   return router;
 }

@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { AdminApiConfig } from "./config.js";
 import { triggerContentPromotionBuild } from "./cloudBuild.js";
 import { resolveUserContext } from "./auth.js";
+import { ContentStorage } from "./contentStorage.js";
 
 const PublishRequestSchema = z.object({
   targetEnvironment: z.literal("prod").default("prod"),
@@ -21,7 +22,7 @@ const PublishRequestSchema = z.object({
     .min(1),
 });
 
-export function createPublishRouter(config: AdminApiConfig) {
+export function createPublishRouter(config: AdminApiConfig, storage: ContentStorage) {
   const router = Router();
 
   router.post(
@@ -31,12 +32,13 @@ export function createPublishRouter(config: AdminApiConfig) {
         const parsed = PublishRequestSchema.parse(req.body ?? {});
         const initiator = resolveUserContext(req);
         const requestId = req.header("x-request-id") ?? randomUUID();
+        const isDryRun = parsed.dryRun ?? false;
 
         const result = await triggerContentPromotionBuild(config, {
           requestId,
           changeSummary: parsed.changeSummary.trim(),
           targetEnvironment: parsed.targetEnvironment,
-          dryRun: parsed.dryRun ?? false,
+          dryRun: isDryRun,
           items: parsed.items.map((item) => ({
             id: item.id.trim(),
             collection: item.collection,
@@ -45,6 +47,24 @@ export function createPublishRouter(config: AdminApiConfig) {
           initiatedBy: initiator,
           gitSha: config.gitSha,
         });
+
+        // Slett draft-filer etter vellykket Cloud Build trigger (kun hvis ikke dry-run)
+        if (!isDryRun) {
+          const deletedDrafts: string[] = [];
+          for (const item of parsed.items) {
+            const draftPath = `${item.collection}/${item.id.trim()}.draft.json`;
+            try {
+              await storage.deleteJson(draftPath);
+              deletedDrafts.push(draftPath);
+            } catch (err) {
+              // Logg feil, men ikke avbryt - Cloud Build er allerede trigget
+              console.warn(`[publish] Kunne ikke slette draft ${draftPath}:`, err);
+            }
+          }
+          if (deletedDrafts.length > 0) {
+            console.warn(`[publish] Slettet ${deletedDrafts.length} draft-filer: ${deletedDrafts.join(", ")}`);
+          }
+        }
 
         res.status(202).json({
           requestId,
