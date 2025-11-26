@@ -115,7 +115,8 @@ export function createDraftsRouter(storage: ContentStorage): Router {
             ...parsed,
             metadata: {
               ...parsed.metadata,
-              // Beholder status som "draft" for å indikere at det ikke er publisert til prod
+              // Setter status til "published" slik at staging-frontend kan lese filen
+              status: "published",
               updatedAt: now,
               updatedBy: actor.email,
             },
@@ -145,6 +146,8 @@ export function createDraftsRouter(storage: ContentStorage): Router {
             ...parsed,
             metadata: {
               ...parsed.metadata,
+              // Setter status til "published" slik at staging-frontend kan lese filen
+              status: "published",
               updatedAt: now,
               updatedBy: actor.email,
             },
