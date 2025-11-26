@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import "./admin.css";
 import { ModeCards } from "./components/ModeCards";
-import { EnvironmentToggle } from "./components/EnvironmentToggle";
 import { ContentList } from "./components/ContentList";
 import { BenefitsPage } from "./components/BenefitsPage";
 import { GlossaryPage } from "./components/GlossaryPage";
@@ -14,7 +13,6 @@ import { DraftsProvider } from "./context/DraftsContext";
 import { ContentFetchProvider } from "../hooks/contentHooks";
 import {
   AdminContentItem,
-  AdminEnvironment,
   AdminMode,
 } from "./types";
 import { useAdminCatalog } from "./hooks/useAdminCatalog";
@@ -25,57 +23,24 @@ const DEFAULT_STAGING_CONTENT_BASE =
   import.meta.env.VITE_ADMIN_STAGING_CONTENT_BASE ?? DEFAULT_CONTENT_BASE;
 const DEFAULT_STAGING_FALLBACK_BASE =
   import.meta.env.VITE_ADMIN_STAGING_FALLBACK_BASE ?? undefined;
-const PROD_CONTENT_BASE =
-  import.meta.env.VITE_ADMIN_PROD_CONTENT_BASE ?? DEFAULT_CONTENT_BASE;
-const PROD_FALLBACK_BASE =
-  import.meta.env.VITE_ADMIN_PROD_FALLBACK_BASE ?? undefined;
-
-const CONTENT_SOURCES: Record<
-  AdminEnvironment,
-  { includeDrafts: boolean; contentBaseUrl: string; fallbackBaseUrl?: string }
-> = {
-  staging: {
-    includeDrafts: true,
-    contentBaseUrl: DEFAULT_STAGING_CONTENT_BASE,
-    fallbackBaseUrl: DEFAULT_STAGING_FALLBACK_BASE,
-  },
-  prod: {
-    includeDrafts: false,
-    contentBaseUrl: PROD_CONTENT_BASE,
-    fallbackBaseUrl: PROD_FALLBACK_BASE,
-  },
-};
 
 export function AdminApp() {
-  const [environment, setEnvironment] =
-    useState<AdminEnvironment>("staging");
-  const contentSource = CONTENT_SOURCES[environment];
-
   return (
     <ContentFetchProvider
-      includeDrafts={contentSource.includeDrafts}
-      baseUrl={contentSource.contentBaseUrl}
-      fallbackBaseUrl={contentSource.fallbackBaseUrl}
+      includeDrafts={true}
+      baseUrl={DEFAULT_STAGING_CONTENT_BASE}
+      fallbackBaseUrl={DEFAULT_STAGING_FALLBACK_BASE}
     >
       <AdminDictionaryProvider>
         <DraftsProvider>
-          <AdminShell
-            environment={environment}
-            onEnvironmentChange={setEnvironment}
-          />
+          <AdminShell />
         </DraftsProvider>
       </AdminDictionaryProvider>
     </ContentFetchProvider>
   );
 }
 
-function AdminShell({
-  environment,
-  onEnvironmentChange,
-}: {
-  environment: AdminEnvironment;
-  onEnvironmentChange: (env: AdminEnvironment) => void;
-}) {
+function AdminShell() {
   const [mode, setMode] = useState<AdminMode | null>(null);
   const [previewItem, setPreviewItem] = useState<AdminContentItem | null>(
     null
@@ -151,14 +116,9 @@ function AdminShell({
               Innholdsredigering
             </h1>
             <p className="admin-subtitle">
-              Administrer tiltakskort og støtteordninger uten redeploy. Velg
-              miljø og modus for å komme i gang.
+              Administrer tiltakskort og tilskuddsordninger.
             </p>
           </div>
-          <EnvironmentToggle
-            environment={environment}
-            onChange={onEnvironmentChange}
-          />
         </header>
 
         {activeView === "dashboard" && (
@@ -173,7 +133,6 @@ function AdminShell({
             {mode && (
               <ContentList
                 mode={mode}
-                environment={environment}
                 items={items}
                 status={catalogStatus}
                 metadata={catalogMetadata}

@@ -10,7 +10,6 @@ import {
   AdminCatalogMetadata,
   AdminCatalogStatus,
   AdminContentItem,
-  AdminEnvironment,
   AdminMode,
   AdminPaginationState,
   DEFAULT_CATALOG_FILTERS,
@@ -23,7 +22,6 @@ import "./ContentList.css";
 
 interface ContentListProps {
   mode: AdminMode;
-  environment: AdminEnvironment;
   items: AdminContentItem[];
   status: AdminCatalogStatus;
   metadata: AdminCatalogMetadata | null;
@@ -109,7 +107,6 @@ function paginateItems(
 
 export function ContentList({
   mode,
-  environment,
   items,
   status,
   metadata,
@@ -268,7 +265,6 @@ export function ContentList({
               skin="primary"
               variant="label-only"
               onClick={() => onEdit?.(item)}
-              disabled={environment === "prod"}
             >
               Endre
             </PktButton>
@@ -335,8 +331,7 @@ export function ContentList({
 
       {status === "loading" && (
         <PktAlert skin="info" title="Henter katalog" ariaLive="polite">
-          Laster inn {mode === "tiltak" ? "tiltak" : "tilskudd"} fra{" "}
-          {environment === "prod" ? "produksjon" : "staging"}.
+          Laster inn {mode === "tiltak" ? "tiltak" : "tilskudd"}…
         </PktAlert>
       )}
 
@@ -355,18 +350,6 @@ export function ContentList({
           >
             Prøv igjen
           </PktButton>
-        </PktAlert>
-      )}
-
-      {environment === "prod" && (
-        <PktAlert
-          skin="warning"
-          title="Produksjon er skrivebeskyttet"
-          ariaLive="off"
-        >
-          Gjør endringer i staging først. Når QA er ferdig trykker du
-          "Publiser til energinokkelen.no" for å sende en Cloud Build job til
-          godkjenning.
         </PktAlert>
       )}
 
@@ -399,7 +382,6 @@ export function ContentList({
                     display="inline"
                     item={previewItem}
                     mode={previewMode}
-                    environment={environment}
                     onClose={onClosePreview}
                   />
                 </div>

@@ -19,7 +19,7 @@
 }
 
 .benefits-editor__preview-card {
-  border-radius: 20px;
+  border-radius: 0;
   background: var(--pkt-color-surface-default-faded-green, #defce8);
   color: var(--pkt-color-text-default, #0f1e2e);
   min-height: 150px;
@@ -28,7 +28,7 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  padding: 1.5rem;
+  padding: var(--pkt-spacing-6, 1.5rem);
   text-align: center;
 }
 

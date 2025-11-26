@@ -14,24 +14,24 @@ const modeCards: Array<{
 }> = [
   {
     id: "tiltak",
-    title: "Rediger tiltak",
+    title: "Tiltakskort",
     description:
-      "Oppdatér beskrivelser, fordeler, tabs og tilknyttede støtteordninger direkte i staging.",
+      "Rediger innholdet i tiltakskortene som vises på energinøkkelen.no.",
     highlights: [
-      "Variantstøtte (standard / gul liste)",
-      "Bygningstype-tekster og ordlister",
-      "Lenker, CTA-er og metadata",
+      "Tekster og fordeler",
+      "Tilknyttede tilskuddsordninger",
+      "Varianter for standard og gul liste",
     ],
   },
   {
     id: "tilskudd",
-    title: "Rediger støtteordninger",
+    title: "Tilskuddsordninger",
     description:
-      "Endre satser, gyldighet, kriterier og hvilke tiltak ordningen vises på.",
+      "Rediger støtteordningene som vises i tiltakskortene.",
     highlights: [
-      "Satser og beregningsmetoder",
-      "Krav til målgruppe og byggtype",
-      "Publiseringslogg og versjonering",
+      "Satser og beløp",
+      "Målgrupper og byggtyper",
+      "Lenker til søknadsskjema",
     ],
   },
 ];

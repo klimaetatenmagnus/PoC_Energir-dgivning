@@ -50,9 +50,9 @@
 
 .admin-content__catalog-meta {
   background: var(--pkt-color-surface-default-light-beige, rgba(16, 57, 131, 0.05));
-  border-left: 4px solid var(--pkt-color-border-blue, rgba(16, 57, 131, 0.8));
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
+  border-left: 4px solid var(--pkt-color-border-subtle, rgba(0, 0, 0, 0.08));
+  padding: var(--pkt-spacing-4, 1rem);
+  border-radius: 0;
   color: var(--pkt-color-text-secondary, #4c566a);
   display: flex;
   flex-direction: column;

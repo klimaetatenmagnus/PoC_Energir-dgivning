@@ -1,6 +1,6 @@
 # Driftsrutine for tiltak- og tilskuddsinnhold
 
-Oppdatert: 2025-11-25 (Codex)
+Oppdatert: 2025-11-26 (Claude)
 
 Dette dokumentet er **single source of truth** for både dagens innholdsdrift og utviklingen av admin-UI-et. Her finner utviklere all nødvendig informasjon om dataflyt, filstruktur, rutiner og fremdriftsplaner. Rutinen dekker variant-/gul-liste-data, schema-validering, staging→prod-synk og auditlogging i GCS. Når admin-UI lanseres skal den følge samme prosess under panseret, og alle endringer i arkitektur eller arbeidsprosess må gjenspeiles her før implementering.
 
@@ -19,7 +19,7 @@ Dette dokumentet er **single source of truth** for både dagens innholdsdrift og
 
 - **Redaktører:** medlemmer av Google Workspace-gruppen *Energinøkkel-redaktør* (`energinokkel-redaktor@klimaoslo.no`). Gruppen gis tilgang til admin-UI, GCS og Cloud Run når disse settes opp.
 - **Utviklere/opperativ drift:** ansvarlige for å holde skript og dokumentasjon oppdatert, samt bistå ved feil i schema eller integrasjon.
-- **Servicekontoer:** `content-admin@energiverktoy-poc-1234.iam.gserviceaccount.com` utfører skriptoperasjoner i Cloud Build/Cloud Run. Kontoen må ha `roles/storage.objectAdmin` på begge content-bøtter.
+- **Servicekontoer:** `cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com` utfører Cloud Build-jobber for publisering. Kontoen må ha `roles/storage.objectAdmin` på begge content-bøtter. Admin-API kjører som `run-energinokkelen-admin@energiverktoy-poc-1234.iam.gserviceaccount.com` og må ha `roles/iam.serviceAccountUser` på `cloud-build@...` for å trigge publiseringsjobber.
 
 ---
 
@@ -145,7 +145,7 @@ Til vi er der, brukes kommandoene over som “grunnsannhet” for hvordan pipeli
   - UI-laget bygges med Punkt-designsystemets React-komponenter (knapper, faner, cards, skjemafelt) for å følge Oslo kommunes visuelle profil, AA-kontrastkrav og tastaturnavigasjon out-of-the-box.
   - Hvilke Punkt-komponenter som kan brukes uendret og hvilke som trenger tilpasning avklares iterativt sammen med design under utviklingen; vi starter med standardkomponentene og legger til lokale wrappers kun når kravet ikke dekkes.
   - Første skjerm etter login viser to tydelige kort (“Rediger tiltak” og “Rediger tilskudd”) slik at brukergruppene finner riktig modus før de går videre til katalogen.
-- **Admin-API/BFF:** Node/Express-tjeneste deployet sammen med frontend. API-et bruker servicekontoen `content-admin@energiverktoy-poc-1234.iam.gserviceaccount.com` med `roles/storage.objectAdmin` på `energinokkelen-content` og `energinokkelen-content-prod`. All skrivetilgang til GCS skjer via dette laget; frontend har kun lesetilgang via API-serveren.
+- **Admin-API/BFF:** Node/Express-tjeneste deployet sammen med frontend. API-et kjører som `run-energinokkelen-admin@energiverktoy-poc-1234.iam.gserviceaccount.com` med `roles/storage.objectAdmin` på `energinokkelen-content` og `energinokkelen-content-prod`. Publiseringsjobber trigges via Cloud Build som kjører som `cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com`. All skrivetilgang til GCS skjer via dette laget; frontend har kun lesetilgang via API-serveren.
 - **Dataflyt:**
   - Lesing: UI-en bruker API-serverens `GET /config/content/tiltak|tilskudd/index.json` og `/<slug>.json?draft=1` for å vise katalog og detaljer.
   - Skriving: Admin-API mottar patcher, validerer mot `TiltakContentSchema`/`TilskuddContentSchema`, og skriver filene til staging-bøtten under riktig sti (`content/tiltak/<id>.json` osv.). Gjenbrukbare verdier (boligtyper, fordelikoner, tagger) hentes fra et internt ordbok-endepunkt slik at frontend kan rendre dropdowns/autocomplete fremfor tekstfelt.
@@ -241,7 +241,7 @@ Planen over erstatter ad-hoc-notater rundt admin-klienten og fungerer som aksjon
     "consoleUrl": "https://console.cloud.google.com/cloud-build/builds/f1fa2a88-...?project=energiverktoy-poc-1234"
   }
   ```
-- Cloud Build-jobben settes opp direkte i koden (`cloudBuild.ts`) og kjører to steg med servicekontoen `content-admin@energiverktoy-poc-1234.iam.gserviceaccount.com`:
+- Cloud Build-jobben settes opp direkte i koden (`cloudBuild.ts`) og kjører to steg med servicekontoen `cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com`:
   1. `gsutil -m rsync -d -r gs://energinokkelen-content/content gs://energinokkelen-content-prod/content` (skippes ved `dryRun=1`).
   2. Python-script som bygger `publish-log.json` (bruker requestmetadataen) og laster den opp til `gs://energinokkelen-content-prod/content/logs/publish-<timestamp>.json`.
 - Konfig styres av miljøvariabler (default-verdier i parentes):| Variabel                                                                         | Beskrivelse                                 |
@@ -251,7 +251,7 @@ Planen over erstatter ad-hoc-notater rundt admin-klienten og fungerer som aksjon
   | `ADMIN_CONTENT_STAGING_PREFIX` (`gs://energinokkelen-content/content`)       | Sti som rsyncer fra.                        |
   | `ADMIN_CONTENT_PROD_PREFIX` (`gs://energinokkelen-content-prod/content`)     | Sti som rsyncer til.                        |
   | `ADMIN_CONTENT_LOG_PREFIX` (`gs://energinokkelen-content-prod/content/logs`) | Hvor publiseringslogger plasseres.          |
-  | `ADMIN_CONTENT_PUBLISHER_SERVICE_ACCOUNT` (`content-admin@…`)               | Servicekontoen Cloud Build kjører som.     |
+  | `ADMIN_CONTENT_PUBLISHER_SERVICE_ACCOUNT` (`cloud-build@…`)                 | Servicekontoen Cloud Build kjører som.     |
   | `ADMIN_API_PORT` (`4100`)                                                    | Lokal porter ved `npm run dev:admin-api`. |
 - Eksempel (lokal tørrkjøring):
   ```bash
@@ -355,6 +355,7 @@ Planen over erstatter ad-hoc-notater rundt admin-klienten og fungerer som aksjon
 | 2025-11-26 | **Automatisk ordliste-matching implementert:** Frontend-komponentene bruker nå sentral ordliste fra dictionary (`glossaryTerms[]`) i stedet for lokale `accordion[].glossary[]`-arrays. `useContentDictionary()`-hook henter ordlisten, og `dictionaryTermsToGlossary()` konverterer til riktig format for `renderParagraphWithGlossary()`. Legacy glossary-oppføringer fjernet fra tetting.json, ventilasjon.json, temperaturstyring.json og vinduer.json.                                                                        | `src/hooks/contentHooks.tsx`, `src/components/FigmaBlokk/components/Tiltak/glossaryHelpers.tsx`, `content/tiltak/*.json`                                                                                                                          |
 | 2025-11-26 | **Katalogfilter og paginering implementert:** Admin-UI har nå klient-side filtrering (status, målgruppe, byggtype, fritekst) og paginering med konfigurerbar sidestørrelse (6/12/24/48). Filtrene nullstilles ved modus-bytte og side resettes ved filter-endring. Nye komponenter: `CatalogFilters`, `CatalogPagination`. Nye typer: `AdminCatalogFilters`, `AdminPaginationState`. Bruker Punkt-komponenter (`PktSelect`, `PktTextinput`, `PktButton`, `PktTag`).                                                                        | `src/admin/components/CatalogFilters.tsx`, `src/admin/components/CatalogPagination.tsx`, `src/admin/components/ContentList.tsx`, `src/admin/types.ts`                                                                                           |
 | 2025-11-26 | **Publiserings-wizard planlagt:** Designet komplett brukerreise for innholdsoppdatering: Endre → Forhåndsvis → Staging → Visuell QA → Prod. Wizarden bruker `PktStepper` og `PktStep` fra Punkt designsystem. Nye API-endepunkter (`/admin/api/drafts`, `/admin/api/drafts/sync-staging`, `/admin/api/drafts/discard-all`) og React-komponenter (`PublishWizard`, `DraftsSummary`, `QAChecklist`, `PublishButton`). Knapper "Oppdater Energinøkkelen" og "Nullstill endringer" vises når det finnes upubliserte endringer. | `Dokumentasjon/innholdsdrift-tiltak.md` § 11.7                                                                                                                                                                                                     |
+| 2025-11-26 | **✅ Publiserings-wizard ferdig og fungerer i prod!** Løste tre IAM/config-problemer: (1) Servicekonto endret fra `content-admin@` til `cloud-build@` i config.ts, (2) La til IAM-binding `roles/iam.serviceAccountUser` på `cloud-build@` for `run-energinokkelen-admin@`, (3) Oppdatert Cloud Run miljøvariabel. Også endret prod-frontend `CONTENT_BUCKET` fra `energinokkelen-content` til `energinokkelen-content-prod` for korrekt staging/prod-separasjon. Ende-til-ende-test bekreftet at endringer i admin-UI nå vises på energinøkkelen.no. | `services/admin-api/config.ts`, Cloud Run, IAM, `Dokumentasjon/Utvikling/ui/publiserings-wizard.md`                                                                                                                                                |
 
 Legg til en ny rad hver gang arkitektur, plan eller prosess endres slik at historikk og ansvar er synlig.
 

@@ -523,7 +523,7 @@ interface PublishWizardState {
 | 10 | Integrer eksisterende `POST /admin/api/publish` i steg 4 | Liten | Eksisterende API | ✅ |
 | 11 | Lag "Nullstill endringer"-dialog | Liten | #3 | ✅ |
 | 12 | Integrer `DraftsProvider` og `PublishActionBar` i `AdminApp.tsx` | Liten | #4, #5 | ✅ |
-| 13 | Testing og QA | Medium | Alt over | |
+| 13 | Testing og QA | Medium | Alt over | ✅ |
 
 ---
 
@@ -531,8 +531,10 @@ interface PublishWizardState {
 
 > Oppdateres fortløpende. Viser de 3-5 neste konkrete utviklingsoppgavene.
 
-1. **Feilsøking: Cloud Build 500-feil ved publisering til prod** – `POST /admin/api/publish` returnerer 500. Cloud Build-jobben feiler pga. substitution/miljøvariabel-konfigurasjon. Undersøker escaping av `$`-tegn i bash-skript (`$$` vs `$`).
-2. **Testing og QA** – Test hele wizard-flyten ende-til-ende i staging-miljøet når Cloud Build-feilen er løst.
+**Status (2025-11-26):** ✅ Publiserings-wizarden er ferdig og fungerer i produksjon.
+
+1. ~~**Feilsøking: Cloud Build 500-feil ved publisering til prod**~~ ✅ Løst – servicekonto endret fra `content-admin@` til `cloud-build@`, og IAM-binding for `serviceAccountUser` lagt til.
+2. ~~**Testing og QA**~~ ✅ Testet ende-til-ende: endring i staging → QA → publisering til prod fungerer.
 3. **Eventuelt: Forbedre feilhåndtering** – Vurdere retry-logikk ved nettverksfeil.
 4. **Eventuelt: Legge til publiseringslogg-visning** – Vise tidligere publiseringer i admin-UI.
 
@@ -562,7 +564,7 @@ interface PublishWizardState {
 
 | Dato | Aktivitet | Referanse |
 |------|-----------|-----------|
-| 2025-11-26 | **Feilsøking pågår:** Cloud Build feiler ved prod-publisering. Fikset: (1) `ADMIN_CONTENT_STAGING_PREFIX` miljøvariabel fjernet `/content`-prefiks, (2) `sync-staging` setter nå `status: "published"`, (3) `logging: "CLOUD_LOGGING_ONLY"` lagt til, (4) `$$`-escaping for miljøvariabler i bash-skript. Fortsatt 500-feil – undersøkes. | §8, `cloudBuild.ts` |
+| 2025-11-26 | **✅ Publisering til prod fungerer!** Løste tre problemer: (1) Servicekonto endret fra `content-admin@` til `cloud-build@` i `config.ts`, (2) La til IAM-binding `roles/iam.serviceAccountUser` på `cloud-build@` for `run-energinokkelen-admin@`, (3) Oppdatert Cloud Run miljøvariabel `ADMIN_CONTENT_PUBLISHER_SERVICE_ACCOUNT`, (4) Endret prod-frontend `CONTENT_BUCKET` fra `energinokkelen-content` til `energinokkelen-content-prod`. | §8, `config.ts`, Cloud Run, IAM |
 | 2025-11-26 | Fikset modal-lukking bug i `PublishWizard` – la til event listener for native `close`-event fra `<dialog>` | `PublishWizard.tsx` |
 | 2025-11-26 | Fikset staging-URL fra `staging.energinokkelen.no` til `staging.energinøkkelen.no` (SSL-sertifikat matcher kun IDN-varianten) | Flere filer |
 | 2025-11-26 | Lagt til 5-tegn minimumskrav for publiseringsbeskrivelse i UI (matcher backend-validering) | `PublishWizard.tsx` |
@@ -575,10 +577,221 @@ interface PublishWizardState {
 | 2025-11-26 | Lagt til Status-kolonne i implementeringsplan, "Neste skritt"-seksjon, og dokumentert rutine for oppdatering | §7, §8 |
 | 2025-11-26 | Utvidet med GCP-detaljer (servicekontoer, IAP, prosjekt-ID, rollback-prosedyre) fra driftshåndboken | `gcp-driftshandbok.md` |
 | 2025-11-26 | Opprettet dette dokumentet, flyttet fra §11.7 i `innholdsdrift-tiltak.md` | Dette dokumentet |
+| 2025-11-26 | **✅ IAP for prod-admin implementert!** Opprettet `prod-admin-neg`, `prod-admin-backend` med IAP aktivert, IAM-binding for workspace-gruppen, og oppdatert URL-map med `/admin` og `/_gcp_iap/` ruter for prod-matcher. | §11 |
 
 ---
 
-## 11. Relatert dokumentasjon
+## 11. IAP for prod-admin
+
+**Status:** ✅ LØST (2025-11-26) – `/admin` på energinøkkelen.no er nå beskyttet av IAP.
+
+### 11.1 Implementert konfigurasjon
+
+Følgende ressurser ble opprettet:
+- `prod-admin-neg`: Serverless NEG som peker til `energinokkelen-admin` Cloud Run
+- `prod-admin-backend`: Backend-service med IAP aktivert
+- IAM-binding: `group:energinokkel-redaktor@klimaoslo.no` har `roles/iap.httpsResourceAccessor`
+- URL-map: `prod-matcher` har nå `/admin` og `/_gcp_iap/` ruter til `prod-admin-backend`
+
+**Verifisering:**
+```bash
+curl -sI "https://xn--energinkkelen-hnb.no/admin"
+# Returnerer HTTP/2 302 med x-goog-iap-generated-response: true
+# og redirect til accounts.google.com for autentisering
+```
+
+### 11.2 Løsning: Steg-for-steg
+
+Følg disse kommandoene i rekkefølge for å sette opp IAP på prod-admin:
+
+#### Steg 1: Opprett Serverless NEG for prod-admin
+
+```bash
+gcloud compute network-endpoint-groups create prod-admin-neg \
+  --region=europe-north1 \
+  --network-endpoint-type=serverless \
+  --cloud-run-service=energinokkelen-admin \
+  --project=energiverktoy-poc-1234
+```
+
+**Merk:** Vi gjenbruker samme Cloud Run-tjeneste (`energinokkelen-admin`) som staging bruker. Alternativt kan man opprette en egen `energinokkelen-admin-prod`-tjeneste senere.
+
+#### Steg 2: Opprett backend-service med IAP aktivert
+
+```bash
+# Opprett backend-service med HTTP-protokoll (ikke HTTPS - serverless NEG krever dette)
+gcloud compute backend-services create prod-admin-backend \
+  --global \
+  --load-balancing-scheme=EXTERNAL_MANAGED \
+  --protocol=HTTP \
+  --project=energiverktoy-poc-1234
+
+gcloud compute backend-services add-backend prod-admin-backend \
+  --global \
+  --network-endpoint-group=prod-admin-neg \
+  --network-endpoint-group-region=europe-north1 \
+  --project=energiverktoy-poc-1234
+```
+
+**Viktig:** Hent OAuth client ID og secret fra IAP OAuth-klienten (ikke fra Secret Manager):
+```bash
+# Hent client ID og secret fra eksisterende IAP-klient
+gcloud iap oauth-clients list projects/168751968131/brands/168751968131 \
+  --project=energiverktoy-poc-1234
+```
+
+Aktiver IAP med **eksakt samme credentials** som staging bruker:
+```bash
+# Hent OAuth client ID og secret fra IAP-klienten (se steg over)
+gcloud compute backend-services update prod-admin-backend \
+  --global \
+  --iap=enabled,oauth2-client-id=<CLIENT_ID>,oauth2-client-secret=<CLIENT_SECRET> \
+  --project=energiverktoy-poc-1234
+```
+
+**Merk:** Det er kritisk at `oauth2-client-secret` er identisk med staging. Hvis hashene er forskjellige får du feilkode 11. Verifiser at hashene matcher:
+```bash
+# Begge skal returnere samme hash
+gcloud compute backend-services describe staging-admin-backend --global --project=energiverktoy-poc-1234 --format='value(iap.oauth2ClientSecretSha256)'
+gcloud compute backend-services describe prod-admin-backend --global --project=energiverktoy-poc-1234 --format='value(iap.oauth2ClientSecretSha256)'
+```
+
+#### Steg 3: Konfigurer IAM for workspace-gruppen
+
+```bash
+gcloud iap web add-iam-policy-binding \
+  --resource-type=backend-services \
+  --service=prod-admin-backend \
+  --member="group:energinokkel-redaktor@klimaoslo.no" \
+  --role="roles/iap.httpsResourceAccessor" \
+  --project=energiverktoy-poc-1234
+```
+
+#### Steg 4: Oppdater URL-mappen med /admin-rute for prod
+
+Eksporter nåværende konfigurasjon:
+```bash
+gcloud compute url-maps export staging-frontend-map \
+  --global \
+  --destination=url-map-backup.yaml \
+  --project=energiverktoy-poc-1234
+```
+
+Legg til følgende routeRules i `prod-matcher` (etter `/config`-ruten, før `/metrics`-ruten):
+
+```yaml
+  - matchRules:
+    - prefixMatch: /_gcp_iap/
+    priority: 240
+    routeAction:
+      urlRewrite:
+        hostRewrite: energinokkelen-admin-168751968131.europe-north1.run.app
+    service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendServices/prod-admin-backend
+  - matchRules:
+    - prefixMatch: /admin
+    priority: 250
+    routeAction:
+      urlRewrite:
+        hostRewrite: energinokkelen-admin-168751968131.europe-north1.run.app
+    service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendServices/prod-admin-backend
+```
+
+Importer oppdatert konfigurasjon:
+```bash
+gcloud compute url-maps import staging-frontend-map \
+  --global \
+  --source=url-map-updated.yaml \
+  --project=energiverktoy-poc-1234
+```
+
+**Alternativt** kan du bruke `gcloud compute url-maps add-path-matcher` eller oppdatere via Cloud Console.
+
+#### Steg 5: Verifiser konfigurasjonen
+
+```bash
+# Sjekk at backend-service har IAP aktivert
+gcloud compute backend-services describe prod-admin-backend \
+  --global \
+  --project=energiverktoy-poc-1234 \
+  --format='yaml(iap)'
+
+# Sjekk at IAM er konfigurert
+gcloud iap web get-iam-policy \
+  --resource-type=backend-services \
+  --service=prod-admin-backend \
+  --project=energiverktoy-poc-1234
+
+# Sjekk URL-map routing
+gcloud compute url-maps describe staging-frontend-map \
+  --global \
+  --project=energiverktoy-poc-1234 \
+  --format='yaml(pathMatchers)'
+```
+
+#### Steg 6: Test
+
+1. Åpne https://energinøkkelen.no/admin i incognito-modus
+2. Du skal bli omdirigert til Google-innlogging
+3. Kun brukere i `energinokkel-redaktor@klimaoslo.no` skal få tilgang
+4. Andre brukere skal få 403-feil
+
+### 11.3 Feilsøking
+
+**Feilkode 11 etter innlogging:**
+- Årsak: OAuth client secret hashen matcher ikke mellom staging og prod
+- Løsning: Kjør `gcloud compute backend-services update` med **eksakt samme** `oauth2-client-secret` som staging bruker
+- Verifiser med: `gcloud compute backend-services describe <service> --format='value(iap.oauth2ClientSecretSha256)'`
+
+**Trafikk går til bucket i stedet for IAP:**
+- Årsak: URL-map endringer kan ta 5-10 minutter å propagere
+- Løsning: Vent og test på nytt. Sjekk med `curl -sI` at `x-goog-iap-generated-response: true` returneres
+
+**403 etter innlogging:**
+- Årsak: Brukeren er ikke medlem av `energinokkel-redaktor@klimaoslo.no`
+- Løsning: Legg til brukeren i Workspace-gruppen, eller legg til individuell IAM-binding
+
+### 11.5 Referanse: Nåværende prod-konfigurasjon
+
+**prod-admin-backend:**
+- IAP: aktivert
+- OAuth client ID: Se `gcloud iap oauth-clients list` (prosjekt-ID: 168751968131)
+- NEG: `prod-admin-neg` → `energinokkelen-admin` Cloud Run
+- IAM: `group:energinokkel-redaktor@klimaoslo.no` har `roles/iap.httpsResourceAccessor`
+
+**prod-matcher routeRules:**
+```yaml
+- matchRules:
+  - prefixMatch: /_gcp_iap/
+  priority: 240
+  routeAction:
+    urlRewrite:
+      hostRewrite: energinokkelen-admin-168751968131.europe-north1.run.app
+  service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendServices/prod-admin-backend
+- matchRules:
+  - prefixMatch: /admin
+  priority: 250
+  routeAction:
+    urlRewrite:
+      hostRewrite: energinokkelen-admin-168751968131.europe-north1.run.app
+  service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendServices/prod-admin-backend
+```
+
+### 11.6 Vurdering: Egen prod-admin Cloud Run-tjeneste?
+
+Nåværende oppsett gjenbruker `energinokkelen-admin` Cloud Run-tjeneste for både staging og prod. Dette fungerer fordi:
+- Admin-UI leser innhold fra GCS-bøtter basert på miljøvalg i UI
+- Publiserings-API bruker miljøvariabler for å bestemme mål-bøtter
+
+**Alternativ:** Opprett `energinokkelen-admin-prod` med egne miljøvariabler. Dette gir bedre separasjon, men krever:
+- Egen Cloud Build-trigger
+- Egen NEG og backend-service
+- Dobbelt vedlikehold
+
+**Anbefaling:** Start med å gjenbruke eksisterende tjeneste. Opprett egen prod-tjeneste senere hvis behov oppstår.
+
+---
+
+## 12. Relatert dokumentasjon
 
 - `Dokumentasjon/innholdsdrift-tiltak.md` – Hovedrutine for innholdsdrift og admin-UI
 - `Dokumentasjon/gcp-driftshandbok.md` – GCP-konfig, Cloud Run, IAM, buckets

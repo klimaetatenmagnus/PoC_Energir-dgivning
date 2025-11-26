@@ -1,6 +1,6 @@
 # Driftsdokumentasjon – Energinøkkelen i Google Cloud
 
-Oppdatert: 2025-11-14 (Codex)
+Oppdatert: 2025-11-26 (Claude)
 
 > Dette dokumentet beskriver Energinøkkelens Google Cloud-miljø, rutiner for bygg/deploy og kjente avvik. Det erstatter `Dokumentasjon/deploy-plan-gcp.md` som “single source of truth” for drift. Oppdater dokumentet hver gang arkitektur, rutiner eller tilgang endres.
 
@@ -262,7 +262,7 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 - **Cloud Build-kall:** API-et anroper `https://cloudbuild.googleapis.com/v1/projects/$PROJECT/locations/$LOCATION/builds` direkte med `GoogleAuth`. Builden består av 2 steg:
   1. `gsutil -m rsync -d -r $STAGING_BUCKET $PROD_BUCKET`
   2. Python-script som skriver `publish-log.json` med metadata (`user`, `changeSummary`, `items`, `gitSha`, `requestId`, `triggeredAt`) til `gs://energinokkelen-content-prod/content/logs/publish-<timestamp>.json`
-- **Servicekontoer/roller:** Cloud Build kjører som `content-admin@energiverktoy-poc-1234.iam.gserviceaccount.com`. Denne har `roles/storage.objectAdmin` på både `energinokkelen-content` og `energinokkelen-content-prod`. Admin-API trenger `roles/cloudbuild.builds.editor` for å opprette jobben.
+- **Servicekontoer/roller:** Cloud Build-publiseringsjobben kjører som `cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com`. Denne har `roles/storage.objectAdmin` på både `energinokkelen-content` og `energinokkelen-content-prod`. Admin-API (som kjører som `run-energinokkelen-admin@...`) trenger `roles/cloudbuild.builds.editor` for å opprette jobben, samt `roles/iam.serviceAccountUser` på `cloud-build@...` for å kunne spesifisere servicekontoen i Cloud Build-jobben.
 - **Konfigurasjon:** styres av
   | Variabel | Default | Notat |
   | --- | --- | --- |
@@ -399,6 +399,7 @@ gcloud monitoring uptime describe projects/energiverktoy-poc-1234/uptimeCheckCon
 
 | Dato       | Beskrivelse                                                                                                                                                                      | Utført av |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| 2025-11-26 | **Publiserings-wizard ferdig:** Fikset servicekonto fra `content-admin@` til `cloud-build@`, la til IAM-binding `serviceAccountUser`, oppdatert Cloud Run env-var. Endret prod-frontend `CONTENT_BUCKET` til `energinokkelen-content-prod` for korrekt staging/prod-separasjon. | Claude |
 | 2025-11-15 | Temperaturstyring flyttet til `content/tiltak/temperaturstyring.json` med variantdata + nye tilskudd (`klimaoslo-smart-energistyring`, `klimaoslo-pris-effektstyring`) dokumentert i content-/driftsrutinene. | Codex      |
 | 2025-11-13 | Dokumenterte staging-host (`staging.energinøkkelen.no`) i LB-oppsettet, og beskrev nye innholdsskript (`content:validate`/`content:publish`) samt driftsrutinen i `Dokumentasjon/innholdsdrift-tiltak.md`. | Codex      |
 | 2025-11-13 | Solenergi/Varmepumpe flyttet til `content/tiltak/*.json` + nye tilskudd (`klimaoslo-solenergitilskudd`, `enova-solcelleanlegg`, `klimaoslo-vaeske-til-vann-varmepumpe`, `klimaoslo-varmepumpebereder`), `useGrantAwareStotteordninger` dokumentert og rutiner for rsync/metadata oppdatert. | Codex      |
