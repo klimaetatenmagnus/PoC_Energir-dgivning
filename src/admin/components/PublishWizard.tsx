@@ -353,7 +353,7 @@ export function PublishWizard({ open, onClose }: PublishWizardProps) {
                         skin="primary"
                         size="small"
                         onClick={handlePublish}
-                        disabled={publishStatus === "publishing"}
+                        disabled={publishStatus === "publishing" || changeSummary.trim().length < 5}
                       >
                         {publishStatus === "publishing"
                           ? "Publiserer..."
