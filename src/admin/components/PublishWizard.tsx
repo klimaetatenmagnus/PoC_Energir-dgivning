@@ -14,6 +14,7 @@ import "./PublishWizard.css";
 interface PublishWizardProps {
   open: boolean;
   onClose: () => void;
+  onPublishSuccess?: () => void;
 }
 
 type WizardStep = 1 | 2 | 3 | 4;
@@ -22,7 +23,7 @@ type StepStatus = "completed" | "current" | "incomplete";
 
 const STAGING_URL = "https://staging.xn--energinkkelen-hnb.no";
 
-export function PublishWizard({ open, onClose }: PublishWizardProps) {
+export function PublishWizard({ open, onClose, onPublishSuccess }: PublishWizardProps) {
   const { drafts, count, syncToStaging, refresh } = useDrafts();
   const modalRef = useRef<HTMLDialogElement | null>(null);
 
@@ -138,8 +139,9 @@ export function PublishWizard({ open, onClose }: PublishWizardProps) {
       setBuildId(data.buildId || null);
       setPublishStatus("success");
 
-      // Refresh drafts-listen (bør nå være tom)
+      // Refresh drafts-listen (bør nå være tom) og katalogen
       await refresh();
+      onPublishSuccess?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Ukjent feil";
       setPublishError(message);

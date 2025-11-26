@@ -191,7 +191,11 @@ function AdminShell() {
       <PublishActionBar onOpenWizard={() => setWizardOpen(true)} />
 
       {/* Publiserings-wizard modal */}
-      <PublishWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
+      <PublishWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        onPublishSuccess={reloadCatalog}
+      />
     </div>
   );
 }
