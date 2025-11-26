@@ -29,7 +29,6 @@ import {
 } from "../../hooks/contentHooks";
 import type {
   AdminContentItem,
-  AdminEnvironment,
   AdminMode,
 } from "../types";
 import type { TilskuddContent } from "../../../content/tilskudd/schema";
@@ -75,7 +74,6 @@ type DrawerModalElement = HTMLElement & {
 interface PreviewPanelProps {
   item: AdminContentItem | null;
   mode: AdminMode | null;
-  environment: AdminEnvironment;
   onClose: () => void;
   display?: "drawer" | "inline";
 }
@@ -83,7 +81,6 @@ interface PreviewPanelProps {
 export function PreviewPanel({
   item,
   mode,
-  environment,
   onClose,
   display = "drawer",
 }: PreviewPanelProps) {
@@ -126,7 +123,7 @@ export function PreviewPanel({
     setAudience("standard");
     setBuildingType("default");
     setSelectedTiltakId(null);
-  }, [item, mode, environment]);
+  }, [item, mode]);
 
   useEffect(() => {
     if (mode !== "tilskudd") {
@@ -226,11 +223,6 @@ export function PreviewPanel({
           <p className="admin-preview__slug">{item.id}</p>
         </div>
         <div className="admin-preview__header-tags">
-          <PktTag skin={environment === "prod" ? "red" : "blue"}>
-            {environment === "prod"
-              ? "Produksjonsdata"
-              : "Stagingdata (draft)"}
-          </PktTag>
           {includeDrafts && (
             <PktTag skin="yellow">Viser upubliserte endringer</PktTag>
           )}
