@@ -31,7 +31,7 @@ fi
 # Default admin preview content bases (can be overridden before running)
 # Primær base peker lokalt gjennom Vite-proxy (/config -> http://localhost:3001)
 export VITE_ADMIN_STAGING_CONTENT_BASE="${VITE_ADMIN_STAGING_CONTENT_BASE:-/config/content}"
-export VITE_ADMIN_STAGING_FALLBACK_BASE="${VITE_ADMIN_STAGING_FALLBACK_BASE:-https://staging.energinokkelen.no/config/content}"
+export VITE_ADMIN_STAGING_FALLBACK_BASE="${VITE_ADMIN_STAGING_FALLBACK_BASE:-https://staging.xn--energinkkelen-hnb.no/config/content}"
 export VITE_ADMIN_PROD_CONTENT_BASE="${VITE_ADMIN_PROD_CONTENT_BASE:-/config/content}"
 export VITE_ADMIN_PROD_FALLBACK_BASE="${VITE_ADMIN_PROD_FALLBACK_BASE:-https://energinokkelen.no/config/content}"
 # Use JSON-based grants (set to 1 to force legacy /api/stotteordninger-live)
