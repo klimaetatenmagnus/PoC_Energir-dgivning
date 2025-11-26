@@ -48,7 +48,17 @@ export function PublishWizard({ open, onClose }: PublishWizardProps) {
     } else {
       modal.close();
     }
-  }, [open]);
+
+    // Lytt på native close-event (X-knapp, Escape, etc.)
+    const handleNativeClose = () => {
+      onClose();
+    };
+    modal.addEventListener("close", handleNativeClose);
+
+    return () => {
+      modal.removeEventListener("close", handleNativeClose);
+    };
+  }, [open, onClose]);
 
   // Reset state når wizard åpnes
   useEffect(() => {

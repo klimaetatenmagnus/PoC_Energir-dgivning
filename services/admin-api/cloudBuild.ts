@@ -157,6 +157,7 @@ function createBuildSpec(
     serviceAccount: `projects/${config.projectId}/serviceAccounts/${config.serviceAccountEmail}`,
     options: {
       substitutionOption: "ALLOW_LOOSE",
+      logging: "CLOUD_LOGGING_ONLY",
     },
   };
 }
