@@ -90,19 +90,21 @@ export function useGrantAwareStotteordninger({
   const debugGrants =
     import.meta.env.VITE_DEBUG_GRANTS === '1' ||
     import.meta.env.VITE_DEBUG_GRANTS === 'true';
-  const sanitisedIds = (grantIds ?? [])
-    .map((id) => id?.trim())
-    .filter((id): id is string => Boolean(id));
-
-  const uniqueGrantIds: string[] = [];
-  const seen = new Set<string>();
-  for (const id of sanitisedIds) {
-    if (seen.has(id)) {
-      continue;
+  const uniqueGrantIds = useMemo(() => {
+    const sanitisedIds = (grantIds ?? [])
+      .map((id) => id?.trim())
+      .filter((id): id is string => Boolean(id));
+    const result: string[] = [];
+    const seen = new Set<string>();
+    for (const id of sanitisedIds) {
+      if (seen.has(id)) {
+        continue;
+      }
+      seen.add(id);
+      result.push(id);
     }
-    seen.add(id);
-    uniqueGrantIds.push(id);
-  }
+    return result;
+  }, [grantIds]);
 
   const hasGrantOverrides = uniqueGrantIds.length > 0;
 
@@ -160,7 +162,7 @@ export function useGrantAwareStotteordninger({
     }
     // Log a compact snapshot for troubleshooting in devtools console
     // Includes counts and which source is used.
-    console.info('[grants-debug]', {
+    console.warn('[grants-debug]', {
       legacyTiltakSlug,
       forceLegacyGrants,
       minGrantCount,

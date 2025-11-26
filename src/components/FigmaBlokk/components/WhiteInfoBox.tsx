@@ -756,7 +756,7 @@ const legacyTiltakComponent = React.useMemo(
     enableRefactoredTiltakCards
       ? undefined
       : getLegacyTiltakComponent(selectedTiltakSlug ?? undefined, tiltakAudience),
-  [selectedTiltakSlug, tiltakAudience]
+  [selectedTiltakSlug, tiltakAudience, enableRefactoredTiltakCards]
 );
 
 const isLegacyTiltak = Boolean(legacyTiltakComponent);
