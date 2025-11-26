@@ -20,7 +20,7 @@ type WizardStep = 1 | 2 | 3 | 4;
 
 type StepStatus = "completed" | "current" | "incomplete";
 
-const STAGING_URL = "https://staging.energinokkelen.no";
+const STAGING_URL = "https://staging.xn--energinkkelen-hnb.no";
 
 export function PublishWizard({ open, onClose }: PublishWizardProps) {
   const { drafts, count, syncToStaging, refresh } = useDrafts();
