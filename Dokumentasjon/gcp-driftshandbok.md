@@ -124,7 +124,7 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
     - `/api/*`, `/metrics`, `/config/*` → `staging-api-backend` / `prod-api-backend`
     - `/admin` og `/admin/*` → `staging-admin-backend` (staging) og etter hvert `prod-admin-backend`
     - SPA rewrite: forespørsler med `Accept: text/html` → `index.html`
-- **Staging host:** `staging.energinokkelen.no` peker til LB-IP `34.111.174.210`. Lokale QA-testere kan mappe hosten via `/etc/hosts` før testing (prosessen er dokumentert i `Dokumentasjon/innholdsdrift-tiltak.md`). Husk å kjøre `gcloud compute url-maps import staging-frontend-map ...` etter endringer i `deploy/gcp/staging-frontend-map.yaml` for at host-regelen skal aktiveres.
+- **Staging host:** `staging.energinøkkelen.no` peker til LB-IP `34.111.174.210`. Lokale QA-testere kan mappe hosten via `/etc/hosts` før testing (prosessen er dokumentert i `Dokumentasjon/innholdsdrift-tiltak.md`). Husk å kjøre `gcloud compute url-maps import staging-frontend-map ...` etter endringer i `deploy/gcp/staging-frontend-map.yaml` for at host-regelen skal aktiveres.
 - **IP-adresse:** `34.111.174.210`
 - **DNS:** Public sone `energinokkel-no` (`xn--energinkkelen-hnb.no.`) i Cloud DNS. Domeneshop peker NS til Google `ns-cloud-a1…a4`.
 - **Sertifikat:** Managed SSL `energinokkel-20251025` (dekker IDN- og ASCII-varianten). Nye sertifikater må opprettes hvis alias-domene registreres.
@@ -217,7 +217,7 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 - `/config/content/tiltak/index.json` og `/config/content/tilskudd/index.json` genereres on-demand og oppsummerer antall publiserte elementer, samt hvor mange som hoppes over (legacy/ugyldig/upublisert). Admin-løsningen skal benytte disse indeksene fremfor å scanne bøtten manuelt.
 - Alle `/config/content/**`-endepunktene returnerer nå `ETag`-headere basert på GCS `generation` (eller filsystemets mtime/size), og støtter `If-None-Match` slik at admin-klienten kan oppdage race conditions og unngå overstyring.
 - Første pilot med nytt schema (`etterisolering-yttervegg`) er supplert med `etterisolering-kjeller-loft`, `solenergi` og `varmepumpe` som nå brukes direkte i frontenden via `useTiltakContent`/`useGrantAwareStotteordninger`.
-- 2025-11-13: `npm run content:validate` og `npm run content:publish -- <push-staging|promote>` automatiserer schema-validering og staging→prod-synk. Rutinen er beskrevet i `Dokumentasjon/innholdsdrift-tiltak.md`; kjøres før redaktører tester via `staging.energinokkelen.no`.
+- 2025-11-13: `npm run content:validate` og `npm run content:publish -- <push-staging|promote>` automatiserer schema-validering og staging→prod-synk. Rutinen er beskrevet i `Dokumentasjon/innholdsdrift-tiltak.md`; kjøres før redaktører tester via `staging.energinøkkelen.no`.
 
 ### 5.3 CDN-invalidator
 
@@ -400,7 +400,7 @@ gcloud monitoring uptime describe projects/energiverktoy-poc-1234/uptimeCheckCon
 | Dato       | Beskrivelse                                                                                                                                                                      | Utført av |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
 | 2025-11-15 | Temperaturstyring flyttet til `content/tiltak/temperaturstyring.json` med variantdata + nye tilskudd (`klimaoslo-smart-energistyring`, `klimaoslo-pris-effektstyring`) dokumentert i content-/driftsrutinene. | Codex      |
-| 2025-11-13 | Dokumenterte staging-host (`staging.energinokkelen.no`) i LB-oppsettet, og beskrev nye innholdsskript (`content:validate`/`content:publish`) samt driftsrutinen i `Dokumentasjon/innholdsdrift-tiltak.md`. | Codex      |
+| 2025-11-13 | Dokumenterte staging-host (`staging.energinøkkelen.no`) i LB-oppsettet, og beskrev nye innholdsskript (`content:validate`/`content:publish`) samt driftsrutinen i `Dokumentasjon/innholdsdrift-tiltak.md`. | Codex      |
 | 2025-11-13 | Solenergi/Varmepumpe flyttet til `content/tiltak/*.json` + nye tilskudd (`klimaoslo-solenergitilskudd`, `enova-solcelleanlegg`, `klimaoslo-vaeske-til-vann-varmepumpe`, `klimaoslo-varmepumpebereder`), `useGrantAwareStotteordninger` dokumentert og rutiner for rsync/metadata oppdatert. | Codex      |
 | 2025-11-14 | Tetting/Ventilasjon/Vinduer modellert i `content/tiltak/*.json` (inkl. gul-listevarianter) og nye tilskudd (`klimaoslo-oppgradering-bygningskropp`, `klimaoslo-energitiltak-borettslag`, `klimaoslo-energikartlegging-borettslag`, `klimaoslo-balansert-ventilasjon`, `klimaoslo-vinduer-dorer`, `enova-energiradgivning`, `byantikvaren-istandsetting`) lagt til dokumentasjonen. | Codex      |
 | 2025-11-13 | Lagt til nye content-filer (etterisolering kjeller/loft + to tilskudd), dokumentert at frontend henter støtteordninger via `useTilskuddBatch`, og oppdatert Oppdatert-linjen. | Codex      |

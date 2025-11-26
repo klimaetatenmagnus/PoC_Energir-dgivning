@@ -104,7 +104,7 @@ Dette dokumentet er **single source of truth** for både dagens innholdsdrift og
 3. Bekreft at `/config/content/tiltak/<slug>.json?draft=1` og `/config/content/tilskudd/<slug>.json?draft=1` returnerer forventet `metadata.status`.
 4. Når alt er godkjent, kjør promote-skriptet og ta en kjapp smoke-test i prod (`https://energinøkkelen.no/config/content/...`).
 
-> **Tips:** Sluttbruker-QA i staging skjer via `https://staging.energinokkelen.no`. Lokalt må du mappe domenet i `/etc/hosts` (`34.111.174.210 staging.energinokkelen.no`). Frontend og `/api/*`-kall går da gjennom samme load balancer som prod.
+> **Tips:** Sluttbruker-QA i staging skjer via `https://staging.energinøkkelen.no`. Lokalt må du mappe domenet i `/etc/hosts` (`34.111.174.210 staging.xn--energinkkelen-hnb.no`). Frontend og `/api/*`-kall går da gjennom samme load balancer som prod.
 
 ---
 
@@ -625,7 +625,7 @@ Tilskudd-preview viser også valgt kombinasjon eksplisitt i resultat-seksjonen.
 Wizarden gir redaktører en steg-for-steg-flyt for å publisere innholdsendringer:
 1. Gjennomgå endringer (liste over draft-filer)
 2. Send til staging (synk til staging-bøtten)
-3. Visuell QA (sjekkliste + lenke til staging.energinokkelen.no)
+3. Visuell QA (sjekkliste + lenke til staging.energinøkkelen.no)
 4. Publiser til prod (trigger Cloud Build)
 
 ---

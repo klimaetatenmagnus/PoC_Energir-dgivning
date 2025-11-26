@@ -81,7 +81,7 @@ Cloud Build-jobben kjører:
 
 **GCP-prosjekt:** `energiverktoy-poc-1234` (region: `europe-north1`)
 
-**Staging-URL:** `staging.energinokkelen.no` (IP `34.111.174.210`)
+**Staging-URL:** `staging.energinøkkelen.no` (IP `34.111.174.210`)
 
 ### 2.4 Servicekontoer og tilgang
 
@@ -134,7 +134,7 @@ src/admin/
 | 1 | **Endre innhold** | Redaktøren redigerer tiltak/tilskudd/fordeler/ordliste via editorene. Endringer lagres som `*.draft.json`. | Automatisk – skjer i eksisterende editorer |
 | 2 | **Forhåndsvis** | Se endringene i admin-preview med valgt audience og byggtype. Verifiser at tekst og layout ser riktig ut. | Klikk "Forhåndsvis" i editoren |
 | 3 | **Send til staging** | Synk draft-filer til staging-bøtten (`gs://energinokkelen-content`). Gjør endringene tilgjengelige på staging-frontend. | Klikk "Send til staging" i wizarden |
-| 4 | **Visuell QA** | Åpne `staging.energinokkelen.no` og verifiser at tiltakskortene vises korrekt i faktisk frontend-kontekst. Sjekkliste vises i wizarden. | Klikk "Åpne staging" + bekreft sjekkliste |
+| 4 | **Visuell QA** | Åpne `staging.energinøkkelen.no` og verifiser at tiltakskortene vises korrekt i faktisk frontend-kontekst. Sjekkliste vises i wizarden. | Klikk "Åpne staging" + bekreft sjekkliste |
 | 5 | **Publiser til prod** | Trigger Cloud Build-jobb som kopierer staging→prod. Logger publiseringen. | Klikk "Publiser til energinøkkelen.no" |
 
 ---
@@ -275,7 +275,7 @@ Bruker `PktStepper` med vertikal orientering for å vise fremdrift:
 │  ──────────────────────────────────────────────────────────────│
 │                                                                 │
 │  Endringene sendes til staging-miljøet slik at du kan          │
-│  verifisere dem på staging.energinokkelen.no før de            │
+│  verifisere dem på staging.energinøkkelen.no før de            │
 │  publiseres til brukerne.                                       │
 │                                                                 │
 │  ┌─────────────────────────┐                                   │
@@ -306,7 +306,7 @@ Bruker `PktStepper` med vertikal orientering for å vise fremdrift:
 │  riktige ut i faktisk frontend-kontekst.                        │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │ 🔗 Åpne staging.energinokkelen.no                       │   │
+│  │ 🔗 Åpne staging.energinøkkelen.no                       │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 │  Sjekkliste før publisering:                                    │
@@ -434,7 +434,7 @@ Bruker `PktStepper` med vertikal orientering for å vise fremdrift:
     { "id": "varmepumpe", "collection": "tiltak" },
     { "id": "enova-varmepumpe", "collection": "tilskudd" }
   ],
-  "stagingUrl": "https://staging.energinokkelen.no"
+  "stagingUrl": "https://staging.energinøkkelen.no"
 }
 ```
 
@@ -531,16 +531,17 @@ interface PublishWizardState {
 
 > Oppdateres fortløpende. Viser de 3-5 neste konkrete utviklingsoppgavene.
 
-1. **Testing og QA** – Test hele wizard-flyten ende-til-ende i staging-miljøet.
-2. **Eventuelt: Forbedre feilhåndtering** – Vurdere retry-logikk ved nettverksfeil.
-3. **Eventuelt: Legge til publiseringslogg-visning** – Vise tidligere publiseringer i admin-UI.
+1. **Fiks: Tiltakskort laster ikke i staging** – `/config/content/tiltak/*.json` returnerer 404 i staging-miljøet. Må undersøke om innholdet mangler i GCS-bøtten eller om URL-mapping/routing er feil.
+2. **Testing og QA** – Test hele wizard-flyten ende-til-ende i staging-miljøet.
+3. **Eventuelt: Forbedre feilhåndtering** – Vurdere retry-logikk ved nettverksfeil.
+4. **Eventuelt: Legge til publiseringslogg-visning** – Vise tidligere publiseringer i admin-UI.
 
 ---
 
 ## 9. Tekniske notater
 
 - **Ingen GitHub-involvering:** Innholdsoppdateringer berører kun GCS-bøtter. Draft-filer lagres lokalt i staging-bøtten, og publish-jobben synker staging→prod via `gsutil rsync`.
-- **Staging-URL:** `staging.energinokkelen.no` (IP `34.111.174.210`). Redaktører som ikke har DNS-oppslag kan bruke direkte Cloud Run URL eller `/etc/hosts`-mapping.
+- **Staging-URL:** `staging.energinøkkelen.no` (IP `34.111.174.210`). Redaktører som ikke har DNS-oppslag kan bruke direkte Cloud Run URL eller `/etc/hosts`-mapping.
 - **Cloud Build-logging:** Publiseringsjobben logger til `gs://energinokkelen-content-prod/content/logs/publish-<timestamp>.json` med metadata:
   - `requestId` – unik ID for publiseringsforespørselen
   - `initiatedBy` – e-postadressen til redaktøren som trigget publiseringen

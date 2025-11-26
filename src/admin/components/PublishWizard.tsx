@@ -183,7 +183,7 @@ export function PublishWizard({ open, onClose }: PublishWizardProps) {
                 Endringene sendes til staging-miljøet slik at du kan verifisere
                 dem på{" "}
                 <a href={STAGING_URL} target="_blank" rel="noopener noreferrer">
-                  staging.energinokkelen.no
+                  staging.energinøkkelen.no
                 </a>{" "}
                 før de publiseres til brukerne.
               </p>
@@ -237,7 +237,7 @@ export function PublishWizard({ open, onClose }: PublishWizardProps) {
                 rel="noopener noreferrer"
                 className="publish-wizard__staging-link"
               >
-                Åpne staging.energinokkelen.no
+                Åpne staging.energinøkkelen.no
               </a>
 
               <QAChecklist />

@@ -25,7 +25,7 @@ export interface SyncStagingResponse {
   stagingUrl: string;
 }
 
-const STAGING_URL = "https://staging.energinokkelen.no";
+const STAGING_URL = "https://staging.xn--energinkkelen-hnb.no";
 
 export function createDraftsRouter(storage: ContentStorage): Router {
   const router = Router();
