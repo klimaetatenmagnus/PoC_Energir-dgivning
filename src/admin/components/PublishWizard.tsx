@@ -44,25 +44,28 @@ export function PublishWizard({ open, onClose, onPublishSuccess }: PublishWizard
     const modal = modalRef.current;
     if (!modal) return;
 
+    const restoreScroll = () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    };
+
     if (open) {
       modal.showModal();
     } else {
       modal.close();
-      // Fjern overflow:hidden fra body som modalen kan ha satt
-      document.body.style.overflow = "";
+      restoreScroll();
     }
 
     // Lytt på native close-event (X-knapp, Escape, etc.)
     const handleNativeClose = () => {
-      document.body.style.overflow = "";
+      restoreScroll();
       onClose();
     };
     modal.addEventListener("close", handleNativeClose);
 
     return () => {
       modal.removeEventListener("close", handleNativeClose);
-      // Cleanup: sørg for at scroll er aktivert når komponenten unmountes
-      document.body.style.overflow = "";
+      restoreScroll();
     };
   }, [open, onClose]);
 
@@ -82,6 +85,8 @@ export function PublishWizard({ open, onClose, onPublishSuccess }: PublishWizard
   }, [open]);
 
   const handleClose = () => {
+    // Fjern overflow-begrensninger fra både html og body
+    document.documentElement.style.overflow = "";
     document.body.style.overflow = "";
     onClose();
   };
