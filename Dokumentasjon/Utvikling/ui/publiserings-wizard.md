@@ -68,16 +68,18 @@ Admin-API (`services/admin-api/*`) har allerede `POST /admin/api/publish` som tr
 ```
 
 Cloud Build-jobben kjører:
-1. `gsutil -m rsync -d -r gs://energinokkelen-content/content gs://energinokkelen-content-prod/content`
-2. Skriver publiseringslogg til `gs://energinokkelen-content-prod/content/logs/publish-<timestamp>.json`
+1. `gsutil -m rsync -d -r gs://energinokkelen-content gs://energinokkelen-content-prod`
+2. Skriver publiseringslogg til `gs://energinokkelen-content-prod/logs/publish-<timestamp>.json`
 
 ### 2.3 GCS-bøtter og miljøer
 
 | Miljø | Bøtte | Beskrivelse |
 |-------|-------|-------------|
-| Staging | `gs://energinokkelen-content/content/` | Draft-filer og QA |
-| Prod | `gs://energinokkelen-content-prod/content/` | Publisert innhold |
-| Logger | `gs://energinokkelen-content-prod/content/logs/` | Publiseringshistorikk |
+| Staging | `gs://energinokkelen-content/` | Draft-filer og QA |
+| Prod | `gs://energinokkelen-content-prod/` | Publisert innhold |
+| Logger | `gs://energinokkelen-content-prod/logs/` | Publiseringshistorikk |
+
+**Viktig:** Bøttestiene har **ikke** `/content`-suffix. Cloud Run-miljøvariablene peker direkte til bøtteroten.
 
 **GCP-prosjekt:** `energiverktoy-poc-1234` (region: `europe-north1`)
 
@@ -578,6 +580,7 @@ interface PublishWizardState {
 | 2025-11-26 | Utvidet med GCP-detaljer (servicekontoer, IAP, prosjekt-ID, rollback-prosedyre) fra driftshåndboken | `gcp-driftshandbok.md` |
 | 2025-11-26 | Opprettet dette dokumentet, flyttet fra §11.7 i `innholdsdrift-tiltak.md` | Dette dokumentet |
 | 2025-11-26 | **✅ IAP for prod-admin implementert!** Opprettet `prod-admin-neg`, `prod-admin-backend` med IAP aktivert, IAM-binding for workspace-gruppen, og oppdatert URL-map med `/admin` og `/_gcp_iap/` ruter for prod-matcher. | §11 |
+| 2025-11-27 | **✅ Staging/prod-separasjon fikset:** (1) Endret `CONTENT_BUCKET` i `energinokkelen-prod` fra `energinokkelen-content` til `energinokkelen-content-prod`, (2) La til `/config/content/*` proxy i admin-server som leser fra staging-bøtten for korrekt forhåndsvisning, (3) Endret `ADMIN_CONTENT_PROD_PREFIX` til `gs://energinokkelen-content-prod` (uten `/content`-suffix). Endringer i admin-UI vises nå kun i prod etter fullført wizard. | §2.3, admin-server |
 
 ---
 

@@ -1,6 +1,6 @@
 # Driftsdokumentasjon – Energinøkkelen i Google Cloud
 
-Oppdatert: 2025-11-26 (Claude)
+Oppdatert: 2025-11-27 (Claude)
 
 > Dette dokumentet beskriver Energinøkkelens Google Cloud-miljø, rutiner for bygg/deploy og kjente avvik. Det erstatter `Dokumentasjon/deploy-plan-gcp.md` som “single source of truth” for drift. Oppdater dokumentet hver gang arkitektur, rutiner eller tilgang endres.
 
@@ -69,7 +69,7 @@ Miljøet består i dag av ett GCP-prosjekt (`energiverktoy-poc-1234`) med både 
 
 - `API_ENV` (`test`/`prod`), `API_PORT=8080`
 - `BUILDING_INFO_BASE_URL=http://127.0.0.1:4000`, `SOLAR_SERVICE_BASE_URL=http://127.0.0.1:4003`
-- `CONTENT_BUCKET`: staging `energinokkelen-content`, prod `energinokkelen-content-prod`
+- `CONTENT_BUCKET`: staging `energinokkelen-content`, prod `energinokkelen-content-prod` (**Viktig:** Prod-tjenesten må bruke `energinokkelen-content-prod` for korrekt staging/prod-separasjon)
 - Secrets: `MATRIKKEL_*`, `ENOVA_API_KEY`, `LIVE`, `PBE_*`, `VITE_*`
 - Sidecar: OpenTelemetry collector (`gmp-collector`) kjører samme image (`otel/opentelemetry-collector-contrib:0.94.0`) i Cloud Run-tjenesten. Konfig åpen i Secret Manager `run-gmp-config` og oppdateres via `monitoring/run-gmp-config.yaml`. Sidecaren bruker env-variabler `GMP_PROJECT=energiverktoy-poc-1234`, `GMP_LOCATION=europe-north1`, `GMP_CLUSTER=cloud-run-energinokkelen`.
 
@@ -268,9 +268,9 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
   | --- | --- | --- |
   | `ADMIN_CLOUD_BUILD_PROJECT` | `GOOGLE_CLOUD_PROJECT` | Prosjekt-id for builden |
   | `ADMIN_CLOUD_BUILD_LOCATION` | `global` | Cloud Build region |
-  | `ADMIN_CONTENT_STAGING_PREFIX` | `gs://energinokkelen-content/content` | Kildebucket |
-  | `ADMIN_CONTENT_PROD_PREFIX` | `gs://energinokkelen-content-prod/content` | Målbucket |
-  | `ADMIN_CONTENT_LOG_PREFIX` | `gs://energinokkelen-content-prod/content/logs` | Audit-logger |
+  | `ADMIN_CONTENT_STAGING_PREFIX` | `gs://energinokkelen-content` | Kildebucket (**NB:** uten `/content`-suffix) |
+  | `ADMIN_CONTENT_PROD_PREFIX` | `gs://energinokkelen-content-prod` | Målbucket (**NB:** uten `/content`-suffix) |
+  | `ADMIN_CONTENT_LOG_PREFIX` | `gs://energinokkelen-content-prod/logs` | Audit-logger |
   | `ADMIN_CONTENT_PUBLISHER_SERVICE_ACCOUNT` | `cloud-build@…` | SA for build-stepene |
 - **Monitoring & verifikasjon:**
   - Cloud Build-tag `content-publish` gjør det enkelt å filtrere i konsollen (`Cloud Build → History → filter tag:content-publish`).
@@ -399,6 +399,7 @@ gcloud monitoring uptime describe projects/energiverktoy-poc-1234/uptimeCheckCon
 
 | Dato       | Beskrivelse                                                                                                                                                                      | Utført av |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| 2025-11-27 | **Staging/prod-separasjon fikset:** (1) Endret `CONTENT_BUCKET` i `energinokkelen-prod` til `energinokkelen-content-prod`, (2) La til `/config/content/*` proxy i admin-server for staging-preview, (3) Endret `ADMIN_CONTENT_PROD_PREFIX` til `gs://energinokkelen-content-prod` (uten `/content`-suffix). Admin-server serverer nå forhåndsvisning fra staging-bøtten. | Claude |
 | 2025-11-26 | **Publiserings-wizard ferdig:** Fikset servicekonto fra `content-admin@` til `cloud-build@`, la til IAM-binding `serviceAccountUser`, oppdatert Cloud Run env-var. Endret prod-frontend `CONTENT_BUCKET` til `energinokkelen-content-prod` for korrekt staging/prod-separasjon. | Claude |
 | 2025-11-15 | Temperaturstyring flyttet til `content/tiltak/temperaturstyring.json` med variantdata + nye tilskudd (`klimaoslo-smart-energistyring`, `klimaoslo-pris-effektstyring`) dokumentert i content-/driftsrutinene. | Codex      |
 | 2025-11-13 | Dokumenterte staging-host (`staging.energinøkkelen.no`) i LB-oppsettet, og beskrev nye innholdsskript (`content:validate`/`content:publish`) samt driftsrutinen i `Dokumentasjon/innholdsdrift-tiltak.md`. | Codex      |
