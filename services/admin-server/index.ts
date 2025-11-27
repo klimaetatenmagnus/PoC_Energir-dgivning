@@ -7,6 +7,7 @@ import {
   createAdminApiRouter,
   createAdminApiErrorHandler,
 } from "../admin-api/router.js";
+import { ContentStorage } from "../admin-api/contentStorage.js";
 
 const config = loadAdminApiConfig();
 const app = express();
@@ -47,6 +48,87 @@ app.get("/_gcp_iap/clear_login_cookie", (_req: Request, res: Response) => {
 });
 
 app.use("/admin/api", createAdminApiRouter(config));
+
+// Proxy for /config/content/* som leser fra staging-bøtten
+// Dette lar forhåndsvisningen i admin-UI hente staging-data i stedet for prod-data
+const stagingStorage = new ContentStorage(config.stagingBucket);
+
+app.get("/config/content/:path(*)", async (req: Request, res: Response) => {
+  try {
+    // Hent relativ path fra URL (f.eks. "tiltak/varmepumpe.json")
+    const relativePath = req.params.path;
+    if (!relativePath) {
+      res.status(400).json({ error: "Mangler filsti" });
+      return;
+    }
+
+    // Sjekk om vi skal inkludere draft-filer
+    const includeDrafts = req.query.draft === "1" || req.query.draft === "true";
+
+    let filePath = relativePath;
+    let source: "draft" | "published" = "published";
+
+    // Hvis includeDrafts, prøv draft-filen først
+    if (includeDrafts && relativePath.endsWith(".json") && !relativePath.endsWith(".draft.json")) {
+      const draftPath = relativePath.replace(/\.json$/, ".draft.json");
+      const draftExists = await stagingStorage.exists(draftPath);
+      if (draftExists) {
+        filePath = draftPath;
+        source = "draft";
+      }
+    }
+
+    const { data, generation, etag } = await stagingStorage.readJson(filePath);
+
+    // Sett cache-headere
+    res.setHeader("Cache-Control", "no-cache");
+    if (etag) {
+      res.setHeader("ETag", etag);
+    }
+    if (generation) {
+      res.setHeader("X-Content-Generation", generation);
+    }
+    res.setHeader("X-Content-Source", source);
+    res.setHeader("X-Content-Bucket", "staging");
+
+    res.json(data);
+  } catch (error) {
+    if (error && typeof error === "object" && "status" in error) {
+      const httpError = error as { status: number; message: string };
+      res.status(httpError.status).json({ error: httpError.message });
+      return;
+    }
+    console.error("[admin-server] Feil ved lesing av innhold:", error);
+    res.status(500).json({ error: "Intern serverfeil ved lesing av innhold" });
+  }
+});
+
+// Proxy for /config/dictionaries/* som leser fra staging-bøtten
+app.get("/config/dictionaries/:path(*)", async (req: Request, res: Response) => {
+  try {
+    const relativePath = `dictionaries/${req.params.path}`;
+    const { data, generation, etag } = await stagingStorage.readJson(relativePath);
+
+    res.setHeader("Cache-Control", "no-cache");
+    if (etag) {
+      res.setHeader("ETag", etag);
+    }
+    if (generation) {
+      res.setHeader("X-Content-Generation", generation);
+    }
+    res.setHeader("X-Content-Bucket", "staging");
+
+    res.json(data);
+  } catch (error) {
+    if (error && typeof error === "object" && "status" in error) {
+      const httpError = error as { status: number; message: string };
+      res.status(httpError.status).json({ error: httpError.message });
+      return;
+    }
+    console.error("[admin-server] Feil ved lesing av dictionary:", error);
+    res.status(500).json({ error: "Intern serverfeil ved lesing av dictionary" });
+  }
+});
 
 const registerStatic = (
   mountPath: string,
