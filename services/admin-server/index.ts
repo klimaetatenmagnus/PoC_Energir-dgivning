@@ -53,10 +53,12 @@ app.use("/admin/api", createAdminApiRouter(config));
 // Dette lar forhåndsvisningen i admin-UI hente staging-data i stedet for prod-data
 const stagingStorage = new ContentStorage(config.stagingBucket);
 
-app.get("/config/content/:path(*)", async (req: Request, res: Response) => {
+app.get("/config/content/*splat", async (req: Request, res: Response) => {
   try {
     // Hent relativ path fra URL (f.eks. "tiltak/varmepumpe.json")
-    const relativePath = req.params.path;
+    // I Express 5 er wildcard-parameteren et array
+    const splatParam = req.params.splat;
+    const relativePath = Array.isArray(splatParam) ? splatParam.join("/") : splatParam;
     if (!relativePath) {
       res.status(400).json({ error: "Mangler filsti" });
       return;
@@ -104,9 +106,11 @@ app.get("/config/content/:path(*)", async (req: Request, res: Response) => {
 });
 
 // Proxy for /config/dictionaries/* som leser fra staging-bøtten
-app.get("/config/dictionaries/:path(*)", async (req: Request, res: Response) => {
+app.get("/config/dictionaries/*splat", async (req: Request, res: Response) => {
   try {
-    const relativePath = `dictionaries/${req.params.path}`;
+    const splatParam = req.params.splat;
+    const pathPart = Array.isArray(splatParam) ? splatParam.join("/") : splatParam;
+    const relativePath = `dictionaries/${pathPart}`;
     const { data, generation, etag } = await stagingStorage.readJson(relativePath);
 
     res.setHeader("Cache-Control", "no-cache");
