@@ -574,13 +574,19 @@ async function listLocalContentFiles(collection: ContentCollection): Promise<str
 
   await walk(collection);
 
-  return results
+  const allFiles = results
     .filter((filePath) => !filePath.endsWith('/index.json'))
-    .filter((filePath) => !filePath.endsWith('.draft.json'))
     .sort((a, b) => a.localeCompare(b));
+
+  // Filtrer ut draft-filer, men behold referanse til hvilke hovedfiler som finnes
+  const mainFiles = allFiles.filter((f) => !f.endsWith('.draft.json'));
+  return mainFiles;
 }
 
-async function listBucketContentFiles(collection: ContentCollection): Promise<string[]> {
+async function listBucketContentFiles(
+  collection: ContentCollection,
+  options: { includeDrafts?: boolean } = {}
+): Promise<string[]> {
   if (!storage || !contentBucketName) {
     return [];
   }
@@ -591,17 +597,43 @@ async function listBucketContentFiles(collection: ContentCollection): Promise<st
     autoPaginate: true
   });
 
-  return files
+  const allFiles = files
     .map((file) => file.name)
     .filter((name): name is string => typeof name === 'string' && name.startsWith(prefix))
     .filter((name) => name.endsWith('.json') && !name.endsWith('/index.json'))
-    .filter((name) => !name.endsWith('.draft.json'))
     .sort((a, b) => a.localeCompare(b));
+
+  // Skill ut hovedfiler og draft-filer
+  const mainFiles = allFiles.filter((f) => !f.endsWith('.draft.json'));
+  const draftFiles = allFiles.filter((f) => f.endsWith('.draft.json'));
+
+  if (!options.includeDrafts) {
+    return mainFiles;
+  }
+
+  // Finn draft-only filer (drafts som ikke har tilhørende hovedfil)
+  const mainFileSet = new Set(mainFiles);
+  const draftOnlyFiles: string[] = [];
+
+  for (const draftPath of draftFiles) {
+    // Konverter draft-sti til hovedfil-sti for å sjekke om den finnes
+    const mainPath = draftPath.replace(/\.draft\.json$/, '.json');
+    if (!mainFileSet.has(mainPath)) {
+      // Dette er en draft-only fil - legg til hovedfil-stien (vil bli lastet som draft via loadContentDocument)
+      draftOnlyFiles.push(mainPath);
+    }
+  }
+
+  // Returner alle hovedfiler + draft-only filer (representert som hovedfil-stier)
+  return [...mainFiles, ...draftOnlyFiles].sort((a, b) => a.localeCompare(b));
 }
 
-async function listContentFiles(collection: ContentCollection): Promise<string[]> {
+async function listContentFiles(
+  collection: ContentCollection,
+  options: { includeDrafts?: boolean } = {}
+): Promise<string[]> {
   if (storage && contentBucketName) {
-    return listBucketContentFiles(collection);
+    return listBucketContentFiles(collection, options);
   }
   return listLocalContentFiles(collection);
 }
@@ -624,7 +656,6 @@ async function loadContentDocument(
   const includeDrafts = Boolean(options.includeDrafts);
 
   // Hvis draft-modus er aktivert, sjekk om det finnes en draft-fil
-  let pathToLoad = relativePath;
   if (includeDrafts) {
     const draftPath = buildDraftPath(relativePath);
     if (draftPath) {
@@ -632,7 +663,6 @@ async function loadContentDocument(
         // Prøv å laste draft-filen først
         const draftResult = await loadJsonFile(draftPath);
         debugLog(`Loaded draft file: ${draftPath}`);
-        pathToLoad = draftPath;
         // Fortsett med draft-data
         const { data, etag } = draftResult;
         return processLoadedContent(draftPath, data, etag, { includeDrafts: true });
@@ -643,8 +673,20 @@ async function loadContentDocument(
     }
   }
 
-  const { data, etag } = await loadJsonFile(pathToLoad);
-  return processLoadedContent(relativePath, data, etag, options);
+  // Prøv å laste hovedfilen
+  try {
+    const { data, etag } = await loadJsonFile(relativePath);
+    return processLoadedContent(relativePath, data, etag, options);
+  } catch (mainError) {
+    // Hvis hovedfilen ikke finnes og vi er i draft-modus, er dette en draft-only fil
+    // som vi allerede har prøvd å laste ovenfor
+    if (includeDrafts) {
+      const draftPath = buildDraftPath(relativePath);
+      debugLog(`Main file ${relativePath} not found, and draft was already attempted`);
+      throw new Error(`Content not found: ${relativePath} (draft path: ${draftPath})`);
+    }
+    throw mainError;
+  }
 }
 
 function processLoadedContent(
@@ -746,7 +788,7 @@ async function buildContentCatalog(
   collection: ContentCollection,
   options: { includeDrafts?: boolean } = {}
 ): Promise<ContentCatalogResponse> {
-  const files = await listContentFiles(collection);
+  const files = await listContentFiles(collection, options);
   const items: ContentCatalogItem[] = [];
   let skippedLegacy = 0;
   let skippedUnpublished = 0;
