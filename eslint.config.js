@@ -1,3 +1,6 @@
+// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+import storybook from "eslint-plugin-storybook";
+
 import js from "@eslint/js";
 import globals from "globals";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
@@ -16,63 +19,57 @@ const tsRecommended = tsPlugin.configs["flat/recommended"].map((config) => ({
   files: config.files ?? tsFiles,
 }));
 
-export default [
-  {
-    ignores: [
-      "dist/**",
-      "node_modules/**",
-      "coverage/**",
-      "scripts/**",
-      "packages/**/dist/**",
-      "**/*.d.ts",
+export default [{
+  ignores: [
+    "dist/**",
+    "node_modules/**",
+    "coverage/**",
+    "scripts/**",
+    "packages/**/dist/**",
+    "**/*.d.ts",
+  ],
+}, {
+  linterOptions: {
+    reportUnusedDisableDirectives: true,
+  },
+  languageOptions: {
+    ecmaVersion: "latest",
+    sourceType: "module",
+    globals: {
+      ...normalizeGlobals(globals.browser),
+      ...normalizeGlobals(globals.node),
+    },
+  },
+  rules: {
+    ...js.configs.recommended.rules,
+    "no-console": ["warn", { allow: ["warn", "error"] }],
+  },
+}, ...tsRecommended, {
+  files: tsFiles,
+  plugins: {
+    "@typescript-eslint": tsPlugin,
+    "react-hooks": reactHooks,
+    "react-refresh": reactRefresh,
+  },
+  rules: {
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+    ],
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    "react-refresh/only-export-components": [
+      "warn",
+      { allowConstantExport: true },
     ],
   },
-  {
-    linterOptions: {
-      reportUnusedDisableDirectives: true,
-    },
-    languageOptions: {
-      ecmaVersion: "latest",
-      sourceType: "module",
-      globals: {
-        ...normalizeGlobals(globals.browser),
-        ...normalizeGlobals(globals.node),
-      },
-    },
-    rules: {
-      ...js.configs.recommended.rules,
-      "no-console": ["warn", { allow: ["warn", "error"] }],
-    },
+}, {
+  files: [
+    "**/*.test.{ts,tsx}",
+    "**/*.spec.{ts,tsx}",
+    "**/__tests__/**/*.{ts,tsx}",
+  ],
+  rules: {
+    "@typescript-eslint/no-explicit-any": "off",
   },
-  ...tsRecommended,
-  {
-    files: tsFiles,
-    plugins: {
-      "@typescript-eslint": tsPlugin,
-      "react-hooks": reactHooks,
-      "react-refresh": reactRefresh,
-    },
-    rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
-      ],
-      "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "warn",
-      "react-refresh/only-export-components": [
-        "warn",
-        { allowConstantExport: true },
-      ],
-    },
-  },
-  {
-    files: [
-      "**/*.test.{ts,tsx}",
-      "**/*.spec.{ts,tsx}",
-      "**/__tests__/**/*.{ts,tsx}",
-    ],
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-    },
-  },
-];
+}, ...storybook.configs["flat/recommended"]];

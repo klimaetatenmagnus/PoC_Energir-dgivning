@@ -42,3 +42,9 @@ coverage/
 .idea/
 .vscode/*
 !.vscode/settings.json
+
+*storybook.log
+storybook-static
+
+# Playwright MCP screenshots
+.playwright-mcp/
