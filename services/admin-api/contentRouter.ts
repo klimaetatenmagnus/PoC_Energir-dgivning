@@ -47,6 +47,16 @@ const UpdateTiltakPayloadSchema = z.object({
     .optional(),
 });
 
+const CreateTiltakPayloadSchema = z.object({
+  tiltak: TiltakContentSchema,
+  changeSummary: z
+    .string()
+    .trim()
+    .min(5, { message: "Bruk en kort oppsummering" })
+    .max(280)
+    .optional(),
+});
+
 const UpdateTilskuddPayloadSchema = z.object({
   generation: z.string().min(1, { message: "Generation må oppgis" }),
   tilskudd: TilskuddContentSchema,
@@ -258,6 +268,78 @@ export function createContentRouter(
         etag,
         hasDraft,
         source: hasDraft ? "draft" : "published",
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Opprett nytt tiltak (lagres som draft)
+  router.post("/content/tiltak", async (req, res, next) => {
+    try {
+      const body = CreateTiltakPayloadSchema.parse(req.body ?? {});
+      const actor = resolveUserContext(req);
+      const tiltakId = body.tiltak.id;
+
+      // Valider at ID er gyldig slug
+      SlugSchema.parse(tiltakId);
+
+      // Sjekk at tiltak med denne ID-en ikke allerede eksisterer
+      const publishedPath = buildTiltakPath(tiltakId);
+      const draftPath = buildTiltakDraftPath(tiltakId);
+
+      const [publishedExists, draftExists] = await Promise.all([
+        storage.exists(publishedPath),
+        storage.exists(draftPath),
+      ]);
+
+      if (publishedExists || draftExists) {
+        throw new HttpError(
+          409,
+          `Et tiltak med ID "${tiltakId}" eksisterer allerede`
+        );
+      }
+
+      // Hent dictionary for å bygge benefits fra refs
+      const { dictionary } = await loadDictionary(storage);
+      const refs = dedupeRefs(body.tiltak.benefitRefs ?? []);
+      if (refs.length > 0) {
+        validateBenefitRefs(refs, dictionary);
+      }
+
+      const now = new Date().toISOString();
+      const summary = body.changeSummary?.trim() || "Opprettet via admin-UI";
+
+      // Opprett som draft (ikke publisert)
+      const newTiltak: TiltakContent = {
+        ...body.tiltak,
+        benefitRefs: refs,
+        benefits: buildBenefitsFromRefs(refs, dictionary),
+        metadata: {
+          ...body.tiltak.metadata,
+          status: "draft",
+          updatedAt: now,
+          updatedBy: actor.email,
+          changeSummary: summary.slice(0, 500),
+        },
+      };
+
+      // Skriv til draft-fil
+      const result = await storage.writeJson(draftPath, newTiltak);
+
+      console.warn(
+        `[admin-api] ${actor.email} opprettet nytt tiltak ${tiltakId}`
+      );
+
+      res.status(201).json({
+        id: newTiltak.id,
+        path: draftPath,
+        tiltak: newTiltak,
+        metadata: newTiltak.metadata,
+        generation: result.generation,
+        hasDraft: true,
+        hasPublished: false,
+        source: "draft",
       });
     } catch (error) {
       next(error);

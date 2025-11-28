@@ -23,6 +23,9 @@ export type TiltakCatalogItem = ContentCatalogItemBase<'tiltak'> & {
   supportTags: string[];
   buildingTypes: string[];
   variantAudiences: string[];
+  // Synlighet-filtrering
+  visibleForBuildingTypes: string[]; // Tom array = vis for alle byggtyper
+  minBuildingYear?: number; // Bygg må være eldre enn dette året
 };
 
 export type TilskuddCatalogItem = ContentCatalogItemBase<'tilskudd'> & {

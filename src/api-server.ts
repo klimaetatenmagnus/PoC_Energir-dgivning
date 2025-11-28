@@ -712,7 +712,10 @@ function createTiltakCatalogItem(
     grants: document.grants,
     supportTags: document.supportTags,
     buildingTypes: Object.keys(document.buildingTypeParagraphs),
-    variantAudiences: document.variants.map((variant) => variant.audience)
+    variantAudiences: document.variants.map((variant) => variant.audience),
+    // Synlighet-filtrering
+    visibleForBuildingTypes: document.visibleForBuildingTypes ?? [],
+    minBuildingYear: document.minBuildingYear
   };
 }
 

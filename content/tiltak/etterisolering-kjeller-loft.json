@@ -4,7 +4,7 @@
   "title": "Etterisolering av kjeller og loft",
   "summary": "Reduser varmetapet ved å oppgradere loftsgulv og gulv mot kjeller – særlig effektivt i eldre boliger.",
   "introParagraphs": [
-    "LOLOCOPTER - Etterisolering av loft og gulv mot kjeller er en av de mest kostnadseffektive måtene å senke energibruk, få et lunere inneklima og kutte strømutgiftene. Mange boliger har lite eller utdatert isolasjon i disse konstruksjonene.",
+    "Etterisolering av loft og gulv mot kjeller er en av de mest kostnadseffektive måtene å senke energibruk, få et lunere inneklima og kutte strømutgiftene. Mange boliger har lite eller utdatert isolasjon i disse konstruksjonene.",
     "Når du legger inn ny isolasjon samtidig som du sikrer god fukthåndtering og ventilasjon, kan du oppnå merkbare besparelser uten å endre fasaden."
   ],
   "buildingTypeParagraphs": {
@@ -90,10 +90,11 @@
     "standard",
     "gulliste"
   ],
+  "visibleForBuildingTypes": [],
   "metadata": {
     "status": "published",
     "updatedBy": "local-redaktor@energinokkelen.dev",
-    "updatedAt": "2025-11-26T14:16:51.153Z",
+    "updatedAt": "2025-11-27T22:47:37.267Z",
     "changeSummary": "Redigert via admin-UI"
   },
   "variants": [

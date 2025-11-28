@@ -13,18 +13,18 @@ export function BenefitsPage({ onBack }: BenefitsPageProps) {
   return (
     <section className="admin-benefits-page">
       <header className="admin-content__header">
+        <PktButton
+          skin="secondary"
+          size="medium"
+          variant="icon-left"
+          iconName="arrow-return"
+          onClick={onBack}
+        >
+          <span>Tilbake</span>
+        </PktButton>
         <div className="admin-content__heading">
           <div className="admin-content__heading-row">
             <h2>Fordeler som kan redigeres</h2>
-            <PktButton
-              skin="secondary"
-              size="medium"
-              variant="icon-left"
-              iconName="arrow-return"
-              onClick={onBack}
-            >
-              <span>Tilbake</span>
-            </PktButton>
           </div>
           <div className="admin-content__primary-action">
             <PktButton

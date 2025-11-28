@@ -76,6 +76,22 @@ export type PublishTiltakResponse = {
   message: string;
 };
 
+export type CreateTiltakPayload = {
+  tiltak: TiltakContent;
+  changeSummary?: string;
+};
+
+export type CreateTiltakResponse = {
+  id: string;
+  path: string;
+  tiltak: TiltakContent;
+  metadata: TiltakContent["metadata"];
+  generation: string | null;
+  hasDraft: boolean;
+  hasPublished: boolean;
+  source: "draft";
+};
+
 export type DiscardDraftResponse = {
   id: string;
   message: string;
@@ -162,6 +178,15 @@ export async function discardTiltakDraft(
 ): Promise<DiscardDraftResponse> {
   return request<DiscardDraftResponse>(`/content/tiltak/${tiltakId}/draft`, {
     method: "DELETE",
+  });
+}
+
+export async function createTiltak(
+  payload: CreateTiltakPayload
+): Promise<CreateTiltakResponse> {
+  return request<CreateTiltakResponse>("/content/tiltak", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }
 

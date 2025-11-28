@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import {
   PktAlert,
   PktButton,
+  PktCheckbox,
   PktRadioButton,
   PktSelect,
   PktTextarea,
@@ -20,6 +21,31 @@ export interface TiltakEditorProps {
   onSave: (updated: TiltakContent) => Promise<void>;
   onCancel: () => void;
   isSaving?: boolean;
+  mode?: "edit" | "create";
+}
+
+/**
+ * Genererer en slug fra en tittel.
+ * Konverterer til lowercase, fjerner diakritiske tegn, og erstatter spesialtegn med bindestreker.
+ */
+function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Fjern diakritiske tegn
+    .replace(/æ/g, "ae")
+    .replace(/ø/g, "o")
+    .replace(/å/g, "a")
+    .replace(/[^a-z0-9]+/g, "-") // Erstatt ikke-alfanumeriske med bindestrek
+    .replace(/^-|-$/g, "") // Fjern ledende/etterfølgende bindestreker
+    .slice(0, 50); // Maks 50 tegn
+}
+
+/**
+ * Validerer at en streng er en gyldig slug.
+ */
+function isValidSlug(slug: string): boolean {
+  return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) && slug.length >= 3;
 }
 
 type BuildingTypeKey = string;
@@ -57,6 +83,7 @@ export function TiltakEditor({
   onSave,
   onCancel,
   isSaving = false,
+  mode = "edit",
 }: TiltakEditorProps) {
   const { dictionary } = useAdminDictionary();
 
@@ -71,7 +98,9 @@ export function TiltakEditor({
 
   // UI-tilstand
   const [error, setError] = useState<string | null>(null);
-  const [isDirty, setIsDirty] = useState(false);
+  const [isDirty, setIsDirty] = useState(mode === "create"); // I create-modus starter vi som dirty
+  const [hasMinBuildingYearError, setMinBuildingYearError] = useState(false);
+  const [manualIdOverride, setManualIdOverride] = useState(false); // Om bruker har manuelt endret ID
 
   // Tilgjengelige audiences fra tiltaket
   const availableAudiences = useMemo(() => tiltak.audiences, [tiltak.audiences]);
@@ -186,11 +215,25 @@ export function TiltakEditor({
     return getAudienceValue(base, variantTabs, selectedAudience);
   }, [editedTiltak.tabs, gullisteVariant?.tabs, selectedAudience]);
 
-  // State for hvilken tab som er valgt for redigering
+  // State for hvilken tab som er valgt for redigering (innhold-tabs)
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
+
+  // State for hovedfane (Tiltaksinformasjon vs Synlighet)
+  const [mainTab, setMainTab] = useState<"info" | "visibility">("info");
 
   // Har dette tiltaket tabs?
   const hasTabs = currentTabs.length > 0 && currentTabs[0]?.tabs?.length > 0;
+
+  // Synlighet-felt
+  const visibleForBuildingTypes = useMemo(
+    () => editedTiltak.visibleForBuildingTypes ?? [],
+    [editedTiltak.visibleForBuildingTypes]
+  );
+
+  const minBuildingYear = useMemo(
+    () => editedTiltak.minBuildingYear,
+    [editedTiltak.minBuildingYear]
+  );
 
   // Første tabs-seksjon (de fleste tiltak har bare én)
   const tabsSection = currentTabs[0] as TiltakTabsSection | undefined;
@@ -390,6 +433,123 @@ export function TiltakEditor({
     [currentGrants, updateValue]
   );
 
+  // ========== SYNLIGHET-CALLBACKS ==========
+
+  // Toggle en enkelt byggtype for synlighet
+  const toggleBuildingTypeVisibility = useCallback(
+    (buildingTypeId: string) => {
+      const current = editedTiltak.visibleForBuildingTypes ?? [];
+      const updated = current.includes(buildingTypeId)
+        ? current.filter((bt) => bt !== buildingTypeId)
+        : [...current, buildingTypeId];
+
+      setEditedTiltak((prev) => ({
+        ...prev,
+        visibleForBuildingTypes: updated,
+      }));
+      setIsDirty(true);
+    },
+    [editedTiltak.visibleForBuildingTypes]
+  );
+
+  // Velg alle byggtyper for synlighet
+  const selectAllBuildingTypesVisibility = useCallback(() => {
+    const allIds = buildingTypes.filter((bt) => bt.id !== "default").map((bt) => bt.id);
+    setEditedTiltak((prev) => ({
+      ...prev,
+      visibleForBuildingTypes: allIds,
+    }));
+    setIsDirty(true);
+  }, [buildingTypes]);
+
+  // Fjern alle byggtyper (vis for alle)
+  const clearAllBuildingTypesVisibility = useCallback(() => {
+    setEditedTiltak((prev) => ({
+      ...prev,
+      visibleForBuildingTypes: [],
+    }));
+    setIsDirty(true);
+  }, []);
+
+  // Håndter endring av byggår-filter
+  const handleMinBuildingYearChange = useCallback((value: string) => {
+    const trimmed = value.trim();
+
+    if (trimmed === "") {
+      setEditedTiltak((prev) => ({
+        ...prev,
+        minBuildingYear: undefined,
+      }));
+      setMinBuildingYearError(false);
+      setIsDirty(true);
+      return;
+    }
+
+    const parsed = parseInt(trimmed, 10);
+    if (!Number.isNaN(parsed)) {
+      setEditedTiltak((prev) => ({
+        ...prev,
+        minBuildingYear: parsed,
+      }));
+      setIsDirty(true);
+    }
+  }, []);
+
+  // Valider byggår-filter ved blur
+  const validateMinBuildingYear = useCallback((value: string) => {
+    const trimmed = value.trim();
+
+    if (trimmed === "") {
+      setMinBuildingYearError(false);
+      return;
+    }
+
+    const parsed = parseInt(trimmed, 10);
+    const isValid = !Number.isNaN(parsed) && parsed >= 1800 && parsed <= 2100;
+    setMinBuildingYearError(!isValid);
+  }, []);
+
+  // Håndter tittelendring (create-modus)
+  const handleTitleChange = useCallback(
+    (newTitle: string) => {
+      setEditedTiltak((prev) => ({
+        ...prev,
+        title: newTitle,
+        // I create-modus: generer slug fra tittel automatisk hvis ikke manuelt overstyrt
+        ...(mode === "create" && !manualIdOverride
+          ? { id: generateSlug(newTitle) }
+          : {}),
+      }));
+      setIsDirty(true);
+      setError(null);
+    },
+    [mode, manualIdOverride]
+  );
+
+  // Håndter ID-endring (create-modus)
+  const handleIdChange = useCallback((newId: string) => {
+    setManualIdOverride(true);
+    setEditedTiltak((prev) => ({
+      ...prev,
+      id: newId.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+    }));
+    setIsDirty(true);
+    setError(null);
+  }, []);
+
+  // Valideringer
+  const titleError = editedTiltak.title.trim().length < 3;
+  const idError = mode === "create" && !isValidSlug(editedTiltak.id);
+
+  // Validering av påkrevde tekstfelter (intro og default byggtype-tekst)
+  const introText = editedTiltak.introParagraphs.filter((p) => p.trim()).join("");
+  const introError = mode === "create" && introText.length === 0;
+
+  const defaultBuildingTypeText = (editedTiltak.buildingTypeParagraphs?.default ?? [])
+    .filter((p) => p.trim())
+    .join("");
+  const buildingTypeError = mode === "create" && defaultBuildingTypeText.length === 0;
+
   // Oppdater tab-innhold (body-tekst for en spesifikk tab)
   const updateTabBody = useCallback(
     (tabIndex: number, text: string) => {
@@ -473,12 +633,21 @@ export function TiltakEditor({
     [currentAccordion]
   );
 
+  // Sjekk om vi kan lagre (create-modus krever gyldig tittel, ID, intro og byggtype-tekst)
+  const canSave = mode === "create"
+    ? isDirty && !titleError && !idError && !introError && !buildingTypeError && !hasMinBuildingYearError
+    : isDirty && !titleError && !hasMinBuildingYearError;
+
   return (
     <div className="tiltak-editor">
       <header className="tiltak-editor__header">
-        <h2 className="tiltak-editor__title">Rediger: {tiltak.title}</h2>
+        <h2 className="tiltak-editor__title">
+          {mode === "create" ? "Opprett nytt tiltak" : `Rediger: ${tiltak.title}`}
+        </h2>
         <p className="tiltak-editor__subtitle">
-          Velg målgruppe og byggtype for å se og redigere relevant innhold.
+          {mode === "create"
+            ? "Fyll inn informasjon for det nye tiltaket."
+            : "Bruk fanene for å redigere innhold eller styre synlighet."}
         </p>
       </header>
 
@@ -488,8 +657,69 @@ export function TiltakEditor({
         </PktAlert>
       )}
 
-      {/* Kontekst-velgere */}
-      <section className="tiltak-editor__context">
+      {/* Hovedfaner */}
+      <div className="tiltak-editor__main-tabs">
+        <PktTabs
+          tabs={[
+            {
+              text: mode === "create" ? "Tiltaksinformasjon" : "Endre tiltaksinformasjon",
+              active: mainTab === "info",
+              action: () => setMainTab("info"),
+            },
+            {
+              text: mode === "create" ? "Synlighet" : "Endre synlighet",
+              active: mainTab === "visibility",
+              action: () => setMainTab("visibility"),
+            },
+          ]}
+          onTabSelected={(index) => setMainTab(index === 0 ? "info" : "visibility")}
+        />
+      </div>
+
+      {/* ========== FANE: TILTAKSINFORMASJON ========== */}
+      {mainTab === "info" && (
+        <>
+          {/* Grunnleggende informasjon (tittel og ID) */}
+          <section className="tiltak-editor__section tiltak-editor__section--identity">
+            <h3 className="tiltak-editor__section-title">Grunnleggende informasjon</h3>
+            <PktTextinput
+              id="tiltak-title"
+              label="Tiltakstittel"
+              helptext="Tittelen som vises i tiltakslisten og på tiltakskortet"
+              value={editedTiltak.title}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                handleTitleChange(e.target.value)
+              }
+              hasError={titleError}
+              errorMessage="Tittel er påkrevd (minst 3 tegn)"
+            />
+
+            {/* ID-felt vises kun i create-modus */}
+            {mode === "create" && (
+              <PktTextinput
+                id="tiltak-id"
+                label="Tiltak-ID (slug)"
+                helptext="Unik identifikator. Genereres automatisk fra tittelen, men kan overstyres. Brukes i URL-er og filnavn."
+                value={editedTiltak.id}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleIdChange(e.target.value)
+                }
+                hasError={idError}
+                errorMessage="ID må være lowercase med kun bokstaver, tall og bindestreker (minst 3 tegn)"
+              />
+            )}
+
+            {/* Vis ID som readonly i edit-modus */}
+            {mode === "edit" && (
+              <div className="tiltak-editor__readonly-field">
+                <span className="tiltak-editor__readonly-label">Tiltak-ID (slug)</span>
+                <span className="tiltak-editor__readonly-value">{editedTiltak.id}</span>
+              </div>
+            )}
+          </section>
+
+          {/* Kontekst-velgere */}
+          <section className="tiltak-editor__context">
         <div className="tiltak-editor__context-row">
           {/* Audience-velger */}
           <PktInputWrapper
@@ -539,7 +769,10 @@ export function TiltakEditor({
 
       {/* Intro-tekst */}
       <section className="tiltak-editor__section">
-        <h3 className="tiltak-editor__section-title">Introduksjonstekst</h3>
+        <h3 className="tiltak-editor__section-title">
+          Introduksjonstekst
+          {mode === "create" && <span className="tiltak-editor__required">*</span>}
+        </h3>
         <PktTextarea
           id="intro-paragraphs"
           label={`Intro for ${selectedAudience === "gulliste" ? "gul liste" : "standard"}`}
@@ -547,6 +780,8 @@ export function TiltakEditor({
           value={currentIntroParagraphs.join("\n\n")}
           onChange={(e) => handleIntroChange(e.target.value)}
           rows={6}
+          hasError={introError && selectedAudience === "standard"}
+          errorMessage="Introduksjonstekst er påkrevd"
         />
       </section>
 
@@ -554,6 +789,9 @@ export function TiltakEditor({
       <section className="tiltak-editor__section">
         <h3 className="tiltak-editor__section-title">
           Byggtype-tekst: {buildingTypes.find((b) => b.id === selectedBuildingType)?.label ?? selectedBuildingType}
+          {mode === "create" && selectedBuildingType === "default" && (
+            <span className="tiltak-editor__required">*</span>
+          )}
         </h3>
         <PktTextarea
           id="buildingtype-paragraphs"
@@ -562,6 +800,8 @@ export function TiltakEditor({
           value={getBuildingTypeText(currentBuildingTypeParagraphs, selectedBuildingType)}
           onChange={(e) => updateBuildingTypeParagraph(selectedBuildingType, e.target.value)}
           rows={5}
+          hasError={buildingTypeError && selectedBuildingType === "default" && selectedAudience === "standard"}
+          errorMessage="Standard byggtype-tekst er påkrevd"
         />
       </section>
 
@@ -845,6 +1085,91 @@ export function TiltakEditor({
           </>
         )}
       </section>
+        </>
+      )}
+
+      {/* ========== FANE: SYNLIGHET ========== */}
+      {mainTab === "visibility" && (
+        <section className="tiltak-editor__section tiltak-editor__section--visibility">
+          <h3 className="tiltak-editor__section-title">Synlighet i tjenesten</h3>
+          <p className="tiltak-editor__section-helptext">
+            Styr hvilke bygg tiltaket skal vises for basert på byggtype og byggeår.
+          </p>
+
+          {/* Byggtype-synlighet */}
+          <PktInputWrapper
+            label="Vis for byggtyper"
+            helptext="Velg hvilke byggtyper dette tiltaket skal vises for. La alle stå umarkert for å vise for alle byggtyper."
+            forId="buildingtype-visibility-group"
+            hasFieldset
+          >
+            <div className="tiltak-editor__checkbox-row">
+              <PktButton
+                skin="tertiary"
+                size="small"
+                onClick={selectAllBuildingTypesVisibility}
+              >
+                Velg alle
+              </PktButton>
+              <PktButton
+                skin="tertiary"
+                size="small"
+                onClick={clearAllBuildingTypesVisibility}
+              >
+                Fjern alle (vis for alle)
+              </PktButton>
+            </div>
+
+            <div className="tiltak-editor__checkbox-grid">
+              {buildingTypes
+                .filter((bt) => bt.id !== "default")
+                .map((bt) => (
+                  <PktCheckbox
+                    key={bt.id}
+                    id={`visibility-${bt.id}`}
+                    label={bt.label}
+                    checked={visibleForBuildingTypes.includes(bt.id)}
+                    onChange={() => toggleBuildingTypeVisibility(bt.id)}
+                  />
+                ))}
+            </div>
+
+            {visibleForBuildingTypes.length === 0 && (
+              <p className="tiltak-editor__hint">
+                <em>Ingen byggtyper valgt – tiltaket vises for alle byggtyper.</em>
+              </p>
+            )}
+          </PktInputWrapper>
+
+          {/* Byggår-filter */}
+          <div className="tiltak-editor__field-group">
+            <PktTextinput
+              id="min-building-year"
+              label="Vis kun for bygg eldre enn år"
+              helptext="Tiltaket vises kun for bygg bygget før dette årstallet. La feltet stå tomt for å vise for alle bygg."
+              type="number"
+              placeholder="f.eks. 1970"
+              value={minBuildingYear?.toString() ?? ""}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                handleMinBuildingYearChange(e.target.value)
+              }
+              onBlur={(e: React.FocusEvent<HTMLInputElement>) =>
+                validateMinBuildingYear(e.target.value)
+              }
+              hasError={hasMinBuildingYearError}
+              errorMessage="Årstallet må være et heltall mellom 1800 og 2100"
+            />
+
+            {minBuildingYear && !hasMinBuildingYearError && (
+              <p className="tiltak-editor__hint">
+                <em>
+                  Tiltaket vises kun for bygg bygget før {minBuildingYear}.
+                </em>
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Handlingsknapper */}
       <footer className="tiltak-editor__footer">
@@ -854,9 +1179,13 @@ export function TiltakEditor({
         <PktButton
           skin="primary"
           onClick={handleSave}
-          disabled={!isDirty || isSaving}
+          disabled={!canSave || isSaving}
         >
-          {isSaving ? "Lagrer..." : "Lagre endringer"}
+          {isSaving
+            ? "Lagrer..."
+            : mode === "create"
+              ? "Opprett tiltak"
+              : "Lagre endringer"}
         </PktButton>
       </footer>
     </div>

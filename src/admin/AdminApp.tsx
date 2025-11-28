@@ -51,6 +51,7 @@ function AdminShell() {
     "dashboard"
   );
   const [editItem, setEditItem] = useState<AdminContentItem | null>(null);
+  const [isCreating, setIsCreating] = useState(false); // Create-modus for nye tiltak
   const [wizardOpen, setWizardOpen] = useState(false);
   const {
     items,
@@ -59,6 +60,7 @@ function AdminShell() {
     metadata: catalogMetadata,
     reload: reloadCatalog,
   } = useAdminCatalog(mode);
+
   const { refresh: refreshDrafts } = useDrafts();
 
   useEffect(() => {
@@ -66,6 +68,7 @@ function AdminShell() {
       setPreviewItem(null);
       setPreviewMode(null);
       setEditItem(null);
+      setIsCreating(false);
     }
     setActiveView("dashboard");
   }, [mode]);
@@ -98,6 +101,7 @@ function AdminShell() {
 
   const handleEditorClose = useCallback(() => {
     setEditItem(null);
+    setIsCreating(false);
     setActiveView("dashboard");
   }, []);
 
@@ -105,9 +109,20 @@ function AdminShell() {
     // Oppdater katalogen og draft-listen etter lagring
     reloadCatalog();
     refreshDrafts();
-    setEditItem(null);
-    setActiveView("dashboard");
+    // Ikke lukk editoren automatisk etter lagring - la bruker fortsette å redigere
   }, [reloadCatalog, refreshDrafts]);
+
+  const handleCreateNew = useCallback(() => {
+    if (mode !== "tiltak") {
+      // Tilskudd-opprettelse ikke implementert ennå
+      return;
+    }
+    setIsCreating(true);
+    setEditItem(null);
+    setActiveView("editor");
+    setPreviewItem(null);
+    setPreviewMode(null);
+  }, [mode]);
 
   return (
     <div className="admin-shell">
@@ -143,6 +158,7 @@ function AdminShell() {
                 onReload={reloadCatalog}
                 onPreview={handlePreview}
                 onEdit={handleEdit}
+                onCreateNew={handleCreateNew}
                 previewItem={previewItem}
                 previewMode={previewMode}
                 onClosePreview={handleClosePreview}
@@ -175,6 +191,16 @@ function AdminShell() {
             tiltakId={editItem.id}
             onClose={handleEditorClose}
             onSaveSuccess={handleEditorSave}
+            mode="edit"
+          />
+        )}
+
+        {activeView === "editor" && isCreating && mode === "tiltak" && (
+          <TiltakEditorPage
+            tiltakId={null}
+            onClose={handleEditorClose}
+            onSaveSuccess={handleEditorSave}
+            mode="create"
           />
         )}
 

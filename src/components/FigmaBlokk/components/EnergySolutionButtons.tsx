@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { ENERGY_SOLUTIONS } from '../constants';
 import { AddressLookupResponse } from '../../../services/buildingApi';
+import { useTiltakCatalog } from '../../../hooks/contentHooks';
+import type { TiltakCatalogItem } from '../../../types/contentCatalog';
+import './EnergySolutionButtons.css';
 
 type EnergySavingsLookup = Record<string | number, Record<'småhus' | 'blokk', Record<string | number, number>>>;
 
@@ -114,6 +117,68 @@ const determineTek = (byggeaar: number): string => {
   return 'eldre';
 };
 
+/**
+ * Mapper bygningstypekode og -navn til katalog-byggtypenøkkel.
+ * Returnerer undefined hvis bygningstypen ikke kan bestemmes.
+ */
+const determineBuildingTypeKey = (
+  buildingTypeCode: string,
+  buildingTypeNameLower: string
+): string | undefined => {
+  // Enebolig og småhus (kode 11)
+  if (buildingTypeCode === '11' || buildingTypeNameLower.includes('enebolig')) {
+    return 'enebolig';
+  }
+  // Tomannsbolig (kode 12)
+  if (buildingTypeCode === '12' || buildingTypeNameLower.includes('tomannsbolig')) {
+    return 'tomannsbolig';
+  }
+  // Rekkehus og kjedet (kode 13)
+  if (
+    buildingTypeCode === '13' ||
+    buildingTypeNameLower.includes('rekkehus') ||
+    buildingTypeNameLower.includes('kjedehus') ||
+    buildingTypeNameLower.includes('kjedet')
+  ) {
+    return 'rekkehus';
+  }
+  // Blokk og leilighetsbygg (kode 14-17)
+  if (
+    ['14', '15', '16', '17'].includes(buildingTypeCode) ||
+    buildingTypeNameLower.includes('blokk') ||
+    buildingTypeNameLower.includes('leilighet') ||
+    buildingTypeNameLower.includes('boligbygg')
+  ) {
+    return 'blokk';
+  }
+  return undefined;
+};
+
+/**
+ * Filtrer tiltak basert på byggtype og byggår.
+ * - visibleForBuildingTypes: Tom array = vis for alle. Ellers vis kun for angitte byggtyper.
+ * - minBuildingYear: Vis kun for bygg bygget FØR dette året.
+ */
+const filterTiltakForBuilding = (
+  tiltak: TiltakCatalogItem[],
+  buildingTypeKey: string | undefined,
+  buildingYear: number | undefined
+): TiltakCatalogItem[] => {
+  return tiltak.filter((t) => {
+    // Byggtype-filter
+    const buildingTypeMatch =
+      t.visibleForBuildingTypes.length === 0 || // Tom = vis for alle
+      (buildingTypeKey && t.visibleForBuildingTypes.includes(buildingTypeKey));
+
+    // Byggår-filter: vis kun for bygg bygget FØR minBuildingYear
+    const buildingYearMatch =
+      t.minBuildingYear === undefined || // Ingen filter = vis alltid
+      (buildingYear !== undefined && buildingYear < t.minBuildingYear);
+
+    return buildingTypeMatch && buildingYearMatch;
+  });
+};
+
 interface EnergySolutionButtonsProps {
   showHeader: boolean;
   isExpanded: boolean;
@@ -151,9 +216,17 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     };
   }, []);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [hasClickedReadMore, setHasClickedReadMore] = useState<boolean>(false);
   const [showEnergyInfo, setShowEnergyInfo] = useState<boolean>(false);
+
+  // Scrollbar-refs og state
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [hasScroll, setHasScroll] = useState(false);
+  const [scrolledToBottom, setScrolledToBottom] = useState(false);
+
+  // Hent tiltakskatalog dynamisk
+  const { data: catalogData, isLoading: isCatalogLoading } = useTiltakCatalog();
 
   const bruksareal = React.useMemo(() => {
     const candidate = typeof buildingData?.bruksarealM2 === 'number'
@@ -181,6 +254,55 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   }, [buildingData]);
 
   const buildingTypeNameLower = React.useMemo(() => buildingTypeName.toLowerCase(), [buildingTypeName]);
+
+  // Bestem byggtype-nøkkel for katalog-filtrering
+  const buildingTypeKey = useMemo(() => {
+    return determineBuildingTypeKey(buildingTypeCode, buildingTypeNameLower);
+  }, [buildingTypeCode, buildingTypeNameLower]);
+
+  // Hent byggeår fra building data
+  const buildingYear = useMemo(() => {
+    const candidate = typeof buildingData?.byggeaar === 'number'
+      ? buildingData.byggeaar
+      : buildingData?.csvData?.byggeaar
+        ? Number(buildingData.csvData.byggeaar)
+        : undefined;
+
+    if (candidate && !Number.isNaN(candidate) && candidate > 0) {
+      return candidate;
+    }
+    return undefined;
+  }, [buildingData]);
+
+  // Filtrer tiltak fra katalog basert på byggtype og byggår
+  const filteredTiltak = useMemo(() => {
+    if (!catalogData?.items || catalogData.items.length === 0) {
+      return [];
+    }
+
+    // Filtrer bare publiserte tiltak (ikke drafts)
+    const publishedTiltak = catalogData.items.filter(
+      (t) => t.status === 'published'
+    );
+
+    return filterTiltakForBuilding(publishedTiltak, buildingTypeKey, buildingYear);
+  }, [catalogData, buildingTypeKey, buildingYear]);
+
+  // Dynamisk tiltak-liste: bruk katalog hvis tilgjengelig, ellers fallback til ENERGY_SOLUTIONS
+  const displayTiltak: Array<{ id: string; title: string }> = useMemo(() => {
+    if (isCatalogLoading || filteredTiltak.length === 0) {
+      // Fallback til hardkodede tiltak mens katalog lastes eller er tom
+      return ENERGY_SOLUTIONS.map((title, index) => ({
+        id: `fallback-${index}`,
+        title: title as string
+      }));
+    }
+
+    return filteredTiltak.map((t) => ({
+      id: t.id,
+      title: t.title
+    }));
+  }, [isCatalogLoading, filteredTiltak]);
 
   const enovaRating = buildingData?.energiattest?.energikarakter?.toUpperCase();
 
@@ -332,9 +454,12 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     }
 
     let totalSavingsKWh = 0;
-    checkedItems.forEach((index) => {
-      const measure = ENERGY_SOLUTIONS[index];
-      totalSavingsKWh += calculateSavings(measure);
+    checkedItems.forEach((tiltakId) => {
+      // Finn tiltaket basert på ID og bruk tittelen for besparelses-beregning
+      const tiltak = displayTiltak.find((t) => t.id === tiltakId);
+      if (tiltak) {
+        totalSavingsKWh += calculateSavings(tiltak.title);
+      }
     });
 
     const newConsumption = Math.max(0, consumptionNum - totalSavingsKWh);
@@ -387,43 +512,69 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     buildingTypeNameLower,
     calculateSavings,
     checkedItems,
+    displayTiltak,
     estimatedRating,
     yearlyConsumption,
   ]);
 
-  const toggleChecked = (index: number) => {
+  const toggleChecked = useCallback((tiltakId: string) => {
     setCheckedItems(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(index)) {
-        newSet.delete(index);
+      if (newSet.has(tiltakId)) {
+        newSet.delete(tiltakId);
       } else {
-        newSet.add(index);
+        newSet.add(tiltakId);
       }
       return newSet;
     });
-  };
+  }, []);
   
   // Calculate total savings whenever checked items change
-  React.useEffect(() => {
+  useEffect(() => {
     if (!onTotalSavingsChange) {
       return;
     }
 
     let totalSavingsKWh = 0;
-    checkedItems.forEach((index) => {
-      const measure = ENERGY_SOLUTIONS[index];
-      totalSavingsKWh += calculateSavings(measure);
+    checkedItems.forEach((tiltakId) => {
+      const tiltak = displayTiltak.find((t) => t.id === tiltakId);
+      if (tiltak) {
+        totalSavingsKWh += calculateSavings(tiltak.title);
+      }
     });
 
     onTotalSavingsChange(totalSavingsKWh);
-  }, [calculateSavings, checkedItems, onTotalSavingsChange]);
+  }, [calculateSavings, checkedItems, displayTiltak, onTotalSavingsChange]);
+
+  // Oppdater scroll-status
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const checkScroll = () => {
+      const hasScrollContent = container.scrollHeight > container.clientHeight;
+      setHasScroll(hasScrollContent);
+
+      const isAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 10;
+      setScrolledToBottom(isAtBottom);
+    };
+
+    checkScroll();
+    container.addEventListener('scroll', checkScroll);
+    window.addEventListener('resize', checkScroll);
+
+    return () => {
+      container.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [displayTiltak]);
 
   return (
-    <div 
+    <div
       style={{
         position: 'absolute',
         left: '50%',
-        bottom: '55px',
+        top: '180px',
         transform: 'translateX(-50%)',
         display: 'flex',
         flexDirection: 'column',
@@ -436,7 +587,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     >
       {/* Energy rating label */}
       <div style={{
-        marginBottom: '20px',
+        marginBottom: '10px',
         display: 'flex',
         alignItems: 'center',
         gap: '20px',
@@ -479,7 +630,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       <div style={{
           display: 'flex',
           gap: '0', // We'll use margin on each box instead for dynamic spacing
-          marginBottom: '12px',
+          marginBottom: '10px',
           alignItems: 'flex-end',
           width: '471px', // Fixed total width to match tiltak list
           justifyContent: 'flex-start'
@@ -554,7 +705,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       
       {/* Title text with toggle button */}
       <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
-        <span 
+        <span
           style={{
             fontFamily: 'Oslo Sans, sans-serif',
             fontWeight: 500,
@@ -568,126 +719,136 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
           Velg tiltak for din bolig
         </span>
       </div>
-      {/* Render 8 energy solution buttons */}
-      {ENERGY_SOLUTIONS.map((buttonText, index) => (
-        <svg 
-          key={index} 
-          width="471" 
-          height="50" 
-          viewBox="0 0 471 50" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-          onMouseEnter={() => setHoveredIndex(index)}
-          onMouseLeave={() => setHoveredIndex(null)}
-          style={{ 
-            cursor: 'pointer',
-            transition: 'all 0.3s ease-in-out'
-          }}
+      {/* Scrollbar-container for tiltakslisten */}
+      <div
+        className={`tiltak-list-wrapper${hasScroll ? ' has-scroll' : ''}${scrolledToBottom ? ' scrolled-to-bottom' : ''}`}
+      >
+        <div
+          ref={scrollContainerRef}
+          className="tiltak-list-container"
         >
-          <rect 
-            x="1" 
-            y="1" 
-            width="469" 
-            height="48" 
-            stroke="#F9F9F9" 
-            strokeWidth="2" 
-            fill={hoveredIndex === index || checkedItems.has(index) ? "#F8F0DD" : "none"}
-            style={{ transition: 'fill 0.3s ease-in-out' }}
-          />
-          <text 
-            x="17" 
-            y="29" 
-            fontFamily="Oslo Sans, sans-serif" 
-            fontWeight="500" 
-            fontStyle="normal"
-            fontSize="18" 
-            letterSpacing="-0.2"
-            fill={hoveredIndex === index || checkedItems.has(index) ? "#2A2859" : "#F9F9F9"} 
-            textAnchor="start"
-            style={{ transition: 'fill 0.3s ease-in-out' }}
-          >
-            {buttonText}
-          </text>
-          {/* Hover buttons - fade in/out */}
-          {(hoveredIndex === index || checkedItems.has(index)) && (
-            <g 
-              style={{ 
-                opacity: 1,
-                animation: 'fadeIn 0.3s ease-in-out'
+          {displayTiltak.map((tiltak) => (
+            <svg
+              key={tiltak.id}
+              width="471"
+              height="50"
+              viewBox="0 0 471 50"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              onMouseEnter={() => setHoveredIndex(displayTiltak.indexOf(tiltak))}
+              onMouseLeave={() => setHoveredIndex(null)}
+              style={{
+                cursor: 'pointer',
+                transition: 'all 0.3s ease-in-out',
+                flexShrink: 0
               }}
             >
-            {/* Right rectangle: width 90px, 16px from right edge - clickable */}
-            <g
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleChecked(index);
-                setHasClickedReadMore(true);
-              }}
-              style={{ cursor: 'pointer' }}
-            >
-                <rect x="365" y="10" width="90" height="30" fill="#2A2859"/>
-                {/* "Legg til" text in right rectangle */}
-                <text 
-                  x="373" 
-                  y="25" 
-                  fontFamily="Oslo Sans, sans-serif" 
-                  fontWeight="500" 
-                  fontStyle="normal"
-                  fontSize="14" 
-                  letterSpacing="-0.2"
-                  fill="#F9F9F9" 
-                  textAnchor="start"
-                  dominantBaseline="middle"
-                >
-                  Legg til
-                </text>
-                {/* Checkbox icon 8px from right edge */}
-                <g transform="translate(431, 17)">
-                  {checkedItems.has(index) ? (
-                    <>
-                      <rect x="1" y="1" width="14" height="14" fill="#2A2859"/>
-                      <rect x="1" y="1" width="14" height="14" stroke="#2A2859" strokeWidth="2"/>
-                      <path fillRule="evenodd" clipRule="evenodd" d="M11.8521 6.1071L6.99857 10.9607L4.14502 8.1071L4.85213 7.39999L6.99857 9.54644L11.145 5.39999L11.8521 6.1071Z" fill="white"/>
-                    </>
-                  ) : (
-                    <>
-                      <rect x="1" y="1" width="14" height="14" fill="white"/>
-                      <rect x="1" y="1" width="14" height="14" stroke="#2A2859" strokeWidth="2"/>
-                    </>
-                  )}
-                </g>
-              </g>
-              {/* Left rectangle: width 70px, 8px gap to right rectangle */}
-              <g
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectSolution(ENERGY_SOLUTIONS[index]);
-                  onExpand(true);
-                }}
-                style={{ cursor: 'pointer' }}
+              <rect
+                x="1"
+                y="1"
+                width="469"
+                height="48"
+                stroke="#F9F9F9"
+                strokeWidth="2"
+                fill={hoveredIndex === displayTiltak.indexOf(tiltak) || checkedItems.has(tiltak.id) ? "#F8F0DD" : "none"}
+                style={{ transition: 'fill 0.3s ease-in-out' }}
+              />
+              <text
+                x="17"
+                y="29"
+                fontFamily="Oslo Sans, sans-serif"
+                fontWeight="500"
+                fontStyle="normal"
+                fontSize="18"
+                letterSpacing="-0.2"
+                fill={hoveredIndex === displayTiltak.indexOf(tiltak) || checkedItems.has(tiltak.id) ? "#2A2859" : "#F9F9F9"}
+                textAnchor="start"
+                style={{ transition: 'fill 0.3s ease-in-out' }}
               >
-                <rect x="287" y="10" width="70" height="30" fill="#2A2859"/>
-                {/* "Les mer" text centered in left rectangle */}
-                <text 
-                  x="322" 
-                  y="25" 
-                  fontFamily="Oslo Sans, sans-serif" 
-                  fontWeight="500" 
-                  fontStyle="normal"
-                  fontSize="14" 
-                  letterSpacing="-0.2"
-                  fill="#F9F9F9" 
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  style={{ pointerEvents: 'none' }}
+                {tiltak.title}
+              </text>
+              {/* Hover buttons - fade in/out */}
+              {(hoveredIndex === displayTiltak.indexOf(tiltak) || checkedItems.has(tiltak.id)) && (
+                <g
+                  style={{
+                    opacity: 1,
+                    animation: 'fadeIn 0.3s ease-in-out'
+                  }}
                 >
-                  Les mer
-                </text>
-              </g>
-            </g>
-          )}
-        </svg>
-      ))}
+                {/* Right rectangle: width 90px, 16px from right edge - clickable */}
+                <g
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleChecked(tiltak.id);
+                    setHasClickedReadMore(true);
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                    <rect x="365" y="10" width="90" height="30" fill="#2A2859"/>
+                    {/* "Legg til" text in right rectangle */}
+                    <text
+                      x="373"
+                      y="25"
+                      fontFamily="Oslo Sans, sans-serif"
+                      fontWeight="500"
+                      fontStyle="normal"
+                      fontSize="14"
+                      letterSpacing="-0.2"
+                      fill="#F9F9F9"
+                      textAnchor="start"
+                      dominantBaseline="middle"
+                    >
+                      Legg til
+                    </text>
+                    {/* Checkbox icon 8px from right edge */}
+                    <g transform="translate(431, 17)">
+                      {checkedItems.has(tiltak.id) ? (
+                        <>
+                          <rect x="1" y="1" width="14" height="14" fill="#2A2859"/>
+                          <rect x="1" y="1" width="14" height="14" stroke="#2A2859" strokeWidth="2"/>
+                          <path fillRule="evenodd" clipRule="evenodd" d="M11.8521 6.1071L6.99857 10.9607L4.14502 8.1071L4.85213 7.39999L6.99857 9.54644L11.145 5.39999L11.8521 6.1071Z" fill="white"/>
+                        </>
+                      ) : (
+                        <>
+                          <rect x="1" y="1" width="14" height="14" fill="white"/>
+                          <rect x="1" y="1" width="14" height="14" stroke="#2A2859" strokeWidth="2"/>
+                        </>
+                      )}
+                    </g>
+                  </g>
+                  {/* Left rectangle: width 70px, 8px gap to right rectangle */}
+                  <g
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectSolution(tiltak.title);
+                      onExpand(true);
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <rect x="287" y="10" width="70" height="30" fill="#2A2859"/>
+                    {/* "Les mer" text centered in left rectangle */}
+                    <text
+                      x="322"
+                      y="25"
+                      fontFamily="Oslo Sans, sans-serif"
+                      fontWeight="500"
+                      fontStyle="normal"
+                      fontSize="14"
+                      letterSpacing="-0.2"
+                      fill="#F9F9F9"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      Les mer
+                    </text>
+                  </g>
+                </g>
+              )}
+            </svg>
+          ))}
+        </div>
+      </div>
       
       {/* New bottom box with #2A2859 background - only show if user has clicked "Legg til" */}
       {hasClickedReadMore && (
