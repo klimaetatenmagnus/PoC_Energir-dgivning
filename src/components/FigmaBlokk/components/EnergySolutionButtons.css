@@ -1,0 +1,63 @@
+/* EnergySolutionButtons.css - Scrollbar-styling for tiltakslisten */
+
+.tiltak-list-container {
+  max-height: 480px; /* Plass til 8 tiltak (8×50px + 7×10px gaps) */
+  overflow-y: auto;
+  width: 471px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  /* Custom scrollbar - Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #F8F0DD transparent;
+}
+
+/* Custom scrollbar - Webkit (Chrome, Safari, Edge) */
+.tiltak-list-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tiltak-list-container::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+.tiltak-list-container::-webkit-scrollbar-thumb {
+  background-color: #F8F0DD;
+  border-radius: 4px;
+}
+
+.tiltak-list-container::-webkit-scrollbar-thumb:hover {
+  background-color: #F9F9F9;
+}
+
+/* Fade effect at bottom when scrollable */
+.tiltak-list-wrapper {
+  position: relative;
+}
+
+.tiltak-list-wrapper::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 8px; /* Account for scrollbar width */
+  height: 40px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(42, 40, 89, 0.3) 100%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tiltak-list-wrapper.has-scroll::after {
+  opacity: 1;
+}
+
+.tiltak-list-wrapper.scrolled-to-bottom::after {
+  opacity: 0;
+}

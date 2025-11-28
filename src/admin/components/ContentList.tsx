@@ -29,6 +29,7 @@ interface ContentListProps {
   onReload?: () => void;
   onPreview?: (item: AdminContentItem) => void;
   onEdit?: (item: AdminContentItem) => void;
+  onCreateNew?: () => void;
   previewItem: AdminContentItem | null;
   previewMode: AdminMode | null;
   onClosePreview: () => void;
@@ -114,6 +115,7 @@ export function ContentList({
   onReload,
   onPreview,
   onEdit,
+  onCreateNew,
   previewItem,
   previewMode,
   onClosePreview,
@@ -320,6 +322,8 @@ export function ContentList({
               size="medium"
               variant="icon-left"
               iconName="plus-sign"
+              onClick={() => onCreateNew?.()}
+              disabled={mode === "tilskudd"} // Tilskudd-opprettelse ikke implementert ennå
             >
               <span>
                 {mode === "tiltak" ? "Opprett tiltak" : "Opprett tilskudd"}

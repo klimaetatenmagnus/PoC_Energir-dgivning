@@ -84,6 +84,54 @@ Dette dokumentet er **single source of truth** for både dagens innholdsdrift og
 
 ---
 
+## 5.1 Synlighet-filtrering for tiltak
+
+Tiltak kan filtreres basert på byggtype og byggeår slik at kun relevante tiltak vises for hver bruker. Dette styres via to felt i tiltak-schema:
+
+### Felt
+
+| Felt | Type | Default | Beskrivelse |
+|------|------|---------|-------------|
+| `visibleForBuildingTypes` | `string[]` | `[]` (tom) | Liste over byggtyper tiltaket skal vises for. Tom array = vis for alle. |
+| `minBuildingYear` | `number` (valgfritt) | `undefined` | Tiltaket vises kun for bygg bygget FØR dette året. Ingen verdi = ingen årsfiltrering. |
+
+### Semantikk
+
+- **`visibleForBuildingTypes: []`** (tom array) betyr "vis for alle byggtyper" – dette er default og bakoverkompatibelt.
+- **`visibleForBuildingTypes: ["enebolig", "rekkehus"]`** betyr "vis kun for enebolig og rekkehus".
+- **`minBuildingYear: 1970`** betyr "vis kun for bygg bygget før 1970" (typisk for etterisoleringstiltak).
+- **`minBuildingYear: undefined`** (utelatt) betyr "ingen årsfiltrering" – tiltaket vises uansett byggeår.
+
+### Eksempler
+
+```json
+{
+  "id": "etterisolering-yttervegg",
+  "title": "Etterisolering av yttervegg",
+  "visibleForBuildingTypes": ["enebolig", "rekkehus", "tomannsbolig"],
+  "minBuildingYear": 1987,
+  ...
+}
+```
+
+I eksempelet over vises tiltaket kun for eneboliger, rekkehus og tomannsboliger bygget før 1987.
+
+### Admin-UI
+
+I TiltakEditor finnes en egen fane "Endre synlighet" hvor redaktører kan:
+1. Krysse av for hvilke byggtyper tiltaket skal vises for (ingen avkrysninger = vis for alle)
+2. Sette årsgrense for byggeår (tomt felt = ingen begrensning)
+
+### Frontend-filtrering
+
+Frontend-komponenten `EnergySolutionButtons` henter tiltakskatalogen og filtrerer automatisk basert på:
+1. Brukerens byggtype (utledet fra Matrikkel-data)
+2. Byggets byggeår (utledet fra Matrikkel-data)
+
+Kun tiltak som matcher begge kriteriene vises i tiltakslisten.
+
+---
+
 ## 6. Skript og kommandoer
 
 | Kommando                                    | Når brukes den?                                                                  | Effekt                                                                                                                                                                                                                                              |
