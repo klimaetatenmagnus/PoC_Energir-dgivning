@@ -820,7 +820,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                   <g
                     onClick={(e) => {
                       e.stopPropagation();
-                      onSelectSolution(tiltak.title);
+                      onSelectSolution(tiltak.id);
                       onExpand(true);
                     }}
                     style={{ cursor: 'pointer' }}

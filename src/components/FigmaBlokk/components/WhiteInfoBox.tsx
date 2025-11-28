@@ -58,7 +58,17 @@ function resolveTiltakSlug(solution: string | null): string | null {
   if (!solution) {
     return null;
   }
-  return TILTAK_SOLUTION_SLUGS[solution]?.slug ?? null;
+  // Først: sjekk om det er en kjent tittel (bakoverkompatibilitet)
+  const mappedSlug = TILTAK_SOLUTION_SLUGS[solution]?.slug;
+  if (mappedSlug) {
+    return mappedSlug;
+  }
+  // Så: sjekk om verdien allerede er en gyldig slug (ID)
+  // Gyldige slugs er lowercase med bindestreker, uten mellomrom
+  if (/^[a-z0-9-]+$/.test(solution) && !solution.startsWith('fallback-')) {
+    return solution;
+  }
+  return null;
 }
 
 function resolveTiltakBuildingType(
