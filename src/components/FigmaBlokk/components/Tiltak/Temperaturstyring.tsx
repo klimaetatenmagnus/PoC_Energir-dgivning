@@ -656,6 +656,14 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
                     transition: `opacity ${isPermitOpen ? '0.4s' : '0.1s'} ease-in-out ${isPermitOpen ? '0.2s' : '0s'}, padding 0.6s ease-in-out`
                   }}
                 >
+                  {/* Søknadsplikt-tekst fra JSON */}
+                  {accordionBody.map((paragraph, index) => (
+                    <p key={`soknadsplikt-${index}`} style={{ margin: index === accordionBody.length - 1 ? 0 : '0 0 16px 0' }}>
+                      {paragraph}
+                    </p>
+                  ))}
+
+                  {/* Links section */}
                   <div
                     style={{
                       marginTop: '16px',
@@ -695,6 +703,7 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
                       </a>
                     ))}
                   </div>
+                  {/* Rectangle with general permit information (same for all tiltak) */}
                   <div
                     style={{
                       marginTop: '16px',
@@ -714,30 +723,41 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
                         margin: '0 0 12px 0'
                       }}
                     >
-                      {accordionItem?.title ?? 'Søknadsplikt'}
+                      Søknadsplikt er ikke en stopper, men en støtte
                     </h3>
-                    {accordionBody.map((paragraph, index) => (
-                      <p
-                        key={`accordion-body-${index}`}
-                        style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#FFFFFF',
-                          margin: index === 0 ? 0 : '16px 0 0 0',
-                          position: 'relative'
-                        }}
-                      >
-                        {renderParagraphWithGlossary({
-                          paragraph,
-                          glossary: glossaryEntries,
-                          hoveredTerm: hoveredGlossaryTerm,
-                          setHoveredTerm: setHoveredGlossaryTerm
-                        })}
-                      </p>
-                    ))}
+                    <p style={{
+                      fontFamily: 'Oslo Sans',
+                      fontWeight: 300,
+                      fontSize: '14px',
+                      lineHeight: '22px',
+                      letterSpacing: '0px',
+                      color: '#FFFFFF',
+                      margin: 0
+                    }}>
+                      Er tiltaket ditt søknadspliktig betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.
+                    </p>
+                    <p style={{
+                      fontFamily: 'Oslo Sans',
+                      fontWeight: 300,
+                      fontSize: '14px',
+                      lineHeight: '22px',
+                      letterSpacing: '0px',
+                      color: '#FFFFFF',
+                      margin: '16px 0 0 0'
+                    }}>
+                      Søknadsplikten skal hjelpe deg som tiltakshaver med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak som tar faglig ansvar for prosjektering og utførelse.
+                    </p>
+                    <p style={{
+                      fontFamily: 'Oslo Sans',
+                      fontWeight: 300,
+                      fontSize: '14px',
+                      lineHeight: '22px',
+                      letterSpacing: '0px',
+                      color: '#FFFFFF',
+                      margin: '16px 0 0 0'
+                    }}>
+                      Selv om du må søke, kan selve tiltaket fortsatt være enkelt å gjennomføre. Ta dialogen tidlig og bruk veiledningstilbudene dersom du er usikker.
+                    </p>
                   </div>
                 </div>
               </div>

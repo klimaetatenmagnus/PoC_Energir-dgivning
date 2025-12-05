@@ -102,19 +102,23 @@
       "id": "soknadsplikt",
       "title": "Søknadsplikt og ansvar",
       "body": [
-        "Varmepumper regnes som tekniske installasjoner, og tiltaket er ofte søknadspliktig dersom det påvirker fasaden eller krever nye tekniske gjennomføringer. Bruk foretak som kan søke Plan- og bygningsetaten for deg.",
-        "Søknadsplikten skal sikre at arbeidet prosjekteres og utføres med riktig kompetanse, og at løsningen fungerer godt både teknisk og visuelt."
+        "Varmepumpe kan være søknadspliktig hvis den endrer fasadens karakter. Om det endrer fasadens karakter eller ikke vurderes fra sak til sak. Større installasjoner regnes ofte som byggteknisk installasjon, som også er søknadspliktig. Plan- og bygningsetaten gir veiledning om søknadsplikt og eventuelt om du må kontakte en fagperson (arkitekt, byggmester eller entreprenør) til å hjelpe deg."
       ],
       "links": [
         {
+          "id": "pbe-soknadsplikt",
+          "label": "Sjekk nærmere om tiltaket ditt er søknadspliktig",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/byggesaksveiledning/"
+        },
+        {
           "id": "pbe-veiledning",
-          "label": "Plan- og bygningsetaten – trenger du veiledning?",
+          "label": "Gratis veiledningstime hos Plan- og bygningsetaten for generell informasjon om søknadsplikt",
           "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/"
         },
         {
-          "id": "dibk-ansvar",
-          "label": "DiBK – ansvarsrett og roller",
-          "url": "https://www.dibk.no/regelverk/sak/3/12/"
+          "id": "pbe-konkret",
+          "label": "Kontakt Plan- og bygningsetaten for en konkret vurdering av søknadsplikt for ditt tiltak, mot gebyr",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/sok-om-a-bygge/forhåndskonferanse/"
         }
       ]
     }
@@ -134,9 +138,9 @@
   ],
   "metadata": {
     "status": "published",
-    "updatedBy": "codex",
-    "updatedAt": "2025-11-15T12:25:00Z",
-    "changeSummary": "Lagt til gul-listevariant, ekstra kildelenker og støtteordninger for varmepumpe."
+    "updatedBy": "migrate-from-git-history",
+    "updatedAt": "2025-12-05T20:56:33.960Z",
+    "changeSummary": "Migrert originale hardkodede tekster fra git-historikk"
   },
   "variants": [
     {
@@ -200,5 +204,6 @@
         "vern"
       ]
     }
-  ]
+  ],
+  "visibleForBuildingTypes": []
 }

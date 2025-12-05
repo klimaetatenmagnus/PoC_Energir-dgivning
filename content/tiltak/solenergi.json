@@ -66,8 +66,7 @@
       "id": "soknadsplikt",
       "title": "Søknadsplikt og veiledning",
       "body": [
-        "Solcelle- og solfangeranlegg er vanligvis søknadspliktige fordi de regnes som tekniske installasjoner og fasadeendringer. Kontakt en fagperson som kan søke Plan- og bygningsetaten på dine vegne.",
-        "I noen tilfeller kan eneboliger få unntak dersom tiltaket regnes som «enkel installasjon» og ikke endrer fasadeuttrykket. Terskelen er lavere for bevaringsverdige bygg."
+        "Solcelleanlegg er som regel søknadspliktig fordi det regnes som teknisk installasjon og fasadeendring. Du må derfor kontakte en fagperson (arkitekt, byggmester eller entreprenør) som søker om tillatelse fra Plan- og bygningsetaten for deg. Ved søknad om solenergianlegg får du 100% rabatt for saksbehandling, samt ved forespørsel om søknadsplikt."
       ],
       "links": [
         {
@@ -103,9 +102,9 @@
   ],
   "metadata": {
     "status": "published",
-    "updatedBy": "Magnus",
-    "updatedAt": "2025-11-15T12:15:00Z",
-    "changeSummary": "Lagt til gul-listevariant og oppdatert grants for solenergi-innholdet."
+    "updatedBy": "migrate-from-git-history",
+    "updatedAt": "2025-12-05T20:57:19.360Z",
+    "changeSummary": "Migrert originale hardkodede tekster fra git-historikk"
   },
   "variants": [
     {
@@ -145,5 +144,7 @@
         "vern"
       ]
     }
-  ]
+  ],
+  "energySourceDescription": "Data for årlig solinnstråling og areal for ulike takflater blir hentet fra Oslo kommunes Solkart (https://od2.pbe.oslo.kommune.no/solkart/). For alle takflater med årlig solpotensial over 800 kWh/m², så summeres produktene av innstårligen og takflatearealet. Deretter antas det at 85% av takarealet kan utnyttes til solceller, og at solcellene har en en virkningsgrad på 20%.",
+  "visibleForBuildingTypes": []
 }

@@ -323,7 +323,6 @@ export function ContentList({
               variant="icon-left"
               iconName="plus-sign"
               onClick={() => onCreateNew?.()}
-              disabled={mode === "tilskudd"} // Tilskudd-opprettelse ikke implementert ennå
             >
               <span>
                 {mode === "tiltak" ? "Opprett tiltak" : "Opprett tilskudd"}

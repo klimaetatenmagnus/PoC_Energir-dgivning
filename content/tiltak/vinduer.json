@@ -129,21 +129,25 @@
   "accordion": [
     {
       "id": "soknadsplikt",
-      "title": "Søknadsplikt og fagansvar",
+      "title": "Søknadsplikt og ansvar",
       "body": [
-        "Vindusutskifting påvirker fasaden og er ofte søknadspliktig. Ta tidlig dialog med Plan- og bygningsetaten, spesielt dersom bygget er bevaringsverdig eller flere boenheter må koordinere arbeidet.",
-        "I større prosjekter krever kommunen ansvarlige foretak for prosjektering og utførelse."
+        "Mindre arbeider, som vedlikehold av eksisterende vinduer, er ikke søknadspliktig. Hvis arbeidene derimot endrer fasadens utseende, må du søke om tillatelse. Dette kan særlig gjelde utskifting av vinduer. Plan- og bygningsetaten gir veiledning om søknadsplikt og eventuelt om du må kontakte en fagperson (arkitekt, byggmester eller entreprenør) til å hjelpe deg."
       ],
       "links": [
         {
-          "id": "dibk-soknadsplikt",
-          "label": "Direktoratet for byggkvalitet – hva er søknadsplikt?",
-          "url": "https://www.dibk.no/regelverk/sak/2/2/innledning"
+          "id": "pbe-soknadsplikt",
+          "label": "Sjekk nærmere om tiltaket ditt er søknadspliktig",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/byggesaksveiledning/"
         },
         {
-          "id": "dibk-ansvar",
-          "label": "Tiltakshaver og ansvarlige foretak",
-          "url": "https://www.dibk.no/regelverk/sak/3/12/innledning"
+          "id": "pbe-veiledning",
+          "label": "Gratis veiledningstime hos Plan- og bygningsetaten for generell informasjon om søknadsplikt",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/"
+        },
+        {
+          "id": "pbe-konkret",
+          "label": "Kontakt Plan- og bygningsetaten for en konkret vurdering av søknadsplikt for ditt tiltak, mot gebyr",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/sok-om-a-bygge/forhåndskonferanse/"
         }
       ]
     }
@@ -167,9 +171,9 @@
   ],
   "metadata": {
     "status": "published",
-    "updatedBy": "claude",
-    "updatedAt": "2025-11-25T21:00:00Z",
-    "changeSummary": "Publisert vinduer-innhold - endret status fra draft til published"
+    "updatedBy": "migrate-from-git-history",
+    "updatedAt": "2025-12-05T20:56:34.042Z",
+    "changeSummary": "Migrert originale hardkodede tekster fra git-historikk"
   },
   "variants": [
     {
@@ -283,5 +287,7 @@
         "vern"
       ]
     }
-  ]
+  ],
+  "energySourceDescription": "Besparelsene estimeres fra datasett basert på bygningstype, bruksareal og teknisk forskrift. Disse variablene hentes automatisk fra Matrikkelen, utenom TEK som estimeres ut fra byggeår. Dette er en forenkling som ikke tar hensyn til tidligere oppgraderinger av bygget. Strømprisen er satt til 1.1kr/kWh.",
+  "visibleForBuildingTypes": []
 }

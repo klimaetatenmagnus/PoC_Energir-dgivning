@@ -70,7 +70,32 @@
   "callsToAction": [],
   "customSections": [],
   "tabs": [],
-  "accordion": [],
+  "accordion": [
+    {
+      "id": "soknadsplikt",
+      "title": "Søknadsplikt og ansvar",
+      "body": [
+        "Etterisolering som ikke endrer bygningens utseende er som regel ikke søknadspliktig. Men hvis tiltaket berører bærende konstruksjoner eller fasade, bør du sjekke med Plan- og bygningsetaten. De kan også gi råd om du bør bruke fagperson (arkitekt, byggmester eller entreprenør) til å søke for deg."
+      ],
+      "links": [
+        {
+          "id": "pbe-soknadsplikt",
+          "label": "Sjekk nærmere om tiltaket ditt er søknadspliktig",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/byggesaksveiledning/"
+        },
+        {
+          "id": "pbe-veiledning",
+          "label": "Gratis veiledningstime hos Plan- og bygningsetaten for generell informasjon om søknadsplikt",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/"
+        },
+        {
+          "id": "pbe-konkret",
+          "label": "Kontakt Plan- og bygningsetaten for en konkret vurdering av søknadsplikt for ditt tiltak, mot gebyr",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/sok-om-a-bygge/forhåndskonferanse/"
+        }
+      ]
+    }
+  ],
   "stats": [],
   "grants": [
     "enova-etterisolering-loft-kjeller",
@@ -93,9 +118,9 @@
   "visibleForBuildingTypes": [],
   "metadata": {
     "status": "published",
-    "updatedBy": "local-redaktor@energinokkelen.dev",
-    "updatedAt": "2025-11-27T22:47:37.267Z",
-    "changeSummary": "Redigert via admin-UI"
+    "updatedBy": "migrate-from-git-history",
+    "updatedAt": "2025-12-05T20:56:34.124Z",
+    "changeSummary": "Migrert originale hardkodede tekster fra git-historikk"
   },
   "variants": [
     {
@@ -162,5 +187,6 @@
         "vern"
       ]
     }
-  ]
+  ],
+  "energySourceDescription": "Besparelsene estimeres fra datasett basert på bygningstype, bruksareal og teknisk forskrift. Disse variablene hentes automatisk fra Matrikkelen, utenom TEK som estimeres ut fra byggeår. Dette er en forenkling som ikke tar hensyn til tidligere oppgraderinger av bygget. Strømprisen er satt til 1.1kr/kWh."
 }

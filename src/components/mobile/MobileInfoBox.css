@@ -1,0 +1,339 @@
+/* MobileInfoBox - Responsiv infoboks for mobil */
+/* Bruker Punkt designsystem farger og spacing */
+
+.mobile-info-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-16, 1rem);
+  padding: var(--pkt-spacing-16, 1rem);
+  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
+}
+
+/* Header med adresse og tags */
+.mobile-info-box__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-8, 0.5rem);
+}
+
+.mobile-info-box__address {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.mobile-info-box__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pkt-spacing-8, 0.5rem);
+}
+
+/* Besparelseskort */
+.mobile-info-box__savings-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-8, 0.5rem);
+  padding: var(--pkt-spacing-16, 1rem);
+  background-color: var(--pkt-color-status-green-95, #c7f6c9);
+  border: 1px solid rgba(17, 59, 50, 0.08);
+  box-shadow: 0px 4px 12px rgba(17, 59, 50, 0.1);
+}
+
+.mobile-info-box__savings-label {
+  text-transform: uppercase;
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--pkt-color-status-green-25, #1b5145);
+}
+
+.mobile-info-box__savings-value {
+  display: flex;
+  align-items: baseline;
+  gap: var(--pkt-spacing-8, 0.5rem);
+}
+
+.mobile-info-box__savings-amount {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--pkt-color-status-green-10, #102c2c);
+  line-height: 1;
+}
+
+.mobile-info-box__savings-unit {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--pkt-color-status-green-20, #164136);
+}
+
+.mobile-info-box__savings-kwh {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pkt-color-status-green-20, #1e4c43);
+}
+
+/* Gul liste alert */
+.mobile-info-box__gul-liste-alert {
+  margin-bottom: var(--pkt-spacing-8, 0.5rem);
+}
+
+.mobile-info-box__gul-liste-alert .pkt-alert {
+  background-color: var(--pkt-color-status-yellow-90, #ffe7bc);
+}
+
+.mobile-info-box__gul-liste-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  text-decoration: underline;
+  cursor: pointer;
+  margin-top: var(--pkt-spacing-8, 0.5rem);
+  display: inline-block;
+}
+
+/* Nøkkelinformasjon */
+.mobile-info-box__key-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-12, 0.75rem);
+}
+
+.mobile-info-box__info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--pkt-spacing-8, 0.5rem);
+}
+
+/* Energiforbruk-rad - samme stil som andre rader */
+.mobile-info-box__info-row--energy {
+  /* Arver fra .mobile-info-box__info-row */
+}
+
+.mobile-info-box__info-label {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-info-box__info-value {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+/* Fargede bokser fjernet - bruker nå ren tekst */
+
+.mobile-info-box__edit-button {
+  align-self: flex-start;
+  margin-bottom: var(--pkt-spacing-8, 0.5rem);
+  margin-left: -0.5rem;
+  min-height: 44px;
+  min-width: 44px;
+  padding: var(--pkt-spacing-8, 0.5rem) 0.5rem;
+}
+
+/* Redigeringsmodus */
+.mobile-info-box__edit-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-4, 0.25rem);
+}
+
+.mobile-info-box__edit-label {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-info-box__edit-input {
+  width: 100%;
+  padding: var(--pkt-spacing-12, 0.75rem);
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  border: 2px solid var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  border-radius: 0;
+  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.mobile-info-box__edit-input:focus {
+  border-color: var(--pkt-color-brand-blue-600, #2e85c8);
+}
+
+.mobile-info-box__edit-actions {
+  display: flex;
+  gap: var(--pkt-spacing-12, 0.75rem);
+  justify-content: flex-end;
+  margin-top: var(--pkt-spacing-8, 0.5rem);
+}
+
+/* Kart */
+.mobile-info-box__map-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-8, 0.5rem);
+}
+
+.mobile-info-box__map-title {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  margin: 0;
+}
+
+.mobile-info-box__map-container {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background-color: var(--pkt-color-brand-neutrals-200, #e5e5e5);
+  overflow: hidden;
+  border: 1px solid var(--pkt-color-brand-neutrals-200, #e5e5e5);
+}
+
+.mobile-info-box__map-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.mobile-info-box__map-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  color: var(--pkt-color-brand-neutrals-600, #666666);
+}
+
+.mobile-info-box__map-link {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  text-decoration: underline;
+}
+
+/* Modal */
+.mobile-info-box__modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--pkt-spacing-16, 1rem);
+  padding-bottom: max(var(--pkt-spacing-16, 1rem), env(safe-area-inset-bottom));
+}
+
+.mobile-info-box__modal {
+  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  width: 100%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: var(--pkt-spacing-24, 1.5rem);
+  position: relative;
+}
+
+.mobile-info-box__modal-close {
+  position: absolute;
+  top: var(--pkt-spacing-12, 0.75rem);
+  right: var(--pkt-spacing-12, 0.75rem);
+  background: none;
+  border: none;
+  padding: var(--pkt-spacing-8, 0.5rem);
+  cursor: pointer;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.mobile-info-box__modal-title {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  margin: 0 0 var(--pkt-spacing-16, 1rem) 0;
+  padding-right: 48px;
+}
+
+.mobile-info-box__modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-12, 0.75rem);
+}
+
+.mobile-info-box__modal-content p {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--pkt-color-brand-neutrals-1000, #2c2c2c);
+  margin: 0;
+}
+
+.mobile-info-box__modal-content ul {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--pkt-color-brand-neutrals-1000, #2c2c2c);
+  margin: 0;
+  padding-left: var(--pkt-spacing-20, 1.25rem);
+}
+
+.mobile-info-box__modal-content li {
+  margin-bottom: var(--pkt-spacing-8, 0.5rem);
+}
+
+.mobile-info-box__gul-liste-info-box {
+  background-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  padding: var(--pkt-spacing-16, 1rem);
+}
+
+.mobile-info-box__gul-liste-info-box p {
+  color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  margin: 0;
+}
+
+.mobile-info-box__external-link {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  text-decoration: underline;
+  display: inline-block;
+  margin-top: var(--pkt-spacing-8, 0.5rem);
+}
+
+/* Punkt accordion tilpasninger */
+.mobile-info-box .pkt-accordion {
+  --pkt-accordion-bg: var(--pkt-color-brand-neutrals-white, #ffffff);
+}
+
+.mobile-info-box .pkt-accordion-item__header {
+  min-height: 56px;
+}
+
+/* Reduser padding mellom accordion-tittel og innhold */
+.mobile-info-box .pkt-accordion-item__content {
+  padding-top: var(--pkt-spacing-8, 0.5rem);
+}

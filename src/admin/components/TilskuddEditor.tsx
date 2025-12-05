@@ -19,6 +19,7 @@ export interface TilskuddEditorProps {
   onSave: (updated: TilskuddContent) => Promise<void>;
   onCancel: () => void;
   isSaving?: boolean;
+  mode?: "edit" | "create";
 }
 
 // Kjente providers basert på eksisterende data
@@ -33,7 +34,9 @@ export function TilskuddEditor({
   onSave,
   onCancel,
   isSaving = false,
+  mode = "edit",
 }: TilskuddEditorProps) {
+  const isCreateMode = mode === "create";
   const { dictionary } = useAdminDictionary();
   const { data: tiltakCatalog } = useTiltakCatalog({ includeDrafts: true });
 
@@ -148,6 +151,17 @@ export function TilskuddEditor({
   const handleSave = async () => {
     try {
       // Valider påkrevde felter
+      if (isCreateMode) {
+        if (!editedTilskudd.title?.trim()) {
+          setError("Tittel må fylles ut");
+          return;
+        }
+        // ID genereres fra tittel - valider at den ble generert
+        if (!editedTilskudd.id?.trim()) {
+          setError("Kunne ikke generere ID fra tittelen. Bruk en tittel med bokstaver eller tall.");
+          return;
+        }
+      }
       if (!editedTilskudd.application.url?.trim()) {
         setError("Søknads-URL må fylles ut");
         return;
@@ -168,7 +182,7 @@ export function TilskuddEditor({
         metadata: {
           ...editedTilskudd.metadata,
           updatedAt: now,
-          changeSummary: "Redigert via admin-UI",
+          changeSummary: isCreateMode ? "Opprettet via admin-UI" : "Redigert via admin-UI",
         },
       };
       await onSave(updatedTilskudd);
@@ -189,9 +203,13 @@ export function TilskuddEditor({
   return (
     <div className="tilskudd-editor">
       <header className="tilskudd-editor__header">
-        <h2 className="tilskudd-editor__title">Rediger: {tilskudd.title}</h2>
+        <h2 className="tilskudd-editor__title">
+          {isCreateMode ? "Opprett ny tilskuddsordning" : `Rediger: ${tilskudd.title}`}
+        </h2>
         <p className="tilskudd-editor__subtitle">
-          Rediger tilskuddsordningen og velg hvem den gjelder for.
+          {isCreateMode
+            ? "Fyll ut informasjonen for den nye tilskuddsordningen."
+            : "Rediger tilskuddsordningen og velg hvem den gjelder for."}
         </p>
       </header>
 
@@ -210,7 +228,21 @@ export function TilskuddEditor({
           label="Tittel"
           helptext="Kort, beskrivende tittel for ordningen"
           value={editedTilskudd.title}
-          onChange={(e) => updateField("title", e.target.value)}
+          onChange={(e) => {
+            const newTitle = e.target.value;
+            updateField("title", newTitle);
+            // I create-modus: generer ID automatisk fra tittel
+            if (isCreateMode) {
+              const generatedId = newTitle
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "") // Fjern aksenter (æ→ae, ø→o, å→a)
+                .replace(/[^a-z0-9]+/g, "-") // Erstatt ikke-alfanumeriske tegn med bindestrek
+                .replace(/^-+|-+$/g, "") // Fjern ledende/avsluttende bindestreker
+                .slice(0, 50); // Begrens lengden
+              updateField("id", generatedId);
+            }
+          }}
         />
 
         <PktTextarea
@@ -373,7 +405,9 @@ export function TilskuddEditor({
           onClick={handleSave}
           disabled={!isDirty || isSaving}
         >
-          {isSaving ? "Lagrer..." : "Lagre endringer"}
+          {isSaving
+            ? (isCreateMode ? "Oppretter..." : "Lagrer...")
+            : (isCreateMode ? "Opprett tilskuddsordning" : "Lagre endringer")}
         </PktButton>
       </footer>
     </div>

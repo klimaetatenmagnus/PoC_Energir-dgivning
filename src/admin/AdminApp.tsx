@@ -113,8 +113,7 @@ function AdminShell() {
   }, [reloadCatalog, refreshDrafts]);
 
   const handleCreateNew = useCallback(() => {
-    if (mode !== "tiltak") {
-      // Tilskudd-opprettelse ikke implementert ennå
+    if (mode !== "tiltak" && mode !== "tilskudd") {
       return;
     }
     setIsCreating(true);
@@ -209,6 +208,16 @@ function AdminShell() {
             tilskuddId={editItem.id}
             onClose={handleEditorClose}
             onSaveSuccess={handleEditorSave}
+            mode="edit"
+          />
+        )}
+
+        {activeView === "editor" && isCreating && mode === "tilskudd" && (
+          <TilskuddEditorPage
+            tilskuddId={null}
+            onClose={handleEditorClose}
+            onSaveSuccess={handleEditorSave}
+            mode="create"
           />
         )}
       </div>

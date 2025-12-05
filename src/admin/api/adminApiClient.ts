@@ -137,6 +137,22 @@ export type DiscardTilskuddDraftResponse = {
   message: string;
 };
 
+export type CreateTilskuddPayload = {
+  tilskudd: TilskuddContent;
+  changeSummary?: string;
+};
+
+export type CreateTilskuddResponse = {
+  id: string;
+  path: string;
+  tilskudd: TilskuddContent;
+  metadata: TilskuddContent["metadata"];
+  generation: string | null;
+  hasDraft: boolean;
+  hasPublished: boolean;
+  source: "draft";
+};
+
 export async function fetchDictionary(
   signal?: AbortSignal
 ): Promise<AdminDictionaryResponse> {
@@ -220,6 +236,15 @@ export async function discardTilskuddDraft(
 ): Promise<DiscardTilskuddDraftResponse> {
   return request<DiscardTilskuddDraftResponse>(`/content/tilskudd/${tilskuddId}/draft`, {
     method: "DELETE",
+  });
+}
+
+export async function createTilskudd(
+  payload: CreateTilskuddPayload
+): Promise<CreateTilskuddResponse> {
+  return request<CreateTilskuddResponse>("/content/tilskudd", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }
 

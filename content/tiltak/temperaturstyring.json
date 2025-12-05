@@ -60,21 +60,25 @@
   "accordion": [
     {
       "id": "soknadsplikt",
-      "title": "Søknadsplikt er ikke en stopper, men en støtte",
+      "title": "Søknadsplikt og ansvar",
       "body": [
-        "Temperaturstyring og styring av elektriske laster handler ofte om å montere termostater, sensorer eller styrebokser. Det er vanligvis ikke søknadspliktig, men alt fast elektrisk arbeid må gjøres av registrert installatør. Er du i tvil, ta kontakt med Plan- og bygningsetaten for veiledning.",
-        "Søknadsplikten skal hjelpe deg som tiltakshaver med å få et trygt og dokumentert resultat. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak for prosjektering eller utførelse. Avklar rollen til fagpersoner tidlig slik at prosjektet går smidig."
+        "Tiltak som å bytte ut ovner, termostater eller sette inn styring er normalt ikke søknadspliktig. Større inngrep, som nytt varmeanlegg eller endringer som berører fasaden eller konstruksjonen, kan derimot være søkandspliktig. Da er det lurt å ta en prat med Byantikvaren for gode tips før du setter i gang. Plan- og bygningsetaten gir også veiledning om søknadsplikt og eventuelt om du må kontakte en fagperson (arkitekt, byggmester eller entreprenør) for å hjelpe deg."
       ],
       "links": [
         {
-          "id": "dibk-soknadsplikt",
-          "label": "Direktoratet for byggkvalitet – hva er søknadsplikt?",
-          "url": "https://www.dibk.no/regelverk/sak/2/2/innledning"
+          "id": "pbe-soknadsplikt",
+          "label": "Sjekk nærmere om tiltaket ditt er søknadspliktig",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/byggesaksveiledning/"
         },
         {
-          "id": "dibk-ansvar",
-          "label": "Tiltakshaver og ansvarlige foretak",
-          "url": "https://www.dibk.no/regelverk/sak/3/12/innledning"
+          "id": "pbe-veiledning",
+          "label": "Gratis veiledningstime hos Plan- og bygningsetaten for generell informasjon om søknadsplikt",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/"
+        },
+        {
+          "id": "pbe-konkret",
+          "label": "Kontakt Plan- og bygningsetaten for en konkret vurdering av søknadsplikt for ditt tiltak, mot gebyr",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/sok-om-a-bygge/forhåndskonferanse/"
         }
       ]
     }
@@ -95,9 +99,9 @@
   ],
   "metadata": {
     "status": "published",
-    "updatedBy": "codex",
-    "updatedAt": "2025-11-15T10:00:00Z",
-    "changeSummary": "Første strukturerte innholdsversjon av Temperaturstyring med variantdata og støtteordninger."
+    "updatedBy": "migrate-from-git-history",
+    "updatedAt": "2025-12-05T20:56:33.939Z",
+    "changeSummary": "Migrert originale hardkodede tekster fra git-historikk"
   },
   "variants": [
     {
@@ -168,5 +172,6 @@
         "vern"
       ]
     }
-  ]
+  ],
+  "visibleForBuildingTypes": []
 }

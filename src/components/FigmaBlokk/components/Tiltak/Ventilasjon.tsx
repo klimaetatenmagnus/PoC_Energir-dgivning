@@ -753,182 +753,97 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
               opacity: isPermitOpen ? 1 : 0,
               transition: `opacity ${isPermitOpen ? '0.4s' : '0.1s'} ease-in-out ${isPermitOpen ? '0.2s' : '0s'}, padding 0.6s ease-in-out`
             }}>
-              <p style={{ margin: 0 }}>
-                Mindre tiltak som vedlikehold av eksisterende ventiler er normalt ikke søknadspliktig. Hvis du skal installere nytt ventilasjonsanlegg, eller gjøre inngrep i fasaden eller i konstruksjonen, er det vanligvis søknadspliktig. Plan- og bygningsetaten gir nærmere veiledning om søknadsplikt og eventuelt om du må kontakte en fagperson (arkitekt, byggmester eller entreprenør) til å hjelpe deg.
-              </p>
-              
+              {/* Søknadsplikt-tekst fra JSON */}
+              {accordionBody.map((paragraph, index) => (
+                <p key={`soknadsplikt-${index}`} style={{ margin: index === accordionBody.length - 1 ? 0 : '0 0 16px 0' }}>
+                  {paragraph}
+                </p>
+              ))}
+
               {/* Links section */}
-              <div style={{ marginTop: '16px' }}>
-                <a 
-                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/skal-du-bygge-rive-eller-endre/ma-du-sende-byggesoknad/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#2A2859',
-                    textDecoration: 'underline',
-                    marginBottom: '12px'
-                  }}
-                >
-                  Sjekk nærmere om tiltaket ditt er søknadspliktig
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
-                    <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
-                  </svg>
-                </a>
-                
-                <a 
-                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/#toc-2"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#2A2859',
-                    textDecoration: 'underline',
-                    marginBottom: '12px'
-                  }}
-                >
-                  Gratis veiledningstime hos Plan- og bygningsetaten for generell informasjon om søknadsplikt
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
-                    <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
-                  </svg>
-                </a>
-                
-                <a 
-                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#2A2859',
-                    textDecoration: 'underline'
-                  }}
-                >
-                  Kontakt Plan- og bygningsetaten for en konkret vurdering av søknadsplikt for ditt tiltak, mot gebyr
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
-                    <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
-                  </svg>
-                </a>
-              </div>
-              
-              {/* Rectangle with permit information */}
-              {accordionItem && (
-                <div
-                  style={{
-                    marginTop: '16px',
-                    padding: '16px',
-                    backgroundColor: '#2A2859'
-                  }}
-                >
-                  <h3
+              <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {accordionLinks.map((link) => (
+                  <a
+                    key={link.url}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
+                      display: 'flex',
+                      alignItems: 'center',
                       fontFamily: 'Oslo Sans',
-                      fontWeight: 700,
-                      fontSize: '16px',
-                      lineHeight: '24px',
-                      letterSpacing: '-0.2px',
-                      color: '#FFFFFF',
-                      margin: '0 0 12px 0'
+                      fontWeight: 300,
+                      fontSize: '14px',
+                      lineHeight: '22px',
+                      letterSpacing: '0px',
+                      color: '#2A2859',
+                      textDecoration: 'underline'
                     }}
                   >
-                    {accordionItem.title}
-                  </h3>
-                  {accordionBody.map((paragraph, index) => (
-                    <p
-                      key={`accordion-body-${index}`}
-                      style={{
-                        fontFamily: 'Oslo Sans',
-                        fontWeight: 300,
-                        fontSize: '14px',
-                        lineHeight: '22px',
-                        letterSpacing: '0px',
-                        color: '#FFFFFF',
-                        margin: index === 0 ? 0 : '16px 0 0 0',
-                        position: 'relative'
-                      }}
-                    >
-                      {renderParagraphWithGlossary({
-                        paragraph,
-                        glossary: glossaryEntries,
-                        hoveredTerm: hoveredGlossaryTerm,
-                        setHoveredTerm: setHoveredGlossaryTerm
-                      })}
-                    </p>
-                  ))}
-                  {accordionLinks.length ? (
-                    <div
-                      style={{
-                        marginTop: '16px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '12px'
-                      }}
-                    >
-                      {accordionLinks.map((link) => (
-                        <a
-                          key={link.id ?? link.url}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            fontFamily: 'Oslo Sans',
-                            fontWeight: 300,
-                            fontSize: '14px',
-                            lineHeight: '22px',
-                            letterSpacing: '0px',
-                            color: '#2A2859',
-                            textDecoration: 'underline',
-                            backgroundColor: '#FFFFFF',
-                            padding: '8px 12px'
-                          }}
-                        >
-                          {link.label}
-                          <svg
-                            width="18"
-                            height="18"
-                            viewBox="0 0 18 18"
-                            fill="none"
-                            style={{ marginLeft: '8px', flexShrink: 0 }}
-                          >
-                            <path
-                              d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z"
-                              fill="#2A2859"
-                            />
-                            <path
-                              fillRule="evenodd"
-                              clipRule="evenodd"
-                              d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z"
-                              fill="#2A2859"
-                            />
-                          </svg>
-                        </a>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              )}
+                    {link.label}
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
+                      <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
+                      <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
+                    </svg>
+                  </a>
+                ))}
+              </div>
+              
+              {/* Rectangle with general permit information (same for all tiltak) */}
+              <div
+                style={{
+                  marginTop: '16px',
+                  padding: '16px',
+                  backgroundColor: '#2A2859'
+                }}
+              >
+                <h3
+                  style={{
+                    fontFamily: 'Oslo Sans',
+                    fontWeight: 700,
+                    fontSize: '16px',
+                    lineHeight: '24px',
+                    letterSpacing: '-0.2px',
+                    color: '#FFFFFF',
+                    margin: '0 0 12px 0'
+                  }}
+                >
+                  Søknadsplikt er ikke en stopper, men en støtte
+                </h3>
+                <p style={{
+                  fontFamily: 'Oslo Sans',
+                  fontWeight: 300,
+                  fontSize: '14px',
+                  lineHeight: '22px',
+                  letterSpacing: '0px',
+                  color: '#FFFFFF',
+                  margin: 0
+                }}>
+                  Er tiltaket ditt søknadspliktig betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.
+                </p>
+                <p style={{
+                  fontFamily: 'Oslo Sans',
+                  fontWeight: 300,
+                  fontSize: '14px',
+                  lineHeight: '22px',
+                  letterSpacing: '0px',
+                  color: '#FFFFFF',
+                  margin: '16px 0 0 0'
+                }}>
+                  Søknadsplikten skal hjelpe deg som tiltakshaver med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak som tar faglig ansvar for prosjektering og utførelse.
+                </p>
+                <p style={{
+                  fontFamily: 'Oslo Sans',
+                  fontWeight: 300,
+                  fontSize: '14px',
+                  lineHeight: '22px',
+                  letterSpacing: '0px',
+                  color: '#FFFFFF',
+                  margin: '16px 0 0 0'
+                }}>
+                  Selv om du må søke, kan selve tiltaket fortsatt være enkelt å gjennomføre. Ta dialogen tidlig og bruk veiledningstilbudene dersom du er usikker.
+                </p>
+              </div>
                 </div>
               </div>
             </div>
