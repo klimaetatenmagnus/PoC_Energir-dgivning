@@ -100,7 +100,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   const [editedAreal, setEditedAreal] = useState(savedAreal);
   const [editedArealLeilighet, setEditedArealLeilighet] = useState(savedArealLeilighet);
   const [editedEnergiforbruk, setEditedEnergiforbruk] = useState(savedEnergiforbruk);
-  const [hasUserEditedEnergy, setHasUserEditedEnergy] = useState(false);
+  const [_hasUserEditedEnergy, setHasUserEditedEnergy] = useState(false);
 
   // Formatert energiforbruk
   const formattedEnergyConsumption = useMemo(() => {
@@ -110,14 +110,14 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   }, [savedEnergiforbruk]);
 
   // Besparelser
-  const shouldShowSavings = totalEnergySavings > 0;
+  const _shouldShowSavings = totalEnergySavings > 0;
   const roundedSavingsKwh = useMemo(() => roundToNearestThousandValue(totalEnergySavings), [totalEnergySavings]);
   const roundedSavingsNok = useMemo(
     () => roundToNearestThousandValue(convertKwhToNok(totalEnergySavings, energyPricePerKwh)),
     [totalEnergySavings, energyPricePerKwh]
   );
-  const formattedSavingsKwh = useMemo(() => formatNumberWithSpaces(roundedSavingsKwh), [roundedSavingsKwh]);
-  const formattedSavingsCurrency = useMemo(() => formatCurrency(roundedSavingsNok), [roundedSavingsNok]);
+  const _formattedSavingsKwh = useMemo(() => formatNumberWithSpaces(roundedSavingsKwh), [roundedSavingsKwh]);
+  const _formattedSavingsCurrency = useMemo(() => formatCurrency(roundedSavingsNok), [roundedSavingsNok]);
 
   // Håndter lagring
   const handleSave = useCallback(() => {
