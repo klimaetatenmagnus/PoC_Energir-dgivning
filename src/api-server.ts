@@ -36,6 +36,8 @@ const pythonScriptsDir = path.join(process.cwd(), 'scripts', 'python');
 const configDirectory = process.env.APP_CONFIG_DIR ?? path.join(process.cwd(), 'content');
 const solarServiceBaseUrl = (process.env.SOLAR_SERVICE_BASE_URL ?? 'http://localhost:4003').replace(/\/$/, '');
 const contentBucketName = process.env.CONTENT_BUCKET;
+// GCS bucket prefix - filer lagres under content/ i bøtten (f.eks. gs://bucket/content/tiltak/foo.json)
+const contentBucketPrefix = process.env.CONTENT_BUCKET_PREFIX ?? 'content';
 
 const storage = contentBucketName ? new Storage() : null;
 
@@ -351,7 +353,11 @@ async function loadJsonFromBucket(relativePath: string): Promise<LoadedJsonFile>
     throw new Error(`Unsafe bucket content path: ${relativePath}`);
   }
 
-  const file = storage.bucket(contentBucketName).file(relativePath);
+  // Legg til content/ prefix for å matche GCS-strukturen fra content:publish
+  const bucketPath = contentBucketPrefix
+    ? `${contentBucketPrefix}/${relativePath}`
+    : relativePath;
+  const file = storage.bucket(contentBucketName).file(bucketPath);
   const [metadata] = await file.getMetadata();
   const generation = metadata.generation ?? null;
   const etag = deriveBucketEtag(metadata);
@@ -591,15 +597,21 @@ async function listBucketContentFiles(
     return [];
   }
 
-  const prefix = `${collection}/`;
+  // Bruk content/ prefix for å matche GCS-strukturen fra content:publish
+  const bucketPrefix = contentBucketPrefix
+    ? `${contentBucketPrefix}/${collection}/`
+    : `${collection}/`;
   const [files] = await storage.bucket(contentBucketName).getFiles({
-    prefix,
+    prefix: bucketPrefix,
     autoPaginate: true
   });
 
+  // Fjern bucket prefix fra filnavnene for å returnere relative stier
+  const prefixToStrip = contentBucketPrefix ? `${contentBucketPrefix}/` : '';
   const allFiles = files
     .map((file) => file.name)
-    .filter((name): name is string => typeof name === 'string' && name.startsWith(prefix))
+    .filter((name): name is string => typeof name === 'string' && name.startsWith(bucketPrefix))
+    .map((name) => prefixToStrip ? name.slice(prefixToStrip.length) : name)
     .filter((name) => name.endsWith('.json') && !name.endsWith('/index.json'))
     .sort((a, b) => a.localeCompare(b));
 
