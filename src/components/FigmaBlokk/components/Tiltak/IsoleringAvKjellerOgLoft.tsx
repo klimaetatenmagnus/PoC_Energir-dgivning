@@ -68,7 +68,6 @@ const IsoleringAvKjellerOgLoftContentComponent: React.FC<IsoleringAvKjellerOgLof
   audience = 'standard'
 }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
-  const [hoveredWord, setHoveredWord] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
   const { data: tiltakContent } = useTiltakContent('etterisolering-kjeller-loft');

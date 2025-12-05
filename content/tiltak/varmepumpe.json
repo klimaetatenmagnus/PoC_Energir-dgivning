@@ -15,7 +15,7 @@
       "Ved montering av varmepumpe i enebolig bør du vurdere både innendørs og utendørs plassering nøye. Utedelen bør plasseres slik at den ikke er til sjenanse, og at støyen ikke forstyrrer oppholdssoner eller naboer. Mange benytter eksisterende tekniske gjennomføringer, som gamle ventiler, for å unngå nye inngrep i fasaden. Luft-til-luft varmepumpe er det vanligste alternativet, men luft-til-vann kan være aktuelt for større oppvarmingsbehov."
     ],
     "rekkehus": [
-      "I rekkehus og tomannsboliger deler man gjerne fasadeuttrykk og taklinjer. Koordiner plassering av utedeler slik at dere beholder et helhetlig uttrykk og møter kravene i reguleringsplanen.",
+      "Luft-til-luft varmepumpe er ofte den enkleste løsningen på rekkehus og flermannsboliger. I rekkehus og tomannsboliger deler man gjerne fasadeuttrykk og taklinjer. Koordiner plassering av utedeler slik at dere beholder et helhetlig uttrykk og møter kravene i reguleringsplanen.",
       "Har dere felles varmeanlegg eller balansert ventilasjon, kan luft-til-vann eller ventilasjonsvarmepumpe gi større besparelser enn enkelte luft-til-luft-enheter."
     ],
     "tomannsbolig": [
@@ -138,15 +138,15 @@
   ],
   "metadata": {
     "status": "published",
-    "updatedBy": "migrate-from-git-history",
-    "updatedAt": "2025-12-05T20:56:33.960Z",
-    "changeSummary": "Migrert originale hardkodede tekster fra git-historikk"
+    "updatedBy": "sync-from-prod-script",
+    "updatedAt": "2025-12-05T22:02:26.026Z",
+    "changeSummary": "Synkronisert intro- og byggtypetekster fra produksjon"
   },
   "variants": [
     {
       "audience": "gulliste",
       "introParagraphs": [
-        "Varmepumpe kan være en god løsning for oppvarming, bedre inneklima samt en effektiv måte å spare energi og redusere strømregningen på - også i verneverdige bygninger. Det er viktig å velge riktig type og plassering av hensyn til byggets historiske verdier. I mange tilfeller finnes det gode løsninger, så lenge de gjøres på riktig måte."
+        "Varmepumpe kan være en god løsning for oppvarming. Den bidrar til å redusere energiforbruk og strømregning - også i verneverdige bygninger. Det er viktig å velge riktig type og plassering av hensyn til byggets historiske verdier."
       ],
       "buildingTypeParagraphs": {
         "enebolig": [
@@ -161,8 +161,8 @@
           "Siden mange tomannsboliger og rekkehus har like fasader, bør du samarbeide med naboen. Da er det enklere å finne løsninger som fungerer både teknisk og visuelt."
         ],
         "blokk": [
-          "I blokker er det spesielt viktig å ta hensyn til både byggets helhet og naboene rundt. Mange bygg på gul liste har fasader og detaljer med høy verneverdi, og utedeler til luft-til-luft varmepumper kan derfor være lite egnet.",
-          "Vurder heller luft-til-vann eller væske-til-vann-løsninger som kobles til et felles vannbårent anlegg. Det krever mer planlegging, men gir skjulte installasjoner og energisparing for hele bygget.",
+          "I blokker er det spesielt viktig å ta hensyn til både byggets helhet og naboene rundt. Mange bygg på gul liste har fasader og detaljer med høy verneverdi - enten det gjelder fasadeuttrykk eller materialbruk. Utedeler til luft-til-luft varmepumper kan derfor være lite egnet.",
+          "Det kan være mer aktuelt med luft-til-vann eller væske-til-vann-løsninger som kobles til et felles vannbårent anlegg. Det krever mer planlegging, men gir skjulte installasjoner og energisparing for hele bygget.",
           "Når du deler fasade, tekniske løsninger og utearealer i borettslag eller sameier, må tiltaket koordineres gjennom styret. Samkjørte løsninger gir bedre kvalitet og øker sjansen for byggetillatelse."
         ],
         "default": [
@@ -205,5 +205,6 @@
       ]
     }
   ],
-  "visibleForBuildingTypes": []
+  "visibleForBuildingTypes": [],
+  "energySourceDescription": "Oppdateres når energiberegninger er tilgjengelige for tiltaket."
 }

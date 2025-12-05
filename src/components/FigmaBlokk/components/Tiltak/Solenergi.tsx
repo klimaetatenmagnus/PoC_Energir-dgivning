@@ -1135,15 +1135,7 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
                 color: '#FFFFFF',
                 margin: 0
               }}>
-                Data for årlig solinnstårlig og areal for ulike takflater blir hentet fra Oslo kommunes <a 
-                  href="https://od2.pbe.oslo.kommune.no/solkart/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{ 
-                    color: '#FFFFFF', 
-                    textDecoration: 'underline'
-                  }}
-                >Solkart</a>. For alle takflater med årlig solpotensial over 800 kWh/m², så summeres produktene av innstårligen og takflatearealet. Deretter antas det at 85% av takarealet kan utnyttes til solceller, og at solcellene har en en virkningsgrad på 20%.
+                {resolvedTiltakContent?.energySourceDescription ?? 'Kildebeskrivelse ikke tilgjengelig.'}
               </p>
             </div>
           </foreignObject>

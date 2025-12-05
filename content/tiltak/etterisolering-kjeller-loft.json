@@ -4,22 +4,23 @@
   "title": "Etterisolering av kjeller og loft",
   "summary": "Reduser varmetapet ved å oppgradere loftsgulv og gulv mot kjeller – særlig effektivt i eldre boliger.",
   "introParagraphs": [
-    "Etterisolering av loft og gulv mot kjeller er en av de mest kostnadseffektive måtene å senke energibruk, få et lunere inneklima og kutte strømutgiftene. Mange boliger har lite eller utdatert isolasjon i disse konstruksjonene.",
-    "Når du legger inn ny isolasjon samtidig som du sikrer god fukthåndtering og ventilasjon, kan du oppnå merkbare besparelser uten å endre fasaden."
+    "Etterisolering av loft og gulv er en effektiv måte å redusere varmetap, få et lunere inneklima og kutte strømregningen. Mange boliger har lite eller utdatert isolasjon – og her kan selv enkle tiltak gjøre stor forskjell."
   ],
   "buildingTypeParagraphs": {
     "default": [
       "I blokker er tiltakene ofte felles prosjekter som må forankres i styret. Loftsgulv kan isoleres ovenfra, mens gulv mot uoppvarmet kjeller kan isoleres nedenfra eller med blåseisolasjon mellom bjelkelag."
     ],
     "enebolig": [
-      "Eneboliger har som regel lett tilgang til loft og kjeller, noe som gjør etterisolering enkelt å kombinere med vedlikehold. Legg minst 20 cm isolasjon i loftsgulvet og vurder samtidig tetting rundt gjennomføringer for å unngå trekk og fukt.",
-      "I kjelleren kan du isolere mellom bjelker eller fra undersiden – husk dampsperre og ventilasjon der det er risiko for kondens."
+      "I eneboliger er det vanlig med tilgjengelig loft og kjeller, noe som gir gode muligheter for etterisolering. Loftet kan isoleres i gulvet med for eksempel trefiber eller cellulose – gjerne 20 cm eller mer – slik at varmen holdes inne uten å måtte endre taket på utsiden. I kjelleren kan det isoleres fra undersiden eller mellom bjelkelag, og i noen tilfeller blåses inn isolasjon uten å åpne gulvet. Det er viktig å sikre ventilasjon slik at det ikke oppstår fukt."
     ],
     "rekkehus": [
-      "Rekkehus og tomannsboliger deler gjerne bjelkelag eller loftsarealer. Samarbeid om tiltakene slik at dere får samme tykkelse og dampsperre, og unngå kuldebroer mellom boenheter."
+      "I rekkehus og flermannsboliger kan loft og kjeller være felles eller nært knyttet til naboens del. Da kan det være lurt å samarbeide, særlig hvis dere deler bjelkelag eller fellesarealer. Loftsgulv isoleres enkelt fra oversiden, og gulv mot kjeller kan etterisoleres nedenfra, eller ved å blåse isolasjon inn i etasjeskillet. Vurder fuktsikring og ventilasjon for best resultat."
     ],
     "tomannsbolig": [
-      "Rekkehus- og tomannsboliger deler gjerne bjelkelag eller loftsarealer. Samarbeid om tiltakene slik at dere får samme tykkelse og dampsperre, og unngå kuldebroer mellom boenheter."
+      "I rekkehus og flermannsboliger kan loft og kjeller være felles eller nært knyttet til naboens del. Da kan det være lurt å samarbeide, særlig hvis dere deler bjelkelag eller fellesarealer. Loftsgulv isoleres enkelt fra oversiden, og gulv mot kjeller kan etterisoleres nedenfra, eller ved å blåse isolasjon inn i etasjeskillet. Vurder fuktsikring og ventilasjon for best resultat."
+    ],
+    "blokk": [
+      "I blokker er etterisolering vanligvis et felles tiltak som må planlegges gjennom styret eller borettslaget. Loft og kjeller er ofte fellesarealer, og tiltak her kan gi store energibesparelser for hele bygningen. Loftsgulv kan isoleres ovenfra, mens gulv mot uoppvarmet kjeller kan isoleres nedenfra eller med blåseisolasjon mellom bjelkelag. Dette må alltid vurderes opp mot fuktsikring og tekniske forhold."
     ]
   },
   "benefitRefs": [
@@ -118,34 +119,33 @@
   "visibleForBuildingTypes": [],
   "metadata": {
     "status": "published",
-    "updatedBy": "migrate-from-git-history",
-    "updatedAt": "2025-12-05T20:56:34.124Z",
-    "changeSummary": "Migrert originale hardkodede tekster fra git-historikk"
+    "updatedBy": "sync-from-prod-script",
+    "updatedAt": "2025-12-05T22:02:25.463Z",
+    "changeSummary": "Synkronisert intro- og byggtypetekster fra produksjon"
   },
   "variants": [
     {
       "audience": "gulliste",
       "introParagraphs": [
         "Etterisolering av loft, kjeller og gulv er en av de mest effektive og rimelige måtene å spare energi i eldre bygg – uten å endre byggets utseende.",
-        "Riktig isolasjon kan gjøre boligen mer komfortabel og senke strømforbruket betydelig. I bygg med verneverdi er det ekstra viktig å bruke metoder og materialer som spiller på lag med konstruksjonen."
+        "Riktig isolasjon kan gjøre boligen mer komfortabel og senke strømforbruket betydelig. I bygg med verneverdi er det ekstra viktig å bruke metoder og materialer som spiller på lag med konstruksjonen. Ofte finnes det gode løsninger, så lenge de tilpasses bygget og utføres på en skånsom måte."
       ],
       "buildingTypeParagraphs": {
         "enebolig": [
           "I eldre eneboliger er det ofte god tilgang til både loft og kjeller, noe som gir mange muligheter for isolering uten store inngrep.",
-          "Loftet kan isoleres i gulvet med naturbaserte materialer som trefiber eller cellulose – gjerne rundt 20 cm – slik at du beholder takets uttrykk. I kjelleren er det lurt å isolere i gulvet over i stedet for på innsiden av murveggene, gjerne ved innblåsing i etasjeskillet.",
-          "Husk å sikre god ventilasjon for å unngå fukt, og kontakt Byantikvaren hvis du er usikker på hvordan tiltaket påvirker huset."
+          "I eldre eneboliger er det ofte god tilgang til både loft og kjeller, noe som gir mange muligheter for isolering uten store inngrep. Loftet kan isoleres i gulvet med naturbaserte materialer som trefiber eller cellulose – 20 cm er ofte nok. På den måten beholder du takets uttrykk og unngår å endre byggets karakter. Mot kjelleren er det lurt å isolere i gulvet over, ikke på innsiden av murveggene siden dette kan bidra til fukt- og råteproblemer på sikt. Dette kan gjøres ved innblåsing av isolasjon i etasjeskillet, gjerne uten å ta opp gulv. Husk å sikre god ventilasjon for å unngå fukt."
         ],
         "rekkehus": [
-          "Loft og kjeller i rekkehus og tomannsboliger kan være felles eller ligge tett inntil naboens del. Samordn tiltakene slik at dere bevarer symmetrien og får en løsning som godtas av Plan- og bygningsetaten.",
-          "Loftsgulv kan isoleres ovenfra uten å påvirke fasaden, mens gulv mot kjeller isoleres best ved å blåse inn materiale i etasjeskillet. Husk ventilasjon og fuktsikring."
+          "Loft og kjeller i rekkehus og tomannsboliger kan være felles eller ligge tett inntil naboens del. Det betyr at energitiltak bør samkjøres med naboen der det er mulig.",
+          "Isolering av loftsgulvet gir stor effekt og kan ofte utføres uten å påvirke byggets fasade. Gulv mot kjeller kan isoleres med innblåst materiale i etasjeskillet, men det krever at man vurderer ventilasjon og eventuell fuktproblematikk."
         ],
         "tomannsbolig": [
-          "Loft og kjeller i rekkehus og tomannsboliger kan være felles eller ligge tett inntil naboens del. Samordn tiltakene slik at dere bevarer symmetrien og får en løsning som godtas av Plan- og bygningsetaten.",
-          "Loftsgulv kan isoleres ovenfra uten å påvirke fasaden, mens gulv mot kjeller isoleres best ved å blåse inn materiale i etasjeskillet. Husk ventilasjon og fuktsikring."
+          "Loft og kjeller i rekkehus og tomannsboliger kan være felles eller ligge tett inntil naboens del. Det betyr at energitiltak bør samkjøres med naboen der det er mulig.",
+          "Isolering av loftsgulvet gir stor effekt og kan ofte utføres uten å påvirke byggets fasade. Gulv mot kjeller kan isoleres med innblåst materiale i etasjeskillet, men det krever at man vurderer ventilasjon og eventuell fuktproblematikk."
         ],
         "blokk": [
-          "I blokker er loft og kjeller som regel fellesarealer. Tiltak bør derfor planlegges i styret, slik at både uttrykk og tekniske krav ivaretas.",
-          "Utvendig uttrykk bør bevares, så prioriter innvendig isolering, tetting og ventilasjonsforbedringer som ikke påvirker fasaden direkte."
+          "I blokker er etterisolering vanligvis et felles tiltak som må planlegges gjennom styret eller borettslaget. Loft og kjeller er ofte fellesarealer, og tiltak her kan gi store energibesparelser for hele bygget.",
+          "Å isolere loftsgulvet med pustende materialer er effektivt og påvirker ikke fasaden. Gulv mot uoppvarmet kjeller kan isoleres nedenfra, men dette må alltid vurderes opp mot fuktsikring og tekniske forhold."
         ],
         "default": [
           "I blokker er loft og kjeller som regel fellesarealer. Tiltak bør derfor planlegges i styret, slik at både uttrykk og tekniske krav ivaretas.",
