@@ -60,8 +60,8 @@ export const Default: Story = {
   args: {
     showHeader: true,
     isExpanded: true,
-    onExpand: (expanded) => console.log('Expanded:', expanded),
-    onSelectSolution: (solution) => console.log('Selected:', solution),
+    onExpand: (_expanded) => {},
+    onSelectSolution: (_solution) => {},
     buildingData: mockBuildingData,
     yearlyConsumption: '25000',
   },
