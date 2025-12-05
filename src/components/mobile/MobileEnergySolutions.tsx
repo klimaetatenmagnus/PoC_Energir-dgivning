@@ -198,7 +198,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   solarData,
   mapCoordinates = null,
   showYellowBox = false,
-  totalEnergySavings = 0,
+  totalEnergySavings: _totalEnergySavings = 0,
 }) => {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [showEnergyInfo, setShowEnergyInfo] = useState(false);
