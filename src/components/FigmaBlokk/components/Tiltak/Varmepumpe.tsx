@@ -81,7 +81,6 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
   audience = 'standard'
 }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
-  const [hoveredWord, setHoveredWord] = useState<string | null>(null);
   const [activeButton, setActiveButton] = useState<string>('Generelt');
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
@@ -664,7 +663,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
                 color: '#000000',
                 margin: 0
               }}>
-                PLACEHOLDER
+                {resolvedTiltakContent?.energySourceDescription ?? 'Kildebeskrivelse ikke tilgjengelig.'}
               </p>
             </div>
           </foreignObject>

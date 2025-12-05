@@ -11,16 +11,18 @@
       "I blokker har man gjerne mindre kontroll over varmeanleggene, men det er likevel mye du kan gjøre i din egen leilighet. Ovner med innebygd døgnstyring eller små enheter som senker temperaturen om natten, kan gi bedre komfort uten mer strømbruk. Har borettslaget felles elbillading, solceller eller varmtvannsberedere, kan det være aktuelt å installere et system som sørger for at strømmen brukes jevnere og smartere gjennom døgnet. Dette kalles pris- og effektstyring."
     ],
     "enebolig": [
-      "I eneboliger har du ofte god kontroll på oppvarmingen i hvert rom, noe som gjør det enklere å tilpasse. Har du elbillader, varmtvannsbereder eller solceller, kan du også se på løsninger som styrer strømforbruket når belastningen er høy eller prisene er høye."
+      "I eldre eneboliger kan det lekke varme fra et rom til et annet, men du har ofte god kontroll på oppvarmingen i hvert rom. Temperaturstyring kan derfor jevne ut varmen bedre. Har du elbillader, varmtvannsbereder eller solceller, kan det være aktuelt å installere et system som sørger for at strømmen brukes jevnere og smartere gjennom døgnet. Dette kalles pris- og effektstyring."
     ],
     "rekkehus": [
-      "I rekkehus og tomannsboliger opplever mange at enkelte rom blir kaldere enn andre. Rom-for-rom-styring lar deg holde det lunt i oppholdsrom, mens du senker temperaturen i rom som ikke er i bruk. Deles hovedsikringen med naboene, kan felles effektstyring sikre jevnere belastning gjennom døgnet."
+      "Har du tekniske installasjoner som elbillading, solceller eller varmtvannsberedere, kan det være aktuelt å installere et system som sørger for at strømmen brukes jevnere og smartere gjennom døgnet. Dette kalles pris- og effektstyring. I verneverdige rekkehus deler dere uttrykk og installasjoner. Avklar med styret hvilke termostater, lokasjoner og kabelføringer som er tillatt før du monterer nytt utstyr.",
+      "Små tiltak som tettelister eller innvendig styring er sjelden problematisk, men inngrep i felles fasader eller synlig utstyr må koordineres."
     ],
     "tomannsbolig": [
       "I tomannsboliger og rekkehus er det vanlig at enkelte rom blir kaldere enn andre. Derfor kan det være smart å styre temperaturen rom for rom, og holde den lav der du ikke oppholder deg, samtidig som du har det lunt i stua. Har du tekniske installasjoner som elbillading, solceller eller varmtvannsberedere, kan det være aktuelt å installere et system som sørger for at strømmen brukes jevnere og smartere gjennom døgnet. Dette kalles pris- og effektstyring."
     ],
     "blokk": [
-      "I blokker har beboere ofte mindre innflytelse på varmeanlegget, men du kan likevel redusere forbruket lokalt. Panelovner med døgnstyring, styring av gulvvarme på bad eller tidsstyrt komfortvarme gir bedre kontroll. Har dere felles tekniske anlegg bør tiltak koordineres med styret slik at ventilasjon, varme og eventuelt solstrøm jobber sammen."
+      "I leiligheter er det vanlig at enkelte rom blir kaldere enn andre. Derfor kan det være smart å styre temperaturen rom for rom, og holde den lav der du ikke oppholder deg, samtidig som du har det lunt i stua. Varmeanlegg med innebygd døgnstyring, kan gi bedre komfort uten høyere energibruk.",
+      "Har borettslaget felles elbillading, solceller eller varmtvannsberedere, kan det være aktuelt å installere et system som sørger for at strømmen brukes jevnere og smartere gjennom døgnet. Dette kalles pris- og effektstyring."
     ]
   },
   "benefits": [
@@ -99,9 +101,9 @@
   ],
   "metadata": {
     "status": "published",
-    "updatedBy": "migrate-from-git-history",
-    "updatedAt": "2025-12-05T20:56:33.939Z",
-    "changeSummary": "Migrert originale hardkodede tekster fra git-historikk"
+    "updatedBy": "sync-from-prod-script",
+    "updatedAt": "2025-12-05T22:02:25.793Z",
+    "changeSummary": "Synkronisert intro- og byggtypetekster fra produksjon"
   },
   "variants": [
     {
@@ -114,17 +116,18 @@
           "I blokker har man gjerne mindre kontroll over varmeanleggene, men det er likevel mye du kan gjøre i din egen leilighet. Ovner med innebygd døgnstyring eller små enheter som senker temperaturen om natten, kan gi bedre komfort uten mer strømbruk. Har borettslaget felles elbillading, solceller eller varmtvannsberedere, kan det være aktuelt å installere et system som sørger for at strømmen brukes jevnere og smartere gjennom døgnet. Dette kalles pris- og effektstyring."
         ],
         "enebolig": [
-          "I eldre eneboliger kan det lekke varme fra et rom til et annet, men du har ofte god kontroll på oppvarmingen i hvert rom. Temperaturstyring kan derfor jevne ut varmen bedre. Har du elbillader, varmtvannsbereder eller solceller, kan du også se på løsninger som styrer strømforbruket når belastningen er høy eller prisene er høye."
+          "I eldre eneboliger kan det lekke varme fra et rom til et annet, men du har ofte god kontroll på oppvarmingen i hvert rom. Temperaturstyring kan derfor jevne ut varmen bedre. Har du elbillader, varmtvannsbereder eller solceller, kan det være aktuelt å installere et system som sørger for at strømmen brukes jevnere og smartere gjennom døgnet. Dette kalles pris- og effektstyring."
         ],
         "rekkehus": [
-          "I verneverdige rekkehus deler dere uttrykk og installasjoner. Avklar med styret hvilke termostater, lokasjoner og kabelføringer som er tillatt før du monterer nytt utstyr.",
+          "Har du tekniske installasjoner som elbillading, solceller eller varmtvannsberedere, kan det være aktuelt å installere et system som sørger for at strømmen brukes jevnere og smartere gjennom døgnet. Dette kalles pris- og effektstyring. I verneverdige rekkehus deler dere uttrykk og installasjoner. Avklar med styret hvilke termostater, lokasjoner og kabelføringer som er tillatt før du monterer nytt utstyr.",
           "Små tiltak som tettelister eller innvendig styring er sjelden problematisk, men inngrep i felles fasader eller synlig utstyr må koordineres."
         ],
         "tomannsbolig": [
           "I flermannsboliger og rekkehus er det vanlig at enkelte rom blir kaldere enn andre. Derfor kan det være smart å styre temperaturen rom for rom, og holde den lav der du ikke oppholder deg, samtidig som du har det lunt i stua. Har du tekniske installasjoner som elbillading, solceller eller varmtvannsberedere, kan det være aktuelt å installere et system som sørger for at strømmen brukes jevnere og smartere gjennom døgnet. Dette kalles pris- og effektstyring."
         ],
         "blokk": [
-          "I bygårder og murgårder påvirker styringskabler, paneler eller sensorer ofte fellesarealer. Planlegg tiltak sammen med styret og Byantikvaren slik at ventilasjon, varme og bevaringshensyn ivaretas."
+          "I leiligheter er det vanlig at enkelte rom blir kaldere enn andre. Derfor kan det være smart å styre temperaturen rom for rom, og holde den lav der du ikke oppholder deg, samtidig som du har det lunt i stua. Varmeanlegg med innebygd døgnstyring, kan gi bedre komfort uten høyere energibruk.",
+          "Har borettslaget felles elbillading, solceller eller varmtvannsberedere, kan det være aktuelt å installere et system som sørger for at strømmen brukes jevnere og smartere gjennom døgnet. Dette kalles pris- og effektstyring."
         ]
       },
       "readMore": [
@@ -173,5 +176,6 @@
       ]
     }
   ],
-  "visibleForBuildingTypes": []
+  "visibleForBuildingTypes": [],
+  "energySourceDescription": "Oppdateres når energiberegninger er tilgjengelige for tiltaket."
 }

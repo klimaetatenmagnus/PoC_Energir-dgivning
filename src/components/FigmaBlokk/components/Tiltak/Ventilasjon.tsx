@@ -5,7 +5,7 @@ import {
   TiltakComponentProps
 } from './shared';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
-import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
+import { useTiltakContent } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type {
   TiltakAccordionItem,
@@ -13,7 +13,6 @@ import type {
 } from '../../../../../content/tiltak/schema';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
-import { renderParagraphWithGlossary, dictionaryTermsToGlossary } from './glossaryHelpers';
 
 type VentilasjonProps = TiltakComponentProps;
 type VentilasjonComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -59,11 +58,9 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
   audience = 'standard'
 }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
-  const [hoveredGlossaryTerm, setHoveredGlossaryTerm] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
   const { data: tiltakContent, isLoading } = useTiltakContent('ventilasjon');
-  const { data: dictionary } = useContentDictionary();
   const resolvedTiltakContent = useMemo(
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
@@ -74,10 +71,6 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
   );
 
   const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
-  const glossaryEntries = useMemo(
-    () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? []),
-    [dictionary?.glossaryTerms]
-  );
 
   const {
     stotteordninger,
@@ -418,7 +411,7 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
                 color: '#000000',
                 margin: 0
               }}>
-                PLACEHOLDER
+                {resolvedTiltakContent?.energySourceDescription ?? 'Kildebeskrivelse ikke tilgjengelig.'}
               </p>
             </div>
           </foreignObject>

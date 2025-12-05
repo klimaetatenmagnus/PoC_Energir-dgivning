@@ -4,27 +4,29 @@
   "title": "Tetting",
   "summary": "Stopp trekk og varmetap med enkle tiltak rundt vinduer, dører og gulv.",
   "introParagraphs": [
-    "Trekker det rundt vinduer, dører eller gulv? Da kan tetting være et av de enkleste grepene du gjør for å få bedre komfort og lavere strømforbruk. Små tiltak som tettelister og isolering bak listverk kan ofte gi stor forskjell – og det meste kan du gjøre selv.",
-    "Tetting passer i alle typer bygg og krever sjelden store inngrep."
+    "Trekker det rundt vinduer, dører eller gulv? Tetting er et enkelt og effektivt tiltak som kan gi bedre komfort og lavere strømforbruk.",
+    "Tetting med tettelister, dyttestrimmel eller isolering bak listverk er enkle tiltak som raskt gir effekt. Mange av tiltakene kan du gjøre selv, og resultatet merkes både på komfort og strømregning."
   ],
   "buildingTypeParagraphs": {
     "default": [
       "I leiligheter er det vanlig at trekk kommer fra gamle vinduer eller overganger mot fellesarealer som trapperom og kjeller. Tetting rundt egne vinduer og dører kan du som regel gjøre selv. Hvis lekkasjene gjelder deler av bygget som flere beboere deler, bør tiltaket tas opp med styret. Tetting er også lurt å gjøre sammen med annet vedlikehold for å få mer igjen for innsatsen."
     ],
     "enebolig": [
-      "I eneboliger oppstår trekken ofte rundt vinduer, dører, ved overganger mellom etasjer eller der tak og vegger møtes. Du kan enkelt finne lekkasjer ved å kjenne etter trekk med hånden eller bruke et stearinlys. Mange av tiltakene kan du gjøre selv, og resultatet merkes både på komfort og strømregning."
+      "I eneboliger oppstår trekken ofte rundt vinduer, dører, ved overganger mellom etasjer eller der tak og vegger møtes. I murhus er det ofte gulv, hjørner og overgangen mot kjeller og loft som slipper ut varme. I trehus oppstår lekkasjene gjerne rundt dører og vinduer, der materialene har beveget seg over tid. Du kan enkelt finne lekkasjer ved å kjenne etter trekk med hånden eller bruke et stearinlys."
     ],
     "rekkehus": [
+      "Trekken kommer ofte fra vinduer, dører og overganger mellom etasjer. I murhus er det ofte gulv, hjørner og overgangen mot kjeller og loft som slipper ut varme. I trehus oppstår lekkasjene gjerne rundt dører og vinduer, der materialene har beveget seg over tid. Du kan enkelt finne lekkasjer ved å kjenne etter trekk med hånden eller bruke et stearinlys.",
       "I rekkehus og tomannsboliger deler du ofte både konstruksjoner og fasader med naboen. Koordiner arbeidet med de andre slik at dere tetter like punkter og bevarer et helhetlig uttrykk.",
       "Start med egne vinduer og dører, og vurder felles tiltak i trapperom, kjeller og loft dersom flere opplever trekk."
     ],
     "tomannsbolig": [
+      "Trekken kommer ofte fra vinduer, dører og overganger mellom etasjer. I murhus er det ofte gulv, hjørner og overgangen mot kjeller og loft som slipper ut varme. I trehus oppstår lekkasjene gjerne rundt dører og vinduer, der materialene har beveget seg over tid. Du kan enkelt finne lekkasjer ved å kjenne etter trekk med hånden eller bruke et stearinlys.",
       "I rekkehus og tomannsboliger deler du ofte både konstruksjoner og fasader med naboen. Koordiner arbeidet med de andre slik at dere tetter like punkter og bevarer et helhetlig uttrykk.",
       "Start med egne vinduer og dører, og vurder felles tiltak i trapperom, kjeller og loft dersom flere opplever trekk."
     ],
     "blokk": [
-      "I blokker er det vanlig at trekken kommer fra felles konstruksjoner: overgangen mellom leilighet og trapperom, gamle sjakter eller ubrukte ventiler. Tetting rundt egne vinduer og innvendige overflater kan du gjøre selv, men tiltak som berører fasaden bør tas opp med styret.",
-      "Be om at tetting samordnes med annet vedlikehold, slik at dere opprettholder uttrykket mot gata."
+      "Trekken kommer ofte fra vinduer, dører og overganger mellom etasjer. I blokker kan trekken også komme fra fellesarealer: overgangen mellom leilighet og trapperom, gamle sjakter eller ubrukte ventiler. Tetting rundt egne vinduer og innvendige overflater kan du gjøre selv, men tiltak som berører fellesarealer bør tas opp med styret.",
+      "Tetting er også lurt å gjøre sammen med annet vedlikehold for å få mer igjen for innsatsen."
     ]
   },
   "benefits": [
@@ -104,9 +106,9 @@
   ],
   "metadata": {
     "status": "published",
-    "updatedBy": "migrate-from-git-history",
-    "updatedAt": "2025-12-05T20:56:33.898Z",
-    "changeSummary": "Migrert originale hardkodede tekster fra git-historikk"
+    "updatedBy": "sync-from-prod-script",
+    "updatedAt": "2025-12-05T22:02:25.901Z",
+    "changeSummary": "Synkronisert intro- og byggtypetekster fra produksjon"
   },
   "variants": [
     {
@@ -182,5 +184,6 @@
       ]
     }
   ],
-  "visibleForBuildingTypes": []
+  "visibleForBuildingTypes": [],
+  "energySourceDescription": "Oppdateres når energiberegninger er tilgjengelige for tiltaket."
 }

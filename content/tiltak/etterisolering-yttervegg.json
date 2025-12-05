@@ -4,7 +4,7 @@
   "title": "Etterisolering av yttervegg",
   "summary": "Bedre komfort, lavere energibruk og oppgradert fasade når du etterisolerer veggene.",
   "introParagraphs": [
-    "YOLO- Etterisolering av fasaden er svært effektivt for å spare strømutgifter, skape bedre inneklima med mindre trekk, og få mer kontroll over temperaturen inne.",
+    "Etterisolering av fasaden er svært effektivt for å spare strømutgifter, skape bedre inneklima med mindre trekk, og få mer kontroll over temperaturen inne.",
     "Hvis du uansett må skifte kledning, altså fasadematerialet, lønner det seg å etterisolere samtidig."
   ],
   "buildingTypeParagraphs": {
@@ -120,35 +120,33 @@
   ],
   "metadata": {
     "status": "published",
-    "updatedBy": "migrate-hardcoded-texts",
-    "updatedAt": "2025-12-05T20:16:25.072Z",
-    "changeSummary": "Migrert hardkodede tekster fra komponenter til JSON"
+    "updatedBy": "sync-from-prod-script",
+    "updatedAt": "2025-12-05T22:02:25.586Z",
+    "changeSummary": "Synkronisert intro- og byggtypetekster fra produksjon"
   },
   "variants": [
     {
       "audience": "gulliste",
       "introParagraphs": [
-        "Fasaden er ansiktet utad på huset – og ofte en viktig del av bygningens særpreg og identitet. Selv om bygget står på gul liste finnes det gode muligheter for å forbedre komforten og redusere varmetapet, så lenge tiltakene er tilpasset konstruksjonen og historien."
+        "Fasaden er viktig for bygningens energibruk, og er i tillegg en viktig del av bygningens særpreg og identitet. Selv om bygget står på Gul liste finnes det gode muligheter for å forbedre komforten og redusere varmetapet, så lenge tiltakene er tilpasset konstruksjonen og historien."
       ],
       "buildingTypeParagraphs": {
         "enebolig": [
           "Eldre eneboliger har stor variasjon i både byggemåte og fasadeuttrykk, og løsningene må tilpasses hvert enkelt hus.",
           "Har huset trekledning og tydelige bygningsdetaljer, bør fasaden som hovedregel bevares slik den er. Innvendig etterisolering eller forbedret tetting kan likevel gi stor effekt. Dersom kledningen er i dårlig stand eller tidligere er byttet ut, kan du vurdere utvendig etterisolering med ny kledning i samme stil.",
-          "Har huset mur- eller betongfasade uten særlige detaljer, er handlingsrommet større – for eksempel på gavlvegger eller fasader mot bakgård og portrom."
+          "Har huset mur- eller betongfasade uten særlige detaljer, er handlingsrommet større – for eksempel på gavlvegger eller fasader mot bakgård og portrom.  Et møte med Byantikvaren er gratis og gir nyttige råd."
         ],
         "rekkehus": [
-          "Mange tomannsboliger og rekkehus har symmetrisk oppbygning og felles fasadepreg. Samarbeid med naboen slik at helheten ivaretas – det gir både bedre visuelle løsninger og større sjanse for byggetillatelse.",
-          "Er fasaden enkel og uten detaljer, for eksempel på bakvegg eller gavl, kan utvendig etterisolering være mulig med ny kledning i tilsvarende uttrykk. Er huset i mur eller pusset tegl, må du bruke løsninger som lar fukt bevege seg naturlig.",
-          "Er fasaden profilert treverk eller historisk murarbeid, anbefales heller forbedret tetting, vindusforbedring og innvendig isolasjon med pustende materialer. Et møte med Byantikvaren er gratis og gir nyttige råd."
+          "Mange tomannsboliger og rekkehus har et enhetlig fasadepreg. Samarbeid med naboen slik at helheten ivaretas – det gir både bedre visuelle løsninger og større sjanse for byggetillatelse. \n \nEr fasaden enkel og uten detaljer, for eksempel på bakvegg eller gavl, kan utvendig etterisolering være mulig med ny kledning i tilsvarende uttrykk. Er huset i mur eller pusset tegl, må du bruke løsninger som lar fukt bevege seg naturlig. \n \nEr fasaden profilert treverk eller historisk murarbeid, anbefales heller innvendig isolasjon med pustende materialer, forbedret tetting og vindusutbedring. Et møte med Byantikvaren er gratis og gir nyttige råd."
         ],
         "tomannsbolig": [
-          "Mange tomannsboliger og rekkehus har symmetrisk oppbygning og felles fasadepreg. Samarbeid med naboen slik at helheten ivaretas – det gir både bedre visuelle løsninger og større sjanse for byggetillatelse.",
+          "Mange tomannsboliger og rekkehus har et enhetlig fasadepreg. Samarbeid med naboen slik at helheten ivaretas – det gir både bedre visuelle løsninger og større sjanse for byggetillatelse.",
           "Er fasaden enkel og uten detaljer, for eksempel på bakvegg eller gavl, kan utvendig etterisolering være mulig med ny kledning i tilsvarende uttrykk. Er huset i mur eller pusset tegl, må du bruke løsninger som lar fukt bevege seg naturlig.",
-          "Er fasaden profilert treverk eller historisk murarbeid, anbefales heller forbedret tetting, vindusforbedring og innvendig isolasjon med pustende materialer. Et møte med Byantikvaren er gratis og gir nyttige råd."
+          "Er fasaden profilert treverk eller historisk murarbeid, anbefales heller innvendig isolasjon med pustende materialer, forbedret tetting og vindusutbedring. Et møte med Byantikvaren er gratis og gir nyttige råd."
         ],
         "blokk": [
           "Blokker har ofte felleseide fasader og stor variasjon i byggestil. En godt planlagt oppgradering kan gi både energigevinst og løfte helhetsinntrykket.",
-          "På enkle, flate fasader, gavlvegger, portrom eller fasader mot bakgård kan utvendig etterisolering være aktuelt. Fasader mot gate, spesielt med utsmykninger, bør bevares. Da kan tetting, balansert ventilasjon og vindusforbedring være bedre løsninger."
+          "På enkle, flate fasader, gavlvegger, portrom eller fasader mot bakgård kan utvendig etterisolering være aktuelt. Fasader mot gate, spesielt med utsmykninger, bør bevares. Da kan innvendig isolasjon med pustende materialer, tetting, balansert ventilasjon og vindusforbedring være bedre løsninger."
         ],
         "default": [
           "Blokker har ofte felleseide fasader og stor variasjon i byggestil. En godt planlagt oppgradering kan gi både energigevinst og løfte helhetsinntrykket.",

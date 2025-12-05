@@ -5,7 +5,7 @@ import {
   TiltakComponentProps
 } from './shared';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
-import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
+import { useTiltakContent } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type {
   TiltakAccordionItem,
@@ -13,7 +13,6 @@ import type {
 } from '../../../../../content/tiltak/schema';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
-import { renderParagraphWithGlossary, dictionaryTermsToGlossary } from './glossaryHelpers';
 
 type TettingProps = TiltakComponentProps;
 type TettingComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -58,11 +57,9 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
   audience = 'standard'
 }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
-  const [hoveredGlossaryTerm, setHoveredGlossaryTerm] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
   const { data: tiltakContent } = useTiltakContent('tetting');
-  const { data: dictionary } = useContentDictionary();
   const resolvedTiltakContent = useMemo(
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
@@ -85,10 +82,6 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
   const accordionItem = content?.accordion[0];
   const accordionBody = accordionItem?.body ?? [];
   const accordionLinks = accordionItem?.links ?? [];
-  const glossaryEntries = useMemo(
-    () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? []),
-    [dictionary?.glossaryTerms]
-  );
   const grantIds = content?.grants ?? [];
 
   // All hooks must be called before any early return
@@ -416,7 +409,7 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
                 color: '#000000',
                 margin: 0
               }}>
-                PLACEHOLDER
+                {resolvedTiltakContent?.energySourceDescription ?? 'Kildebeskrivelse ikke tilgjengelig.'}
               </p>
             </div>
           </foreignObject>

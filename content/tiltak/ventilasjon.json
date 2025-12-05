@@ -17,7 +17,7 @@
       "I mange rekkehus og tomannsboliger er ventilasjonen svekket over tid. Du kan få bedre luftkvalitet bare ved å rense og åpne ventiler, men vurder også mer moderne løsninger. Balansert ventilasjon sørger for at frisk luft kommer inn, brukt luft trekkes ut og varmen bevares – uten trekk. Et slikt tiltak gir jevnere temperatur. Samarbeider du med naboen kan dere oppnå enda mer effektive løsninger."
     ],
     "blokk": [
-      "I leilighetsbygg er det vanlig med naturlig ventilasjon gjennom sjakter og lufteluker. Mange slike løsninger er tettet eller fjernet, og resultatet er dårlig luft – særlig på bad og kjøkken. Få renset og åpnet ventiler i egen bolig, og ta saken opp med styret dersom hele bygget trenger balansert ventilasjon eller nye avtrekk."
+      "I leilighetsbygg er det vanlig med naturlig ventilasjon gjennom sjakter og lufteluker. Mange slike løsninger er tettet eller fjernet, og resultatet er dårlig luft – særlig på bad og kjøkken. Få renset og åpnet ventiler i egen bolig. Borettslag og sameier kan også vurdere balansert ventilasjon - et system som gir frisk luft og varmegjenbruk. Det gir bedre inneklima for hele bygget."
     ],
     "default": [
       "Mange leiligheter har dårlig ventilasjon etter at gamle systemer ble fjernet eller tettet. Start med å få renset og åpnet ventiler i egen bolig. Hvis flere i bygget har samme utfordring, kan borettslaget vurdere balansert ventilasjon – et system som gir frisk luft og varmegjenbruk. Det gir bedre inneklima for hele bygget."
@@ -99,9 +99,9 @@
   ],
   "metadata": {
     "status": "published",
-    "updatedBy": "migrate-from-git-history",
-    "updatedAt": "2025-12-05T20:56:33.918Z",
-    "changeSummary": "Migrert originale hardkodede tekster fra git-historikk"
+    "updatedBy": "sync-from-prod-script",
+    "updatedAt": "2025-12-05T22:02:26.144Z",
+    "changeSummary": "Synkronisert intro- og byggtypetekster fra produksjon"
   },
   "variants": [
     {
@@ -171,5 +171,6 @@
       ]
     }
   ],
-  "visibleForBuildingTypes": []
+  "visibleForBuildingTypes": [],
+  "energySourceDescription": "Oppdateres når energiberegninger er tilgjengelige for tiltaket."
 }

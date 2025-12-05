@@ -5,7 +5,7 @@ import {
   TiltakComponentProps
 } from './shared';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
-import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
+import { useTiltakContent } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type {
   TiltakAccordionItem,
@@ -13,7 +13,6 @@ import type {
 } from '../../../../../content/tiltak/schema';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
-import { renderParagraphWithGlossary, dictionaryTermsToGlossary } from './glossaryHelpers';
 
 type TemperaturstyringProps = TiltakComponentProps;
 type TemperaturstyringComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -58,11 +57,9 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
   audience = 'standard'
 }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
-  const [hoveredGlossaryTerm, setHoveredGlossaryTerm] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
 
   const { data: tiltakContent, isLoading } = useTiltakContent('temperaturstyring');
-  const { data: dictionary } = useContentDictionary();
   const resolvedTiltakContent = useMemo(
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
@@ -73,10 +70,6 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
   );
 
   const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
-  const glossaryEntries = useMemo(
-    () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? []),
-    [dictionary?.glossaryTerms]
-  );
 
   // Hooks for støtteordninger - må være før tidlig return (React rules of hooks)
   const grantIds = content?.grants ?? [];
@@ -407,7 +400,7 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
                   margin: 0
                 }}
               >
-                Oppdateres når energiberegninger er tilgjengelige for tiltaket.
+                {resolvedTiltakContent?.energySourceDescription ?? 'Kildebeskrivelse ikke tilgjengelig.'}
               </p>
             </div>
           </foreignObject>
