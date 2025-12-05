@@ -41,6 +41,17 @@
   font-weight: var(--pkt-font-weight-medium, 500);
 }
 
+.tilskudd-editor-page__create-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--pkt-spacing-4, 0.25rem) var(--pkt-spacing-12, 0.75rem);
+  background-color: #f4f5ff; /* Light blue tint */
+  color: #2a2859; /* brand-dark-blue-1000 */
+  border: 2px solid #2a2859;
+  font-size: var(--pkt-font-size-14, 0.875rem);
+  font-weight: var(--pkt-font-weight-medium, 500);
+}
+
 .tilskudd-editor-page__error-actions {
   display: flex;
   gap: var(--pkt-spacing-12, 0.75rem);

@@ -680,7 +680,147 @@ Wizarden gir redaktører en steg-for-steg-flyt for å publisere innholdsendringe
 
 ---
 
-### 11.8 Øvrige oppgaver
+### 11.8 Migrering av hardkodede tekster til JSON
+
+**Status:** Fullført ✅
+
+**Bakgrunn:** Flere tekster i tiltakskortene var hardkodet i React-komponentene og kunne derfor ikke redigeres via admin-UI. Dette gjaldt primært:
+
+1. **Søknadsplikt-tekst** (`accordion[id=soknadsplikt].body`): Innholdet i "Sjekk om du må søke for å gjennomføre tiltaket"-seksjonen (hvit boks)
+2. **Kilde-tekst** (`energySourceDescription`): Forklaringsteksten i infoboksen om energibesparelse
+
+**Strukturen i komponentene:**
+- **Hvit boks**: Inneholder søknadsplikt-tekst som er **unik per tiltak** – leses nå fra JSON
+- **Blå boks**: Inneholder generell tekst ("Søknadsplikt er ikke en stopper...") som er **lik for alle tiltak** – forblir hardkodet
+
+#### Berørte komponenter og JSON-filer
+
+| Komponent | JSON-fil | Har energiberegning? |
+|-----------|----------|---------------------|
+| `Tetting.tsx` | `tetting.json` | Nei |
+| `Ventilasjon.tsx` | `ventilasjon.json` | Nei |
+| `Temperaturstyring.tsx` | `temperaturstyring.json` | Nei |
+| `Varmepumpe.tsx` | `varmepumpe.json` | Nei (placeholder) |
+| `Solenergi.tsx` | `solenergi.json` | Ja |
+| `UtskiftningAvVindu.tsx` | `vinduer.json` | Ja |
+| `EtterisoleringYttervegg.tsx` | `etterisolering-yttervegg.json` | Ja |
+| `IsoleringAvKjellerOgLoft.tsx` | `etterisolering-kjeller-loft.json` | Ja |
+
+#### Gjennomført arbeid
+
+**✅ Fase 1: Utvide schema – FULLFØRT**
+
+Lagt til nytt valgfritt felt i `content/tiltak/schema.ts`:
+
+```ts
+energySourceDescription: z.string().trim().optional()
+```
+
+**✅ Fase 2: Migreringsscript – FULLFØRT**
+
+Opprettet script som henter originale tekster fra git-historikk:
+
+- `scripts/migrate-from-git-history.ts` – Henter originale tekster fra git og oppdaterer JSON
+
+Scriptet bruker `git show` for å hente de originale TSX-filene fra før migreringen startet:
+- Søknadsplikt-tekster fra commit `99487b3` ("ferdige tiltakskort")
+- Kilde-tekster fra commit `5f42b5a` ("ferdige kildebokser på tiltakskortene")
+
+```bash
+# Kjør scriptet
+npx tsx scripts/migrate-from-git-history.ts
+```
+
+**✅ Fase 2b: JSON-filer oppdatert – FULLFØRT**
+
+Alle 8 JSON-filer har nå korrekte originale tekster:
+
+| Tiltak | Søknadsplikt-tekst | Kilde-tekst |
+|--------|-------------------|-------------|
+| `tetting.json` | ✅ "Tetting regnes som vedlikehold..." | N/A |
+| `ventilasjon.json` | ✅ "Mindre tiltak som vedlikehold..." | N/A |
+| `temperaturstyring.json` | ✅ "Tiltak som å bytte ut ovner..." | N/A |
+| `varmepumpe.json` | ✅ "Varmepumpe kan være søknadspliktig..." | N/A |
+| `solenergi.json` | ✅ "Solcelleanlegg er som regel..." | ✅ "Data for årlig solinnstråling..." |
+| `vinduer.json` | ✅ "Mindre arbeider, som vedlikehold..." | ✅ "Besparelsene estimeres..." |
+| `etterisolering-yttervegg.json` | ✅ "Etterisolering som endrer fasaden..." | ✅ "Besparelsene estimeres..." |
+| `etterisolering-kjeller-loft.json` | ✅ "Etterisolering som ikke endrer..." | ✅ "Besparelsene estimeres..." |
+
+**✅ Fase 3: Oppdatere komponenter – FULLFØRT**
+
+| Komponent | TSX leser søknadsplikt fra JSON | TSX leser kilde fra JSON | Status |
+|-----------|--------------------------------|-------------------------|--------|
+| `Tetting.tsx` | ✅ | N/A | ✅ Ferdig |
+| `Ventilasjon.tsx` | ✅ | N/A | ✅ Ferdig |
+| `Temperaturstyring.tsx` | ✅ | N/A | ✅ Ferdig |
+| `Varmepumpe.tsx` | ✅ | N/A | ✅ Ferdig |
+| `Solenergi.tsx` | ✅ | ✅ | ✅ Ferdig |
+| `UtskiftningAvVindu.tsx` | ✅ | ✅ | ✅ Ferdig |
+| `EtterisoleringYttervegg.tsx` | ✅ | ✅ | ✅ Ferdig |
+| `IsoleringAvKjellerOgLoft.tsx` | ✅ | ✅ | ✅ Ferdig |
+
+**✅ Fase 4: Admin-UI – FULLFØRT**
+
+Lagt til felt for redigering av:
+- `accordion[id=soknadsplikt]` – Søknadsplikt-tekst og lenker (hvit boks) – *eksisterte allerede*
+- `energySourceDescription` – Kilde-tekst for energiberegning – *ny seksjon*
+
+#### Fullførte oppgaver
+
+1. ~~**Oppdater `EtterisoleringYttervegg.tsx`:**~~ ✅ Fullført
+   - ~~Bytt ut hardkodet søknadsplikt-tekst med lesing fra `accordionBody`/`accordionLinks`~~
+   - ~~Bytt ut hardkodet kilde-tekst med `resolvedTiltakContent?.energySourceDescription`~~
+
+2. ~~**Admin-UI i `TiltakEditor.tsx`:**~~ ✅ Fullført
+   - ~~Søknadsplikt-seksjonen var allerede implementert (`accordion[id=soknadsplikt].body` og `links`)~~
+   - ~~Lagt til ny seksjon for `energySourceDescription` (vises kun for tiltak med energiberegning)~~
+
+3. **Verifisering:**
+   - Visuell sjekk at tekster vises korrekt i frontend
+   - Test redigering av søknadsplikt og kilde i admin-UI
+
+#### Implementeringsdetaljer
+
+**Komponentkode for å lese fra JSON:**
+
+```tsx
+// Hent accordion-data
+const accordionItem = content.accordion.find(a => a.id === 'soknadsplikt');
+const accordionBody = accordionItem?.body ?? [];
+const accordionLinks = accordionItem?.links ?? [];
+
+// Render søknadsplikt-tekst (hvit boks)
+{accordionBody.map((paragraph, index) => (
+  <p key={`soknadsplikt-${index}`}>
+    {paragraph}
+  </p>
+))}
+
+// Render kilde-tekst
+{resolvedTiltakContent?.energySourceDescription ?? 'Fallback...'}
+```
+
+**Blå boks (hardkodet, lik for alle tiltak):**
+
+```tsx
+<h3>Søknadsplikt er ikke en stopper, men en støtte</h3>
+<p>Er tiltaket ditt søknadspliktig betyr det at Plan- og bygningsetaten
+   må godkjenne arbeidet før du setter i gang...</p>
+```
+
+#### Filendringer
+
+| Fil | Endring | Status |
+|-----|---------|--------|
+| `content/tiltak/schema.ts` | `energySourceDescription` felt | ✅ |
+| `scripts/migrate-from-git-history.ts` | Migreringsscript fra git | ✅ Opprettet og kjørt |
+| `content/tiltak/*.json` | Søknadsplikt + kilde | ✅ Alle 8 filer oppdatert |
+| `src/components/.../Tiltak/*.tsx` | Les fra JSON | ✅ Alle 8 komponenter ferdig |
+| `src/admin/components/TiltakEditor.tsx` | UI for kilde-tekst | ✅ Implementert |
+
+---
+
+### 11.9 Øvrige oppgaver
 
 1. ~~**Katalogfilter og paginering:**~~ ✅ Implementert klient-side filtrering (status, målgruppe, byggtype, fritekst) og paginering (6/12/24/48 elementer per side) med Punkt-komponenter. Filtre nullstilles ved modus-bytte og paginering resettes ved filter-endring.
 2. **Prod-klar admin-pipeline:** Etabler prod-trigger/konfig for admin (Cloud Build + Cloud Run) og prod-hostrule/SSL når prod-host er klart, slik at admin kan kjøres i prod med samme base `/admin/` og IAP-policy.

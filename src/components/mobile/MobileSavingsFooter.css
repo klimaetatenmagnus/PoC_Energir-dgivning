@@ -1,0 +1,336 @@
+/* MobileSavingsFooter - Sticky footer med animert besparelsesindikator
+ *
+ * Layout (topp til bunn):
+ * 1. Overskrift: "Estimert besparelse"
+ * 2. Graf/søyle: Animert bredde basert på besparelse
+ * 3. Verdier: kr/år og kWh/år
+ *
+ * Farger fra Punkt designsystem:
+ * - Bakgrunn: --pkt-color-surface-strong-gray (#f2f2f2) - svak kontrast mot hvit
+ * - Søyle: --pkt-color-brand-dark-green-1000 (#034b45)
+ * - Tekst: --pkt-color-brand-dark-blue-1000 (#2a2859) - standard for designet
+ */
+
+.mobile-savings-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1100; /* Over InfoBox modal (1000) */
+
+  /* Punkt lysegrå bakgrunn - svak kontrast mot hvit */
+  background-color: var(--pkt-color-surface-strong-gray, #f2f2f2);
+
+  /* Subtil skygge og kant */
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  border-top: 1px solid var(--pkt-color-brand-neutrals-200, #e5e5e5);
+
+  /* Animasjon for å gli inn */
+  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Highlight-effekt når tiltak legges til - subtil gråtone fra Punkt grays */
+.mobile-savings-footer--highlight {
+  background-color: var(--pkt-color-grays-gray-100, #e6e6e6);
+  transition: background-color 0.15s ease-out;
+}
+
+/* Tilbake til normal når highlight fjernes */
+.mobile-savings-footer:not(.mobile-savings-footer--highlight) {
+  transition: background-color 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.mobile-savings-footer__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.875rem 1.25rem;
+  padding-bottom: calc(0.875rem + env(safe-area-inset-bottom, 0));
+}
+
+/* Overskrift øverst - matcher "Velg tiltak for din bolig" */
+.mobile-savings-footer__heading {
+  margin: 0;
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+/* Graf-wrapper som inneholder søyle og x-akse */
+.mobile-savings-footer__graph {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  /* Gi plass til sentrert siste verdi (ca 30px for "55k kr") */
+  padding-right: 1.75rem;
+}
+
+/* Søyle-container */
+.mobile-savings-footer__bar-container {
+  position: relative;
+  height: 14px;
+  background: var(--pkt-color-brand-neutrals-200, #e5e5e5);
+  border-radius: 7px;
+  overflow: hidden;
+  /* Subtil puls når zoom skjer */
+  transition: transform 0.3s ease-out;
+}
+
+
+/* Hovedsøyle - animert bredde med bounce */
+.mobile-savings-footer__bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+
+  /* Punkt Oslo-grønn med gradient for dybde */
+  background: linear-gradient(
+    90deg,
+    var(--pkt-color-brand-dark-green-1000, #034b45) 0%,
+    var(--pkt-color-status-green-25, #1b5145) 70%,
+    #2a7a6a 100%
+  );
+  border-radius: 7px;
+
+  /* Dynamisk animasjon - rask og springende */
+  transition: width 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-width: 0;
+
+  /* Subtil skygge for dybde */
+  box-shadow: 0 1px 3px rgba(3, 75, 69, 0.3);
+}
+
+/* Bounce-animasjon når søylen vokser */
+.mobile-savings-footer__bar--growing {
+  animation: barBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Under zoom-animasjon: Fjern CSS transition, bredden styres av JavaScript */
+.mobile-savings-footer__bar--synced {
+  transition: none;
+}
+
+@keyframes barBounce {
+  0% {
+    transform: scaleY(1) scaleX(1);
+  }
+  25% {
+    transform: scaleY(1.15) scaleX(0.98);
+  }
+  50% {
+    transform: scaleY(0.95) scaleX(1.01);
+  }
+  75% {
+    transform: scaleY(1.05) scaleX(1);
+  }
+  100% {
+    transform: scaleY(1) scaleX(1);
+  }
+}
+
+/* X-akse under søylen */
+.mobile-savings-footer__axis {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Container for alle hakk - bruker position relative for absolutt posisjonering av hakk */
+.mobile-savings-footer__ticks {
+  position: relative;
+  height: 8px;
+  overflow: hidden; /* Skjul hakk som er utenfor skjermen under animasjon */
+}
+
+/* Enkelt hakk - nå absolutt posisjonert */
+.mobile-savings-footer__tick {
+  width: 1px;
+  height: 4px;
+  background-color: var(--pkt-color-brand-neutrals-400, #a3a3a3);
+  /* Ingen transition - posisjonen styres av JavaScript */
+}
+
+/* Store hakk ved kroneverdier (hver 10.) */
+.mobile-savings-footer__tick--major {
+  height: 8px;
+  width: 1.5px;
+  background-color: var(--pkt-color-brand-neutrals-600, #6b6b6b);
+}
+
+/* Container for kroneverdier - absolutt posisjonering for nøyaktig plassering */
+.mobile-savings-footer__labels {
+  position: relative;
+  height: 1rem;
+  margin-top: 0.125rem;
+}
+
+.mobile-savings-footer__axis-value {
+  position: absolute;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--pkt-color-brand-neutrals-700, #4d4d4d);
+  /* Animert overgang når verdiene endres */
+  transition: all 0.4s ease-out;
+  white-space: nowrap;
+}
+
+/* 0% - justert til venstre kant av første hakk */
+.mobile-savings-footer__axis-value:nth-child(1) {
+  left: -2px;
+}
+
+/* 25% - sentrert */
+.mobile-savings-footer__axis-value:nth-child(2) {
+  left: 25%;
+  transform: translateX(-50%);
+}
+
+/* 50% - sentrert */
+.mobile-savings-footer__axis-value:nth-child(3) {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 75% - sentrert */
+.mobile-savings-footer__axis-value:nth-child(4) {
+  left: 75%;
+  transform: translateX(-50%);
+}
+
+/* 100% - sentrert under siste hakk */
+.mobile-savings-footer__axis-value:nth-child(5) {
+  left: 100%;
+  transform: translateX(-50%);
+  color: var(--pkt-color-brand-neutrals-800, #3d3d3d);
+}
+
+/* Under animasjon - kroneverdiene oppdateres jevnt via JavaScript */
+.mobile-savings-footer__labels--animating .mobile-savings-footer__axis-value {
+  /* Ingen spesiell CSS-animasjon - verdiene interpoleres i koden */
+}
+
+/* Verdier-seksjon nederst */
+.mobile-savings-footer__values {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Beløp-visning (venstre) */
+.mobile-savings-footer__amount {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  flex-shrink: 0;
+}
+
+.mobile-savings-footer__amount-prefix {
+  font-size: 1.25rem;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+.mobile-savings-footer__amount-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+
+  /* Animert tall-oppdatering */
+  transition: transform 0.2s ease-out;
+}
+
+.mobile-savings-footer__amount-suffix {
+  font-size: 1rem;
+  font-weight: 500;
+  opacity: 0.7;
+  margin-left: 0.125rem;
+}
+
+/* kWh-visning (høyre) */
+.mobile-savings-footer__kwh {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  white-space: nowrap;
+}
+
+/* Responsiv justering for veldig små skjermer */
+@media (max-width: 350px) {
+  .mobile-savings-footer__amount-value {
+    font-size: 1.25rem;
+  }
+
+  .mobile-savings-footer__amount-prefix,
+  .mobile-savings-footer__amount-suffix {
+    font-size: 1rem;
+  }
+
+  .mobile-savings-footer__kwh {
+    font-size: 0.875rem;
+  }
+
+  .mobile-savings-footer__content {
+    padding: 0.875rem 1rem;
+    padding-bottom: calc(0.875rem + env(safe-area-inset-bottom, 0));
+  }
+
+  .mobile-savings-footer__axis-value {
+    font-size: 0.625rem;
+  }
+}
+
+/* Høykontrast-modus støtte */
+@media (prefers-contrast: high) {
+  .mobile-savings-footer {
+    background: #ffffff;
+    border-top: 2px solid #000000;
+  }
+
+  .mobile-savings-footer__bar {
+    background: #034b45;
+  }
+
+  .mobile-savings-footer__heading {
+    color: #000000;
+  }
+}
+
+/* Redusert bevegelse */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-savings-footer {
+    animation: none;
+  }
+
+  .mobile-savings-footer__bar {
+    transition: width 0.1s linear;
+  }
+
+  .mobile-savings-footer__bar--growing {
+    animation: none;
+  }
+
+  .mobile-savings-footer--highlight {
+    transition: none;
+  }
+
+  .mobile-savings-footer:not(.mobile-savings-footer--highlight) {
+    transition: none;
+  }
+}

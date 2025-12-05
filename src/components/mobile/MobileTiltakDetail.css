@@ -1,0 +1,660 @@
+/* MobileTiltakDetail - Full-skjerm tiltaksdetaljer for mobil */
+/* Bruker Punkt designsystem farger og spacing */
+
+.mobile-tiltak-detail {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  background-color: var(--pkt-color-brand-neutrals-100, #f9f9f9);
+  overflow: hidden;
+}
+
+/* Header - sticky med tilbake-knapp */
+.mobile-tiltak-detail__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--pkt-spacing-12, 0.75rem) var(--pkt-spacing-16, 1rem);
+  padding-top: max(var(--pkt-spacing-12, 0.75rem), env(safe-area-inset-top));
+  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  border-bottom: 1px solid var(--pkt-color-brand-neutrals-200, #f2f2f2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  min-height: 60px;
+  flex-shrink: 0;
+}
+
+.mobile-tiltak-detail__header-content {
+  display: flex;
+  align-items: center;
+  gap: var(--pkt-spacing-12, 0.75rem);
+}
+
+.mobile-tiltak-detail__logo {
+  width: 52px;
+  height: auto;
+}
+
+.mobile-tiltak-detail__logo path {
+  fill: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-tiltak-detail__header-title {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-tiltak-detail__back-button {
+  --pkt-btn-bg: transparent;
+  --pkt-btn-border-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  --pkt-btn-text-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+/* Hovedinnhold - scrollbart */
+.mobile-tiltak-detail__main {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--pkt-spacing-16, 1rem);
+  padding-bottom: max(var(--pkt-spacing-32, 2rem), env(safe-area-inset-bottom));
+}
+
+/* Laster og feil */
+.mobile-tiltak-detail__loading,
+.mobile-tiltak-detail__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pkt-spacing-16, 1rem);
+  padding: var(--pkt-spacing-32, 2rem);
+  text-align: center;
+}
+
+.mobile-tiltak-detail__loading p,
+.mobile-tiltak-detail__error p {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  margin: 0;
+}
+
+.mobile-tiltak-detail__error h2 {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  margin: 0;
+}
+
+/* Hero-seksjon med tittel og fordels-chips */
+.mobile-tiltak-detail__hero {
+  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  padding: var(--pkt-spacing-20, 1.25rem);
+  margin: calc(-1 * var(--pkt-spacing-16, 1rem));
+  margin-bottom: var(--pkt-spacing-16, 1rem);
+}
+
+/* Fordels-chips - identisk med desktop (.tiltak-card__benefit-chip) */
+.mobile-tiltak-detail__benefit-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: var(--pkt-spacing-12, 0.75rem);
+}
+
+.mobile-tiltak-detail__benefit-chip {
+  background: #c7f6c9;
+  height: 30px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  color: #2a2859;
+  box-sizing: border-box;
+  width: fit-content;
+  white-space: nowrap;
+  font-family: 'Oslo Sans', sans-serif;
+}
+
+.mobile-tiltak-detail__benefit-chip-title {
+  font-size: 14px;
+  line-height: 21px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+}
+
+.mobile-tiltak-detail__benefit-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.mobile-tiltak-detail__benefit-chip-icon pkt-icon {
+  width: 16px;
+  height: 16px;
+  color: #2a2859;
+}
+
+.mobile-tiltak-detail__eyebrow {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pkt-color-brand-neutrals-700, #666666);
+  margin-bottom: var(--pkt-spacing-4, 0.25rem);
+  display: block;
+}
+
+.mobile-tiltak-detail__title {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  margin: 0 0 var(--pkt-spacing-12, 0.75rem) 0;
+  line-height: 1.2;
+}
+
+.mobile-tiltak-detail__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pkt-spacing-8, 0.5rem);
+}
+
+/* Seksjoner */
+.mobile-tiltak-detail__section {
+  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  padding: var(--pkt-spacing-20, 1.25rem);
+  margin-bottom: var(--pkt-spacing-12, 0.75rem);
+}
+
+.mobile-tiltak-detail__section:last-child {
+  margin-bottom: 0;
+}
+
+.mobile-tiltak-detail__section-title {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  margin: 0 0 var(--pkt-spacing-12, 0.75rem) 0;
+}
+
+.mobile-tiltak-detail__section-description {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  color: var(--pkt-color-brand-neutrals-700, #666666);
+  margin: 0 0 var(--pkt-spacing-12, 0.75rem) 0;
+}
+
+/* Intro-tekst */
+.mobile-tiltak-detail__intro p {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  margin: 0 0 var(--pkt-spacing-12, 0.75rem) 0;
+}
+
+.mobile-tiltak-detail__intro p:last-child {
+  margin-bottom: 0;
+}
+
+/* Fordeler */
+.mobile-tiltak-detail__benefits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-12, 0.75rem);
+}
+
+.mobile-tiltak-detail__benefit {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--pkt-spacing-12, 0.75rem);
+  padding: var(--pkt-spacing-12, 0.75rem);
+  background-color: var(--pkt-color-brand-neutrals-50, #fcfcfc);
+  border-left: 3px solid var(--pkt-color-brand-dark-green-1000, #034b45);
+}
+
+.mobile-tiltak-detail__benefit-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  color: var(--pkt-color-brand-dark-green-1000, #034b45);
+}
+
+.mobile-tiltak-detail__benefit-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-4, 0.25rem);
+}
+
+.mobile-tiltak-detail__benefit-title {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-tiltak-detail__benefit-description {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.8125rem;
+  color: var(--pkt-color-brand-neutrals-700, #666666);
+  line-height: 1.5;
+}
+
+/* Tabs */
+.mobile-tiltak-detail__tabs {
+  display: flex;
+  gap: var(--pkt-spacing-8, 0.5rem);
+  overflow-x: auto;
+  padding-bottom: var(--pkt-spacing-4, 0.25rem);
+  margin-bottom: var(--pkt-spacing-16, 1rem);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.mobile-tiltak-detail__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-tiltak-detail__tab {
+  flex-shrink: 0;
+  padding: var(--pkt-spacing-8, 0.5rem) var(--pkt-spacing-16, 1rem);
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  background-color: var(--pkt-color-brand-neutrals-100, #f9f9f9);
+  border: 1px solid var(--pkt-color-brand-neutrals-300, #e6e6e6);
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.mobile-tiltak-detail__tab:hover {
+  background-color: var(--pkt-color-brand-neutrals-200, #f2f2f2);
+}
+
+.mobile-tiltak-detail__tab--active {
+  background-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  border-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-tiltak-detail__tab--active:hover {
+  background-color: var(--pkt-color-brand-dark-blue-900, #3a386d);
+}
+
+/* Tab-panel */
+.mobile-tiltak-detail__tab-panel {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Tekst-stacker */
+.mobile-tiltak-detail__text-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-12, 0.75rem);
+}
+
+.mobile-tiltak-detail__text-stack p {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  margin: 0;
+}
+
+.mobile-tiltak-detail__text-stack--secondary {
+  margin-top: var(--pkt-spacing-16, 1rem);
+  padding-top: var(--pkt-spacing-16, 1rem);
+  border-top: 1px solid var(--pkt-color-brand-neutrals-200, #f2f2f2);
+}
+
+.mobile-tiltak-detail__muted {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.8125rem;
+  color: var(--pkt-color-brand-neutrals-700, #666666);
+  margin: 0 0 var(--pkt-spacing-8, 0.5rem) 0;
+}
+
+/* Lenker */
+.mobile-tiltak-detail__links {
+  margin-top: var(--pkt-spacing-16, 1rem);
+}
+
+.mobile-tiltak-detail__links-label {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pkt-color-brand-neutrals-700, #666666);
+  display: block;
+  margin-bottom: var(--pkt-spacing-8, 0.5rem);
+}
+
+.mobile-tiltak-detail__links ul,
+.mobile-tiltak-detail__link-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-8, 0.5rem);
+}
+
+.mobile-tiltak-detail__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pkt-spacing-4, 0.25rem);
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.9375rem;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  min-height: 44px;
+  padding: var(--pkt-spacing-8, 0.5rem) 0;
+}
+
+.mobile-tiltak-detail__link:hover {
+  color: var(--pkt-color-brand-dark-green-1000, #034b45);
+}
+
+/* Accordion */
+.mobile-tiltak-detail__accordion {
+  --pkt-accordion-bg: var(--pkt-color-brand-neutrals-50, #fcfcfc);
+}
+
+.mobile-tiltak-detail__accordion-links {
+  list-style: none;
+  margin: var(--pkt-spacing-12, 0.75rem) 0 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-4, 0.25rem);
+}
+
+.mobile-tiltak-detail__accordion-links a {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  text-decoration: underline;
+  display: inline-block;
+  padding: var(--pkt-spacing-4, 0.25rem) 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+/* Årlig besparelse */
+.mobile-tiltak-detail__section--savings {
+  background-color: var(--pkt-color-brand-dark-green-1000, #034b45);
+  color: var(--pkt-color-brand-neutrals-white, #ffffff);
+}
+
+.mobile-tiltak-detail__savings {
+  display: flex;
+  align-items: center;
+  gap: var(--pkt-spacing-8, 0.5rem);
+  flex-wrap: wrap;
+}
+
+.mobile-tiltak-detail__savings-label {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.mobile-tiltak-detail__savings-value {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 300;
+}
+
+.mobile-tiltak-detail__savings-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--pkt-color-brand-neutrals-white, #ffffff);
+  color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  margin-left: auto;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.mobile-tiltak-detail__savings-tooltip {
+  margin-top: var(--pkt-spacing-12, 0.75rem);
+  padding: var(--pkt-spacing-12, 0.75rem);
+  background-color: #D1F9FF;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-tiltak-detail__savings-tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--pkt-spacing-8, 0.5rem);
+}
+
+.mobile-tiltak-detail__savings-tooltip-header strong {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.mobile-tiltak-detail__savings-tooltip-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  cursor: pointer;
+  padding: 0;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-tiltak-detail__savings-tooltip p {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Mindre titler for Støtteordninger og Søknadsplikt accordions */
+.mobile-tiltak-detail__main > .pkt-accordion .pkt-accordion-item__title {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.mobile-tiltak-detail__permit-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-16, 1rem);
+}
+
+.mobile-tiltak-detail__permit-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-8, 0.5rem);
+}
+
+.mobile-tiltak-detail__permit-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pkt-spacing-4, 0.25rem);
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 300;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  min-height: 44px;
+  padding: var(--pkt-spacing-8, 0.5rem) 0;
+}
+
+.mobile-tiltak-detail__permit-highlight {
+  background-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  padding: var(--pkt-spacing-16, 1rem);
+  color: var(--pkt-color-brand-neutrals-white, #ffffff);
+}
+
+.mobile-tiltak-detail__permit-highlight h4 {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 var(--pkt-spacing-8, 0.5rem) 0;
+}
+
+.mobile-tiltak-detail__permit-highlight p {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-weight: 300;
+  margin: 0;
+}
+
+/* Støtteordninger */
+.mobile-tiltak-detail__grants {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-12, 0.75rem);
+}
+
+.mobile-tiltak-detail__grant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-8, 0.5rem);
+  padding: var(--pkt-spacing-12, 0.75rem);
+  background-color: var(--pkt-color-brand-neutrals-50, #fcfcfc);
+  border: 1px solid var(--pkt-color-brand-neutrals-200, #f2f2f2);
+}
+
+.mobile-tiltak-detail__grant-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-4, 0.25rem);
+}
+
+.mobile-tiltak-detail__grant-title {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-tiltak-detail__grant-amount {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.8125rem;
+  color: var(--pkt-color-brand-dark-green-1000, #034b45);
+  font-weight: 500;
+}
+
+.mobile-tiltak-detail__grant-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--pkt-spacing-12, 0.75rem);
+  flex-wrap: wrap;
+}
+
+.mobile-tiltak-detail__grant-provider {
+  display: inline-block;
+  padding: var(--pkt-spacing-4, 0.25rem) var(--pkt-spacing-8, 0.5rem);
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  border-radius: 2px;
+}
+
+.mobile-tiltak-detail__grant-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pkt-spacing-4, 0.25rem);
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  background: none;
+  border: none;
+  padding: var(--pkt-spacing-4, 0.25rem) 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  min-height: 44px;
+}
+
+.mobile-tiltak-detail__grant-link:hover {
+  color: var(--pkt-color-brand-dark-green-1000, #034b45);
+}
+
+/* CTA-seksjon */
+.mobile-tiltak-detail__section--cta {
+  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  position: sticky;
+  bottom: 0;
+  margin-bottom: 0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  padding-bottom: max(var(--pkt-spacing-20, 1.25rem), env(safe-area-inset-bottom));
+}
+
+.mobile-tiltak-detail__cta-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-12, 0.75rem);
+}
+
+.mobile-tiltak-detail__cta-button {
+  width: 100%;
+}
+
+/* Responsivt for veldig smale skjermer */
+@media (max-width: 340px) {
+  .mobile-tiltak-detail__title {
+    font-size: 1.5rem;
+  }
+
+  .mobile-tiltak-detail__section-title {
+    font-size: 1rem;
+  }
+
+  .mobile-tiltak-detail__tab {
+    padding: var(--pkt-spacing-8, 0.5rem) var(--pkt-spacing-12, 0.75rem);
+    font-size: 0.8125rem;
+  }
+}

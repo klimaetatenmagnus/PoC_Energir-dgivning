@@ -10,7 +10,7 @@ import {
 } from './shared';
 import { useTiltakContent } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
-import type { TiltakContent } from '../../../../../content/tiltak/schema';
+import type { TiltakContent, TiltakAccordionItem } from '../../../../../content/tiltak/schema';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
@@ -28,6 +28,7 @@ type EtterisoleringYtterveggContentView = {
   introParagraphs: string[];
   buildingTypeParagraphs: Record<string, string[]>;
   readMore: ReadMoreLink[];
+  accordion: TiltakAccordionItem[];
   grants: string[];
 };
 
@@ -54,6 +55,7 @@ function mapTiltakContentToLegacy(
     introParagraphs: content.introParagraphs,
     buildingTypeParagraphs,
     readMore: content.readMore.map(({ label, url }) => ({ label, url })),
+    accordion: content.accordion,
     grants: content.grants
   };
 }
@@ -87,6 +89,9 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
     content?.buildingTypeParagraphs.default ??
     [];
   const readMoreLinks = (content?.readMore ?? []).slice(0, 5);
+  const accordionItem = content?.accordion.find(a => a.id === 'soknadsplikt') ?? content?.accordion[0];
+  const accordionBody = accordionItem?.body ?? [];
+  const accordionLinks = accordionItem?.links ?? [];
   const grantIds = content?.grants ?? [];
 
   // All hooks must be called before any early return
@@ -802,84 +807,44 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
               opacity: isPermitOpen ? 1 : 0,
               transition: `opacity ${isPermitOpen ? '0.4s' : '0.1s'} ease-in-out ${isPermitOpen ? '0.2s' : '0s'}, padding 0.6s ease-in-out`
             }}>
-              <p style={{ margin: 0 }}>
-                Etterisolering som endrer fasaden er søknadspliktig. Du må derfor kontakte en fagperson (arkitekt, byggmester eller entreprenør) som søker om tillatelse fra Plan- og bygningsetaten for deg. Etterisolering fra innsiden er som regel ikke søknadspliktig, så lenge du ikke endrer bygningens utseende eller bærende konstruksjon.
+              {/* Søknadsplikt-tekst fra JSON */}
+              {accordionBody.map((paragraph, index) => (
+                <p key={`soknadsplikt-${index}`} style={{ margin: index === accordionBody.length - 1 ? 0 : '0 0 16px 0' }}>
+                  {paragraph}
+                </p>
+              ))}
 
-              </p>
-              
-              {/* Links section */}
-              <div style={{ marginTop: '16px' }}>
-                <a 
-                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/skal-du-bygge-rive-eller-endre/ma-du-sende-byggesoknad/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#2A2859',
-                    textDecoration: 'underline',
-                    marginBottom: '12px'
-                  }}
-                >
-                  Sjekk nærmere om tiltaket ditt er søknadspliktig
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
-                    <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
-                  </svg>
-                </a>
-                
-                <a 
-                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/#toc-2"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#2A2859',
-                    textDecoration: 'underline',
-                    marginBottom: '12px'
-                  }}
-                >
-                  Gratis veiledningstime hos Plan- og bygningsetaten for generell informasjon om søknadsplikt
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
-                    <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
-                  </svg>
-                </a>
-                
-                <a 
-                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px',
-                    lineHeight: '22px',
-                    letterSpacing: '0px',
-                    color: '#2A2859',
-                    textDecoration: 'underline'
-                  }}
-                >
-                  Kontakt Plan- og bygningsetaten for en konkret vurdering av søknadsplikt for ditt tiltak, mot gebyr
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
-                    <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
-                  </svg>
-                </a>
-              </div>
+              {/* Søknadsplikt-lenker fra JSON */}
+              {accordionLinks.length > 0 && (
+                <div style={{ marginTop: '16px' }}>
+                  {accordionLinks.map((link, index) => (
+                    <a
+                      key={link.id || `link-${index}`}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        fontFamily: 'Oslo Sans',
+                        fontWeight: 300,
+                        fontSize: '14px',
+                        lineHeight: '22px',
+                        letterSpacing: '0px',
+                        color: '#2A2859',
+                        textDecoration: 'underline',
+                        marginBottom: index < accordionLinks.length - 1 ? '12px' : '0'
+                      }}
+                    >
+                      {link.label}
+                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: '8px', flexShrink: 0 }}>
+                        <path d="M12.9546 11.8742V13.033H5.0459V5.16359H6.20465V4.03859H5.0459V4.03297H3.9209V14.158H14.0796V11.8742H12.9546Z" fill="#2A2859"/>
+                        <path fillRule="evenodd" clipRule="evenodd" d="M10.1253 4.02734V5.15234H12.1615L8.07777 9.24734L8.85402 10.0292L12.9434 5.92859V7.97047H14.0796V4.02734H10.1253Z" fill="#2A2859"/>
+                      </svg>
+                    </a>
+                  ))}
+                </div>
+              )}
               
               {/* Rectangle with permit information */}
               <div style={{
@@ -1174,7 +1139,7 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
                 color: '#FFFFFF',
                 margin: 0
               }}>
-                Besparelsene estimeres fra datasett basert på bygningstype, bruksareal og teknisk forskrift. Disse variablene hentes automatisk fra Matrikkelen, utenom TEK som estimeres ut fra byggeår. Dette er en forenkling som ikke tar hensyn til tidligere oppgraderinger av bygget. Strømprisen er satt til 1.1kr/kWh.
+                {resolvedTiltakContent?.energySourceDescription ?? 'Besparelsene estimeres fra datasett basert på bygningstype, bruksareal og teknisk forskrift. Disse variablene hentes automatisk fra Matrikkelen, utenom TEK som estimeres ut fra byggeår. Dette er en forenkling som ikke tar hensyn til tidligere oppgraderinger av bygget. Strømprisen er satt til 1.1kr/kWh.'}
               </p>
             </div>
           </foreignObject>

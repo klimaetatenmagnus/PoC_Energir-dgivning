@@ -912,6 +912,32 @@ export function TiltakEditor({
         </section>
       )}
 
+      {/* Kilde for energiberegning - vises kun hvis tiltaket har energySourceDescription */}
+      {(editedTiltak.energySourceDescription !== undefined ||
+        ['solenergi', 'vinduer', 'etterisolering-yttervegg', 'etterisolering-kjeller-loft'].includes(editedTiltak.id)) && (
+        <section className="tiltak-editor__section">
+          <h3 className="tiltak-editor__section-title">Kilde for energiberegning</h3>
+          <p className="tiltak-editor__section-helptext">
+            Forklaringstekst som vises i infoboksen om energibesparelse (ved spørsmålstegn-ikonet).
+          </p>
+          <PktTextarea
+            id="energy-source-description"
+            label="Kildetekst"
+            helptext="Forklaring på hvordan energibesparelser er beregnet, kilder og forutsetninger."
+            value={editedTiltak.energySourceDescription ?? ""}
+            onChange={(e) => {
+              setEditedTiltak((prev) => ({
+                ...prev,
+                energySourceDescription: e.target.value || undefined,
+              }));
+              setIsDirty(true);
+              setError(null);
+            }}
+            rows={4}
+          />
+        </section>
+      )}
+
       {/* Les mer-lenker */}
       <section className="tiltak-editor__section">
         <h3 className="tiltak-editor__section-title">Les mer-lenker</h3>

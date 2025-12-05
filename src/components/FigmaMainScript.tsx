@@ -7,7 +7,7 @@ import { EnergySolutionButtons } from './FigmaBlokk/components/EnergySolutionBut
 import { WhiteInfoBox } from './FigmaBlokk/components/WhiteInfoBox';
 import { OsloLogo } from './FigmaBlokk/components/OsloLogo';
 import { ProsessenVidere } from './FigmaBlokk/components/ProsessenVidere';
-import { fetchSolarData, SolarEnergyData } from '../services/solarEnergyService';
+import { SolarEnergyData } from '../services/solarEnergyService';
 import { sjekkGulListeMedGnrBnr } from '../services/gul-liste-service';
 import { LYSEVEIEN_3_DATA } from '../testData/lyseveien3';
 import { THERESES_11A_DATA } from '../testData/theresegate11a';
@@ -136,17 +136,10 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   }, [buildingData]);
 
   // Use custom hooks for coordinates
-  const apiMapCoordinates = React.useMemo(() => {
-    if (!buildingData.coordinatesWgs84) {
-      return null;
-    }
-    return {
-      lat: buildingData.coordinatesWgs84.lat,
-      lng: buildingData.coordinatesWgs84.lon,
-    };
-  }, [buildingData.coordinatesWgs84]);
-
-  const mapCoordinates = useAddressCoordinates(searchAddress, apiMapCoordinates);
+  // Always use Geonorge for map coordinates - backend's coordinatesWgs84 can point to
+  // wrong building when an property (gnr/bnr) has multiple buildings with different addresses
+  // (e.g., Fallanveien 29 vs Kurveien 50 on the same property)
+  const mapCoordinates = useAddressCoordinates(searchAddress, null);
   const {
     phase: overlayPhase,
     buildingType: overlayBuildingType,
@@ -248,47 +241,38 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   
   // Track if solar data has been fetched
   const [hasFetchedSolarData, setHasFetchedSolarData] = React.useState(false);
-  
-  // Fetch solar data when component mounts
+
+  // Use solar data from backend response (already correctly fetched with right building number)
+  // instead of making a separate fetch that uses potentially wrong coordinates
   React.useEffect(() => {
-    // Only fetch once per component lifecycle
+    // Only set once per component lifecycle
     if (hasFetchedSolarData || !buildingData) return;
-    
-    const loadSolarData = async () => {
-      setHasFetchedSolarData(true);
-      
-      // TEST MODE: Check if this is test data
-      if (searchAddress === "Lyseveien 3, 0362 OSLO" && buildingData.gnr === 33 && buildingData.bnr === 1139) {
-        // console.log('🧪 [TEST MODE] Using cached solar data for Lyseveien 3');
-        setSolarData(LYSEVEIEN_3_DATA.solarData);
-        return;
-      } else if (searchAddress === "Thereses gate 11A, 0358 OSLO" && buildingData.gnr === 215 && buildingData.bnr === 156) {
-        // console.log('🧪 [TEST MODE] Using cached solar data for Thereses gate 11A');
-        setSolarData(THERESES_11A_DATA.solarData);
-        return;
-      } else if (searchAddress === "Thereses gate 44A, 0168 OSLO" && buildingData.gnr === 215 && buildingData.bnr === 278) {
-        // console.log('🧪 [TEST MODE] Using cached solar data for Thereses gate 44A');
-        setSolarData(THERESES_44A_DATA.solarData);
-        return;
-      }
-      
-      const params: Parameters<typeof fetchSolarData>[0] = {
-        gnr: buildingData.gnr,
-        bnr: buildingData.bnr,
-        seksjonsnummer: buildingData.seksjonsnummer,
-        byggId: buildingData.byggId,
-        representasjonspunkt: buildingData.representasjonspunkt
-      };
-      
-      // console.log('🌞 Fetching solar data with params:', params);
-      const data = await fetchSolarData(params);
-      if (data) {
-        // console.log('🌞 Solar data received:', data);
-        setSolarData(data);
-      }
-    };
-    
-    loadSolarData();
+
+    setHasFetchedSolarData(true);
+
+    // TEST MODE: Check if this is test data
+    if (searchAddress === "Lyseveien 3, 0362 OSLO" && buildingData.gnr === 33 && buildingData.bnr === 1139) {
+      setSolarData(LYSEVEIEN_3_DATA.solarData);
+      return;
+    } else if (searchAddress === "Thereses gate 11A, 0358 OSLO" && buildingData.gnr === 215 && buildingData.bnr === 156) {
+      setSolarData(THERESES_11A_DATA.solarData);
+      return;
+    } else if (searchAddress === "Thereses gate 44A, 0168 OSLO" && buildingData.gnr === 215 && buildingData.bnr === 278) {
+      setSolarData(THERESES_44A_DATA.solarData);
+      return;
+    }
+
+    // Use solar data from backend response - already correctly fetched with csvData.bygningsNr
+    if (buildingData.filteredSolarEnergy !== undefined || buildingData.takflater) {
+      setSolarData({
+        takAreal_m2: buildingData.takAreal_m2,
+        sol_kwh_m2_yr: buildingData.sol_kwh_m2_yr,
+        sol_kwh_bygg_tot: buildingData.sol_kwh_bygg_tot,
+        solKategori: buildingData.solKategori,
+        takflater: buildingData.takflater,
+        filteredSolarEnergy: buildingData.filteredSolarEnergy,
+      });
+    }
   }, [buildingData, hasFetchedSolarData, searchAddress]);
 
   // Track if gul liste has been checked

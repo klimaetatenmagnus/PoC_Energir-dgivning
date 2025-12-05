@@ -68,6 +68,16 @@ const UpdateTilskuddPayloadSchema = z.object({
     .optional(),
 });
 
+const CreateTilskuddPayloadSchema = z.object({
+  tilskudd: TilskuddContentSchema,
+  changeSummary: z
+    .string()
+    .trim()
+    .min(5, { message: "Bruk en kort oppsummering" })
+    .max(280)
+    .optional(),
+});
+
 /**
  * Hjelpefunksjoner for draft-filer
  */
@@ -459,6 +469,69 @@ export function createContentRouter(
         etag,
         hasDraft,
         source: hasDraft ? "draft" : "published",
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Opprett nytt tilskudd (lagres som draft)
+  router.post("/content/tilskudd", async (req, res, next) => {
+    try {
+      const body = CreateTilskuddPayloadSchema.parse(req.body ?? {});
+      const actor = resolveUserContext(req);
+      const tilskuddId = body.tilskudd.id;
+
+      // Valider at ID er gyldig slug
+      SlugSchema.parse(tilskuddId);
+
+      // Sjekk at tilskudd med denne ID-en ikke allerede eksisterer
+      const publishedPath = buildTilskuddPath(tilskuddId);
+      const draftPath = buildTilskuddDraftPath(tilskuddId);
+
+      const [publishedExists, draftExists] = await Promise.all([
+        storage.exists(publishedPath),
+        storage.exists(draftPath),
+      ]);
+
+      if (publishedExists || draftExists) {
+        throw new HttpError(
+          409,
+          `Et tilskudd med ID "${tilskuddId}" eksisterer allerede`
+        );
+      }
+
+      const now = new Date().toISOString();
+      const summary = body.changeSummary?.trim() || "Opprettet via admin-UI";
+
+      // Opprett som draft (ikke publisert)
+      const newTilskudd: TilskuddContent = {
+        ...body.tilskudd,
+        metadata: {
+          ...body.tilskudd.metadata,
+          status: "draft",
+          updatedAt: now,
+          updatedBy: actor.email,
+          changeSummary: summary.slice(0, 500),
+        },
+      };
+
+      // Skriv til draft-fil
+      const result = await storage.writeJson(draftPath, newTilskudd);
+
+      console.warn(
+        `[admin-api] ${actor.email} opprettet nytt tilskudd ${tilskuddId}`
+      );
+
+      res.status(201).json({
+        id: newTilskudd.id,
+        path: draftPath,
+        tilskudd: newTilskudd,
+        metadata: newTilskudd.metadata,
+        generation: result.generation,
+        hasDraft: true,
+        hasPublished: false,
+        source: "draft",
       });
     } catch (error) {
       next(error);

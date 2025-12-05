@@ -64,27 +64,25 @@
   "accordion": [
     {
       "id": "soknadsplikt",
-      "title": "Søknadsplikt er ikke en stopper, men en støtte",
+      "title": "Søknadsplikt og ansvar",
       "body": [
-        "Er tiltaket ditt søknadspliktig betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.",
-        "Søknadsplikten skal hjelpe deg som tiltakshaver med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak som tar faglig ansvar for prosjektering og utførelse.",
-        "Selv om du må søke, kan selve tettingen fortsatt være enkel å gjennomføre. Ta dialogen tidlig og bruk veiledningstilbudene dersom du er usikker."
+        "Tetting regnes som vedlikehold og er normalt ikke søknadspliktig, så lenge tiltaket ikke endrer bygningens uttrykk, fasade eller detaljer. Inngrep som påvirker verneverdige vinduer eller dører, kan likevel være søknadspliktige. Er du i tvil, eller planlegger å gjøre inngrep i eldre konstruksjoner, kan du ta kontakt med Byantikvaren for gratis veiledning før du setter i gang. Du kan også kontakte Plan- og bygningsetaten og mot gebyr få en konkret vurdering av søknadsplikt."
       ],
       "links": [
         {
-          "id": "dibk-soknadsplikt",
-          "label": "Direktoratet for byggkvalitet – hva er søknadsplikt?",
-          "url": "https://www.dibk.no/regelverk/sak/2/2/innledning"
+          "id": "pbe-soknadsplikt",
+          "label": "Sjekk nærmere om tiltaket ditt er søknadspliktig",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/byggesaksveiledning/"
         },
         {
-          "id": "dibk-ansvar",
-          "label": "Tiltakshaver og ansvarlige foretak",
-          "url": "https://www.dibk.no/regelverk/sak/3/12/innledning"
+          "id": "pbe-veiledning",
+          "label": "Gratis veiledningstime hos Plan- og bygningsetaten for generell informasjon om søknadsplikt",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/trenger-du-veiledning/"
         },
         {
-          "id": "lovdata-ansvar",
-          "label": "Plan- og bygningsloven §20-3",
-          "url": "https://lovdata.no/dokument/NL/lov/2008-06-27-71/KAPITTEL_4-1#%C2%A720-3"
+          "id": "pbe-konkret",
+          "label": "Kontakt Plan- og bygningsetaten for en konkret vurdering av søknadsplikt for ditt tiltak, mot gebyr",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/sok-om-a-bygge/forhåndskonferanse/"
         }
       ]
     }
@@ -106,9 +104,9 @@
   ],
   "metadata": {
     "status": "published",
-    "updatedBy": "claude",
-    "updatedAt": "2025-11-25T21:00:00Z",
-    "changeSummary": "Publisert tetting-innhold - endret status fra draft til published"
+    "updatedBy": "migrate-from-git-history",
+    "updatedAt": "2025-12-05T20:56:33.898Z",
+    "changeSummary": "Migrert originale hardkodede tekster fra git-historikk"
   },
   "variants": [
     {
@@ -183,5 +181,6 @@
         "vern"
       ]
     }
-  ]
+  ],
+  "visibleForBuildingTypes": []
 }

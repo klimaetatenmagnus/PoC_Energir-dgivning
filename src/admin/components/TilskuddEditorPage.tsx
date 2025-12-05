@@ -6,33 +6,100 @@ import {
   updateTilskudd,
   publishTilskudd,
   discardTilskuddDraft,
+  createTilskudd,
 } from "../api/adminApiClient";
 import type { TilskuddContent } from "../../../content/tilskudd/schema";
 import "./TilskuddEditorPage.css";
 
 interface TilskuddEditorPageProps {
-  tilskuddId: string;
+  tilskuddId: string | null; // null = create-modus
   onClose: () => void;
   onSaveSuccess: () => void;
+  mode?: "edit" | "create";
 }
 
-type LoadingState = "loading" | "ready" | "error" | "saving" | "publishing" | "discarding";
+/**
+ * Oppretter et tomt tilskudd-objekt for create-modus.
+ */
+function createEmptyTilskudd(): TilskuddContent {
+  return {
+    schemaVersion: 1,
+    id: "",
+    title: "",
+    summary: "",
+    description: [""],
+    category: "kommunal",
+    provider: {
+      name: "",
+      url: "",
+    },
+    funding: [
+      {
+        kind: "custom",
+        description: "Beskriv støttebeløpet",
+      },
+    ],
+    eligibility: [
+      {
+        title: "Hvem kan søke",
+        description: ["Beskriv kravene for å kunne søke"],
+      },
+    ],
+    requirements: [],
+    buildingTypes: ["enebolig"],
+    appliesToTiltak: [],
+    regions: ["oslo"],
+    audiences: ["standard"],
+    tags: [],
+    contacts: [],
+    application: {
+      url: "",
+      rolling: true,
+    },
+    links: [],
+    metadata: {
+      status: "draft",
+      updatedAt: new Date().toISOString(),
+      updatedBy: "pending",
+      changeSummary: "Opprettet",
+    },
+  };
+}
+
+type LoadingState = "loading" | "ready" | "error" | "saving" | "publishing" | "discarding" | "creating";
 
 export function TilskuddEditorPage({
   tilskuddId,
   onClose,
   onSaveSuccess,
+  mode: propMode,
 }: TilskuddEditorPageProps) {
-  const [tilskudd, setTilskudd] = useState<TilskuddContent | null>(null);
-  const [generation, setGeneration] = useState<string | null>(null);
-  const [loadingState, setLoadingState] = useState<LoadingState>("loading");
-  const [error, setError] = useState<string | null>(null);
-  const [hasDraft, setHasDraft] = useState(false);
-  const [source, setSource] = useState<"draft" | "published">("published");
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // Bestem modus: create hvis tilskuddId er null eller propMode er "create"
+  const isCreateMode = propMode === "create" || tilskuddId === null;
 
-  // Hent tilskudd-data ved oppstart
+  const [tilskudd, setTilskudd] = useState<TilskuddContent | null>(
+    isCreateMode ? createEmptyTilskudd() : null
+  );
+  const [generation, setGeneration] = useState<string | null>(null);
+  const [loadingState, setLoadingState] = useState<LoadingState>(
+    isCreateMode ? "ready" : "loading"
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [hasDraft, setHasDraft] = useState(isCreateMode);
+  const [source, setSource] = useState<"draft" | "published">("draft");
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // Etter opprettelse: bytt til edit-modus for å kunne fortsette redigering
+  const [currentMode, setCurrentMode] = useState<"edit" | "create">(
+    isCreateMode ? "create" : "edit"
+  );
+
+  // Hent tilskudd-data ved oppstart (bare i edit-modus)
   useEffect(() => {
+    // Ikke hent data i create-modus
+    if (isCreateMode || !tilskuddId) {
+      return;
+    }
+
     let cancelled = false;
 
     async function load() {
@@ -41,7 +108,7 @@ export function TilskuddEditorPage({
       setSuccessMessage(null);
 
       try {
-        const response = await fetchTilskudd(tilskuddId);
+        const response = await fetchTilskudd(tilskuddId!);
         if (cancelled) return;
 
         setTilskudd(response.tilskudd);
@@ -61,10 +128,43 @@ export function TilskuddEditorPage({
     return () => {
       cancelled = true;
     };
-  }, [tilskuddId]);
+  }, [tilskuddId, isCreateMode]);
 
   const handleSave = useCallback(
     async (updated: TilskuddContent) => {
+      // I create-modus: opprett nytt tilskudd
+      if (currentMode === "create") {
+        setLoadingState("creating");
+        setError(null);
+        setSuccessMessage(null);
+
+        try {
+          const response = await createTilskudd({
+            tilskudd: updated,
+            changeSummary: updated.metadata.changeSummary,
+          });
+
+          // Oppdater state med opprettet tilskudd
+          setGeneration(response.generation);
+          setTilskudd(response.tilskudd);
+          setHasDraft(response.hasDraft);
+          setSource(response.source);
+          setLoadingState("ready");
+          setSuccessMessage(`Tilskuddsordningen "${response.tilskudd.title}" er opprettet som utkast`);
+
+          // Bytt til edit-modus for videre redigering
+          setCurrentMode("edit");
+
+          // Gi beskjed til parent
+          onSaveSuccess();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Kunne ikke opprette tilskuddsordningen");
+          setLoadingState("ready");
+        }
+        return;
+      }
+
+      // Edit-modus: oppdater eksisterende tilskudd
       if (!generation) {
         setError("Mangler generasjonsinfo - prøv å laste inn på nytt");
         return;
@@ -75,7 +175,7 @@ export function TilskuddEditorPage({
       setSuccessMessage(null);
 
       try {
-        const response = await updateTilskudd(tilskuddId, {
+        const response = await updateTilskudd(tilskudd!.id, {
           tilskudd: updated,
           generation,
           changeSummary: updated.metadata.changeSummary,
@@ -96,16 +196,21 @@ export function TilskuddEditorPage({
         setLoadingState("ready"); // Gå tilbake til ready så bruker kan prøve igjen
       }
     },
-    [tilskuddId, generation, onSaveSuccess]
+    [currentMode, tilskudd, generation, onSaveSuccess]
   );
 
   const handlePublish = useCallback(async () => {
+    if (!tilskudd?.id) {
+      setError("Kan ikke publisere - tilskudd mangler ID");
+      return;
+    }
+
     setLoadingState("publishing");
     setError(null);
     setSuccessMessage(null);
 
     try {
-      const response = await publishTilskudd(tilskuddId);
+      const response = await publishTilskudd(tilskudd.id);
 
       // Oppdater state med publisert versjon
       setGeneration(response.generation);
@@ -121,9 +226,20 @@ export function TilskuddEditorPage({
       setError(err instanceof Error ? err.message : "Kunne ikke publisere");
       setLoadingState("ready");
     }
-  }, [tilskuddId, onSaveSuccess]);
+  }, [tilskudd?.id, onSaveSuccess]);
 
   const handleDiscardDraft = useCallback(async () => {
+    if (!tilskudd?.id) {
+      setError("Kan ikke forkaste - tilskudd mangler ID");
+      return;
+    }
+
+    // I create-modus før lagring: bare lukk editoren
+    if (currentMode === "create") {
+      onClose();
+      return;
+    }
+
     if (!confirm("Er du sikker på at du vil forkaste alle upubliserte endringer?")) {
       return;
     }
@@ -133,10 +249,10 @@ export function TilskuddEditorPage({
     setSuccessMessage(null);
 
     try {
-      await discardTilskuddDraft(tilskuddId);
+      await discardTilskuddDraft(tilskudd.id);
 
       // Hent publisert versjon på nytt
-      const response = await fetchTilskudd(tilskuddId);
+      const response = await fetchTilskudd(tilskudd.id);
       setTilskudd(response.tilskudd);
       setGeneration(response.generation);
       setHasDraft(response.hasDraft);
@@ -149,14 +265,19 @@ export function TilskuddEditorPage({
       setError(err instanceof Error ? err.message : "Kunne ikke forkaste utkastet");
       setLoadingState("ready");
     }
-  }, [tilskuddId, onSaveSuccess]);
+  }, [tilskudd?.id, currentMode, onClose, onSaveSuccess]);
 
   const handleRetry = useCallback(() => {
+    // Ingen retry i create-modus
+    if (!tilskudd?.id) {
+      return;
+    }
+
     setLoadingState("loading");
     setError(null);
     setSuccessMessage(null);
 
-    fetchTilskudd(tilskuddId)
+    fetchTilskudd(tilskudd.id)
       .then((response) => {
         setTilskudd(response.tilskudd);
         setGeneration(response.generation);
@@ -168,9 +289,9 @@ export function TilskuddEditorPage({
         setError(err instanceof Error ? err.message : "Kunne ikke hente tilskudd");
         setLoadingState("error");
       });
-  }, [tilskuddId]);
+  }, [tilskudd?.id]);
 
-  const isProcessing = loadingState === "saving" || loadingState === "publishing" || loadingState === "discarding";
+  const isProcessing = loadingState === "saving" || loadingState === "publishing" || loadingState === "discarding" || loadingState === "creating";
 
   return (
     <div className="tilskudd-editor-page">
@@ -186,8 +307,8 @@ export function TilskuddEditorPage({
           <span>Tilbake</span>
         </PktButton>
 
-        {/* Draft-status og publiser-knapper */}
-        {tilskudd && loadingState !== "loading" && loadingState !== "error" && (
+        {/* Draft-status og publiser-knapper (skjules i create-modus før første lagring) */}
+        {tilskudd && loadingState !== "loading" && loadingState !== "error" && currentMode !== "create" && (
           <div className="tilskudd-editor-page__actions">
             {hasDraft && (
               <>
@@ -258,7 +379,8 @@ export function TilskuddEditorPage({
           tilskudd={tilskudd}
           onSave={handleSave}
           onCancel={onClose}
-          isSaving={loadingState === "saving"}
+          isSaving={loadingState === "saving" || loadingState === "creating"}
+          mode={currentMode}
         />
       )}
 

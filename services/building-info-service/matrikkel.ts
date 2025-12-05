@@ -24,6 +24,7 @@ import {
   assembleBuildingResult,
   type BuildingResult,
 } from './resultAssembler.ts';
+import { csvService } from '../../src/services/csvService.ts';
 import {
   startExternalCall,
   type ExternalResultLabel,
@@ -1302,34 +1303,77 @@ export async function resolveBuildingData(
     bygningsnummer: bygg.bygningsnummer,
   });
 
-  let lat: number | undefined;
-  let lon: number | undefined;
+  // === Hent csvData FØR soloppslag for å få riktig bygningsnummer ===
+  // CSV-filen har korrekt bygningsnummer per adresse, mens bygg.bygningsnummer
+  // kan peke på feil bygning for eiendommer med flere bygninger (f.eks. Fallanveien 29)
+  let csvBygningsNr: string | undefined;
+
+  if (adr.adressetekst) {
+    const csvData = csvService.findByExactAddress(adr.adressetekst);
+    if (csvData?.bygningsNr) {
+      csvBygningsNr = csvData.bygningsNr;
+      if (LOG) {
+        debugLog(`📊 CSV bygningsnummer for "${adr.adressetekst}": ${csvBygningsNr}`);
+        if (bygg.bygningsnummer && bygg.bygningsnummer !== csvBygningsNr) {
+          debugLog(`⚠️  AVVIK: Matrikkel-API ga bygningsnummer ${bygg.bygningsnummer}, men CSV har ${csvBygningsNr}`);
+        }
+      }
+    }
+  }
+
+  // Fallback: Søk på adresse hvis eksakt match ikke fant noe
+  if (!csvBygningsNr && adr.adressetekst) {
+    const searchAddress = `${adr.adressetekst}${adr.husnummer || ''}${adr.bokstav || ''}`.trim();
+    const matches = csvService.findByAddress(searchAddress);
+    if (matches.length > 0 && matches[0].bygningsNr) {
+      csvBygningsNr = matches[0].bygningsNr;
+      if (LOG) {
+        debugLog(`📊 CSV bygningsnummer via søk "${searchAddress}": ${csvBygningsNr}`);
+      }
+    }
+  }
+
+  // Prioriter csvBygningsNr for soloppslag - dette er alltid riktig for adressen
+  const byggNrForSoloppslag = csvBygningsNr || bygg.bygningsnummer || undefined;
+
+  // Beregn koordinater for kartvisning (brukes alltid)
+  let latForKart: number | undefined;
+  let lonForKart: number | undefined;
 
   if (bygg.representasjonspunkt) {
     const wgs84Coords = proj4('EPSG:32632', 'EPSG:4326', [
       bygg.representasjonspunkt.east,
       bygg.representasjonspunkt.north,
     ]);
-    lon = wgs84Coords[0];
-    lat = wgs84Coords[1];
+    lonForKart = wgs84Coords[0];
+    latForKart = wgs84Coords[1];
 
     if (LOG) {
-      debugLog('📍 Konverterte koordinater for solenergi-oppslag:', {
+      debugLog('📍 Konverterte koordinater:', {
         utm: {
           east: bygg.representasjonspunkt.east,
           north: bygg.representasjonspunkt.north,
           epsg: 'EPSG:32632',
         },
-        wgs84: { lat, lon, epsg: 'EPSG:4326' },
+        wgs84: { lat: latForKart, lon: lonForKart, epsg: 'EPSG:4326' },
       });
     }
   }
 
+  // For soloppslag: bruk kun koordinater hvis vi IKKE har bygningsnummer fra CSV
+  // (koordinater fra bygg.representasjonspunkt kan peke på feil bygning)
+  const latForSol = csvBygningsNr ? undefined : latForKart;
+  const lonForSol = csvBygningsNr ? undefined : lonForKart;
+
+  if (LOG) {
+    debugLog(`☀️  Soloppslag med byggNr=${byggNrForSoloppslag}, lat=${latForSol}, lon=${lonForSol}`);
+  }
+
   const solarData = await fetchSolarData({
     byggId,
-    byggNr: bygg.bygningsnummer ?? undefined,
-    lat,
-    lon,
+    byggNr: byggNrForSoloppslag,
+    lat: latForSol,
+    lon: lonForSol,
     gnr: adr.gnr,
     bnr: adr.bnr,
     seksjonsnummer: seksjonForEnova,
@@ -1343,7 +1387,7 @@ export async function resolveBuildingData(
     seksjonsnummer,
     seksjonForEnova,
     rpPBE,
-    coordinatesWgs84: lat !== undefined && lon !== undefined ? { lat, lon } : null,
+    coordinatesWgs84: latForKart !== undefined && lonForKart !== undefined ? { lat: latForKart, lon: lonForKart } : null,
     attest,
     solarData,
   });

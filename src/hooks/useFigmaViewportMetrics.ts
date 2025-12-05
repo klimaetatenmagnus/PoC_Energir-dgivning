@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+import { BREAKPOINTS } from './useResponsive';
 
 interface FigmaViewportMetrics {
   scaleFactor: number;
   verticalOffset: number;
+  /** true hvis viewport < 768px - brukes for betinget rendering av mobil/desktop */
+  isMobileView: boolean;
 }
 
 const DESIGN_WIDTH = 1728;
@@ -11,7 +14,7 @@ const VIEWPORT_PADDING = 10;
 
 const computeMetrics = (): FigmaViewportMetrics => {
   if (typeof window === 'undefined') {
-    return { scaleFactor: 1, verticalOffset: 0 };
+    return { scaleFactor: 1, verticalOffset: 0, isMobileView: false };
   }
 
   const viewportWidth = window.innerWidth;
@@ -27,7 +30,9 @@ const computeMetrics = (): FigmaViewportMetrics => {
   const scaledHeight = DESIGN_HEIGHT * scaleFactor;
   const verticalOffset = Math.max((viewportHeight - scaledHeight) / 2, 0);
 
-  return { scaleFactor, verticalOffset };
+  const isMobileView = viewportWidth < BREAKPOINTS.tablet;
+
+  return { scaleFactor, verticalOffset, isMobileView };
 };
 
 export function useFigmaViewportMetrics(): FigmaViewportMetrics {

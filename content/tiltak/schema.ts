@@ -183,6 +183,7 @@ export const TiltakContentSchema = z
     media: MediaAssetSchema.optional(),
     grants: z.array(SlugSchema).default([]),
     relatedTiltak: z.array(SlugSchema).default([]),
+    energySourceDescription: z.string().trim().optional(),
     supportTags: z.array(z.string().regex(/^[a-z0-9-]+$/)).default([]),
     audiences: z.array(ContentAudienceSchema).min(1).default(['standard']),
     // Synlighet-filtrering: styr hvilke bygg tiltaket vises for
