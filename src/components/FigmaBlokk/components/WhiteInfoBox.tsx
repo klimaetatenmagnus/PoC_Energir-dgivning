@@ -1,6 +1,5 @@
 import React from 'react';
 import { LocationPin } from './LocationPin';
-import { TiltakCardRenderer } from './Tiltak/TiltakCardRenderer';
 import { getLegacyTiltakComponent } from './Tiltak/legacyComponents';
 import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../../utils/tekEnergyCalculations';
 import { convertKwhToNok, formatCurrency, formatNumberWithSpaces } from '../../../utils/energy';
@@ -757,47 +756,29 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   // Total container height is 900px, current bottom is 55px
   const expandedBottom = 55; // Keep same bottom position
   
-const enableRefactoredTiltakCards =
-  typeof import.meta !== 'undefined' &&
-  import.meta.env?.VITE_ENABLE_REFACTORED_TILTAK === 'true';
-
 const legacyTiltakComponent = React.useMemo(
-  () =>
-    enableRefactoredTiltakCards
-      ? undefined
-      : getLegacyTiltakComponent(selectedTiltakSlug ?? undefined, tiltakAudience),
-  [selectedTiltakSlug, tiltakAudience, enableRefactoredTiltakCards]
+  () => getLegacyTiltakComponent(selectedTiltakSlug ?? undefined, tiltakAudience),
+  [selectedTiltakSlug, tiltakAudience]
 );
 
-const isLegacyTiltak = Boolean(legacyTiltakComponent);
 const previewWrapperStyle: React.CSSProperties = {
   width: '100%',
   height: '100%',
   boxSizing: 'border-box',
-  padding: isLegacyTiltak ? 0 : '2rem 1.5rem',
+  padding: 0,
   overflowX: 'hidden',
-  overflowY: isLegacyTiltak ? 'hidden' : 'auto'
+  overflowY: 'hidden'
 };
 
-const tiltakPreview = selectedTiltakSlug ? (
+const tiltakPreview = selectedTiltakSlug && legacyTiltakComponent ? (
     <div style={previewWrapperStyle}>
-      {legacyTiltakComponent ? (
-        React.createElement(legacyTiltakComponent, {
-          audience: tiltakAudience,
-          buildingType: tiltakBuildingType,
-          buildingData,
-          className: 'white-info-box__tiltak-card',
-          onBack: handleTiltakBack
-        })
-      ) : (
-        <TiltakCardRenderer
-          slug={selectedTiltakSlug}
-          audience={tiltakAudience}
-          buildingType={tiltakBuildingType}
-          className="white-info-box__tiltak-card"
-          onBack={handleTiltakBack}
-        />
-      )}
+      {React.createElement(legacyTiltakComponent, {
+        audience: tiltakAudience,
+        buildingType: tiltakBuildingType,
+        buildingData,
+        className: 'white-info-box__tiltak-card',
+        onBack: handleTiltakBack
+      })}
     </div>
   ) : null;
   

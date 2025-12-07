@@ -18,7 +18,6 @@ import {
   PktTag,
 } from "@oslokommune/punkt-react";
 import type { ContentAudience } from "../../../content/schema-helpers";
-import { TiltakCardRenderer } from "../../components/FigmaBlokk/components/Tiltak/TiltakCardRenderer";
 import { useAdminDictionary } from "../context/AdminDictionaryContext";
 import {
   useContentFetchSettings,
@@ -389,23 +388,22 @@ function TiltakPreviewCanvas({
   buildingType: string;
   audience: ContentAudience;
 }) {
-  // Use legacy component if available, otherwise fall back to generic renderer
   const LegacyComponent = TILTAK_COMPONENT_MAP[tiltakId];
+
+  if (!LegacyComponent) {
+    return (
+      <div className="admin-preview__canvas">
+        <p>Ingen forhåndsvisning tilgjengelig for tiltak: {tiltakId}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-preview__canvas">
-      {LegacyComponent ? (
-        <LegacyComponent
-          buildingType={buildingType === "default" ? undefined : buildingType}
-          audience={audience}
-        />
-      ) : (
-        <TiltakCardRenderer
-          slug={tiltakId}
-          buildingType={buildingType === "default" ? undefined : buildingType}
-          audience={audience}
-        />
-      )}
+      <LegacyComponent
+        buildingType={buildingType === "default" ? undefined : buildingType}
+        audience={audience}
+      />
     </div>
   );
 }
