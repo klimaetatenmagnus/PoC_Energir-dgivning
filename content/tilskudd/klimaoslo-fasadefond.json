@@ -9,7 +9,7 @@
   ],
   "category": "kommunal",
   "provider": {
-    "name": "Klima- og energifondet (Oslo kommune)",
+    "id": "oslo-kommune",
     "url": "https://www.oslo.kommune.no/klima-og-energi/klima-og-energifondet/",
     "contactEmail": "klimaetaten@oslo.kommune.no"
   },

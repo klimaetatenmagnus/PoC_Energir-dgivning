@@ -49,13 +49,23 @@ export const GlossaryTermDictionaryEntrySchema = z
   })
   .strict();
 
+export const ProviderDictionaryEntrySchema = z
+  .object({
+    id: SlugSchema,
+    name: NonEmptyStringSchema,
+    url: z.string().url().optional(),
+    color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional()
+  })
+  .strict();
+
 export const ContentDictionarySchema = z
   .object({
     schemaVersion: z.literal(dictionarySchemaVersion),
     buildingTypes: z.array(BuildingTypeDictionaryEntrySchema),
     benefits: z.array(BenefitDictionaryEntrySchema),
     supportTags: z.array(SupportTagDictionaryEntrySchema),
-    glossaryTerms: z.array(GlossaryTermDictionaryEntrySchema).default([])
+    glossaryTerms: z.array(GlossaryTermDictionaryEntrySchema).default([]),
+    providers: z.array(ProviderDictionaryEntrySchema).default([])
   })
   .strict();
 
@@ -63,4 +73,5 @@ export type BuildingTypeDictionaryEntry = z.infer<typeof BuildingTypeDictionaryE
 export type BenefitDictionaryEntry = z.infer<typeof BenefitDictionaryEntrySchema>;
 export type SupportTagDictionaryEntry = z.infer<typeof SupportTagDictionaryEntrySchema>;
 export type GlossaryTermDictionaryEntry = z.infer<typeof GlossaryTermDictionaryEntrySchema>;
+export type ProviderDictionaryEntry = z.infer<typeof ProviderDictionaryEntrySchema>;
 export type ContentDictionary = z.infer<typeof ContentDictionarySchema>;

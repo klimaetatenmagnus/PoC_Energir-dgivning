@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import stotteordningService, { Stotteordning } from '../../../../services/stotteordning-service';
 import type { AddressLookupResponse } from '../../../../services/buildingApi';
+import { useContentDictionary } from '../../../../hooks/contentHooks';
 
 export interface TiltakComponentProps {
   onBack?: () => void;
@@ -23,24 +24,107 @@ const FALLBACK_ENTRY: Stotteordning = {
 
 const DEFAULT_BUILDING_CATEGORY: BuildingCategory = 'enebolig';
 
-export const OVERSKRIFT_FARGER: Record<string, string> = {
-  'Enova': '#C7F6C9',
+/**
+ * Legacy-mapping av tilbydernavn til farger.
+ * Brukes kun som fallback når dictionary ikke er tilgjengelig.
+ *
+ * @deprecated Bruk useProviderColors() hook i stedet for å hente farger fra dictionary.
+ */
+const LEGACY_OVERSKRIFT_FARGER: Record<string, string> = {
+  // Legacy-navn for bakoverkompatibilitet med eksterne datakilder
   'Klima- og energifondet': '#D1F9FF',
-  'Oslo kommune': '#D1F9FF',
+  'Klima- og energifondet (Oslo kommune)': '#D1F9FF',
   'Klimaetaten': '#D1F9FF',
-  'Byantikvaren': '#FFE4B5',
-  'Riksantikvaren': '#FFB4AC',
-  'Kulturminnefondet': '#DDA0DD'
+  'Byantikvaren i Oslo': '#F9C66B',
+  'Enova SF': '#C7F6C9'
 };
 
 const DEFAULT_OVERSKRIFT_FARGE = '#E0E0E0';
 
+/**
+ * Hook som gir tilgang til provider-farger fra dictionary.
+ * Returnerer en funksjon som slår opp farge basert på provider-navn.
+ */
+export function useProviderColors(): (providerName?: string | null) => string {
+  const { data: dictionary } = useContentDictionary();
+
+  const providerColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (dictionary?.providers) {
+      for (const provider of dictionary.providers) {
+        if (provider.color) {
+          map.set(provider.name, provider.color);
+        }
+      }
+    }
+    return map;
+  }, [dictionary?.providers]);
+
+  return useCallback(
+    (providerName?: string | null): string => {
+      if (!providerName) {
+        return DEFAULT_OVERSKRIFT_FARGE;
+      }
+
+      // 1. Først sjekk dictionary
+      const dictionaryColor = providerColorMap.get(providerName);
+      if (dictionaryColor) {
+        return dictionaryColor;
+      }
+
+      // 2. Sjekk legacy-mapping for gamle navn
+      const legacyColor = LEGACY_OVERSKRIFT_FARGER[providerName];
+      if (legacyColor) {
+        return legacyColor;
+      }
+
+      // 3. Fallback
+      return DEFAULT_OVERSKRIFT_FARGE;
+    },
+    [providerColorMap]
+  );
+}
+
+/**
+ * Synkron funksjon for å hente provider-farge.
+ * Bruker kun legacy-mapping, ikke dictionary.
+ *
+ * @deprecated Bruk useProviderColors() hook i stedet for dictionary-basert fargeoppslag.
+ */
 export const getOverskriftColor = (overskrift?: string | null): string => {
   if (!overskrift) {
     return DEFAULT_OVERSKRIFT_FARGE;
   }
 
-  return OVERSKRIFT_FARGER[overskrift] ?? DEFAULT_OVERSKRIFT_FARGE;
+  return LEGACY_OVERSKRIFT_FARGER[overskrift] ?? DEFAULT_OVERSKRIFT_FARGE;
+};
+
+/**
+ * Eksportert for bakoverkompatibilitet. Bruk useProviderColors() i stedet.
+ * @deprecated
+ */
+export const OVERSKRIFT_FARGER = LEGACY_OVERSKRIFT_FARGER;
+
+/**
+ * Konverterer tilbyder-navn til visningsnavn.
+ * Legacy-mappinger beholdes for bakoverkompatibilitet med eventuelle
+ * eksterne datakilder som ikke er oppdatert.
+ */
+export const getOverskriftLabel = (overskrift?: string | null): string => {
+  if (!overskrift) {
+    return 'Støtte';
+  }
+  // Legacy-mappinger for bakoverkompatibilitet
+  if (overskrift === 'Klima- og energifondet' || overskrift === 'Klima- og energifondet (Oslo kommune)') {
+    return 'Oslo kommune';
+  }
+  if (overskrift === 'Byantikvaren i Oslo') {
+    return 'Byantikvaren';
+  }
+  if (overskrift === 'Enova SF') {
+    return 'Enova';
+  }
+  return overskrift;
 };
 
 export const openExternalLink = (url?: string | null): void => {

@@ -1,6 +1,6 @@
 # Driftsdokumentasjon – Energinøkkelen i Google Cloud
 
-Oppdatert: 2025-11-27 (Claude)
+Oppdatert: 2025-12-06 (Claude)
 
 > Dette dokumentet beskriver Energinøkkelens Google Cloud-miljø, rutiner for bygg/deploy og kjente avvik. Det erstatter `Dokumentasjon/deploy-plan-gcp.md` som “single source of truth” for drift. Oppdater dokumentet hver gang arkitektur, rutiner eller tilgang endres.
 
@@ -70,6 +70,7 @@ Miljøet består i dag av ett GCP-prosjekt (`energiverktoy-poc-1234`) med både 
 - `API_ENV` (`test`/`prod`), `API_PORT=8080`
 - `BUILDING_INFO_BASE_URL=http://127.0.0.1:4000`, `SOLAR_SERVICE_BASE_URL=http://127.0.0.1:4003`
 - `CONTENT_BUCKET`: staging `energinokkelen-content`, prod `energinokkelen-content-prod` (**Viktig:** Prod-tjenesten må bruke `energinokkelen-content-prod` for korrekt staging/prod-separasjon)
+- `CONTENT_BUCKET_PREFIX`: default `content` – API-serveren legger til dette prefixet når den leser filer fra GCS (f.eks. `gs://energinokkelen-content/content/tiltak/foo.json`)
 - Secrets: `MATRIKKEL_*`, `ENOVA_API_KEY`, `LIVE`, `PBE_*`, `VITE_*`
 - Sidecar: OpenTelemetry collector (`gmp-collector`) kjører samme image (`otel/opentelemetry-collector-contrib:0.94.0`) i Cloud Run-tjenesten. Konfig åpen i Secret Manager `run-gmp-config` og oppdateres via `monitoring/run-gmp-config.yaml`. Sidecaren bruker env-variabler `GMP_PROJECT=energiverktoy-poc-1234`, `GMP_LOCATION=europe-north1`, `GMP_CLUSTER=cloud-run-energinokkelen`.
 
@@ -110,7 +111,13 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 | `energinokkelen-data`          | Felles  | Rådata/CSV/Excel              | Cloud Run SA (viewer)                                                                                    |
 | `energinokkelen-build-logs`    | Felles  | Cloud Build loggbucket         | Opprettes automatisk via Cloud Build config                                                              |
 
-`api-server` leser `/config/app.json` direkte fra bøtten (via `CONTENT_BUCKET`) og faller tilbake til lokale filer hvis objektet ikke finnes. JSON-en caches per GCS-generation, så oppdatering av filen i bøtten blir synlig uten redeploy.
+`api-server` leser `/config/app.json` direkte fra bøtten (via `CONTENT_BUCKET` + `CONTENT_BUCKET_PREFIX`) og faller tilbake til lokale filer hvis objektet ikke finnes. JSON-en caches per GCS-generation, så oppdatering av filen i bøtten blir synlig uten redeploy.
+
+**Viktig om bucket-struktur:** Alle innholdsfiler ligger i `content/`-undermappen i bøttene:
+- Staging: `gs://energinokkelen-content/content/tiltak/*.json`, `gs://energinokkelen-content/content/tilskudd/*.json`
+- Prod: `gs://energinokkelen-content-prod/content/tiltak/*.json`, `gs://energinokkelen-content-prod/content/tilskudd/*.json`
+
+API-serveren bruker `CONTENT_BUCKET_PREFIX=content` for å legge til riktig sti når den leser fra GCS.
 `deploy/gcp/invalidate-cdn-cache.sh` brukes til å invalidere LB cache etter deploy (via Cloud Build steg).
 
 > Merk: `energinokkelen-content` (staging, opprettet 2025-10-23) og `energinokkelen-content-prod` (prod, opprettet 2025-10-25) er den eneste autoritative lagringen for tiltak- og støtteordningsdata. Begge bøttene har uniform bucket-level access, versjonering og soft delete aktivert. Alle redaktørendringer må først testes i staging-bøtten og bekreftes via staging-frontend/admin før filene kopieres videre til prod (se pilotkravet i `Dokumentasjon/Utvikling/tiltak-innholdsredigering-plan.md`).
@@ -400,6 +407,7 @@ gcloud monitoring uptime describe projects/energiverktoy-poc-1234/uptimeCheckCon
 | Dato       | Beskrivelse                                                                                                                                                                      | Utført av |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
 | 2025-11-27 | **Staging/prod-separasjon fikset:** (1) Endret `CONTENT_BUCKET` i `energinokkelen-prod` til `energinokkelen-content-prod`, (2) La til `/config/content/*` proxy i admin-server for staging-preview, (3) Endret `ADMIN_CONTENT_PROD_PREFIX` til `gs://energinokkelen-content-prod` (uten `/content`-suffix). Admin-server serverer nå forhåndsvisning fra staging-bøtten. | Claude |
+| 2025-12-06 | **GCS bucket-struktur og prefix-fix:** (1) La til `CONTENT_BUCKET_PREFIX=content` i api-server.ts slik at filer leses fra `gs://bucket/content/tiltak/*.json` i stedet for root-nivå, (2) Oppdaterte `ADMIN_CONTENT_STAGING_PREFIX` og `ADMIN_CONTENT_PROD_PREFIX` i admin-tjenesten til å inkludere `/content`-suffix (`gs://energinokkelen-content/content`), (3) Slettet legacy-filer fra rot-nivå i staging-bøtten og kopierte tilskudd/dictionaries til `content/`-undermappen, (4) Fikset `CONTENT_BUCKET` i prod-tjenesten fra `energinokkelen-content` til `energinokkelen-content-prod` for korrekt miljøseparasjon. | Claude |
 | 2025-11-26 | **Publiserings-wizard ferdig:** Fikset servicekonto fra `content-admin@` til `cloud-build@`, la til IAM-binding `serviceAccountUser`, oppdatert Cloud Run env-var. Endret prod-frontend `CONTENT_BUCKET` til `energinokkelen-content-prod` for korrekt staging/prod-separasjon. | Claude |
 | 2025-11-15 | Temperaturstyring flyttet til `content/tiltak/temperaturstyring.json` med variantdata + nye tilskudd (`klimaoslo-smart-energistyring`, `klimaoslo-pris-effektstyring`) dokumentert i content-/driftsrutinene. | Codex      |
 | 2025-11-13 | Dokumenterte staging-host (`staging.energinøkkelen.no`) i LB-oppsettet, og beskrev nye innholdsskript (`content:validate`/`content:publish`) samt driftsrutinen i `Dokumentasjon/innholdsdrift-tiltak.md`. | Codex      |

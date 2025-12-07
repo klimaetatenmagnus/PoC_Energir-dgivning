@@ -1,6 +1,6 @@
 # Driftsrutine for tiltak- og tilskuddsinnhold
 
-Oppdatert: 2025-11-27 (Claude)
+Oppdatert: 2025-12-06 (Claude)
 
 Dette dokumentet er **single source of truth** for både dagens innholdsdrift og utviklingen av admin-UI-et. Her finner utviklere all nødvendig informasjon om dataflyt, filstruktur, rutiner og fremdriftsplaner. Rutinen dekker variant-/gul-liste-data, schema-validering, staging→prod-synk og auditlogging i GCS. Når admin-UI lanseres skal den følge samme prosess under panseret, og alle endringer i arkitektur eller arbeidsprosess må gjenspeiles her før implementering.
 
@@ -47,8 +47,8 @@ Dette dokumentet er **single source of truth** for både dagens innholdsdrift og
 | `content/tiltak/*.json`                           | Ett dokument per tiltak. Må inneholde `audiences`, `metadata` og eventuelle `variants[]` for gul liste.     |
 | `content/tilskudd/*.json`                         | Ett dokument per støtteordning. Refereres fra tiltak via `grants`.                                              |
 | `TiltakContentSchema` / `TilskuddContentSchema` | Definerer påkrevde felter, variant- og metadata-struktur. Valideres av script og API.                             |
-| **Staging-bøtte**                            | `gs://energinokkelen-content/` – brukes til daglige oppdateringer og QA. (**NB:** uten `/content`-suffix) |
-| **Prod-bøtte**                               | `gs://energinokkelen-content-prod/` – eksponeres av API-et i prod. (**NB:** uten `/content`-suffix) |
+| **Staging-bøtte**                            | `gs://energinokkelen-content/content/` – brukes til daglige oppdateringer og QA. Filene ligger i `content/`-undermappen i bøtten. |
+| **Prod-bøtte**                               | `gs://energinokkelen-content-prod/content/` – eksponeres av API-et i prod. Filene ligger i `content/`-undermappen i bøtten. |
 | **Publiseringslogg**                          | JSON-filer i `gs://energinokkelen-content-prod/logs/` som beskriver hvem som promoterte innhold og når. |
 
 ---
@@ -296,8 +296,8 @@ Planen over erstatter ad-hoc-notater rundt admin-klienten og fungerer som aksjon
   | -------------------------------------------------------------------------------- | ------------------------------------------- |
   | `ADMIN_CLOUD_BUILD_PROJECT` (`$GOOGLE_CLOUD_PROJECT`)                        | Prosjekt-id for builden.                    |
   | `ADMIN_CLOUD_BUILD_LOCATION` (`global`)                                      | Cloud Build-region.                         |
-  | `ADMIN_CONTENT_STAGING_PREFIX` (`gs://energinokkelen-content/content`)       | Sti som rsyncer fra.                        |
-  | `ADMIN_CONTENT_PROD_PREFIX` (`gs://energinokkelen-content-prod/content`)     | Sti som rsyncer til.                        |
+  | `ADMIN_CONTENT_STAGING_PREFIX` (`gs://energinokkelen-content/content`)       | Sti som rsyncer fra. **Viktig:** Må inkludere `/content`-suffix. |
+  | `ADMIN_CONTENT_PROD_PREFIX` (`gs://energinokkelen-content-prod/content`)     | Sti som rsyncer til. **Viktig:** Må inkludere `/content`-suffix. |
   | `ADMIN_CONTENT_LOG_PREFIX` (`gs://energinokkelen-content-prod/content/logs`) | Hvor publiseringslogger plasseres.          |
   | `ADMIN_CONTENT_PUBLISHER_SERVICE_ACCOUNT` (`cloud-build@…`)                 | Servicekontoen Cloud Build kjører som.     |
   | `ADMIN_API_PORT` (`4100`)                                                    | Lokal porter ved `npm run dev:admin-api`. |

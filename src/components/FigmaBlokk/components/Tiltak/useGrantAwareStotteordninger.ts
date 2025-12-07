@@ -1,13 +1,20 @@
 import { useEffect, useMemo } from 'react';
 import type { TilskuddContent } from '../../../../../content/tilskudd/schema';
+import type { ProviderDictionaryEntry } from '../../../../../content/dictionaries/schema';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
-import { useTilskuddBatch } from '../../../../hooks/contentHooks';
+import { useTilskuddBatch, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useStotteordninger } from './shared';
 
 type UseGrantAwareStotteordningerOptions = {
   grantIds?: string[] | null;
   legacyTiltakSlug: string;
   buildingType?: string;
+  /**
+   * Gulliste-modus for legacy-fallback.
+   * Ved grants-basert henting filtreres tilskudd via grantIds som allerede
+   * er audience-spesifikke (fra applyTiltakVariant).
+   */
+  gulliste?: boolean;
 };
 
 export type UseGrantAwareStotteordningerResult = {
@@ -70,19 +77,42 @@ function formatFundingSummary(funding: TilskuddContent['funding']): string | nul
   }
 }
 
-function mapTilskuddToStotteordning(tilskudd: TilskuddContent): Stotteordning {
+/**
+ * Slår opp tilbydernavn fra dictionary basert på provider.id.
+ * Returnerer fallback hvis provider ikke finnes i dictionary.
+ */
+function getProviderNameFromDictionary(
+  providerId: string | undefined,
+  providers: ProviderDictionaryEntry[] | undefined
+): string | null {
+  if (!providerId) {
+    return null;
+  }
+  const provider = providers?.find((p) => p.id === providerId);
+  return provider?.name ?? null;
+}
+
+function mapTilskuddToStotteordning(
+  tilskudd: TilskuddContent,
+  providers: ProviderDictionaryEntry[] | undefined
+): Stotteordning {
+  // Slå opp provider-navn fra dictionary basert på id
+  const providerName = getProviderNameFromDictionary(tilskudd.provider?.id, providers);
+
   return {
     ordning: tilskudd.title,
     lenke: tilskudd.application?.url ?? tilskudd.links[0]?.url ?? null,
     belop: formatFundingSummary(tilskudd.funding),
-    overskrift: tilskudd.provider?.name ?? null
+    // Bruk navn fra dictionary hvis tilgjengelig, ellers fallback til deprecated name-felt
+    overskrift: providerName ?? tilskudd.provider?.name ?? null
   };
 }
 
 export function useGrantAwareStotteordninger({
   grantIds,
   legacyTiltakSlug,
-  buildingType
+  buildingType,
+  gulliste = false
 }: UseGrantAwareStotteordningerOptions): UseGrantAwareStotteordningerResult {
   const forceLegacyGrants = import.meta.env.VITE_FORCE_LEGACY_GRANTS === '1';
   const minGrantCount =
@@ -90,6 +120,11 @@ export function useGrantAwareStotteordninger({
   const debugGrants =
     import.meta.env.VITE_DEBUG_GRANTS === '1' ||
     import.meta.env.VITE_DEBUG_GRANTS === 'true';
+
+  // Hent providers fra dictionary for å slå opp tilbydernavn
+  const { data: dictionary } = useContentDictionary();
+  const providers = dictionary?.providers;
+
   const uniqueGrantIds = useMemo(() => {
     const sanitisedIds = (grantIds ?? [])
       .map((id) => id?.trim())
@@ -118,8 +153,10 @@ export function useGrantAwareStotteordninger({
     if (!grantData?.length) {
       return [];
     }
-    return grantData.map(mapTilskuddToStotteordning);
-  }, [grantData]);
+    // Tilskudd filtreres ikke på audience her - filtreringen skjer via grants-arrayet
+    // i tiltak-innholdet, som allerede er audience-spesifikt via applyTiltakVariant()
+    return grantData.map((tilskudd) => mapTilskuddToStotteordning(tilskudd, providers));
+  }, [grantData, providers]);
 
   const shouldEnableLegacyFallback =
     !hasGrantOverrides ||
@@ -135,6 +172,7 @@ export function useGrantAwareStotteordninger({
   } = useStotteordninger({
     tiltak: legacyTiltakSlug,
     buildingType,
+    gulliste,
     enabled: shouldEnableLegacyFallback
   });
 

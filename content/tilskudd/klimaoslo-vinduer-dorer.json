@@ -9,7 +9,7 @@
   ],
   "category": "kommunal",
   "provider": {
-    "name": "Klima- og energifondet (Oslo kommune)",
+    "id": "oslo-kommune",
     "url": "https://www.klimaoslo.no/tilskudd/tilskudd-til-bytte-av-vinduer-og-dorer/",
     "contactEmail": "klimaetaten@bym.oslo.kommune.no"
   },

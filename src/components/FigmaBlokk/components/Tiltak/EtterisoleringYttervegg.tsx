@@ -3,7 +3,8 @@ import {
   ENERGY_SAVINGS_DATA,
   TiltakComponentProps,
   calculateTekPeriod,
-  getOverskriftColor,
+  useProviderColors,
+  getOverskriftLabel,
   openExternalLink,
   parseNumericValue,
   resolveEnergyCategory
@@ -69,6 +70,9 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [hoveredWord, setHoveredWord] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
+
+  // Provider-farger fra dictionary
+  const getProviderColor = useProviderColors();
 
   const { data: tiltakContent } = useTiltakContent('etterisolering-yttervegg');
   const resolvedTiltakContent = useMemo(
@@ -626,7 +630,7 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
                       y={boxYPosition}
                       width={ordning.overskrift === 'Enova' ? "43" : ordning.overskrift === 'Oslo kommune' ? "82" : "82"}
                       height="23"
-                      fill={getOverskriftColor(ordning.overskrift)}
+                      fill={getProviderColor(ordning.overskrift)}
                     />
                     
                     {/* Overskrift text */}
@@ -643,7 +647,7 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
                       textAnchor="middle"
                       dominantBaseline="middle"
                     >
-                      {ordning.overskrift === 'Klima- og energifondet' ? 'Oslo kommune' : ordning.overskrift}
+                      {getOverskriftLabel(ordning.overskrift)}
                     </text>
                     
                     {/* Lenke text with click handler - moved left to avoid scrollbar */}

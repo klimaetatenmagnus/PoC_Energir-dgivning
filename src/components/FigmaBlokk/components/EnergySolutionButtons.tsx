@@ -381,7 +381,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       return (savingsData[buildingCategory].etteriso_yttervegg || 0) * bruksareal;
     }
 
-    if (measure === 'Isolering av kjeller og loft') {
+    if (measure === 'Isolering av kjeller og loft' || measure === 'Etterisolering av kjeller og loft') {
       return (savingsData[buildingCategory].etteriso_takloft || 0) * bruksareal;
     }
 
