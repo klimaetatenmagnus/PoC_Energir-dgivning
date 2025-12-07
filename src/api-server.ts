@@ -814,6 +814,12 @@ async function buildContentCatalog(
         continue;
       }
 
+      // Hopp over slettede elementer - de skal ikke vises i katalogen
+      if (document.data.metadata.status === 'deleted') {
+        skippedUnpublished += 1;
+        continue;
+      }
+
       if (document.collection === 'tiltak') {
         items.push(createTiltakCatalogItem(relativePath, document.data));
       } else if (document.collection === 'tilskudd') {
