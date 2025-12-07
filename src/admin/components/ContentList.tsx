@@ -59,6 +59,11 @@ function filterItems(
   filters: AdminCatalogFilters
 ): AdminContentItem[] {
   return items.filter((item) => {
+    // Skjul slettede elementer (de skal aldri vises i admin-listen)
+    if (item.status === "deleted") {
+      return false;
+    }
+
     // Status filter
     if (filters.status !== "all" && item.status !== filters.status) {
       return false;

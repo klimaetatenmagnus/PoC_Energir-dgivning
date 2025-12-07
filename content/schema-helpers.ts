@@ -16,7 +16,7 @@ export const BuildingTypeKeySchema = z
 
 export const ParagraphArraySchema = z.array(NonEmptyStringSchema).min(1);
 
-export const ContentStatusSchema = z.enum(['draft', 'published', 'archived']);
+export const ContentStatusSchema = z.enum(['draft', 'published', 'archived', 'deleted']);
 
 export const ContentAudienceSchema = z.enum(['standard', 'gulliste']);
 

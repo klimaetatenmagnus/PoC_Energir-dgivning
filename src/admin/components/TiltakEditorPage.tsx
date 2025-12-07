@@ -7,6 +7,7 @@ import {
   publishTiltak,
   discardTiltakDraft,
   createTiltak,
+  deleteTiltak,
 } from "../api/adminApiClient";
 import type { TiltakContent } from "../../../content/tiltak/schema";
 import "./TiltakEditorPage.css";
@@ -61,7 +62,7 @@ function createEmptyTiltak(): TiltakContent {
   };
 }
 
-type LoadingState = "loading" | "ready" | "error" | "saving" | "publishing" | "discarding" | "creating";
+type LoadingState = "loading" | "ready" | "error" | "saving" | "publishing" | "discarding" | "creating" | "deleting";
 
 export function TiltakEditorPage({
   tiltakId,
@@ -81,7 +82,7 @@ export function TiltakEditorPage({
   );
   const [error, setError] = useState<string | null>(null);
   const [hasDraft, setHasDraft] = useState(isCreateMode);
-  const [source, setSource] = useState<"draft" | "published">("draft");
+  const [_source, setSource] = useState<"draft" | "published">("draft");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   // Etter opprettelse: bytt til edit-modus for å kunne fortsette redigering
   const [currentMode, setCurrentMode] = useState<"edit" | "create">(
@@ -262,6 +263,36 @@ export function TiltakEditorPage({
     }
   }, [tiltak?.id, currentMode, onClose, onSaveSuccess]);
 
+  const handleDelete = useCallback(async () => {
+    if (!tiltak?.id) {
+      setError("Kan ikke slette - tiltak mangler ID");
+      return;
+    }
+
+    if (!confirm(`Er du sikker på at du vil slette tiltaket "${tiltak.title}"?\n\nSlettingen må publiseres via wizarden for å bli permanent. Du kan angre ved å forkaste utkastet.`)) {
+      return;
+    }
+
+    setLoadingState("deleting");
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await deleteTiltak(tiltak.id);
+      setSuccessMessage(response.message);
+      setHasDraft(true); // Slettingen oppretter en draft
+      setLoadingState("ready");
+
+      // Gi beskjed til parent om å oppdatere listen (viser nå "Upubliserte endringer")
+      onSaveSuccess();
+      // Lukk editoren og gå tilbake til listen
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kunne ikke slette tiltaket");
+      setLoadingState("ready");
+    }
+  }, [tiltak?.id, tiltak?.title, onClose, onSaveSuccess]);
+
   const handleRetry = useCallback(() => {
     // Ingen retry i create-modus
     if (!tiltak?.id) {
@@ -286,7 +317,7 @@ export function TiltakEditorPage({
       });
   }, [tiltak?.id]);
 
-  const isProcessing = loadingState === "saving" || loadingState === "publishing" || loadingState === "discarding" || loadingState === "creating";
+  const isProcessing = loadingState === "saving" || loadingState === "publishing" || loadingState === "discarding" || loadingState === "creating" || loadingState === "deleting";
 
   return (
     <div className="tiltak-editor-page">
@@ -328,11 +359,17 @@ export function TiltakEditorPage({
                 </PktButton>
               </>
             )}
-            {!hasDraft && source === "published" && (
-              <span className="tiltak-editor-page__published-badge">
-                Publisert
-              </span>
-            )}
+            {/* Slett-knapp - vises alltid i edit-modus */}
+            <PktButton
+              skin="secondary"
+              size="medium"
+              variant="icon-left"
+              iconName="cross-circle"
+              onClick={handleDelete}
+              disabled={isProcessing}
+            >
+              {loadingState === "deleting" ? "Sletter..." : "Slett"}
+            </PktButton>
           </div>
         )}
         {/* Create-modus badge */}

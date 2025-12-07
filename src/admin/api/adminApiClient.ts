@@ -97,6 +97,11 @@ export type DiscardDraftResponse = {
   message: string;
 };
 
+export type DeleteTiltakResponse = {
+  id: string;
+  message: string;
+};
+
 // Tilskudd types
 export type FetchTilskuddResponse = {
   tilskudd: TilskuddContent;
@@ -133,6 +138,11 @@ export type PublishTilskuddResponse = {
 };
 
 export type DiscardTilskuddDraftResponse = {
+  id: string;
+  message: string;
+};
+
+export type DeleteTilskuddResponse = {
   id: string;
   message: string;
 };
@@ -206,6 +216,14 @@ export async function createTiltak(
   });
 }
 
+export async function deleteTiltak(
+  tiltakId: string
+): Promise<DeleteTiltakResponse> {
+  return request<DeleteTiltakResponse>(`/content/tiltak/${tiltakId}`, {
+    method: "DELETE",
+  });
+}
+
 // Tilskudd API functions
 export async function fetchTilskudd(
   tilskuddId: string
@@ -245,6 +263,14 @@ export async function createTilskudd(
   return request<CreateTilskuddResponse>("/content/tilskudd", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteTilskudd(
+  tilskuddId: string
+): Promise<DeleteTilskuddResponse> {
+  return request<DeleteTilskuddResponse>(`/content/tilskudd/${tilskuddId}`, {
+    method: "DELETE",
   });
 }
 

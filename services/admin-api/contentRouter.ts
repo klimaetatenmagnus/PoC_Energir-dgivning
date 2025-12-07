@@ -696,6 +696,119 @@ export function createContentRouter(
     }
   });
 
+  // ===== SOFT DELETE ENDPOINTS =====
+  // Sletting oppretter en draft med status "deleted".
+  // Slettingen må publiseres via wizarden for å bli permanent.
+  // Kan forkastes via "Forkast utkast"-knappen.
+
+  // Myk sletting av tiltak (oppretter draft med status "deleted")
+  router.delete("/content/tiltak/:id", async (req, res, next) => {
+    try {
+      const tiltakId = SlugSchema.parse(req.params.id?.trim());
+      const actor = resolveUserContext(req);
+      const draftPath = buildTiltakDraftPath(tiltakId);
+      const publishedPath = buildTiltakPath(tiltakId);
+
+      // Sjekk om tiltak eksisterer (enten draft eller publisert)
+      const [hasDraft, hasPublished] = await Promise.all([
+        storage.exists(draftPath),
+        storage.exists(publishedPath),
+      ]);
+
+      if (!hasDraft && !hasPublished) {
+        throw new HttpError(404, `Tiltak ${tiltakId} finnes ikke`);
+      }
+
+      // Les eksisterende innhold (prioriter draft hvis den finnes)
+      const pathToRead = hasDraft ? draftPath : publishedPath;
+      const { data } = await storage.readJson<TiltakContent>(pathToRead);
+      const parsed = TiltakContentSchema.parse(data);
+
+      // Marker som slettet - lagres som draft slik at det kan forkastes
+      const now = new Date().toISOString();
+      const deletedContent: TiltakContent = {
+        ...parsed,
+        metadata: {
+          ...parsed.metadata,
+          status: "deleted",
+          updatedAt: now,
+          updatedBy: actor.email,
+          changeSummary: `Markert for sletting av ${actor.email}`,
+        },
+      };
+
+      // Skriv til DRAFT-fil (ikke publisert) - slettingen må publiseres via wizard
+      const result = await storage.writeJson(draftPath, deletedContent);
+
+      console.warn(
+        `[admin-api] ${actor.email} markerte tiltak ${tiltakId} for sletting (draft)`
+      );
+
+      res.json({
+        id: tiltakId,
+        message: `Tiltak "${parsed.title}" er markert for sletting. Publiser via wizarden for å fullføre slettingen.`,
+        hasDraft: true,
+        generation: result.generation,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Myk sletting av tilskudd (oppretter draft med status "deleted")
+  router.delete("/content/tilskudd/:id", async (req, res, next) => {
+    try {
+      const tilskuddId = SlugSchema.parse(req.params.id?.trim());
+      const actor = resolveUserContext(req);
+      const draftPath = buildTilskuddDraftPath(tilskuddId);
+      const publishedPath = buildTilskuddPath(tilskuddId);
+
+      // Sjekk om tilskudd eksisterer (enten draft eller publisert)
+      const [hasDraft, hasPublished] = await Promise.all([
+        storage.exists(draftPath),
+        storage.exists(publishedPath),
+      ]);
+
+      if (!hasDraft && !hasPublished) {
+        throw new HttpError(404, `Tilskudd ${tilskuddId} finnes ikke`);
+      }
+
+      // Les eksisterende innhold (prioriter draft hvis den finnes)
+      const pathToRead = hasDraft ? draftPath : publishedPath;
+      const { data } = await storage.readJson<TilskuddContent>(pathToRead);
+      const parsed = TilskuddContentSchema.parse(data);
+
+      // Marker som slettet - lagres som draft slik at det kan forkastes
+      const now = new Date().toISOString();
+      const deletedContent: TilskuddContent = {
+        ...parsed,
+        metadata: {
+          ...parsed.metadata,
+          status: "deleted",
+          updatedAt: now,
+          updatedBy: actor.email,
+          changeSummary: `Markert for sletting av ${actor.email}`,
+        },
+      };
+
+      // Skriv til DRAFT-fil (ikke publisert) - slettingen må publiseres via wizard
+      const result = await storage.writeJson(draftPath, deletedContent);
+
+      console.warn(
+        `[admin-api] ${actor.email} markerte tilskudd ${tilskuddId} for sletting (draft)`
+      );
+
+      res.json({
+        id: tilskuddId,
+        message: `Tilskudd "${parsed.title}" er markert for sletting. Publiser via wizarden for å fullføre slettingen.`,
+        hasDraft: true,
+        generation: result.generation,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 }
 

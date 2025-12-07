@@ -7,6 +7,7 @@ import {
   publishTilskudd,
   discardTilskuddDraft,
   createTilskudd,
+  deleteTilskudd,
 } from "../api/adminApiClient";
 import type { TilskuddContent } from "../../../content/tilskudd/schema";
 import "./TilskuddEditorPage.css";
@@ -66,7 +67,7 @@ function createEmptyTilskudd(): TilskuddContent {
   };
 }
 
-type LoadingState = "loading" | "ready" | "error" | "saving" | "publishing" | "discarding" | "creating";
+type LoadingState = "loading" | "ready" | "error" | "saving" | "publishing" | "discarding" | "creating" | "deleting";
 
 export function TilskuddEditorPage({
   tilskuddId,
@@ -86,7 +87,7 @@ export function TilskuddEditorPage({
   );
   const [error, setError] = useState<string | null>(null);
   const [hasDraft, setHasDraft] = useState(isCreateMode);
-  const [source, setSource] = useState<"draft" | "published">("draft");
+  const [_source, setSource] = useState<"draft" | "published">("draft");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   // Etter opprettelse: bytt til edit-modus for å kunne fortsette redigering
   const [currentMode, setCurrentMode] = useState<"edit" | "create">(
@@ -267,6 +268,36 @@ export function TilskuddEditorPage({
     }
   }, [tilskudd?.id, currentMode, onClose, onSaveSuccess]);
 
+  const handleDelete = useCallback(async () => {
+    if (!tilskudd?.id) {
+      setError("Kan ikke slette - tilskudd mangler ID");
+      return;
+    }
+
+    if (!confirm(`Er du sikker på at du vil slette tilskuddsordningen "${tilskudd.title}"?\n\nSlettingen må publiseres via wizarden for å bli permanent. Du kan angre ved å forkaste utkastet.`)) {
+      return;
+    }
+
+    setLoadingState("deleting");
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await deleteTilskudd(tilskudd.id);
+      setSuccessMessage(response.message);
+      setHasDraft(true); // Slettingen oppretter en draft
+      setLoadingState("ready");
+
+      // Gi beskjed til parent om å oppdatere listen (viser nå "Upubliserte endringer")
+      onSaveSuccess();
+      // Lukk editoren og gå tilbake til listen
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kunne ikke slette tilskuddsordningen");
+      setLoadingState("ready");
+    }
+  }, [tilskudd?.id, tilskudd?.title, onClose, onSaveSuccess]);
+
   const handleRetry = useCallback(() => {
     // Ingen retry i create-modus
     if (!tilskudd?.id) {
@@ -291,7 +322,7 @@ export function TilskuddEditorPage({
       });
   }, [tilskudd?.id]);
 
-  const isProcessing = loadingState === "saving" || loadingState === "publishing" || loadingState === "discarding" || loadingState === "creating";
+  const isProcessing = loadingState === "saving" || loadingState === "publishing" || loadingState === "discarding" || loadingState === "creating" || loadingState === "deleting";
 
   return (
     <div className="tilskudd-editor-page">
@@ -333,11 +364,17 @@ export function TilskuddEditorPage({
                 </PktButton>
               </>
             )}
-            {!hasDraft && source === "published" && (
-              <span className="tilskudd-editor-page__published-badge">
-                Publisert
-              </span>
-            )}
+            {/* Slett-knapp - vises alltid i edit-modus */}
+            <PktButton
+              skin="secondary"
+              size="medium"
+              variant="icon-left"
+              iconName="cross-circle"
+              onClick={handleDelete}
+              disabled={isProcessing}
+            >
+              {loadingState === "deleting" ? "Sletter..." : "Slett"}
+            </PktButton>
           </div>
         )}
       </header>
