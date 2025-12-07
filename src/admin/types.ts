@@ -8,7 +8,8 @@ export type AdminStatus =
   | "draft"
   | "in-review"
   | "published"
-  | "archived";
+  | "archived"
+  | "deleted";
 
 export interface AdminContentItem {
   id: string;
