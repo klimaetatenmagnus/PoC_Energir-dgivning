@@ -103,8 +103,13 @@ export function TiltakEditor({
   const [manualIdOverride, setManualIdOverride] = useState(false); // Om bruker har manuelt endret ID
 
   // Tilgjengelige audiences fra tiltaket
+  // Sjekk både audiences-arrayen OG om det finnes en gulliste-variant
   const availableAudiences = useMemo(() => tiltak.audiences, [tiltak.audiences]);
-  const hasGulliste = availableAudiences.includes("gulliste");
+  const hasGullisteVariant = useMemo(
+    () => tiltak.variants.some((v) => v.audience === "gulliste"),
+    [tiltak.variants]
+  );
+  const hasGulliste = availableAudiences.includes("gulliste") || hasGullisteVariant;
 
   // Finn gulliste-variant hvis den finnes
   const gullisteVariant = useMemo(
