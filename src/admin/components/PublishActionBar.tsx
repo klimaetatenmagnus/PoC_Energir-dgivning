@@ -5,9 +5,10 @@ import "./PublishActionBar.css";
 
 interface PublishActionBarProps {
   onOpenWizard: () => void;
+  onDiscardSuccess?: () => void;
 }
 
-export function PublishActionBar({ onOpenWizard }: PublishActionBarProps) {
+export function PublishActionBar({ onOpenWizard, onDiscardSuccess }: PublishActionBarProps) {
   const { drafts, count, loading, error, discardAll, refresh } = useDrafts();
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [discarding, setDiscarding] = useState(false);
@@ -29,6 +30,8 @@ export function PublishActionBar({ onOpenWizard }: PublishActionBarProps) {
     try {
       await discardAll();
       setShowDiscardConfirm(false);
+      // Oppdater katalogen så status-badges reflekterer at drafts er borte
+      onDiscardSuccess?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Ukjent feil";
       setDiscardError(message);

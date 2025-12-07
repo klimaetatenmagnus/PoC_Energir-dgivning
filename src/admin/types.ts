@@ -73,12 +73,20 @@ export interface AdminGlossaryTermDictionaryEntry {
   links: AdminGlossaryLink[];
 }
 
+export interface AdminProviderDictionaryEntry {
+  id: string;
+  name: string;
+  url?: string;
+  color?: string;
+}
+
 export interface AdminContentDictionary {
   schemaVersion: number;
   buildingTypes: AdminBuildingTypeDictionaryEntry[];
   benefits: AdminBenefitDictionaryEntry[];
   supportTags: AdminSupportTagDictionaryEntry[];
   glossaryTerms: AdminGlossaryTermDictionaryEntry[];
+  providers: AdminProviderDictionaryEntry[];
 }
 
 export interface AdminDictionaryContextValue {

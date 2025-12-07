@@ -223,7 +223,10 @@ function AdminShell() {
       </div>
 
       {/* Floating action bar for publisering */}
-      <PublishActionBar onOpenWizard={() => setWizardOpen(true)} />
+      <PublishActionBar
+        onOpenWizard={() => setWizardOpen(true)}
+        onDiscardSuccess={reloadCatalog}
+      />
 
       {/* Publiserings-wizard modal */}
       <PublishWizard
