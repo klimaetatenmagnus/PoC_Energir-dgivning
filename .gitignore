@@ -37,6 +37,10 @@ coverage/
 # Lokale draft-filer (admin-UI lagrer til GCS i staging/prod)
 *.draft.json
 
+# Innholdsfiler for tiltak og tilskudd (lever i GCS bucket, ikke git)
+content/tiltak/*.json
+content/tilskudd/*.json
+
 # Editor/OS
 .DS_Store
 .idea/
