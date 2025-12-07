@@ -9,7 +9,7 @@
   ],
   "category": "statlig",
   "provider": {
-    "name": "Enova",
+    "id": "enova",
     "url": "https://www.enova.no",
     "contactEmail": "post@enova.no"
   },

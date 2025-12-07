@@ -5,7 +5,8 @@ import {
   calculateTekPeriod,
   parseNumericValue,
   resolveEnergyCategory,
-  getOverskriftColor,
+  useProviderColors,
+  getOverskriftLabel,
   openExternalLink
 } from './shared';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
@@ -84,6 +85,9 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [hoveredTabId, setHoveredTabId] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
+
+  // Provider-farger fra dictionary
+  const getProviderColor = useProviderColors();
 
   const { data: tiltakContent } = useTiltakContent('vinduer');
   const { data: dictionary } = useContentDictionary();
@@ -798,7 +802,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
                       y={boxYPosition}
                       width={ordning.overskrift === 'Enova' ? "43" : ordning.overskrift === 'Oslo kommune' ? "82" : "82"}
                       height="23"
-                      fill={getOverskriftColor(ordning.overskrift)}
+                      fill={getProviderColor(ordning.overskrift)}
                     />
                     
                     {/* Overskrift text */}
@@ -815,7 +819,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
                       textAnchor="middle"
                       dominantBaseline="middle"
                     >
-                      {ordning.overskrift === 'Klima- og energifondet' ? 'Oslo kommune' : ordning.overskrift}
+                      {getOverskriftLabel(ordning.overskrift)}
                     </text>
                     
                     {/* Lenke text with click handler - moved left to avoid scrollbar */}

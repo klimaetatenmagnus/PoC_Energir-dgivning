@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
-  getOverskriftColor,
+  useProviderColors,
+  getOverskriftLabel,
   openExternalLink,
   TiltakComponentProps
 } from './shared';
@@ -59,6 +60,9 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
 }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
+
+  // Provider-farger fra dictionary
+  const getProviderColor = useProviderColors();
 
   const { data: tiltakContent, isLoading } = useTiltakContent('ventilasjon');
   const resolvedTiltakContent = useMemo(
@@ -567,7 +571,7 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
                       y={boxYPosition}
                       width={ordning.overskrift === 'Enova' ? "43" : ordning.overskrift === 'Oslo kommune' ? "82" : "82"}
                       height="23"
-                      fill={getOverskriftColor(ordning.overskrift)}
+                      fill={getProviderColor(ordning.overskrift)}
                     />
                     
                     {/* Overskrift text */}
@@ -584,7 +588,7 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
                       textAnchor="middle"
                       dominantBaseline="middle"
                     >
-                      {ordning.overskrift === 'Klima- og energifondet' ? 'Oslo kommune' : ordning.overskrift}
+                      {getOverskriftLabel(ordning.overskrift)}
                     </text>
                     
                     {/* Lenke text with click handler - moved left to avoid scrollbar */}

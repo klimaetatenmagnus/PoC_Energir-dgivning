@@ -408,5 +408,37 @@
       ],
       "links": []
     }
+  ],
+  "providers": [
+    {
+      "id": "enova",
+      "name": "Enova",
+      "url": "https://www.enova.no",
+      "color": "#C7F6C9"
+    },
+    {
+      "id": "oslo-kommune",
+      "name": "Oslo kommune",
+      "url": "https://www.klimaoslo.no/tilskudd/",
+      "color": "#D1F9FF"
+    },
+    {
+      "id": "byantikvaren",
+      "name": "Byantikvaren",
+      "url": "https://www.oslo.kommune.no/byantikvaren/",
+      "color": "#F9C66B"
+    },
+    {
+      "id": "riksantikvaren",
+      "name": "Riksantikvaren",
+      "url": "https://www.riksantikvaren.no/",
+      "color": "#FFB4AC"
+    },
+    {
+      "id": "kulturminnefondet",
+      "name": "Kulturminnefondet",
+      "url": "https://kulturminnefondet.no/",
+      "color": "#E0ADFF"
+    }
   ]
 }

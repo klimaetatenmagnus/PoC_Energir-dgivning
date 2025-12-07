@@ -9,7 +9,7 @@
   ],
   "category": "kommunal",
   "provider": {
-    "name": "Byantikvaren i Oslo",
+    "id": "byantikvaren",
     "url": "https://www.oslo.kommune.no/tilskudd-legater-og-stipend/tilskudd-til-istandsetting-av-kulturminner/",
     "contactEmail": "byantikvaren@bja.oslo.kommune.no"
   },

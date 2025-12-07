@@ -9,7 +9,7 @@
   ],
   "category": "statlig",
   "provider": {
-    "name": "Enova SF",
+    "id": "enova",
     "organizationNumber": "984 382 882",
     "url": "https://www.enova.no/nb/privat/bolig/stottetilbud-bolig/energiradgivning",
     "contactEmail": "post@enova.no"

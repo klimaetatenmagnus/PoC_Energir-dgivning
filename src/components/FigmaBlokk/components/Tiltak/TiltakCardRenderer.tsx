@@ -18,7 +18,7 @@ import {
   normaliseBuildingTypeKey,
 } from "../../../../utils/tiltakContent";
 import type { TiltakComponentProps } from "./shared";
-import { getOverskriftColor, openExternalLink } from "./shared";
+import { getOverskriftColor, getOverskriftLabel, openExternalLink } from "./shared";
 import { renderParagraphWithGlossary, dictionaryTermsToGlossary, type GlossaryEntry } from "./glossaryHelpers";
 import { useGrantAwareStotteordninger } from "./useGrantAwareStotteordninger";
 import "./TiltakCardRenderer.css";
@@ -149,15 +149,6 @@ function getBuildingLabel(buildingType?: string | null): string {
   return buildingType;
 }
 
-function getOverskriftLabel(overskrift?: string | null): string {
-  if (!overskrift) {
-    return "Støtte";
-  }
-  if (overskrift === "Klima- og energifondet") {
-    return "Oslo kommune";
-  }
-  return overskrift;
-}
 
 export const TiltakCardRenderer: React.FC<TiltakCardRendererProps> = ({
   slug,

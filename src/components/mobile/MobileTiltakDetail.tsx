@@ -11,7 +11,7 @@ import type { ContentAudience } from '../../../content/schema-helpers';
 import type { TiltakTabsSection } from '../../../content/tiltak/schema';
 import type { ContentDictionary, BenefitDictionaryEntry } from '../../../content/dictionaries/schema';
 import { useGrantAwareStotteordninger } from '../FigmaBlokk/components/Tiltak/useGrantAwareStotteordninger';
-import { getOverskriftColor, openExternalLink } from '../FigmaBlokk/components/Tiltak/shared';
+import { useProviderColors, getOverskriftLabel, openExternalLink } from '../FigmaBlokk/components/Tiltak/shared';
 import { OsloLogo } from '../FigmaBlokk/components/OsloLogo';
 import './MobileTiltakDetail.css';
 
@@ -50,14 +50,6 @@ interface MobileTiltakDetailProps {
 
 type TabState = Record<string, string | null>;
 
-/**
- * Hent overskrift-etikett for støtteordninger
- */
-const getOverskriftLabel = (overskrift?: string | null): string => {
-  if (!overskrift) return 'Støtte';
-  if (overskrift === 'Klima- og energifondet') return 'Oslo kommune';
-  return overskrift;
-};
 
 /**
  * Hent byggtype-etikett (ikke lenger brukt for tags, men beholdt for evt. fremtidig bruk)
@@ -101,6 +93,9 @@ export const MobileTiltakDetail: React.FC<MobileTiltakDetailProps> = ({
 }) => {
   const { data, isLoading, error } = useTiltakContent(tiltakId);
   const { data: dictionary } = useContentDictionary();
+
+  // Provider-farger fra dictionary
+  const getProviderColor = useProviderColors();
 
   // State for kilde-tooltip
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
@@ -166,15 +161,18 @@ export const MobileTiltakDetail: React.FC<MobileTiltakDetailProps> = ({
     return annualSavingsKwh * energyPricePerKwh;
   }, [annualSavingsKwh, energyPricePerKwh]);
 
-  // Separer søknadsplikt fra generell accordion
-  const { permitItem, generalAccordion } = useMemo(() => {
+  // Separer søknadsplikt fra generell accordion og hent highlight-entry
+  const { permitItem, permitHighlightEntry, generalAccordion } = useMemo(() => {
     const baseAccordion = resolvedContent?.accordion ?? [];
     const permit = baseAccordion.find((item) => item.id === 'soknadsplikt');
     if (!permit) {
-      return { permitItem: null, generalAccordion: baseAccordion };
+      return { permitItem: null, permitHighlightEntry: null, generalAccordion: baseAccordion };
     }
+    // Hent første glossary-entry som highlight (samme logikk som desktop)
+    const highlight = permit.glossary && permit.glossary.length > 0 ? permit.glossary[0] : null;
     return {
       permitItem: permit,
+      permitHighlightEntry: highlight,
       generalAccordion: baseAccordion.filter((item) => item !== permit),
     };
   }, [resolvedContent?.accordion]);
@@ -188,11 +186,13 @@ export const MobileTiltakDetail: React.FC<MobileTiltakDetailProps> = ({
     [resolvedContent]
   );
 
-  // Hent støtteordninger
+  // Hent støtteordninger - gulliste brukes for legacy-fallback
+  // grantIds er allerede audience-filtrert via applyTiltakVariant
   const { stotteordninger, isLoading: grantsLoading } = useGrantAwareStotteordninger({
     grantIds: resolvedContent?.grants ?? [],
     legacyTiltakSlug: tiltakId,
     buildingType,
+    gulliste: audience === 'gulliste',
   });
 
   const hasRegisteredGrants = stotteordninger.length > 0;
@@ -468,9 +468,8 @@ export const MobileTiltakDetail: React.FC<MobileTiltakDetailProps> = ({
                   </button>
                 </div>
                 <p>
-                  Estimatet er basert på byggets energiforbruk og generelle antakelser om
-                  besparelse for denne typen tiltak. Faktisk besparelse kan variere avhengig
-                  av boligens tilstand, bruksmønster og strømpriser.
+                  {resolvedContent?.energySourceDescription ??
+                    'Estimatet er basert på byggets energiforbruk og generelle antakelser om besparelse for denne typen tiltak. Faktisk besparelse kan variere avhengig av boligens tilstand, bruksmønster og strømpriser.'}
                 </p>
               </div>
             )}
@@ -541,7 +540,7 @@ export const MobileTiltakDetail: React.FC<MobileTiltakDetailProps> = ({
                       {hasOverskrift && (
                         <span
                           className="mobile-tiltak-detail__grant-provider"
-                          style={{ backgroundColor: getOverskriftColor(entry.overskrift) }}
+                          style={{ backgroundColor: getProviderColor(entry.overskrift) }}
                         >
                           {getOverskriftLabel(entry.overskrift)}
                         </span>
@@ -570,7 +569,7 @@ export const MobileTiltakDetail: React.FC<MobileTiltakDetailProps> = ({
             <PktAccordionItem
               id="permit-check"
               name="permit-accordion"
-              title="Sjekk om du må søke for å gjennomføre tiltaket"
+              title={permitItem.title}
               defaultOpen={false}
             >
                 <div className="mobile-tiltak-detail__permit-content">
@@ -597,16 +596,15 @@ export const MobileTiltakDetail: React.FC<MobileTiltakDetailProps> = ({
                       ))}
                     </div>
                   )}
-                  {/* Generisk "Søknadsplikt er ikke en stopper"-boks */}
-                  <div className="mobile-tiltak-detail__permit-highlight">
-                    <h4>Søknadsplikt er ikke en stopper, men en støtte</h4>
-                    <p>
-                      Er tiltaket ditt søknadspliktig, betyr ikke det at du får avslag. Tvert imot!
-                      Søknadsplikten skal sikre at arbeidet planlegges og gjennomføres med god kvalitet
-                      – både i papirene og på bygget. Målet er at du som tiltakshaver får det resultatet
-                      du ønsker deg, på en trygg og effektiv måte.
-                    </p>
-                  </div>
+                  {/* Highlight-boks fra glossary (hvis tilgjengelig) */}
+                  {permitHighlightEntry && (
+                    <div className="mobile-tiltak-detail__permit-highlight">
+                      <h4>{permitHighlightEntry.term}</h4>
+                      {permitHighlightEntry.definition.map((paragraph, index) => (
+                        <p key={`permit-highlight-${index}`}>{paragraph}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
             </PktAccordionItem>
           </PktAccordion>

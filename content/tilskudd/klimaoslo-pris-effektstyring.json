@@ -9,7 +9,7 @@
   ],
   "category": "kommunal",
   "provider": {
-    "name": "Klima- og energifondet (Oslo kommune)",
+    "id": "oslo-kommune",
     "url": "https://www.klimaoslo.no/tilskudd/pris-og-effektstyrt-energilagringssystem-for-boliger/",
     "contactEmail": "klimaetaten@bym.oslo.kommune.no",
     "contactPhone": "+47 21 80 21 80"

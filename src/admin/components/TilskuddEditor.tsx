@@ -22,12 +22,12 @@ export interface TilskuddEditorProps {
   mode?: "edit" | "create";
 }
 
-// Kjente providers basert på eksisterende data
-const KNOWN_PROVIDERS = [
+// Fallback providers hvis dictionary ikke er lastet ennå
+const FALLBACK_PROVIDERS = [
   { id: "enova", name: "Enova", url: "https://www.enova.no" },
-  { id: "klimaoslo", name: "Klima- og energifondet (Oslo kommune)", url: "https://www.klimaoslo.no/tilskudd/" },
-  { id: "byantikvaren", name: "Byantikvaren i Oslo", url: "https://www.oslo.kommune.no/byantikvaren/" },
-] as const;
+  { id: "oslo-kommune", name: "Oslo kommune", url: "https://www.klimaoslo.no/tilskudd/" },
+  { id: "byantikvaren", name: "Byantikvaren", url: "https://www.oslo.kommune.no/byantikvaren/" },
+];
 
 export function TilskuddEditor({
   tilskudd,
@@ -55,6 +55,14 @@ export function TilskuddEditor({
     return types.filter((t) => !t.internalOnly);
   }, [dictionary?.buildingTypes]);
 
+  // Providers fra dictionary (med fallback)
+  const providers = useMemo(() => {
+    if (dictionary?.providers && dictionary.providers.length > 0) {
+      return dictionary.providers;
+    }
+    return FALLBACK_PROVIDERS;
+  }, [dictionary?.providers]);
+
   // Alle tiltak fra katalogen
   const allTiltak = useMemo(() => {
     return tiltakCatalog?.items ?? [];
@@ -73,19 +81,20 @@ export function TilskuddEditor({
     []
   );
 
-  // Provider-håndtering
+  // Provider-håndtering - lagrer id fra dictionary
   const handleProviderChange = useCallback(
     (providerId: string) => {
-      const known = KNOWN_PROVIDERS.find((p) => p.id === providerId);
-      if (known) {
+      const selected = providers.find((p) => p.id === providerId);
+      if (selected) {
         updateField("provider", {
           ...editedTilskudd.provider,
-          name: known.name,
-          url: known.url,
+          id: selected.id, // Provider-id fra dictionary (påkrevd)
+          url: selected.url,
+          // name er deprecated - ikke lagre, hentes fra dictionary ved visning
         });
       }
     },
-    [editedTilskudd.provider, updateField]
+    [editedTilskudd.provider, updateField, providers]
   );
 
   // Audience-håndtering (checkbox-basert)
@@ -192,13 +201,23 @@ export function TilskuddEditor({
     }
   };
 
-  // Finn hvilken kjent provider som matcher (for select-boksen)
+  // Finn hvilken provider som matcher (for select-boksen)
   const matchedProviderId = useMemo(() => {
-    const found = KNOWN_PROVIDERS.find(
+    // Først prøv å matche på id (ny måte)
+    if (editedTilskudd.provider.id) {
+      const foundById = providers.find(
+        (p) => p.id === editedTilskudd.provider.id
+      );
+      if (foundById) {
+        return foundById.id;
+      }
+    }
+    // Fallback: match på name (legacy/bakoverkompatibilitet)
+    const foundByName = providers.find(
       (p) => p.name === editedTilskudd.provider.name
     );
-    return found?.id ?? "custom";
-  }, [editedTilskudd.provider.name]);
+    return foundByName?.id ?? providers[0]?.id ?? "enova";
+  }, [editedTilskudd.provider.id, editedTilskudd.provider.name, providers]);
 
   return (
     <div className="tilskudd-editor">
@@ -268,7 +287,7 @@ export function TilskuddEditor({
           value={matchedProviderId}
           onChange={(e) => handleProviderChange(e.target.value)}
         >
-          {KNOWN_PROVIDERS.map((provider) => (
+          {providers.map((provider) => (
             <option key={provider.id} value={provider.id}>
               {provider.name}
             </option>

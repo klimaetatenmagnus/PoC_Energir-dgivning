@@ -111,7 +111,8 @@ const ApplicationProcessSchema = z
 
 const ProviderSchema = z
   .object({
-    name: NonEmptyStringSchema,
+    id: SlugSchema, // Refererer til provider i dictionary (enova, oslo-kommune, byantikvaren)
+    name: NonEmptyStringSchema.optional(), // Deprecated: bruk id i stedet. Beholdes for bakoverkompatibilitet.
     organizationNumber: z.string().trim().optional(),
     url: z.string().url().optional(),
     contactEmail: z.string().email().optional(),

@@ -11,6 +11,7 @@ import { useResponsive } from "./hooks/useResponsive";
 import { useAddressCoordinates } from "./components/FigmaBlokk/hooks/useAddressCoordinates";
 import { fetchSolarData, SolarEnergyData } from "./services/solarEnergyService";
 import { calculateAnnualEnergyConsumption, determineBuildingType } from "./utils/tekEnergyCalculations";
+import { sjekkGulListeMedGnrBnr } from "./services/gul-liste-service";
 
 export default function App() {
   const {
@@ -190,11 +191,41 @@ export default function App() {
     return undefined;
   }, [result]);
 
+  // State for gulliste-status (for mobil)
+  const [isGulliste, setIsGulliste] = useState(false);
+
+  // Sjekk gulliste-status når result endres
+  useEffect(() => {
+    if (!result) {
+      setIsGulliste(false);
+      return;
+    }
+
+    const gnrRaw = result.gnr || result.csvData?.gnr;
+    const bnrRaw = result.bnr || result.csvData?.bnr;
+
+    if (!gnrRaw || !bnrRaw) {
+      setIsGulliste(false);
+      return;
+    }
+
+    const gnr = typeof gnrRaw === 'string' ? Number(gnrRaw) : gnrRaw;
+    const bnr = typeof bnrRaw === 'string' ? Number(bnrRaw) : bnrRaw;
+
+    sjekkGulListeMedGnrBnr(gnr, bnr)
+      .then((gulListeResult) => {
+        setIsGulliste(gulListeResult.erPaaGulListe);
+      })
+      .catch((err) => {
+        console.warn('Kunne ikke sjekke gulliste-status:', err);
+        setIsGulliste(false);
+      });
+  }, [result]);
+
   // Bestem audience basert på gulliste-status
   const audienceForTiltak = useMemo(() => {
-    // TODO: Sjekk om bygningen er på gulliste og returner 'gulliste' i så fall
-    return 'standard' as const;
-  }, []);
+    return isGulliste ? 'gulliste' as const : 'standard' as const;
+  }, [isGulliste]);
 
   // Special rendering for Figma blokk mode (handles both enebolig and blokk)
   if (mode === "figma-blokk" && result) {
