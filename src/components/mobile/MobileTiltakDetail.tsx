@@ -7,35 +7,15 @@ import {
 } from '@oslokommune/punkt-react';
 import { useTiltakContent, useContentDictionary } from '../../hooks/contentHooks';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../utils/tiltakContent';
+import { resolveTiltakBenefits } from '../../utils/benefitUtils';
 import type { ContentAudience } from '../../../content/schema-helpers';
 import type { TiltakTabsSection } from '../../../content/tiltak/schema';
-import type { ContentDictionary, BenefitDictionaryEntry } from '../../../content/dictionaries/schema';
 import { useGrantAwareStotteordninger } from '../FigmaBlokk/components/Tiltak/useGrantAwareStotteordninger';
 import { useProviderColors, getOverskriftLabel, openExternalLink } from '../FigmaBlokk/components/Tiltak/shared';
 import { OsloLogo } from '../FigmaBlokk/components/OsloLogo';
+import { BenefitChipList } from '../common/BenefitChip';
 import './MobileTiltakDetail.css';
 
-/**
- * pkt-icon web component wrapper (identisk med desktop)
- * Bruker React.createElement for å unngå TypeScript-feil med custom elements
- */
-type PunktIconProps = React.HTMLAttributes<HTMLElement> & {
-  name?: string;
-};
-const PunktIcon: React.FC<PunktIconProps> = (props) =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- pkt-icon er et webcomponent uten typings
-  React.createElement('pkt-icon' as any, props);
-
-/**
- * Slå opp en fordel fra den sentrale ordboken basert på id
- */
-function getBenefitFromDictionary(
-  benefitId: string,
-  dictionary?: ContentDictionary
-): BenefitDictionaryEntry | null {
-  if (!dictionary?.benefits) return null;
-  return dictionary.benefits.find((b) => b.id === benefitId) ?? null;
-}
 
 interface MobileTiltakDetailProps {
   tiltakId: string;
@@ -119,31 +99,12 @@ export const MobileTiltakDetail: React.FC<MobileTiltakDetailProps> = ({
   const readMore = resolvedContent?.readMore ?? [];
   const callsToAction = resolvedContent?.callsToAction ?? [];
 
-  // Berik fordeler fra den sentrale ordboken
-  // Tiltakets benefits-array inneholder id-referanser til ordboken
-  const enrichedBenefits = useMemo(() => {
-    const rawBenefits = resolvedContent?.benefits ?? [];
-    return rawBenefits.map((benefit) => {
-      // Slå opp i ordboken basert på id
-      const dictionaryBenefit = getBenefitFromDictionary(benefit.id, dictionary);
-      if (dictionaryBenefit) {
-        // Bruk data fra ordboken, men la tiltaket overstyre hvis det har egne verdier
-        return {
-          id: benefit.id,
-          title: benefit.title || dictionaryBenefit.title,
-          description: benefit.description || dictionaryBenefit.description,
-          icon: dictionaryBenefit.icon, // Ikon kommer alltid fra ordboken
-        };
-      }
-      // Fallback til tiltakets egen data hvis ikke funnet i ordbok
-      return {
-        id: benefit.id,
-        title: benefit.title,
-        description: benefit.description,
-        icon: undefined,
-      };
-    });
-  }, [resolvedContent?.benefits, dictionary]);
+  // Berik fordeler fra dictionary via felles utility
+  // Prioriterer benefitRefs og slår opp i dictionary, med fallback til benefits-array
+  const enrichedBenefits = useMemo(
+    () => resolveTiltakBenefits(resolvedContent, dictionary, 4),
+    [resolvedContent, dictionary]
+  );
 
   // Hent bygningsspesifikke paragrafer
   const buildingTypeParagraphs = useMemo(() => {
@@ -301,26 +262,13 @@ export const MobileTiltakDetail: React.FC<MobileTiltakDetailProps> = ({
         <section className="mobile-tiltak-detail__hero">
           <span className="mobile-tiltak-detail__eyebrow">Tiltak</span>
           <h1 className="mobile-tiltak-detail__title">{resolvedContent.title}</h1>
-          {/* Fordels-chips - identisk struktur som desktop */}
+          {/* Fordels-chips - bruker felles BenefitChipList-komponent */}
           {enrichedBenefits.length > 0 && (
-            <div className="mobile-tiltak-detail__benefit-chips">
-              {enrichedBenefits.slice(0, 4).map((benefit) => (
-                <div
-                  key={`benefit-chip-${benefit.id}`}
-                  className="mobile-tiltak-detail__benefit-chip"
-                  title={benefit.description ?? undefined}
-                >
-                  {benefit.icon && (
-                    <span className="mobile-tiltak-detail__benefit-chip-icon" aria-hidden="true">
-                      <PunktIcon name={benefit.icon} />
-                    </span>
-                  )}
-                  <span className="mobile-tiltak-detail__benefit-chip-title">
-                    {benefit.title}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <BenefitChipList
+              benefits={enrichedBenefits}
+              maxItems={4}
+              className="mobile-tiltak-detail__benefit-chips"
+            />
           )}
         </section>
 

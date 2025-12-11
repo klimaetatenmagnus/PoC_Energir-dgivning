@@ -6,7 +6,7 @@ import {
   TiltakComponentProps
 } from './shared';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
-import { useTiltakContent } from '../../../../hooks/contentHooks';
+import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type {
   TiltakAccordionItem,
@@ -14,6 +14,8 @@ import type {
 } from '../../../../../content/tiltak/schema';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
+import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
+import { BenefitChipSvg } from '../../../common/BenefitChip';
 
 type VentilasjonProps = TiltakComponentProps;
 type VentilasjonComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -65,10 +67,18 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
   const getProviderColor = useProviderColors();
 
   const { data: tiltakContent, isLoading } = useTiltakContent('ventilasjon');
+  const { data: dictionary } = useContentDictionary();
   const resolvedTiltakContent = useMemo(
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
   );
+
+  // Berik fordeler fra dictionary via felles utility
+  const enrichedBenefits = useMemo(
+    () => resolveTiltakBenefits(resolvedTiltakContent, dictionary, 4),
+    [resolvedTiltakContent, dictionary]
+  );
+
   const content = useMemo(
     () => mapVentilasjonContent(resolvedTiltakContent),
     [resolvedTiltakContent]
@@ -100,8 +110,6 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
     content.buildingTypeParagraphs[buildingTypeKey] ??
     content.buildingTypeParagraphs.default ??
     [];
-
-  const benefits = content.benefits.slice(0, 4);
 
   const readMoreLinks = content.readMore.slice(0, 3);
 
@@ -220,124 +228,14 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
           </div>
         </foreignObject>
         
-        {/* Blue rectangles */}
-        <rect
-          x="565"
-          y="60"
-          width="132"
-          height="30"
-          fill="#C7F6C9"
+        {/* Fordeler - bruker felles BenefitChipSvg-komponent */}
+        <BenefitChipSvg
+          benefits={enrichedBenefits}
+          x={565}
+          y={60}
+          width={220}
+          maxItems={4}
         />
-        
-        {/* Sound/speaker icon in first box */}
-        <svg x="573" y="67" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M3.71973 13.75H3.70947C3.70414 13.7499 3.69682 13.7497 3.68799 13.7495C3.67026 13.7492 3.64569 13.7484 3.61523 13.7471C3.55407 13.7445 3.46815 13.7392 3.36621 13.729C3.16479 13.7089 2.88779 13.668 2.604 13.583C2.32538 13.4996 2.00381 13.3632 1.74463 13.1304C1.47111 12.8846 1.27492 12.5362 1.2749 12.085V10.645H0.5V5.36475H3.61865L11.6099 2.00195V14.0083L4.22021 10.8931V13.75H3.71973ZM4.22021 6.19678V9.80811L10.6099 12.501V3.50781L4.22021 6.19678ZM14.7729 10.6304L14.6152 11.105L14.457 11.5791L12.3374 10.8745L12.6528 9.92529L14.7729 10.6304ZM1.5 9.63965H3.22021V6.36475H1.5V9.63965ZM15.1807 6.76514L15.1694 7.76465L12.9346 7.73975L12.9458 6.73975L15.1807 6.76514ZM14.7788 3.70215L12.7788 4.70215L12.3315 3.80762L14.3315 2.80762L14.7788 3.70215ZM2.2749 12.085C2.27492 12.216 2.32204 12.3044 2.41309 12.3862C2.51856 12.481 2.68351 12.5633 2.89111 12.6255C3.00157 12.6586 3.11427 12.6821 3.22021 12.7002V10.645H2.2749V12.085Z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="597"
-          y="75"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[0]?.title ?? 'Fordel'}
-        </text>
-        <rect
-          x="565"
-          y="106"
-          width="147"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* House icon in second box */}
-        <svg x="573" y="113" width="16" height="16" viewBox="0 0 32 32" fill="none">
-          <path d="M1.233 16.423L16 1.645l4 4.003V4.06h6v7.592l4.767 4.771-1.414 1.414L16 4.474 2.647 17.837z" fill="#2A2859"/>
-          <path d="M8 29V16H6v15h8V20h4v11h8V16h-2v13h-4V18h-8v11z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="598"
-          y="121"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[1]?.title ?? 'Fordel'}
-        </text>
-        <rect
-          x="565"
-          y="152"
-          width="155"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* House with heart icon in third box */}
-        <svg x="573" y="159" width="17" height="16" viewBox="0 0 17 16" fill="none">
-          <path fillRule="evenodd" clipRule="evenodd" d="M5.42501 7.092C6.21251 6.3035 7.49451 6.304 8.28301 7.092L8.33251 7.1425L8.38251 7.0925C9.17051 6.3045 10.453 6.3045 11.241 7.0925C12.0285 7.88 12.0285 9.1625 11.241 9.9505L8.33301 12.8585L5.42501 9.95C4.63701 9.162 4.63701 7.88 5.42501 7.092ZM10.5345 7.799C10.136 7.401 9.48851 7.401 9.09001 7.799L8.33301 8.556L7.57601 7.7995C7.37701 7.6005 7.11551 7.501 6.85401 7.501C6.59251 7.501 6.33101 7.6005 6.13201 7.7995C5.73401 8.1975 5.73401 8.845 6.13201 9.2435L8.33301 11.4445L10.5345 9.243C10.9325 8.845 10.9325 8.197 10.5345 7.799Z" fill="#2A2859"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M5.65601 2.7305L8.33301 0.5L14.333 5.5V16H2.33301V1H5.22351L5.65601 2.7305ZM4.44251 2H3.33301V4.6665L4.80301 3.4415L4.44251 2ZM3.33301 5.9685V15H13.333V5.9685L8.33301 1.802L3.33301 5.9685Z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="598"
-          y="167"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[2]?.title ?? 'Fordel'}
-        </text>
-        <rect
-          x="565"
-          y="198"
-          width="190"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* Heater icon in fourth box */}
-        <svg x="573" y="205" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          {/* Heat waves - wavy */}
-          <path d="M4.5 0.5C4.5 0.5 4 1 4 1.5C4 2 4.5 2.5 4.5 2.5C4.5 2.5 5 2 5 1.5C5 1 4.5 0.5 4.5 0.5Z" fill="#2A2859"/>
-          <path d="M8 0.5C8 0.5 7.5 1 7.5 1.5C7.5 2 8 2.5 8 2.5C8 2.5 8.5 2 8.5 1.5C8.5 1 8 0.5 8 0.5Z" fill="#2A2859"/>
-          <path d="M11.5 0.5C11.5 0.5 11 1 11 1.5C11 2 11.5 2.5 11.5 2.5C11.5 2.5 12 2 12 1.5C12 1 11.5 0.5 11.5 0.5Z" fill="#2A2859"/>
-          {/* Heater body */}
-          <rect x="1" y="4" width="14" height="9" rx="2" fill="#2A2859"/>
-          <rect x="2" y="5" width="12" height="7" rx="1" fill="#C7F6C9"/>
-          {/* Vertical heater lines - 5 lines */}
-          <rect x="3.5" y="6" width="0.8" height="5" fill="#2A2859"/>
-          <rect x="5.5" y="6" width="0.8" height="5" fill="#2A2859"/>
-          <rect x="7.6" y="6" width="0.8" height="5" fill="#2A2859"/>
-          <rect x="9.7" y="6" width="0.8" height="5" fill="#2A2859"/>
-          <rect x="11.7" y="6" width="0.8" height="5" fill="#2A2859"/>
-          {/* Legs */}
-          <rect x="3" y="13" width="1.5" height="2" fill="#2A2859"/>
-          <rect x="11.5" y="13" width="1.5" height="2" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="597"
-          y="213"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[3]?.title ?? 'Fordel'}
-        </text>
         
         {/* Dark green box below the list */}
         <rect

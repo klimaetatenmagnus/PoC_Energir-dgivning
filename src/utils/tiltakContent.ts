@@ -23,6 +23,9 @@ export function applyTiltakVariant(
     buildingTypeParagraphs: variant.buildingTypeParagraphs
       ? { ...content.buildingTypeParagraphs, ...variant.buildingTypeParagraphs }
       : content.buildingTypeParagraphs,
+    benefitRefs: variant.benefitRefs?.length
+      ? variant.benefitRefs
+      : content.benefitRefs,
     benefits: variant.benefits ?? content.benefits,
     readMore: variant.readMore ?? content.readMore,
     callsToAction: variant.callsToAction ?? content.callsToAction,

@@ -98,52 +98,9 @@
   margin-bottom: var(--pkt-spacing-16, 1rem);
 }
 
-/* Fordels-chips - identisk med desktop (.tiltak-card__benefit-chip) */
+/* Fordels-chips - bruker felles BenefitChip-komponent, kun layout-tilpasning her */
 .mobile-tiltak-detail__benefit-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
   margin-top: var(--pkt-spacing-12, 0.75rem);
-}
-
-.mobile-tiltak-detail__benefit-chip {
-  background: #c7f6c9;
-  height: 30px;
-  padding: 0 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 300;
-  letter-spacing: -0.01em;
-  color: #2a2859;
-  box-sizing: border-box;
-  width: fit-content;
-  white-space: nowrap;
-  font-family: 'Oslo Sans', sans-serif;
-}
-
-.mobile-tiltak-detail__benefit-chip-title {
-  font-size: 14px;
-  line-height: 21px;
-  font-weight: 500;
-  letter-spacing: -0.2px;
-}
-
-.mobile-tiltak-detail__benefit-chip-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
-
-.mobile-tiltak-detail__benefit-chip-icon pkt-icon {
-  width: 16px;
-  height: 16px;
-  color: #2a2859;
 }
 
 .mobile-tiltak-detail__eyebrow {

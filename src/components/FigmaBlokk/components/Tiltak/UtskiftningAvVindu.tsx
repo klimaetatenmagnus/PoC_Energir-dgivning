@@ -12,6 +12,8 @@ import {
 import type { Stotteordning } from '../../../../services/stotteordning-service';
 import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
+import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
+import { BenefitChipSvg } from '../../../common/BenefitChip/BenefitChipSvg';
 import type {
   TiltakAccordionItem,
   TiltakContent,
@@ -95,6 +97,13 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
   );
+
+  // Berik fordeler fra dictionary via felles utility
+  const enrichedBenefits = useMemo(
+    () => resolveTiltakBenefits(resolvedTiltakContent, dictionary, 4),
+    [resolvedTiltakContent, dictionary]
+  );
+
   const content = useMemo(
     () => mapVinduerContent(resolvedTiltakContent),
     [resolvedTiltakContent]
@@ -139,7 +148,6 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
     activeTab?.buildingTypeBody?.[buildingTypeKey] ??
     activeTab?.buildingTypeBody?.default ??
     baseBuildingParagraphs;
-  const benefits = content?.benefits ?? [];
   const readMoreLinks = (content?.readMore ?? []).slice(0, 3);
   const [primaryReadMore, ...secondaryReadMoreLinks] = readMoreLinks;
   const accordionItem = content?.accordion[0];
@@ -344,123 +352,14 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
   </div>
 </foreignObject>
 
-        {/* Blue rectangles */}
-        <rect
-          x="565"
-          y="40"
-          width="132"
-          height="30"
-          fill="#C7F6C9"
+        {/* Fordeler - bruker felles BenefitChipSvg-komponent */}
+        <BenefitChipSvg
+          benefits={enrichedBenefits}
+          x={565}
+          y={60}
+          width={220}
+          maxItems={4}
         />
-        
-        {/* Snowflake icon */}
-        <svg x="573" y="47" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M8.49023 3.23242L10.0698 1.71387L10.7529 2.375L8.49023 4.55762V7.18604L10.8765 5.86035L11.6987 2.90918L11.689 2.89062L12.6299 3.13428L12.0527 5.20703L14.5122 3.84229L15 4.65771L12.5381 6.02344L14.6978 6.59375L14.459 7.50293L11.3262 6.69629L8.98047 7.99951L11.3706 9.32666L14.4492 8.53418V8.50146L14.6978 9.40625L12.5391 9.97559L15 11.3423L14.5122 12.1577L12.0508 10.7905L12.6299 12.8843L11.689 13.1279L10.8525 10.1255L8.49023 8.81348V11.4458L10.7529 13.625L10.0698 14.2861L8.49023 12.7671V15.5H7.51465V12.7661L5.93018 14.2861L5.24268 13.625L7.51465 11.4404V8.81348L5.14062 10.1299L4.31104 13.1094L3.37012 12.8657L3.94385 10.7939L1.48779 12.1577L1 11.3423L3.47461 9.96875L1.30225 9.40625L1.55566 8.51562L4.65381 9.31396L7.02393 7.99951L4.67236 6.69482L1.55566 7.49854L1.30225 6.59375L3.46094 6.02295L1 4.65771L1.48779 3.84229L3.94141 5.20312L3.36523 3.13428L4.30615 2.89062H4.31104L5.13623 5.86621L7.51465 7.18604V4.55908L5.24268 2.375L5.93018 1.71387L7.51465 3.2334V0.5H8.49023V3.23242Z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="597"
-          y="55"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[0]?.title ?? 'Mindre trekk'}
-        </text>
-        <rect
-          x="565"
-          y="86"
-          width="132"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* Sound/speaker icon */}
-        <svg x="573" y="93" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M3.71973 13.75H3.70947C3.70414 13.7499 3.69682 13.7497 3.68799 13.7495C3.67026 13.7492 3.64569 13.7484 3.61523 13.7471C3.55407 13.7445 3.46815 13.7392 3.36621 13.729C3.16479 13.7089 2.88779 13.668 2.604 13.583C2.32538 13.4996 2.00381 13.3632 1.74463 13.1304C1.47111 12.8846 1.27492 12.5362 1.2749 12.085V10.645H0.5V5.36475H3.61865L11.6099 2.00195V14.0083L4.22021 10.8931V13.75H3.71973ZM4.22021 6.19678V9.80811L10.6099 12.501V3.50781L4.22021 6.19678ZM14.7729 10.6304L14.6152 11.105L14.457 11.5791L12.3374 10.8745L12.6528 9.92529L14.7729 10.6304ZM1.5 9.63965H3.22021V6.36475H1.5V9.63965ZM15.1807 6.76514L15.1694 7.76465L12.9346 7.73975L12.9458 6.73975L15.1807 6.76514ZM14.7788 3.70215L12.7788 4.70215L12.3315 3.80762L14.3315 2.80762L14.7788 3.70215ZM2.2749 12.085C2.27492 12.216 2.32204 12.3044 2.41309 12.3862C2.51856 12.481 2.68351 12.5633 2.89111 12.6255C3.00157 12.6586 3.11427 12.6821 3.22021 12.7002V10.645H2.2749V12.085Z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="597"
-          y="101"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[1]?.title ?? 'Redusert støy'}
-        </text>
-        <rect
-          x="565"
-          y="132"
-          width="162"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* Chart/graph icon in first box */}
-        <svg x="573" y="139" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M14.9333 3.73333V0H11.2V1.06667H13.1176L8.73813 5.44533L4.13595 0.77914L1.15888 3.75621L1.91312 4.51046L4.13067 2.2928L8.73339 6.95953L13.8667 1.82625V3.73333H14.9333Z" fill="#2A2859"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M4.944 6.4H1.12V14.9333H0V16H16V14.9333H14.8747V6.93333H11.0507V14.9333H9.90933V9.06667H6.08533V14.9333H4.944V6.4ZM12.1173 14.9333H13.808V8H12.1173V14.9333ZM8.84267 10.1333V14.9333H7.152V10.1333H8.84267ZM3.87733 14.9333V7.46667H2.18667V14.9333H3.87733Z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="597"
-          y="147"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[2]?.title ?? 'Høyere boligverdi'}
-        </text>
-        <rect
-          x="565"
-          y="178"
-          width="190"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* Heater icon */}
-        <svg x="573" y="185" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          {/* Heat waves - wavy */}
-          <path d="M4.5 0.5C4.5 0.5 4 1 4 1.5C4 2 4.5 2.5 4.5 2.5C4.5 2.5 5 2 5 1.5C5 1 4.5 0.5 4.5 0.5Z" fill="#2A2859"/>
-          <path d="M8 0.5C8 0.5 7.5 1 7.5 1.5C7.5 2 8 2.5 8 2.5C8 2.5 8.5 2 8.5 1.5C8.5 1 8 0.5 8 0.5Z" fill="#2A2859"/>
-          <path d="M11.5 0.5C11.5 0.5 11 1 11 1.5C11 2 11.5 2.5 11.5 2.5C11.5 2.5 12 2 12 1.5C12 1 11.5 0.5 11.5 0.5Z" fill="#2A2859"/>
-          {/* Heater body */}
-          <rect x="1" y="4" width="14" height="9" rx="2" fill="#2A2859"/>
-          <rect x="2" y="5" width="12" height="7" rx="1" fill="#C7F6C9"/>
-          {/* Vertical heater lines - 5 lines */}
-          <rect x="3.5" y="6" width="0.8" height="5" fill="#2A2859"/>
-          <rect x="5.5" y="6" width="0.8" height="5" fill="#2A2859"/>
-          <rect x="7.6" y="6" width="0.8" height="5" fill="#2A2859"/>
-          <rect x="9.7" y="6" width="0.8" height="5" fill="#2A2859"/>
-          <rect x="11.7" y="6" width="0.8" height="5" fill="#2A2859"/>
-          {/* Legs */}
-          <rect x="3" y="13" width="1.5" height="2" fill="#2A2859"/>
-          <rect x="11.5" y="13" width="1.5" height="2" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="597"
-          y="193"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[3]?.title ?? 'Redusert energibehov'}
-        </text>
         
         {/* Dark green box below the list */}
         <rect

@@ -5,12 +5,14 @@ import {
   openExternalLink,
   TiltakComponentProps
 } from './shared';
-import { useTiltakContent } from '../../../../hooks/contentHooks';
+import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type { TiltakContent } from '../../../../../content/tiltak/schema';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
+import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
+import { BenefitChipSvg } from '../../../common/BenefitChip';
 
 type SolenergiComponentProps = TiltakComponentProps & { audience?: ContentAudience };
 
@@ -68,6 +70,7 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
   const getProviderColor = useProviderColors();
 
   const { data: tiltakContent, isLoading } = useTiltakContent('solenergi');
+  const { data: dictionary } = useContentDictionary();
   const resolvedTiltakContent = useMemo(
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
@@ -75,6 +78,12 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
   const content = useMemo(
     () => mapTiltakContentToSolenergi(resolvedTiltakContent),
     [resolvedTiltakContent]
+  );
+
+  // Berik fordeler fra dictionary via felles utility
+  const enrichedBenefits = useMemo(
+    () => resolveTiltakBenefits(resolvedTiltakContent, dictionary, 4),
+    [resolvedTiltakContent, dictionary]
   );
 
   const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
@@ -106,10 +115,6 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
     content.buildingTypeParagraphs.default ??
     [];
 
-  const benefits = content.benefits.slice(0, 4).map((b) => ({
-    title: b.title || 'Fordel',
-    description: b.description
-  }));
   const readMoreLinks = content.readMore.slice(0, 3);
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
@@ -235,112 +240,15 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
           </div>
         </foreignObject>
         
-        {/* Blue rectangles */}
-        <rect
-          x="565"
-          y="60"
-          width="162"
-          height="30"
-          fill="#C7F6C9"
+        {/* Fordeler - bruker felles BenefitChipSvg-komponent */}
+        <BenefitChipSvg
+          benefits={enrichedBenefits}
+          x={565}
+          y={60}
+          width={220}
+          maxItems={4}
         />
-        
-        {/* Chart/graph icon in first box */}
-        <svg x="573" y="67" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M14.9333 3.73333V0H11.2V1.06667H13.1176L8.73813 5.44533L4.13595 0.77914L1.15888 3.75621L1.91312 4.51046L4.13067 2.2928L8.73339 6.95953L13.8667 1.82625V3.73333H14.9333Z" fill="#2A2859"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M4.944 6.4H1.12V14.9333H0V16H16V14.9333H14.8747V6.93333H11.0507V14.9333H9.90933V9.06667H6.08533V14.9333H4.944V6.4ZM12.1173 14.9333H13.808V8H12.1173V14.9333ZM8.84267 10.1333V14.9333H7.152V10.1333H8.84267ZM3.87733 14.9333V7.46667H2.18667V14.9333H3.87733Z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="597"
-          y="75"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[0]?.title ?? 'Fordel'}
-        </text>
-        <rect
-          x="565"
-          y="106"
-          width="177"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* Bulb icon from Oslo kommune */}
-        <svg x="573" y="113" width="16" height="16" viewBox="0 0 32 32" fill="none">
-          <path fill="#2A2859" fillRule="evenodd"
-            d="M10.169 2.377C11.868 1.423 13.842 1 16.012 1s4.144.423 5.843 1.377c1.706.958 3.078 2.42 4.084 4.401 1.539 3.032 1.228 5.892.182 8.472-.908 2.24-2.402 4.336-3.725 6.193l-.324.455v7.439L16 31l-5.59-1.682v-7.393q-.168-.214-.342-.43c-1.452-1.827-3.08-3.875-4.08-6.101-1.155-2.575-1.506-5.458.097-8.616 1.006-1.981 2.378-3.443 4.084-4.4m.91 1.635c-1.35.758-2.476 1.93-3.332 3.616-1.29 2.544-1.035 4.819-.058 6.997.896 1.995 2.367 3.848 3.838 5.701l.267.337h3.831q.069-.072.15-.162c.243-.27.55-.645.82-1.08.572-.921.81-1.821.445-2.553a5 5 0 0 0-.161-.298 4 4 0 0 1-.259.37c-.292.371-.68.714-1.182.894-.521.187-1.075.166-1.623-.04-1.078-.405-1.908-1.138-1.924-2.186-.016-.985.71-1.704 1.444-2.053.763-.363 1.747-.455 2.722-.101.16-.715.262-1.437.325-2.014a22 22 0 0 0 .09-1.044l.003-.058v-.016l.933.041.932.042v.008l-.002.02-.004.07q-.004.09-.016.255a24 24 0 0 1-.081.887c-.08.724-.22 1.694-.46 2.64q-.034.137-.072.277a6 6 0 0 1 1.004 1.469c.821 1.649.125 3.324-.531 4.382q-.08.128-.162.25h2.642l.22-.31c1.34-1.882 2.695-3.788 3.515-5.81.9-2.22 1.114-4.49-.117-6.915-.855-1.686-1.98-2.858-3.332-3.616-1.358-.763-3.001-1.14-4.932-1.14s-3.574.377-4.932 1.14m1.198 20.396v-1.873h7.93v1.873zm0 1.873v1.644l3.747 1.127 4.182-1.145V26.28zm2.88-10.503q.172-.219.325-.54l-.03-.012c-.508-.194-.988-.136-1.318.021-.304.145-.363.296-.375.33.024.057.148.252.711.464.185.07.282.05.34.03.076-.027.196-.102.347-.293"
-            clipRule="evenodd" />
-        </svg>
-        <text 
-          x="598"
-          y="121"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[1]?.title ?? 'Fordel'}
-        </text>
-        <rect
-          x="565"
-          y="152"
-          width="183"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* Coins/money icon in third box */}
-        <svg x="573" y="159" width="17" height="16" viewBox="0 0 17 16" fill="none">
-          <path fillRule="evenodd" clipRule="evenodd" d="M9.16699 2.25C9.16699 0.9885 10.814 0 12.917 0C15.02 0 16.667 0.9885 16.667 2.25V11C16.667 12.2615 15.02 13.25 12.917 13.25C10.814 13.25 9.16699 12.2615 9.16699 11V2.25ZM12.917 12.25C14.4905 12.25 15.667 11.59 15.667 11V10.791C14.987 11.2285 14.016 11.5 12.917 11.5C11.818 11.5 10.847 11.2285 10.167 10.791V11C10.167 11.59 11.3435 12.25 12.917 12.25ZM12.917 10.5C14.4905 10.5 15.667 9.84 15.667 9.25V9.041C14.987 9.4785 14.016 9.75 12.917 9.75C11.818 9.75 10.847 9.4785 10.167 9.041V9.25C10.167 9.84 11.3435 10.5 12.917 10.5ZM12.917 8.75C14.4905 8.75 15.667 8.09 15.667 7.5V7.291C14.987 7.7285 14.016 8 12.917 8C11.818 8 10.847 7.7285 10.167 7.291V7.5C10.167 8.09 11.3435 8.75 12.917 8.75ZM12.917 7C14.4905 7 15.667 6.34 15.667 5.75V5.541C14.987 5.9785 14.016 6.25 12.917 6.25C11.818 6.25 10.847 5.9785 10.167 5.541V5.75C10.167 6.34 11.3435 7 12.917 7ZM12.917 5.25C14.4905 5.25 15.667 4.59 15.667 4V3.791C14.987 4.2285 14.016 4.5 12.917 4.5C11.818 4.5 10.847 4.2285 10.167 3.791V4C10.167 4.59 11.3435 5.25 12.917 5.25ZM10.167 2.25C10.167 2.84 11.3435 3.5 12.917 3.5C14.4905 3.5 15.667 2.84 15.667 2.25C15.667 1.66 14.4905 1 12.917 1C11.3435 1 10.167 1.66 10.167 2.25Z" fill="#2A2859"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M0.666992 8.5C0.666992 7.2385 2.31399 6.25 4.41699 6.25C6.51999 6.25 8.16699 7.2385 8.16699 8.5V13.75C8.16699 15.0115 6.51999 16 4.41699 16C2.31399 16 0.666992 15.0115 0.666992 13.75V8.5ZM4.41699 15C5.99099 15 7.16699 14.34 7.16699 13.75V13.541C6.48699 13.9785 5.51549 14.25 4.41699 14.25C3.31849 14.25 2.34699 13.9785 1.66699 13.541V13.75C1.66699 14.34 2.84299 15 4.41699 15ZM4.41699 13.25C5.99099 13.25 7.16699 12.59 7.16699 12V11.791C6.48699 12.2285 5.51549 12.5 4.41699 12.5C3.31849 12.5 2.34699 12.2285 1.66699 11.791V12C1.66699 12.59 2.84299 13.25 4.41699 13.25ZM4.41699 11.5C5.99099 11.5 7.16699 10.84 7.16699 10.25V10.041C6.48699 10.4785 5.51549 10.75 4.41699 10.75C3.31849 10.75 2.34699 10.4785 1.66699 10.041V10.25C1.66699 10.84 2.84299 11.5 4.41699 11.5ZM1.66699 8.5C1.66699 9.09 2.84299 9.75 4.41699 9.75C5.99099 9.75 7.16699 9.09 7.16699 8.5C7.16699 7.91 5.99099 7.25 4.41699 7.25C2.84299 7.25 1.66699 7.91 1.66699 8.5Z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="598"
-          y="167"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[2]?.title ?? 'Fordel'}
-        </text>
-        <rect
-          x="565"
-          y="198"
-          width="183"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* Lightning bolt icon in fourth box */}
-        <svg x="573" y="205" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M9.5 1L3 9.25H7.5L6.5 15L13 6.75H8.5L9.5 1Z" fill="none" stroke="#2A2859" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round"/>
-        </svg>
-        <text 
-          x="597"
-          y="213"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[3]?.title ?? 'Fordel'}
-        </text>
-        
+
         {/* Dark green box below the list */}
         <rect
           x="565"

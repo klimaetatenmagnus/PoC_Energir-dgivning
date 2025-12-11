@@ -9,7 +9,9 @@ import {
   getOverskriftLabel,
   openExternalLink
 } from './shared';
-import { useTiltakContent } from '../../../../hooks/contentHooks';
+import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
+import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
+import { BenefitChipSvg } from '../../../common/BenefitChip/BenefitChipSvg';
 import type { TiltakContent, TiltakAccordionItem } from '../../../../../content/tiltak/schema';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
@@ -75,10 +77,18 @@ const IsoleringAvKjellerOgLoftContentComponent: React.FC<IsoleringAvKjellerOgLof
   const getProviderColor = useProviderColors();
 
   const { data: tiltakContent } = useTiltakContent('etterisolering-kjeller-loft');
+  const { data: dictionary } = useContentDictionary();
   const resolvedTiltakContent = useMemo(
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
   );
+
+  // Berik fordeler fra dictionary via felles utility
+  const enrichedBenefits = useMemo(
+    () => resolveTiltakBenefits(resolvedTiltakContent, dictionary, 4),
+    [resolvedTiltakContent, dictionary]
+  );
+
   const content = useMemo(
     () => mapTiltakContentToKjellerLoft(resolvedTiltakContent),
     [resolvedTiltakContent]
@@ -229,124 +239,14 @@ const IsoleringAvKjellerOgLoftContentComponent: React.FC<IsoleringAvKjellerOgLof
           </div>
         </foreignObject>
         
-        {/* Blue rectangles */}
-        <rect
-          x="565"
-          y="60"
-          width="132"
-          height="30"
-          fill="#C7F6C9"
+        {/* Fordeler - bruker felles BenefitChipSvg-komponent */}
+        <BenefitChipSvg
+          benefits={enrichedBenefits}
+          x={565}
+          y={60}
+          width={220}
+          maxItems={4}
         />
-        
-        {/* Snowflake icon in first box */}
-        <svg x="573" y="67" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M8.49023 3.23242L10.0698 1.71387L10.7529 2.375L8.49023 4.55762V7.18604L10.8765 5.86035L11.6987 2.90918L11.689 2.89062L12.6299 3.13428L12.0527 5.20703L14.5122 3.84229L15 4.65771L12.5381 6.02344L14.6978 6.59375L14.459 7.50293L11.3262 6.69629L8.98047 7.99951L11.3706 9.32666L14.4492 8.53418V8.50146L14.6978 9.40625L12.5391 9.97559L15 11.3423L14.5122 12.1577L12.0508 10.7905L12.6299 12.8843L11.689 13.1279L10.8525 10.1255L8.49023 8.81348V11.4458L10.7529 13.625L10.0698 14.2861L8.49023 12.7671V15.5H7.51465V12.7661L5.93018 14.2861L5.24268 13.625L7.51465 11.4404V8.81348L5.14062 10.1299L4.31104 13.1094L3.37012 12.8657L3.94385 10.7939L1.48779 12.1577L1 11.3423L3.47461 9.96875L1.30225 9.40625L1.55566 8.51562L4.65381 9.31396L7.02393 7.99951L4.67236 6.69482L1.55566 7.49854L1.30225 6.59375L3.46094 6.02295L1 4.65771L1.48779 3.84229L3.94141 5.20312L3.36523 3.13428L4.30615 2.89062H4.31104L5.13623 5.86621L7.51465 7.18604V4.55908L5.24268 2.375L5.93018 1.71387L7.51465 3.2334V0.5H8.49023V3.23242Z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="597"
-          y="75"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          Mindre trekk
-        </text>
-        <rect
-          x="565"
-          y="106"
-          width="147"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* House icon in second box */}
-        <svg x="573" y="113" width="16" height="16" viewBox="0 0 32 32" fill="none">
-          <path d="M1.233 16.423L16 1.645l4 4.003V4.06h6v7.592l4.767 4.771-1.414 1.414L16 4.474 2.647 17.837z" fill="#2A2859"/>
-          <path d="M8 29V16H6v15h8V20h4v11h8V16h-2v13h-4V18h-8v11z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="598"
-          y="121"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          Ivaretar boligen
-        </text>
-        <rect
-          x="565"
-          y="152"
-          width="183"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* Coins/money icon in third box */}
-        <svg x="573" y="159" width="17" height="16" viewBox="0 0 17 16" fill="none">
-          <path fillRule="evenodd" clipRule="evenodd" d="M9.16699 2.25C9.16699 0.9885 10.814 0 12.917 0C15.02 0 16.667 0.9885 16.667 2.25V11C16.667 12.2615 15.02 13.25 12.917 13.25C10.814 13.25 9.16699 12.2615 9.16699 11V2.25ZM12.917 12.25C14.4905 12.25 15.667 11.59 15.667 11V10.791C14.987 11.2285 14.016 11.5 12.917 11.5C11.818 11.5 10.847 11.2285 10.167 10.791V11C10.167 11.59 11.3435 12.25 12.917 12.25ZM12.917 10.5C14.4905 10.5 15.667 9.84 15.667 9.25V9.041C14.987 9.4785 14.016 9.75 12.917 9.75C11.818 9.75 10.847 9.4785 10.167 9.041V9.25C10.167 9.84 11.3435 10.5 12.917 10.5ZM12.917 8.75C14.4905 8.75 15.667 8.09 15.667 7.5V7.291C14.987 7.7285 14.016 8 12.917 8C11.818 8 10.847 7.7285 10.167 7.291V7.5C10.167 8.09 11.3435 8.75 12.917 8.75ZM12.917 7C14.4905 7 15.667 6.34 15.667 5.75V5.541C14.987 5.9785 14.016 6.25 12.917 6.25C11.818 6.25 10.847 5.9785 10.167 5.541V5.75C10.167 6.34 11.3435 7 12.917 7ZM12.917 5.25C14.4905 5.25 15.667 4.59 15.667 4V3.791C14.987 4.2285 14.016 4.5 12.917 4.5C11.818 4.5 10.847 4.2285 10.167 3.791V4C10.167 4.59 11.3435 5.25 12.917 5.25ZM10.167 2.25C10.167 2.84 11.3435 3.5 12.917 3.5C14.4905 3.5 15.667 2.84 15.667 2.25C15.667 1.66 14.4905 1 12.917 1C11.3435 1 10.167 1.66 10.167 2.25Z" fill="#2A2859"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M0.666992 8.5C0.666992 7.2385 2.31399 6.25 4.41699 6.25C6.51999 6.25 8.16699 7.2385 8.16699 8.5V13.75C8.16699 15.0115 6.51999 16 4.41699 16C2.31399 16 0.666992 15.0115 0.666992 13.75V8.5ZM4.41699 15C5.99099 15 7.16699 14.34 7.16699 13.75V13.541C6.48699 13.9785 5.51549 14.25 4.41699 14.25C3.31849 14.25 2.34699 13.9785 1.66699 13.541V13.75C1.66699 14.34 2.84299 15 4.41699 15ZM4.41699 13.25C5.99099 13.25 7.16699 12.59 7.16699 12V11.791C6.48699 12.2285 5.51549 12.5 4.41699 12.5C3.31849 12.5 2.34699 12.2285 1.66699 11.791V12C1.66699 12.59 2.84299 13.25 4.41699 13.25ZM4.41699 11.5C5.99099 11.5 7.16699 10.84 7.16699 10.25V10.041C6.48699 10.4785 5.51549 10.75 4.41699 10.75C3.31849 10.75 2.34699 10.4785 1.66699 10.041V10.25C1.66699 10.84 2.84299 11.5 4.41699 11.5ZM1.66699 8.5C1.66699 9.09 2.84299 9.75 4.41699 9.75C5.99099 9.75 7.16699 9.09 7.16699 8.5C7.16699 7.91 5.99099 7.25 4.41699 7.25C2.84299 7.25 1.66699 7.91 1.66699 8.5Z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="598"
-          y="167"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          Lavere strømregning
-        </text>
-        <rect
-          x="565"
-          y="198"
-          width="190"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* Heater icon in fourth box */}
-        <svg x="573" y="205" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          {/* Heat waves - wavy */}
-          <path d="M4.5 0.5C4.5 0.5 4 1 4 1.5C4 2 4.5 2.5 4.5 2.5C4.5 2.5 5 2 5 1.5C5 1 4.5 0.5 4.5 0.5Z" fill="#2A2859"/>
-          <path d="M8 0.5C8 0.5 7.5 1 7.5 1.5C7.5 2 8 2.5 8 2.5C8 2.5 8.5 2 8.5 1.5C8.5 1 8 0.5 8 0.5Z" fill="#2A2859"/>
-          <path d="M11.5 0.5C11.5 0.5 11 1 11 1.5C11 2 11.5 2.5 11.5 2.5C11.5 2.5 12 2 12 1.5C12 1 11.5 0.5 11.5 0.5Z" fill="#2A2859"/>
-          {/* Heater body */}
-          <rect x="1" y="4" width="14" height="9" rx="2" fill="#2A2859"/>
-          <rect x="2" y="5" width="12" height="7" rx="1" fill="#C7F6C9"/>
-          {/* Vertical heater lines - 5 lines */}
-          <rect x="3.5" y="6" width="0.8" height="5" fill="#2A2859"/>
-          <rect x="5.5" y="6" width="0.8" height="5" fill="#2A2859"/>
-          <rect x="7.6" y="6" width="0.8" height="5" fill="#2A2859"/>
-          <rect x="9.7" y="6" width="0.8" height="5" fill="#2A2859"/>
-          <rect x="11.7" y="6" width="0.8" height="5" fill="#2A2859"/>
-          {/* Legs */}
-          <rect x="3" y="13" width="1.5" height="2" fill="#2A2859"/>
-          <rect x="11.5" y="13" width="1.5" height="2" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="597"
-          y="213"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          Redusert energibehov
-        </text>
         
         {/* Dark green box below the list */}
         <rect
