@@ -5,12 +5,14 @@ import {
   openExternalLink,
   TiltakComponentProps
 } from './shared';
-import { useTiltakContent } from '../../../../hooks/contentHooks';
+import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type { TiltakContent, TiltakAccordionItem } from '../../../../../content/tiltak/schema';
 import type { Stotteordning } from '../../../../services/stotteordning-service';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
+import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
+import { BenefitChipSvg } from '../../../common/BenefitChip/BenefitChipSvg';
 
 type VarmepumpeTab = {
   id: string;
@@ -90,6 +92,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
   const getProviderColor = useProviderColors();
 
   const { data: tiltakContent, isLoading } = useTiltakContent('varmepumpe');
+  const { data: dictionary } = useContentDictionary();
   const resolvedTiltakContent = useMemo(
     () => applyTiltakVariant(tiltakContent, audience),
     [tiltakContent, audience]
@@ -97,6 +100,12 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
   const content = useMemo(
     () => mapTiltakContentToVarmepumpe(resolvedTiltakContent),
     [resolvedTiltakContent]
+  );
+
+  // Berik fordeler fra dictionary via felles utility
+  const enrichedBenefits = useMemo(
+    () => resolveTiltakBenefits(resolvedTiltakContent, dictionary, 4),
+    [resolvedTiltakContent, dictionary]
   );
 
   const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
@@ -137,7 +146,6 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
 
   const generalBody = [...introParagraphs, ...buildingParagraphs];
 
-  const benefits = content.benefits.slice(0, 4);
   const readMoreLinks = content.readMore.slice(0, 3);
   const accordionItem = content.accordion[0];
   const accordionBody = accordionItem?.body ?? [];
@@ -485,111 +493,15 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
         
         {/* Content areas for hver knapp */}
         {renderScrollableParagraphs(activeTabKey, activeTabParagraphs)}
-        
-        {/* Blue rectangles */}
-        <rect
-          x="565"
-          y="40"
-          width="132"
-          height="30"
-          fill="#C7F6C9"
+
+        {/* Fordeler - bruker felles BenefitChipSvg-komponent */}
+        <BenefitChipSvg
+          benefits={enrichedBenefits}
+          x={565}
+          y={60}
+          width={220}
+          maxItems={4}
         />
-        
-        {/* Sound/speaker icon in first box */}
-        <svg x="573" y="47" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M3.71973 13.75H3.70947C3.70414 13.7499 3.69682 13.7497 3.68799 13.7495C3.67026 13.7492 3.64569 13.7484 3.61523 13.7471C3.55407 13.7445 3.46815 13.7392 3.36621 13.729C3.16479 13.7089 2.88779 13.668 2.604 13.583C2.32538 13.4996 2.00381 13.3632 1.74463 13.1304C1.47111 12.8846 1.27492 12.5362 1.2749 12.085V10.645H0.5V5.36475H3.61865L11.6099 2.00195V14.0083L4.22021 10.8931V13.75H3.71973ZM4.22021 6.19678V9.80811L10.6099 12.501V3.50781L4.22021 6.19678ZM14.7729 10.6304L14.6152 11.105L14.457 11.5791L12.3374 10.8745L12.6528 9.92529L14.7729 10.6304ZM1.5 9.63965H3.22021V6.36475H1.5V9.63965ZM15.1807 6.76514L15.1694 7.76465L12.9346 7.73975L12.9458 6.73975L15.1807 6.76514ZM14.7788 3.70215L12.7788 4.70215L12.3315 3.80762L14.3315 2.80762L14.7788 3.70215ZM2.2749 12.085C2.27492 12.216 2.32204 12.3044 2.41309 12.3862C2.51856 12.481 2.68351 12.5633 2.89111 12.6255C3.00157 12.6586 3.11427 12.6821 3.22021 12.7002V10.645H2.2749V12.085Z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="597"
-          y="55"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[0]?.title ?? 'Fordel'}
-        </text>
-        <rect
-          x="565"
-          y="86"
-          width="147"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* House icon from Oslo kommune in second box */}
-        <svg x="573" y="93" width="16" height="16" viewBox="0 0 32 32" fill="none">
-          <path d="M1.233 16.423L16 1.645l4 4.003V4.06h6v7.592l4.767 4.771-1.414 1.414L16 4.474 2.647 17.837z" fill="#2A2859"/>
-          <path d="M8 29V16H6v15h8V20h4v11h8V16h-2v13h-4V18h-8v11z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="598"
-          y="101"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[1]?.title ?? 'Fordel'}
-        </text>
-        <rect
-          x="565"
-          y="132"
-          width="155"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* House with heart icon in third box */}
-        <svg x="573" y="139" width="17" height="16" viewBox="0 0 17 16" fill="none">
-          <path fillRule="evenodd" clipRule="evenodd" d="M5.42501 7.092C6.21251 6.3035 7.49451 6.304 8.28301 7.092L8.33251 7.1425L8.38251 7.0925C9.17051 6.3045 10.453 6.3045 11.241 7.0925C12.0285 7.88 12.0285 9.1625 11.241 9.9505L8.33301 12.8585L5.42501 9.95C4.63701 9.162 4.63701 7.88 5.42501 7.092ZM10.5345 7.799C10.136 7.401 9.48851 7.401 9.09001 7.799L8.33301 8.556L7.57601 7.7995C7.37701 7.6005 7.11551 7.501 6.85401 7.501C6.59251 7.501 6.33101 7.6005 6.13201 7.7995C5.73401 8.1975 5.73401 8.845 6.13201 9.2435L8.33301 11.4445L10.5345 9.243C10.9325 8.845 10.9325 8.197 10.5345 7.799Z" fill="#2A2859"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M5.65601 2.7305L8.33301 0.5L14.333 5.5V16H2.33301V1H5.22351L5.65601 2.7305ZM4.44251 2H3.33301V4.6665L4.80301 3.4415L4.44251 2ZM3.33301 5.9685V15H13.333V5.9685L8.33301 1.802L3.33301 5.9685Z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="598"
-          y="147"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[2]?.title ?? 'Fordel'}
-        </text>
-        <rect
-          x="565"
-          y="178"
-          width="183"
-          height="30"
-          fill="#C7F6C9"
-        />
-        
-        {/* Coins/money icon in fourth box */}
-        <svg x="573" y="185" width="17" height="16" viewBox="0 0 17 16" fill="none">
-          <path fillRule="evenodd" clipRule="evenodd" d="M9.16699 2.25C9.16699 0.9885 10.814 0 12.917 0C15.02 0 16.667 0.9885 16.667 2.25V11C16.667 12.2615 15.02 13.25 12.917 13.25C10.814 13.25 9.16699 12.2615 9.16699 11V2.25ZM12.917 12.25C14.4905 12.25 15.667 11.59 15.667 11V10.791C14.987 11.2285 14.016 11.5 12.917 11.5C11.818 11.5 10.847 11.2285 10.167 10.791V11C10.167 11.59 11.3435 12.25 12.917 12.25ZM12.917 10.5C14.4905 10.5 15.667 9.84 15.667 9.25V9.041C14.987 9.4785 14.016 9.75 12.917 9.75C11.818 9.75 10.847 9.4785 10.167 9.041V9.25C10.167 9.84 11.3435 10.5 12.917 10.5ZM12.917 8.75C14.4905 8.75 15.667 8.09 15.667 7.5V7.291C14.987 7.7285 14.016 8 12.917 8C11.818 8 10.847 7.7285 10.167 7.291V7.5C10.167 8.09 11.3435 8.75 12.917 8.75ZM12.917 7C14.4905 7 15.667 6.34 15.667 5.75V5.541C14.987 5.9785 14.016 6.25 12.917 6.25C11.818 6.25 10.847 5.9785 10.167 5.541V5.75C10.167 6.34 11.3435 7 12.917 7ZM12.917 5.25C14.4905 5.25 15.667 4.59 15.667 4V3.791C14.987 4.2285 14.016 4.5 12.917 4.5C11.818 4.5 10.847 4.2285 10.167 3.791V4C10.167 4.59 11.3435 5.25 12.917 5.25ZM10.167 2.25C10.167 2.84 11.3435 3.5 12.917 3.5C14.4905 3.5 15.667 2.84 15.667 2.25C15.667 1.66 14.4905 1 12.917 1C11.3435 1 10.167 1.66 10.167 2.25Z" fill="#2A2859"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M0.666992 8.5C0.666992 7.2385 2.31399 6.25 4.41699 6.25C6.51999 6.25 8.16699 7.2385 8.16699 8.5V13.75C8.16699 15.0115 6.51999 16 4.41699 16C2.31399 16 0.666992 15.0115 0.666992 13.75V8.5ZM4.41699 15C5.99099 15 7.16699 14.34 7.16699 13.75V13.541C6.48699 13.9785 5.51549 14.25 4.41699 14.25C3.31849 14.25 2.34699 13.9785 1.66699 13.541V13.75C1.66699 14.34 2.84299 15 4.41699 15ZM4.41699 13.25C5.99099 13.25 7.16699 12.59 7.16699 12V11.791C6.48699 12.2285 5.51549 12.5 4.41699 12.5C3.31849 12.5 2.34699 12.2285 1.66699 11.791V12C1.66699 12.59 2.84299 13.25 4.41699 13.25ZM4.41699 11.5C5.99099 11.5 7.16699 10.84 7.16699 10.25V10.041C6.48699 10.4785 5.51549 10.75 4.41699 10.75C3.31849 10.75 2.34699 10.4785 1.66699 10.041V10.25C1.66699 10.84 2.84299 11.5 4.41699 11.5ZM1.66699 8.5C1.66699 9.09 2.84299 9.75 4.41699 9.75C5.99099 9.75 7.16699 9.09 7.16699 8.5C7.16699 7.91 5.99099 7.25 4.41699 7.25C2.84299 7.25 1.66699 7.91 1.66699 8.5Z" fill="#2A2859"/>
-        </svg>
-        <text 
-          x="597"
-          y="193"
-          fontFamily="Oslo Sans"
-          fontWeight="500"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          dominantBaseline="middle"
-        >
-          {benefits[3]?.title ?? 'Fordel'}
-        </text>
         
         {/* Dark green box below the list */}
         <rect

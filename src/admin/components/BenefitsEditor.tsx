@@ -22,7 +22,6 @@ import {
 } from "../api/adminApiClient";
 import iconNames from "../data/punktIcons.json";
 import "./BenefitsEditor.css";
-import { LEGACY_BENEFIT_ICONS } from "./legacyBenefitIcons";
 
 type DraftState = {
   id: string;
@@ -304,19 +303,10 @@ export const BenefitsEditor = forwardRef<BenefitsEditorHandle>(
                 </option>
               ))}
             </PktSelect>
-            {!draft.icon && LEGACY_BENEFIT_ICONS[draft.id] && (
-              <p className="benefits-editor__legacy-note">
-                Denne fordelen bruker et eldre ikon. Velg et Punkt-ikon for å erstatte det.
-              </p>
-            )}
           </div>
           <div className="benefits-editor__icon-preview" aria-hidden="true">
             {draft.icon ? (
               <pkt-icon name={draft.icon} aria-hidden="true" />
-            ) : LEGACY_BENEFIT_ICONS[draft.id] ? (
-              <span className="benefits-editor__legacy-icon">
-                {LEGACY_BENEFIT_ICONS[draft.id]}
-              </span>
             ) : (
               <span>Ingen ikon valgt</span>
             )}
@@ -383,7 +373,6 @@ export const BenefitsEditor = forwardRef<BenefitsEditorHandle>(
 
         <div className="benefits-editor__grid" ref={gridRef}>
           {benefits.map((entry, index) => {
-            const legacyIcon = LEGACY_BENEFIT_ICONS[entry.id];
             const hasPunktIcon = Boolean(entry.icon?.trim());
             return (
               <Fragment key={entry.id}>
@@ -393,8 +382,6 @@ export const BenefitsEditor = forwardRef<BenefitsEditorHandle>(
                       <div className="benefits-editor__preview-icon" aria-hidden="true">
                         {hasPunktIcon ? (
                           <pkt-icon name={entry.icon} aria-hidden="true" />
-                        ) : legacyIcon ? (
-                          <span className="benefits-editor__legacy-icon">{legacyIcon}</span>
                         ) : (
                           <span className="benefits-editor__icon-placeholder">Aa</span>
                         )}

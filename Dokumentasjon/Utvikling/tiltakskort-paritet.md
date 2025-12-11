@@ -234,7 +234,7 @@ Fylles ut etter hver nettleser-sjekk (legacy vs refaktor).
 3. **Oppgaver:**
    - Utvid P2 (fordeler) og P3 (støtteordning) med konkrete krav fra solenergi.
    - Opprett P7 (Les mer-sirkel) og P8 (permit-panel) for nye elementer.
-4. Når CSS er implementert i `TiltakCardRenderer.css`, logg QA i §5 (legg inn slug, miljø og resultat).
+4. Når CSS er implementert, logg QA i §5 (legg inn slug, miljø og resultat).
 
 ## 9. Neste oppgaver (handover)
 
