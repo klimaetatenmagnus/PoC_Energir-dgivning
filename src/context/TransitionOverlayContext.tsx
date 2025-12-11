@@ -5,6 +5,7 @@ import {
   TransitionOverlayContext,
   type BeginTransitionPayload,
   type BuildingKind,
+  type OverlayState,
   type TransitionOverlayContextValue,
   type ViewportRect,
 } from './TransitionOverlayTypes';
@@ -13,12 +14,13 @@ export const TransitionOverlayProvider: React.FC<{ children: React.ReactNode }> 
   const [state, setState] = useState<OverlayState>(initialOverlayState);
   const [recentlyCompleted, setRecentlyCompleted] = useState<BuildingKind | null>(null);
 
-  const beginTransition = useCallback(({ buildingType, startRect }: BeginTransitionPayload) => {
+  const beginTransition = useCallback(({ buildingType, startRect, isMobile = false }: BeginTransitionPayload) => {
     setState({
       phase: 'captured',
       buildingType,
       startRect,
       targetRect: null,
+      isMobile,
     });
     setRecentlyCompleted(null);
   }, []);
@@ -30,7 +32,7 @@ export const TransitionOverlayProvider: React.FC<{ children: React.ReactNode }> 
       }
 
       const hasExistingTarget = Boolean(previous.targetRect);
-      const nextPhase: OverlayPhase = hasExistingTarget ? previous.phase : 'animating';
+      const nextPhase = hasExistingTarget ? previous.phase : 'animating';
 
       if (
         previous.targetRect &&
@@ -47,6 +49,7 @@ export const TransitionOverlayProvider: React.FC<{ children: React.ReactNode }> 
         buildingType: previous.buildingType,
         startRect: previous.startRect,
         targetRect: rect,
+        isMobile: previous.isMobile,
       };
     });
   }, []);

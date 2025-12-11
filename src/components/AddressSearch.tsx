@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import '../styles/components.css';
 import { PktButton } from '@oslokommune/punkt-react';
 import { resolveApiUrl } from '../runtimeConfig.ts';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger({ prefix: 'address-search' });
 
 interface AddressSearchProps {
   onSearch: (address: string) => void;
@@ -61,11 +64,11 @@ export const AddressSearch: React.FC<AddressSearchProps> = ({ onSearch, isLoadin
         setShowSuggestions(true);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('Failed to fetch suggestions:', response.status, errorData);
+        logger.error('Failed to fetch suggestions:', response.status, errorData);
         setSuggestions([]);
       }
     } catch (error) {
-      console.error('Error fetching suggestions:', error);
+      logger.error('Error fetching suggestions:', error);
       setSuggestions([]);
     } finally {
       setIsLoadingSuggestions(false);

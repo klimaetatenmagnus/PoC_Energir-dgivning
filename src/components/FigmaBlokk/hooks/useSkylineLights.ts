@@ -11,6 +11,9 @@ const COLUMN_ALIGNMENT_TOLERANCE = 1.5;
 const MIN_WINDOW_SIZE = 8;
 const MAX_WINDOW_SIZE = 24;
 const GROUND_Y_THRESHOLD = 330;
+// Threshold for detecting doors at the bottom of nested SVG components (like EneboligSvg, BlokkSvg)
+// Doors are typically in the bottom 15% of the component's coordinate space
+const DOOR_BOTTOM_RATIO_THRESHOLD = 0.85;
 
 interface WindowRect {
   element: SVGPathElement;
@@ -79,40 +82,86 @@ const isSquareWindow = (rect: { width: number; height: number }) => {
   );
 };
 
+const getParentSvgViewBox = (path: SVGPathElement): { height: number } | null => {
+  // Check if the path is inside a nested SVG (like EneboligSvg or BlokkSvg)
+  const parentSvg = path.closest('svg');
+  if (!parentSvg) return null;
+
+  // If the parent SVG has a viewBox, use it to determine the coordinate space
+  const viewBox = parentSvg.getAttribute('viewBox');
+  if (!viewBox) return null;
+
+  const parts = viewBox.split(/\s+/).map(Number);
+  if (parts.length >= 4) {
+    return { height: parts[3] };
+  }
+  return null;
+};
+
+const isDoorInNestedSvg = (path: SVGPathElement, rect: { y: number; height: number }): boolean => {
+  // Check if path is inside a nested SVG component (not the root skyline SVG)
+  const parentSvg = path.closest('svg');
+  const grandparentSvg = parentSvg?.parentElement?.closest('svg');
+
+  // If there's a grandparent SVG, this path is in a nested SVG component
+  if (grandparentSvg && parentSvg) {
+    const viewBoxData = getParentSvgViewBox(path);
+    if (viewBoxData) {
+      // Check if the rect is in the bottom portion of the nested SVG
+      const bottomY = rect.y + rect.height;
+      const ratioFromTop = bottomY / viewBoxData.height;
+      return ratioFromTop > DOOR_BOTTOM_RATIO_THRESHOLD;
+    }
+  }
+  return false;
+};
+
 const collectWindowRects = (svgElement: SVGSVGElement): WindowRect[] => {
   const paths = Array.from(svgElement.querySelectorAll<SVGPathElement>('path'));
+  const results: WindowRect[] = [];
 
-  return paths
-    .filter((path) => path.getAttribute('fill')?.toLowerCase() === WINDOW_FILL.toLowerCase())
-    .map((path) => {
-      const rect = parseRectFromPath(path.getAttribute('d'));
-      const originalFill = path.getAttribute('fill') ?? WINDOW_FILL;
-      const originalTransition = path.style.transition ?? '';
+  for (const path of paths) {
+    // Only process paths with window fill color
+    if (path.getAttribute('fill')?.toLowerCase() !== WINDOW_FILL.toLowerCase()) {
+      continue;
+    }
 
-      if (!rect) {
-        return null;
-      }
+    const rect = parseRectFromPath(path.getAttribute('d'));
+    if (!rect) {
+      continue;
+    }
 
-      return {
-        element: path,
-        x: rect.x,
-        y: rect.y,
-        width: rect.width,
-        height: rect.height,
-        originalFill,
-        originalTransition,
-      };
-    })
-    .filter((rect): rect is WindowRect => {
-      if (!rect) {
-        return false;
-      }
-      if (!isSquareWindow(rect)) {
-        return false;
-      }
-      const isAboveGround = rect.y + rect.height < GROUND_Y_THRESHOLD;
-      return isAboveGround;
+    // Skip non-square shapes
+    if (!isSquareWindow(rect)) {
+      continue;
+    }
+
+    // Skip doors in nested SVG components (like EneboligSvg, BlokkSvg)
+    if (isDoorInNestedSvg(path, rect)) {
+      continue;
+    }
+
+    // Skip elements below ground threshold (for inline paths in root SVG)
+    const isAboveGround = rect.y + rect.height < GROUND_Y_THRESHOLD;
+    if (!isAboveGround) {
+      continue;
+    }
+
+    const originalFill = path.getAttribute('fill') ?? WINDOW_FILL;
+    const originalTransition = path.style.transition ?? '';
+
+    results.push({
+      element: path,
+      x: rect.x,
+      y: rect.y,
+      width: rect.width,
+      height: rect.height,
+      originalFill,
+      originalTransition,
     });
+  }
+
+  return results;
 };
 
 const ROW_TOLERANCE = 1.5;

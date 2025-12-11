@@ -12,6 +12,9 @@ import {
 import { resolveUserContext } from "./auth.js";
 import { ContentStorage } from "./contentStorage.js";
 import { HttpError } from "./httpError.js";
+import { createLogger } from "../shared/logger.js";
+
+const logger = createLogger({ prefix: 'admin-api' });
 
 const DICTIONARY_PATH = "dictionaries/index.json";
 
@@ -76,8 +79,8 @@ export function createDictionaryRouter(storage: ContentStorage) {
         expectedGeneration: body.generation,
       });
 
-      console.warn(
-        `[admin-api] ${actor.email} opprettet fordel ${body.benefit.id} (generation=${result.generation ?? "ukjent"})`
+      logger.info(
+        `${actor.email} opprettet fordel ${body.benefit.id} (generation=${result.generation ?? "ukjent"})`
       );
 
       res.status(201).json({
@@ -128,8 +131,8 @@ export function createDictionaryRouter(storage: ContentStorage) {
         expectedGeneration: body.generation,
       });
 
-      console.warn(
-        `[admin-api] ${actor.email} oppdaterte fordel ${benefitId} (generation=${result.generation ?? "ukjent"})`
+      logger.info(
+        `${actor.email} oppdaterte fordel ${benefitId} (generation=${result.generation ?? "ukjent"})`
       );
 
       res.json({
@@ -174,8 +177,8 @@ export function createDictionaryRouter(storage: ContentStorage) {
         expectedGeneration: body.generation,
       });
 
-      console.warn(
-        `[admin-api] ${actor.email} slettet fordel ${benefitId} (generation=${result.generation ?? "ukjent"})`
+      logger.info(
+        `${actor.email} slettet fordel ${benefitId} (generation=${result.generation ?? "ukjent"})`
       );
 
       res.json({
@@ -216,8 +219,8 @@ export function createDictionaryRouter(storage: ContentStorage) {
         expectedGeneration: body.generation,
       });
 
-      console.warn(
-        `[admin-api] ${actor.email} opprettet ordlistebegrep ${body.glossaryTerm.id} (generation=${result.generation ?? "ukjent"})`
+      logger.info(
+        `${actor.email} opprettet ordlistebegrep ${body.glossaryTerm.id} (generation=${result.generation ?? "ukjent"})`
       );
 
       res.status(201).json({
@@ -267,8 +270,8 @@ export function createDictionaryRouter(storage: ContentStorage) {
         expectedGeneration: body.generation,
       });
 
-      console.warn(
-        `[admin-api] ${actor.email} oppdaterte ordlistebegrep ${termId} (generation=${result.generation ?? "ukjent"})`
+      logger.info(
+        `${actor.email} oppdaterte ordlistebegrep ${termId} (generation=${result.generation ?? "ukjent"})`
       );
 
       res.json({
@@ -312,8 +315,8 @@ export function createDictionaryRouter(storage: ContentStorage) {
         expectedGeneration: body.generation,
       });
 
-      console.warn(
-        `[admin-api] ${actor.email} slettet ordlistebegrep ${termId} (generation=${result.generation ?? "ukjent"})`
+      logger.info(
+        `${actor.email} slettet ordlistebegrep ${termId} (generation=${result.generation ?? "ukjent"})`
       );
 
       res.json({

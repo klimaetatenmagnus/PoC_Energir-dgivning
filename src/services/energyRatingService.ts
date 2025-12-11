@@ -1,5 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger({ prefix: 'energy-rating-service' });
 
 // Energy rating thresholds (kWh/m²/year)
 export interface EnergyRatingThreshold {
@@ -15,7 +18,7 @@ function loadThresholds(): EnergyRatingThreshold[] {
     const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
     return data.thresholds;
   } catch (error) {
-    console.warn('[EnergyRatingService] Could not load thresholds from file, using defaults:', error);
+    logger.warn('Could not load thresholds from file, using defaults:', error);
     // Default thresholds as fallback
     return [
       { rating: 'A', maxValue: 50 },

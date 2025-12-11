@@ -15,8 +15,8 @@ if (typeof window !== "undefined") {
 async function bootstrap() {
   try {
     await loadAppConfig();
-  } catch (error) {
-    console.warn("[app-config] Falling back to default config", error);
+  } catch {
+    // Stille feil - default config brukes
   }
 
   const root = document.getElementById("root");

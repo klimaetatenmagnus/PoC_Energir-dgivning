@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { createLogger } from '../../../utils/logger';
+
+const logger = createLogger({ prefix: 'useAddressCoordinates' });
 
 interface Coordinates {
   lat: number;
@@ -58,7 +61,7 @@ export const useAddressCoordinates = (
         const response = await fetch(endpoint.toString(), { signal: controller.signal });
 
         if (!response.ok) {
-          console.warn(`[useAddressCoordinates] Lookup failed with status ${response.status}`);
+          logger.warn(`Lookup failed with status ${response.status}`);
           setMapCoordinates(null);
           return;
         }
@@ -77,14 +80,14 @@ export const useAddressCoordinates = (
         if (Number.isFinite(lat) && Number.isFinite(lon)) {
           setMapCoordinates({ lat, lng: lon });
         } else {
-          console.warn('[useAddressCoordinates] Received invalid coordinates from Geonorge');
+          logger.warn('Received invalid coordinates from Geonorge');
           setMapCoordinates(null);
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
         }
-        console.warn('[useAddressCoordinates] Failed to fetch coordinates', error);
+        logger.warn('Failed to fetch coordinates', error);
         setMapCoordinates(null);
       }
     };

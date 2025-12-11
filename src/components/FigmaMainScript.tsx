@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AddressLookupResponse } from '../services/buildingApi';
 import { useAddressCoordinates } from './FigmaBlokk/hooks/useAddressCoordinates';
@@ -17,6 +16,9 @@ import { useFigmaViewportMetrics } from './FigmaBlokk/hooks/useFigmaViewportMetr
 import { EneboligSvg, BlokkSvg } from './FigmaBlokk/components/BuildingSprites';
 import type { LandingSnapshot, BuildingSnapshot } from '../hooks/useFigmaAddressSearch';
 import { useTransitionOverlay, toViewportRect } from '../context/useTransitionOverlay';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger({ prefix: 'figma-main' });
 
 const FIGMA_ARTBOARD_WIDTH = 1728;
 const FIGMA_ARTBOARD_CENTER = FIGMA_ARTBOARD_WIDTH / 2;
@@ -304,7 +306,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
           setShowYellowBox(false);
         }
       } catch (error) {
-        console.error('🏛️ Error checking Gul liste:', error);
+        logger.error('Error checking Gul liste:', error);
         setShowYellowBox(false); // Default to false on error
       } finally {
         setGulListeLoading(false);

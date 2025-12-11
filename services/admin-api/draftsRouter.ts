@@ -4,6 +4,9 @@ import { TilskuddContentSchema, type TilskuddContent } from "../../content/tilsk
 import { resolveUserContext } from "./auth.js";
 import { ContentStorage } from "./contentStorage.js";
 import { HttpError } from "./httpError.js";
+import { createLogger } from "../shared/logger.js";
+
+const logger = createLogger({ prefix: 'drafts' });
 
 export interface DraftSummary {
   id: string;
@@ -53,7 +56,7 @@ export function createDraftsRouter(storage: ContentStorage): Router {
             updatedBy: parsed.metadata.updatedBy,
           });
         } catch (error) {
-          console.warn(`[drafts] Kunne ikke lese tiltak-draft ${file.path}:`, error);
+          logger.warn(`Kunne ikke lese tiltak-draft ${file.path}:`, error);
         }
       }
 
@@ -72,7 +75,7 @@ export function createDraftsRouter(storage: ContentStorage): Router {
             updatedBy: parsed.metadata.updatedBy,
           });
         } catch (error) {
-          console.warn(`[drafts] Kunne ikke lese tilskudd-draft ${file.path}:`, error);
+          logger.warn(`Kunne ikke lese tilskudd-draft ${file.path}:`, error);
         }
       }
 
@@ -127,9 +130,9 @@ export function createDraftsRouter(storage: ContentStorage): Router {
           await storage.writeJson(mainPath, stagedContent);
 
           synced.push({ id: parsed.id, collection: "tiltak" });
-          console.warn(`[drafts] ${actor.email} synket tiltak ${parsed.id} til staging`);
+          logger.info(`${actor.email} synket tiltak ${parsed.id} til staging`);
         } catch (error) {
-          console.error(`[drafts] Feil ved synking av tiltak-draft ${file.path}:`, error);
+          logger.error(`Feil ved synking av tiltak-draft ${file.path}:`, error);
         }
       }
 
@@ -158,9 +161,9 @@ export function createDraftsRouter(storage: ContentStorage): Router {
           await storage.writeJson(mainPath, stagedContent);
 
           synced.push({ id: parsed.id, collection: "tilskudd" });
-          console.warn(`[drafts] ${actor.email} synket tilskudd ${parsed.id} til staging`);
+          logger.info(`${actor.email} synket tilskudd ${parsed.id} til staging`);
         } catch (error) {
-          console.error(`[drafts] Feil ved synking av tilskudd-draft ${file.path}:`, error);
+          logger.error(`Feil ved synking av tilskudd-draft ${file.path}:`, error);
         }
       }
 
@@ -201,9 +204,9 @@ export function createDraftsRouter(storage: ContentStorage): Router {
 
           await storage.deleteJson(file.path);
           discarded.push({ id, collection: "tiltak" });
-          console.warn(`[drafts] ${actor.email} forkastet draft for tiltak ${id}`);
+          logger.info(`${actor.email} forkastet draft for tiltak ${id}`);
         } catch (error) {
-          console.error(`[drafts] Feil ved sletting av tiltak-draft ${file.path}:`, error);
+          logger.error(`Feil ved sletting av tiltak-draft ${file.path}:`, error);
         }
       }
 
@@ -218,9 +221,9 @@ export function createDraftsRouter(storage: ContentStorage): Router {
 
           await storage.deleteJson(file.path);
           discarded.push({ id, collection: "tilskudd" });
-          console.warn(`[drafts] ${actor.email} forkastet draft for tilskudd ${id}`);
+          logger.info(`${actor.email} forkastet draft for tilskudd ${id}`);
         } catch (error) {
-          console.error(`[drafts] Feil ved sletting av tilskudd-draft ${file.path}:`, error);
+          logger.error(`Feil ved sletting av tilskudd-draft ${file.path}:`, error);
         }
       }
 

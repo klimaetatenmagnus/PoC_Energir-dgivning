@@ -6,6 +6,9 @@ import type { AdminApiConfig } from "./config.js";
 import { triggerContentPromotionBuild } from "./cloudBuild.js";
 import { resolveUserContext } from "./auth.js";
 import { ContentStorage } from "./contentStorage.js";
+import { createLogger } from "../shared/logger.js";
+
+const logger = createLogger({ prefix: 'publish' });
 
 const PublishRequestSchema = z.object({
   targetEnvironment: z.literal("prod").default("prod"),
@@ -58,11 +61,11 @@ export function createPublishRouter(config: AdminApiConfig, storage: ContentStor
               deletedDrafts.push(draftPath);
             } catch (err) {
               // Logg feil, men ikke avbryt - Cloud Build er allerede trigget
-              console.warn(`[publish] Kunne ikke slette draft ${draftPath}:`, err);
+              logger.warn(`Kunne ikke slette draft ${draftPath}:`, err);
             }
           }
           if (deletedDrafts.length > 0) {
-            console.warn(`[publish] Slettet ${deletedDrafts.length} draft-filer: ${deletedDrafts.join(", ")}`);
+            logger.info(`Slettet ${deletedDrafts.length} draft-filer: ${deletedDrafts.join(", ")}`);
           }
         }
 

@@ -1,6 +1,16 @@
 import React from 'react';
 import { LocationPin } from './LocationPin';
-import { getLegacyTiltakComponent } from './Tiltak/legacyComponents';
+import {
+  Varmepumpe,
+  Solenergi,
+  Tetting,
+  Temperaturstyring,
+  UtskiftningAvVindu,
+  IsoleringAvKjellerOgLoft,
+  EtterisoleringYttervegg,
+  Ventilasjon
+} from './Tiltak';
+import type { TiltakComponentProps } from './Tiltak/shared';
 import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../../utils/tekEnergyCalculations';
 import { convertKwhToNok, formatCurrency, formatNumberWithSpaces } from '../../../utils/energy';
 import { AddressLookupResponse } from '../../../services/buildingApi';
@@ -139,6 +149,17 @@ const roundToNearestThousandValue = (value: number): number => {
 
 const roundToNearestThousand = (value: number): string => {
   return formatNumberWithSpaces(roundToNearestThousandValue(value));
+};
+
+const TILTAK_COMPONENT_MAP: Record<string, React.ComponentType<TiltakComponentProps>> = {
+  'varmepumpe': Varmepumpe,
+  'solenergi': Solenergi,
+  'tetting': Tetting,
+  'temperaturstyring': Temperaturstyring,
+  'vinduer': UtskiftningAvVindu,
+  'etterisolering-kjeller-loft': IsoleringAvKjellerOgLoft,
+  'etterisolering-yttervegg': EtterisoleringYttervegg,
+  'ventilasjon': Ventilasjon
 };
 
 interface WhiteInfoBoxProps {
@@ -755,10 +776,10 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   // Calculate expanded height to fill screen with equal margins
   // Total container height is 900px, current bottom is 55px
   const expandedBottom = 55; // Keep same bottom position
-  
-const legacyTiltakComponent = React.useMemo(
-  () => getLegacyTiltakComponent(selectedTiltakSlug ?? undefined, tiltakAudience),
-  [selectedTiltakSlug, tiltakAudience]
+
+const tiltakComponent = React.useMemo(
+  () => selectedTiltakSlug ? TILTAK_COMPONENT_MAP[selectedTiltakSlug] : undefined,
+  [selectedTiltakSlug]
 );
 
 const previewWrapperStyle: React.CSSProperties = {
@@ -770,9 +791,9 @@ const previewWrapperStyle: React.CSSProperties = {
   overflowY: 'hidden'
 };
 
-const tiltakPreview = selectedTiltakSlug && legacyTiltakComponent ? (
+const tiltakPreview = selectedTiltakSlug && tiltakComponent ? (
     <div style={previewWrapperStyle}>
-      {React.createElement(legacyTiltakComponent, {
+      {React.createElement(tiltakComponent, {
         audience: tiltakAudience,
         buildingType: tiltakBuildingType,
         buildingData,

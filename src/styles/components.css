@@ -1408,6 +1408,58 @@
   height: 100%;
 }
 
+/* ===========================================
+   Z-INDEX HIERARCHY (Mobile)
+   ===========================================
+   - TransitionOverlayRenderer: 10000 (highest - building animation)
+   - Mobile suggestions dropdown: 1000
+   - Mobile modals/overlays: 1000
+   - Mobile header (sticky): 100
+   - Mobile skyline: 1
+   - Mobile content: 2
+   =========================================== */
+
+/* Mobile Landing Fade Animations */
+.mobile-landing__content--fading {
+  animation: mobileLandingFadeOut 2s ease-in-out forwards;
+}
+
+.mobile-landing__skyline-container--fading {
+  animation: mobileLandingFadeOut 2s ease-in-out forwards;
+}
+
+@keyframes mobileLandingFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* GPU acceleration hints for smooth mobile performance */
+.mobile-landing__content,
+.mobile-landing__skyline-container {
+  will-change: opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-landing__content--fading,
+  .mobile-landing__skyline-container--fading {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .mobile-landing__content,
+  .mobile-landing__skyline-container {
+    will-change: auto;
+  }
+}
+
 /* Phablet og oppover (>=576px) - litt mer plass */
 @media (min-width: 576px) {
   .mobile-landing__content {

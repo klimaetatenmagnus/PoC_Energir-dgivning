@@ -3,9 +3,9 @@ import {
   useProviderColors,
   getOverskriftLabel,
   openExternalLink,
-  TiltakComponentProps
+  TiltakComponentProps,
+  type Stotteordning
 } from './shared';
-import type { Stotteordning } from '../../../../services/stotteordning-service';
 import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type {
@@ -83,12 +83,9 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
   const grantIds = content?.grants ?? [];
   const {
     stotteordninger,
-    intendedSource,
     isLoading: grantLoading
   } = useGrantAwareStotteordninger({
-    grantIds,
-    legacyTiltakSlug: 'smart_energistyring',
-    buildingType
+    grantIds
   });
 
   // Berik fordeler fra dictionary via felles utility
@@ -120,7 +117,7 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
-    : intendedSource === 'grants' && grantLoading
+    : grantLoading
       ? [
           {
             ordning: 'Henter støtteordninger …',
@@ -671,7 +668,7 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
 };
 
 export const Temperaturstyring: React.FC<TemperaturstyringProps> = (props) => (
-  <TemperaturstyringContentComponent {...props} audience="standard" />
+  <TemperaturstyringContentComponent {...props} audience={props.audience ?? 'standard'} />
 );
 
 export { TemperaturstyringContentComponent };

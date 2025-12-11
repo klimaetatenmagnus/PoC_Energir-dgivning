@@ -7,9 +7,9 @@ import {
   resolveEnergyCategory,
   useProviderColors,
   getOverskriftLabel,
-  openExternalLink
+  openExternalLink,
+  type Stotteordning
 } from './shared';
-import type { Stotteordning } from '../../../../services/stotteordning-service';
 import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
@@ -33,7 +33,7 @@ type ReadMoreLink = {
 };
 
 export const UtskiftningAvVindu: React.FC<UtskiftningAvVinduProps> = (props) => (
-  <UtskiftningAvVinduContentComponent {...props} audience="standard" />
+  <UtskiftningAvVinduContentComponent {...props} audience={props.audience ?? 'standard'} />
 );
 
 export { UtskiftningAvVinduContentComponent };
@@ -161,12 +161,9 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
   // All hooks must be called before any early return
   const {
     stotteordninger,
-    intendedSource,
     isLoading: grantsLoading
   } = useGrantAwareStotteordninger({
-    grantIds,
-    legacyTiltakSlug: 'vinduer',
-    buildingType
+    grantIds
   });
 
   // Show loading state after all hooks have been called
@@ -180,7 +177,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
-    : intendedSource === 'grants' && grantsLoading
+    : grantsLoading
       ? [
           {
             ordning: 'Henter støtteordninger …',

@@ -16,6 +16,9 @@ type MatrikkelCredentials = {
 type RuntimeFlags = {
   liveMode: boolean;
   logSoap: boolean;
+  debugBuildingInfo: boolean;
+  debugApi: boolean;
+  debugBygningstype: boolean;
 };
 
 type PortsConfig = {
@@ -151,6 +154,9 @@ export function getRuntimeConfig(): RuntimeConfig {
     flags: {
       liveMode: parseBoolean("LIVE"),
       logSoap: parseBoolean("LOG_SOAP") || parseBoolean("LOG"),
+      debugBuildingInfo: parseBoolean("DEBUG_BUILDING_INFO"),
+      debugApi: parseBoolean("API_DEBUG"),
+      debugBygningstype: parseBoolean("DEBUG_BYGNINGSTYPE"),
     },
   };
 

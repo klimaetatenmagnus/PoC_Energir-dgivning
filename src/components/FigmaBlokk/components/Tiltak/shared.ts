@@ -1,13 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import stotteordningService, { Stotteordning } from '../../../../services/stotteordning-service';
+import { useCallback, useMemo } from 'react';
 import type { AddressLookupResponse } from '../../../../services/buildingApi';
 import { useContentDictionary } from '../../../../hooks/contentHooks';
+import type { ContentAudience } from '../../../../../content/schema-helpers';
+
+export interface Stotteordning {
+  ordning: string;
+  lenke: string | null;
+  belop: string | null;
+  overskrift: string | null;
+}
 
 export interface TiltakComponentProps {
   onBack?: () => void;
   buildingType?: string;
   buildingData?: AddressLookupResponse;
   className?: string;
+  audience?: ContentAudience;
 }
 
 export type BuildingCategory = 'enebolig' | 'rekkehus' | 'blokk';
@@ -15,20 +23,12 @@ export type EnergyBuildingCategory = 'småhus' | 'blokk';
 export type TekPeriod = 'eldre' | '49' | '69' | '87' | '97' | '7';
 export type SavingsMetric = '0.75' | '1.2' | 'etteriso_yttervegg' | 'etteriso_takloft';
 
-const FALLBACK_ENTRY: Stotteordning = {
-  ordning: 'Kunne ikke hente støtteordninger',
-  lenke: null,
-  belop: 'Sjekk at API-serveren kjører',
-  overskrift: 'Feil'
-};
-
 const DEFAULT_BUILDING_CATEGORY: BuildingCategory = 'enebolig';
 
 /**
  * Legacy-mapping av tilbydernavn til farger.
- * Brukes kun som fallback når dictionary ikke er tilgjengelig.
- *
- * @deprecated Bruk useProviderColors() hook i stedet for å hente farger fra dictionary.
+ * Brukes kun internt av useProviderColors() som fallback når dictionary ikke er tilgjengelig.
+ * Ikke eksportert – bruk useProviderColors() hook i stedet.
  */
 const LEGACY_OVERSKRIFT_FARGER: Record<string, string> = {
   // Legacy-navn for bakoverkompatibilitet med eksterne datakilder
@@ -84,26 +84,6 @@ export function useProviderColors(): (providerName?: string | null) => string {
     [providerColorMap]
   );
 }
-
-/**
- * Synkron funksjon for å hente provider-farge.
- * Bruker kun legacy-mapping, ikke dictionary.
- *
- * @deprecated Bruk useProviderColors() hook i stedet for dictionary-basert fargeoppslag.
- */
-export const getOverskriftColor = (overskrift?: string | null): string => {
-  if (!overskrift) {
-    return DEFAULT_OVERSKRIFT_FARGE;
-  }
-
-  return LEGACY_OVERSKRIFT_FARGER[overskrift] ?? DEFAULT_OVERSKRIFT_FARGE;
-};
-
-/**
- * Eksportert for bakoverkompatibilitet. Bruk useProviderColors() i stedet.
- * @deprecated
- */
-export const OVERSKRIFT_FARGER = LEGACY_OVERSKRIFT_FARGER;
 
 /**
  * Konverterer tilbyder-navn til visningsnavn.
@@ -182,73 +162,6 @@ export const resolveEnergyCategory = (buildingType?: string): EnergyBuildingCate
   }
 
   return undefined;
-};
-
-export interface UseStotteordningerOptions {
-  tiltak: string;
-  buildingType?: string;
-  gulliste?: boolean;
-  enabled?: boolean;
-}
-
-export interface UseStotteordningerResult {
-  stotteordninger: Stotteordning[];
-  isLoading: boolean;
-  error?: string;
-}
-
-export const useStotteordninger = ({ tiltak, buildingType, gulliste = false, enabled = true }: UseStotteordningerOptions): UseStotteordningerResult => {
-  const [stotteordninger, setStotteordninger] = useState<Stotteordning[]>([]);
-  const [isLoading, setIsLoading] = useState(Boolean(enabled));
-  const [error, setError] = useState<string>();
-
-  useEffect(() => {
-    let isMounted = true;
-
-    if (!enabled) {
-      setStotteordninger([]);
-      setIsLoading(false);
-      setError(undefined);
-      return () => {
-        isMounted = false;
-      };
-    }
-
-    const fetchStotteordninger = async () => {
-      setIsLoading(true);
-      setError(undefined);
-
-      try {
-        const mappedType = resolveBuildingCategory(buildingType);
-        const data = await stotteordningService.getStotteordninger(gulliste, tiltak, mappedType);
-
-        if (!isMounted) {
-          return;
-        }
-
-        setStotteordninger(data);
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Feil ved henting av støtteordninger', err);
-
-        if (!isMounted) {
-          return;
-        }
-
-        setStotteordninger([FALLBACK_ENTRY]);
-        setError('Kunne ikke hente støtteordninger');
-        setIsLoading(false);
-      }
-    };
-
-    fetchStotteordninger();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [buildingType, gulliste, tiltak, enabled]);
-
-  return { stotteordninger, isLoading, error };
 };
 
 export type EnergySavingsData = Record<

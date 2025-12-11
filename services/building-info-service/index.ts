@@ -10,7 +10,7 @@ import {
   recordCacheOperation,
   startLookupTimer,
 } from './metrics.ts';
-import { infoLog } from './logging.ts';
+import { infoLog, errorLog } from './logging.ts';
 
 export { resolveBuildingData } from './matrikkel.ts';
 export type { BuildingDataOptions } from './matrikkel.ts';
@@ -46,7 +46,7 @@ const lookupHandler: RequestHandler = async (req, res) => {
     finalizeLookup('success');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Ukjent feil';
-    console.error(error);
+    errorLog('lookup failed', error);
     res.status(500).json({ error: message });
     finalizeLookup('error');
   }
@@ -63,7 +63,7 @@ app.get('/address/:address', async (req, res) => {
     finalizeLookup('success');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Ukjent feil';
-    console.error(error);
+    errorLog('address lookup failed', error);
     res.status(500).json({ error: message });
     finalizeLookup('error');
   }

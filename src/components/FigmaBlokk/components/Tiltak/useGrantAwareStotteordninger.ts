@@ -1,31 +1,17 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { TilskuddContent } from '../../../../../content/tilskudd/schema';
 import type { ProviderDictionaryEntry } from '../../../../../content/dictionaries/schema';
-import type { Stotteordning } from '../../../../services/stotteordning-service';
+import type { Stotteordning } from './shared';
 import { useTilskuddBatch, useContentDictionary } from '../../../../hooks/contentHooks';
-import { useStotteordninger } from './shared';
 
 type UseGrantAwareStotteordningerOptions = {
   grantIds?: string[] | null;
-  legacyTiltakSlug: string;
-  buildingType?: string;
-  /**
-   * Gulliste-modus for legacy-fallback.
-   * Ved grants-basert henting filtreres tilskudd via grantIds som allerede
-   * er audience-spesifikke (fra applyTiltakVariant).
-   */
-  gulliste?: boolean;
 };
 
 export type UseGrantAwareStotteordningerResult = {
   stotteordninger: Stotteordning[];
-  source: 'grants' | 'legacy';
-  intendedSource: 'grants' | 'legacy';
   isLoading: boolean;
-  grantLoading: boolean;
-  legacyLoading: boolean;
-  grantError?: Error;
-  legacyError?: string;
+  error?: Error;
 };
 
 const currencyFormatters = new Map<string, Intl.NumberFormat>();
@@ -109,18 +95,8 @@ function mapTilskuddToStotteordning(
 }
 
 export function useGrantAwareStotteordninger({
-  grantIds,
-  legacyTiltakSlug,
-  buildingType,
-  gulliste = false
+  grantIds
 }: UseGrantAwareStotteordningerOptions): UseGrantAwareStotteordningerResult {
-  const forceLegacyGrants = import.meta.env.VITE_FORCE_LEGACY_GRANTS === '1';
-  const minGrantCount =
-    Number.parseInt(import.meta.env.VITE_MIN_GRANT_COUNT ?? '', 10) || 2;
-  const debugGrants =
-    import.meta.env.VITE_DEBUG_GRANTS === '1' ||
-    import.meta.env.VITE_DEBUG_GRANTS === 'true';
-
   // Hent providers fra dictionary for å slå opp tilbydernavn
   const { data: dictionary } = useContentDictionary();
   const providers = dictionary?.providers;
@@ -141,15 +117,15 @@ export function useGrantAwareStotteordninger({
     return result;
   }, [grantIds]);
 
-  const hasGrantOverrides = uniqueGrantIds.length > 0;
+  const hasGrantIds = uniqueGrantIds.length > 0;
 
   const {
     data: grantData,
-    isLoading: isGrantLoading,
-    error: grantError
-  } = useTilskuddBatch(hasGrantOverrides ? uniqueGrantIds : null);
+    isLoading,
+    error
+  } = useTilskuddBatch(hasGrantIds ? uniqueGrantIds : null);
 
-  const grantBasedStotteordninger = useMemo(() => {
+  const stotteordninger = useMemo(() => {
     if (!grantData?.length) {
       return [];
     }
@@ -158,82 +134,9 @@ export function useGrantAwareStotteordninger({
     return grantData.map((tilskudd) => mapTilskuddToStotteordning(tilskudd, providers));
   }, [grantData, providers]);
 
-  const shouldEnableLegacyFallback =
-    !hasGrantOverrides ||
-    Boolean(grantError) ||
-    (grantData !== undefined &&
-      grantBasedStotteordninger.length < minGrantCount) ||
-    (grantData !== undefined && grantBasedStotteordninger.length === 0);
-
-  const {
-    stotteordninger: legacyStotteordninger,
-    isLoading: isLegacyLoading,
-    error: legacyError
-  } = useStotteordninger({
-    tiltak: legacyTiltakSlug,
-    buildingType,
-    gulliste,
-    enabled: shouldEnableLegacyFallback
-  });
-
-  const useGrantSource =
-    !forceLegacyGrants &&
-    hasGrantOverrides &&
-    grantBasedStotteordninger.length >= minGrantCount &&
-    !grantError;
-  const intendedSource: 'grants' | 'legacy' =
-    useGrantSource && hasGrantOverrides ? 'grants' : 'legacy';
-
-  const stotteordninger = useGrantSource ? grantBasedStotteordninger : legacyStotteordninger;
-  const source: 'grants' | 'legacy' = useGrantSource ? 'grants' : 'legacy';
-
-  const isLoading =
-    source === 'grants'
-      ? isGrantLoading
-      : shouldEnableLegacyFallback
-        ? isLegacyLoading
-        : isGrantLoading;
-
-  useEffect(() => {
-    if (!debugGrants) {
-      return;
-    }
-    // Log a compact snapshot for troubleshooting in devtools console
-    // Includes counts and which source is used.
-    console.warn('[grants-debug]', {
-      legacyTiltakSlug,
-      forceLegacyGrants,
-      minGrantCount,
-      grantIds: uniqueGrantIds,
-      grantCount: grantBasedStotteordninger.length,
-      legacyCount: legacyStotteordninger.length,
-      source,
-      intendedSource,
-      grantError: grantError?.message,
-      legacyError
-    });
-  }, [
-    debugGrants,
-    forceLegacyGrants,
-    minGrantCount,
-    uniqueGrantIds,
-    grantBasedStotteordninger.length,
-    legacyStotteordninger.length,
-    source,
-    intendedSource,
-    grantError,
-    legacyError,
-    legacyTiltakSlug
-  ]);
-
   return {
     stotteordninger,
-    source,
-    intendedSource,
     isLoading,
-    grantLoading: isGrantLoading,
-    legacyLoading: isLegacyLoading,
-    grantError,
-    legacyError
+    error
   };
 }

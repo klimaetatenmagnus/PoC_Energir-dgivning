@@ -1,6 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { parse } from 'csv-parse/sync';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger({ prefix: 'csv-service' });
 
 interface RawCSVRecord {
   BYGNINGS_NR: string;
@@ -113,9 +116,9 @@ export class CSVService {
       }));
 
       this.isLoaded = true;
-      console.warn(`[CSVService] Loaded ${this.data.length} records from Matrikkel CSV`);
+      logger.info(`Loaded ${this.data.length} records from Matrikkel CSV`);
     } catch (error) {
-      console.error('[CSVService] Error loading CSV:', error);
+      logger.error('Error loading CSV:', error);
       this.data = [];
     }
   }

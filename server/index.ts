@@ -2,13 +2,16 @@ import "../loadEnv.ts";
 import express from "express";
 import fetch from "node-fetch";
 import { getRuntimeConfig } from "../packages/config/src/runtime.ts";
+import { createLogger } from "../src/utils/logger.ts";
+
+const logger = createLogger({ prefix: 'matrikkel-proxy' });
 
 // ────── Globale feilloggere ─────────────────────────────────────────────
 process.on("uncaughtException", (err) =>
-  console.error("❌ uncaughtException:", err)
+  logger.error("uncaughtException:", err)
 );
 process.on("unhandledRejection", (err) =>
-  console.error("❌ unhandledRejection:", err)
+  logger.error("unhandledRejection:", err)
 );
 
 const runtimeConfig = getRuntimeConfig();
@@ -132,16 +135,16 @@ app.use(express.text({ type: "text/xml" }));
 
 app.post("/api/matrikkel/:service", async (req, res) => {
   const service = req.params.service;
-  console.error("⇢ route reached for service", service);
+  logger.info("route reached for service", service);
 
   try {
     let xml = req.body as string;
-    console.error("XML-prefix:", xml.slice(0, 120));
+    logger.debug("XML-prefix:", xml.slice(0, 120));
 
     xml = ensureContext(xml, service);
 
     const targetUrl = `${BASE_URL}/${service}`;
-    console.error("→ calling", targetUrl);
+    logger.info("calling", targetUrl);
 
     const soapAction = "";
 
@@ -157,16 +160,16 @@ app.post("/api/matrikkel/:service", async (req, res) => {
     });
 
     const text = await resp.text();
-    console.error(`[${env}] Matrikkel →`, resp.status, Date.now() - t0, "ms");
+    logger.info(`[${env}] Matrikkel response:`, resp.status, Date.now() - t0, "ms");
     res.status(resp.status).send(text);
   } catch (err) {
-    console.error("❌ route error:", err);
+    logger.error("route error:", err);
     res.status(500).send("Proxy error");
   }
 });
 
 // ────── 4. Oppstart-logg ────────────────────────────────────────────────
-console.warn(
+logger.info(
   `env=${env}`,
   "\nBASE_URL =",
   BASE_URL || "(undefined)",
@@ -175,7 +178,7 @@ console.warn(
 );
 
 app.listen(3000, () =>
-  console.warn(`Proxy listening on http://localhost:3000  (env=${env})`)
+  logger.info(`Proxy listening on http://localhost:3000  (env=${env})`)
 );
 
 // HACK: hold prosessen i live i ts-node-ESM-miljøet

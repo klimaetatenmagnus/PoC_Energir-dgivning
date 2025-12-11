@@ -1,18 +1,12 @@
-const debugEnabled =
-  process.env.DEBUG_BUILDING_INFO === "1" || process.env.LOG_SOAP === "1";
+import { createLogger } from '../shared/logger.js';
 
-export function debugLog(...args: unknown[]) {
-  if (debugEnabled) {
-    console.warn("[building-info:debug]", ...args);
-  }
-}
+export const logger = createLogger({
+  prefix: 'building-info',
+  debugEnvVar: 'DEBUG_BUILDING_INFO',
+});
 
-export function infoLog(...args: unknown[]) {
-  console.warn("[building-info]", ...args);
-}
-
-export function warnLog(...args: unknown[]) {
-  console.warn("[building-info:warn]", ...args);
-}
-
-export const errorLog = console.error.bind(console, "[building-info:error]");
+// Eksporter individuelle funksjoner for bakoverkompatibilitet
+export const debugLog = logger.debug;
+export const infoLog = logger.info;
+export const warnLog = logger.warn;
+export const errorLog = logger.error;

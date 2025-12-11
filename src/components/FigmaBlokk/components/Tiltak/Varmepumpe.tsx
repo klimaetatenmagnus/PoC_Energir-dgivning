@@ -3,12 +3,12 @@ import {
   useProviderColors,
   getOverskriftLabel,
   openExternalLink,
-  TiltakComponentProps
+  TiltakComponentProps,
+  type Stotteordning
 } from './shared';
 import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type { TiltakContent, TiltakAccordionItem } from '../../../../../content/tiltak/schema';
-import type { Stotteordning } from '../../../../services/stotteordning-service';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
 import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
@@ -112,12 +112,9 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
 
   const {
     stotteordninger,
-    isLoading: stotteordningerLoading,
-    intendedSource
+    isLoading: stotteordningerLoading
   } = useGrantAwareStotteordninger({
-    grantIds: content?.grants ?? [],
-    legacyTiltakSlug: 'varmepumpe',
-    buildingType
+    grantIds: content?.grants ?? []
   });
 
   const tabBodies = useMemo(() => {
@@ -153,7 +150,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
-    : intendedSource === 'grants' && stotteordningerLoading
+    : stotteordningerLoading
       ? [
           {
             ordning: 'Henter støtteordninger …',
@@ -1012,7 +1009,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
 };
 
 export const Varmepumpe: React.FC<VarmepumpeProps> = (props) => (
-  <VarmepumpeContentComponent {...props} audience="standard" />
+  <VarmepumpeContentComponent {...props} audience={props.audience ?? 'standard'} />
 );
 
 export { VarmepumpeContentComponent }; 

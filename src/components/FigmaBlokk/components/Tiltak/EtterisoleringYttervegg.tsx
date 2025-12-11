@@ -7,14 +7,14 @@ import {
   getOverskriftLabel,
   openExternalLink,
   parseNumericValue,
-  resolveEnergyCategory
+  resolveEnergyCategory,
+  type Stotteordning
 } from './shared';
 import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
 import { BenefitChipSvg } from '../../../common/BenefitChip/BenefitChipSvg';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type { TiltakContent, TiltakAccordionItem } from '../../../../../content/tiltak/schema';
-import type { Stotteordning } from '../../../../services/stotteordning-service';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
 
@@ -111,12 +111,9 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
   // All hooks must be called before any early return
   const {
     stotteordninger,
-    intendedSource,
     isLoading: grantsLoading
   } = useGrantAwareStotteordninger({
-    grantIds,
-    legacyTiltakSlug: 'etterisolering_fasade',
-    buildingType
+    grantIds
   });
 
   // Show loading state after all hooks have been called
@@ -130,7 +127,7 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
-    : intendedSource === 'grants' && grantsLoading
+    : grantsLoading
       ? [
           {
             ordning: 'Henter støtteordninger …',
@@ -1054,7 +1051,7 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
 };
 
 export const EtterisoleringYttervegg: React.FC<EtterisoleringYtterveggProps> = (props) => (
-  <EtterisoleringYtterveggContentComponent {...props} audience="standard" />
+  <EtterisoleringYtterveggContentComponent {...props} audience={props.audience ?? 'standard'} />
 );
 
 export { EtterisoleringYtterveggContentComponent };

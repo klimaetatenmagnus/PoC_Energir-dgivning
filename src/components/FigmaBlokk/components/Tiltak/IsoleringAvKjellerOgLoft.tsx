@@ -7,13 +7,13 @@ import {
   resolveEnergyCategory,
   useProviderColors,
   getOverskriftLabel,
-  openExternalLink
+  openExternalLink,
+  type Stotteordning
 } from './shared';
 import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
 import { BenefitChipSvg } from '../../../common/BenefitChip/BenefitChipSvg';
 import type { TiltakContent, TiltakAccordionItem } from '../../../../../content/tiltak/schema';
-import type { Stotteordning } from '../../../../services/stotteordning-service';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
@@ -111,12 +111,9 @@ const IsoleringAvKjellerOgLoftContentComponent: React.FC<IsoleringAvKjellerOgLof
   // All hooks must be called before any early return
   const {
     stotteordninger,
-    intendedSource,
     isLoading: grantsLoading
   } = useGrantAwareStotteordninger({
-    grantIds,
-    legacyTiltakSlug: 'etterisolering_kjeller_loft',
-    buildingType
+    grantIds
   });
 
   // Show loading state after all hooks have been called
@@ -130,7 +127,7 @@ const IsoleringAvKjellerOgLoftContentComponent: React.FC<IsoleringAvKjellerOgLof
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
-    : intendedSource === 'grants' && grantsLoading
+    : grantsLoading
       ? [
           {
             ordning: 'Henter støtteordninger …',
@@ -876,7 +873,7 @@ const IsoleringAvKjellerOgLoftContentComponent: React.FC<IsoleringAvKjellerOgLof
 };
 
 export const IsoleringAvKjellerOgLoft: React.FC<IsoleringAvKjellerOgLoftProps> = (props) => (
-  <IsoleringAvKjellerOgLoftContentComponent {...props} audience="standard" />
+  <IsoleringAvKjellerOgLoftContentComponent {...props} audience={props.audience ?? 'standard'} />
 );
 
 export { IsoleringAvKjellerOgLoftContentComponent };

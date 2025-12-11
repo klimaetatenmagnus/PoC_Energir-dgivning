@@ -1,12 +1,14 @@
 // src/utils/soapDump.ts
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createLogger } from "./logger.js";
 
 /** mappe der alle dump-filer havner  */
 const DIR = path.resolve("soap-dumps");
 
-const infoLog = (...args: unknown[]) => console.warn("[soap-dump]", ...args);
-const errorLog = (...args: unknown[]) => console.error("[soap-dump:error]", ...args);
+const logger = createLogger({ prefix: 'soap-dump' });
+const infoLog = logger.info;
+const errorLog = logger.error;
 
 // lag mappen én gang ved oppstart
 await fs.mkdir(DIR, { recursive: true });

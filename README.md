@@ -11,7 +11,6 @@ Oppdatert: 2025-09-28 (refaktor runde 2)
 ## Reposstruktur
 - `services/building-info-service/` – modulene som henter og sammenstiller data fra Matrikkel SOAP-endepunkter, CSV-datasettet og sol-/Enova-kilder.
 - `services/solar-service/` – Express-tjeneste som proxier PBE Solkart WFS og normaliserer solinnstrålingsdata.
-- `services/subsidy-service/` – legacy stub for lokale tester av støtteordningsdata.
 - `src/` – API-server, frontend-klienter og React-app (inkludert hooks og UI).
 - `scripts/` – TypeScript/Node-verktøy, Python-skript (`scripts/python/`) og hjelpe-skript som `scripts/start-ui-only.sh`.
 - `data/raw/` – importerte kilder (Matrikkel CSV, støtteordning Excel, energimerkegrenser).
@@ -23,7 +22,7 @@ Oppdatert: 2025-09-28 (refaktor runde 2)
 ## Kom i gang
 - `npm install` – installer avhengigheter.
 - `npm run dev` – starter frontend, API-server, building-info-service og solar-service lokalt (bruk `.env`).
-- `npm run dev:local` – variant med subsidy-service.
+- `npm run dev:local` – variant uten solar-service (kun client, server, buildings).
 - `npm run dev:server` / `npm run dev:buildings` / `npm run dev:solar` – start enkelt-tjenester ved behov.
 
 > Miljøvariabler lastes via `packages/config`. I utvikling brukes `.env.local`/`.env`. Sett `DOTENV_CONFIG_PATH` hvis filen ligger et annet sted.

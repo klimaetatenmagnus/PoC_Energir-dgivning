@@ -34,9 +34,6 @@ export VITE_ADMIN_STAGING_CONTENT_BASE="${VITE_ADMIN_STAGING_CONTENT_BASE:-/conf
 export VITE_ADMIN_STAGING_FALLBACK_BASE="${VITE_ADMIN_STAGING_FALLBACK_BASE:-https://staging.xn--energinkkelen-hnb.no/config/content}"
 export VITE_ADMIN_PROD_CONTENT_BASE="${VITE_ADMIN_PROD_CONTENT_BASE:-/config/content}"
 export VITE_ADMIN_PROD_FALLBACK_BASE="${VITE_ADMIN_PROD_FALLBACK_BASE:-https://energinokkelen.no/config/content}"
-# Use JSON-based grants (set to 1 to force legacy /api/stotteordninger-live)
-export VITE_FORCE_LEGACY_GRANTS="${VITE_FORCE_LEGACY_GRANTS:-0}"
-export VITE_MIN_GRANT_COUNT="${VITE_MIN_GRANT_COUNT:-2}"
 
 # Default admin-API konfig til lokale dummyverdier slik at vi slipper ekte GCP-tilganger.
 LOCAL_CONTENT_ROOT="${ROOT_DIR}/content"
@@ -71,7 +68,7 @@ BUILDING_PID=$!
 
 # Start solar-service
 echo "☀️  Starting solar-service on port 4003..."
-PORT=4003 node services/solar-service/index.js &
+PORT=4003 npx tsx services/solar-service/index.ts &
 SOLAR_PID=$!
 
 # Start API server
@@ -101,7 +98,6 @@ echo "🔌 API: http://localhost:3001"
 echo "🏢 Building Service: http://localhost:4000"
 echo "☀️  Solar Service: http://localhost:4003"
 echo "🔐 Admin API: http://localhost:4100/admin/api"
-echo "📊 Støtteordninger: http://localhost:3001/api/stotteordninger"
 echo ""
 echo "📋 Test addresses:"
 echo "  - Rosenholmveien 25, Oslo"
