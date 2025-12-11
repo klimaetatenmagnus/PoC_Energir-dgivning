@@ -65,6 +65,7 @@ export const BenefitChipSvg: React.FC<BenefitChipSvgProps> = ({
             {benefit.icon && (
               <span className="benefit-chip__icon" aria-hidden="true">
                 {/* pkt-icon fungerer ikke alltid i foreignObject, så vi bruker en fallback */}
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {React.createElement('pkt-icon' as any, { name: benefit.icon })}
               </span>
             )}
