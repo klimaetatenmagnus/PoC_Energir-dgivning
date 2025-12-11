@@ -33,7 +33,6 @@ export default defineConfig({
     proxy: {
       "/lookup": "http://localhost:4002",
       "/solinnstraling": "http://localhost:4003",
-      "/subsidy": "http://localhost:4001",
       "/api": "http://localhost:3001",
       "/admin/api": "http://localhost:4100",
       "/config": {

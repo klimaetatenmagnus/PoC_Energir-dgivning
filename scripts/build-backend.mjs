@@ -22,7 +22,7 @@ await build({
     "admin-api": resolve(projectRoot, "services/admin-api/index.ts"),
     "solar-service": resolve(
       projectRoot,
-      "services/solar-service/index.js"
+      "services/solar-service/index.ts"
     ),
   },
   bundle: true,

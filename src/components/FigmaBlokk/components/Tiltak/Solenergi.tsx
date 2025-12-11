@@ -3,12 +3,12 @@ import {
   useProviderColors,
   getOverskriftLabel,
   openExternalLink,
-  TiltakComponentProps
+  TiltakComponentProps,
+  type Stotteordning
 } from './shared';
 import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type { TiltakContent } from '../../../../../content/tiltak/schema';
-import type { Stotteordning } from '../../../../services/stotteordning-service';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
 import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
@@ -92,12 +92,9 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
   const grantIds = content?.grants ?? [];
   const {
     stotteordninger,
-    isLoading: stotteordningerLoading,
-    intendedSource
+    isLoading: stotteordningerLoading
   } = useGrantAwareStotteordninger({
-    grantIds,
-    legacyTiltakSlug: 'solenergi',
-    buildingType
+    grantIds
   });
 
   // Tidlig return etter alle hooks
@@ -119,7 +116,7 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
-    : intendedSource === 'grants' && stotteordningerLoading
+    : stotteordningerLoading
       ? [
           {
             ordning: 'Henter støtteordninger …',
@@ -1058,7 +1055,7 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
 };
 
 export const Solenergi: React.FC<SolenergiProps> = (props) => (
-  <SolenergiContentComponent {...props} audience="standard" />
+  <SolenergiContentComponent {...props} audience={props.audience ?? 'standard'} />
 );
 
 export { SolenergiContentComponent };

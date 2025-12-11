@@ -49,7 +49,6 @@ export function DraftsProvider({ children }: PropsWithChildren) {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Ukjent feil";
       setError(message);
-      console.error("[DraftsProvider] Feil ved henting av drafts:", err);
     } finally {
       setLoading(false);
     }
@@ -85,7 +84,6 @@ export function DraftsProvider({ children }: PropsWithChildren) {
         }
         const message = err instanceof Error ? err.message : "Ukjent feil";
         setError(message);
-        console.error("[DraftsProvider] Feil ved henting av drafts:", err);
       } finally {
         setLoading(false);
       }

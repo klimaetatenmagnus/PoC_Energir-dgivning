@@ -315,3 +315,296 @@ _Disse punktene ble notert i forrige forsøk og må bekreftes før de aktiveres 
 - `Overlevering/Marvin-tilpasning.md` ble integrert her; filen kan slettes eller peke hit.
 - 2025-09-23: FigmaMainScript/EnergySolutionButtons/WhiteInfoBox er tilbake i `tsconfig`; `npx tsc --noEmit` holder grønn. `npm run lint` stopper fremdeles med eksisterende console-logger/`any` i Tiltak-mappene – ryddes i neste Figma-pulje.
 - 2025-09-23: building-info-service delt i `context.ts`, `matrikkel.ts` og `resultAssembler.ts`; `resolveBuildingData` i `index.ts` re-eksponeres via modulene. `npx tsc --noEmit` kjørt etter oppsplitting.
+
+## Test-konsolidering (2025-12)
+
+### For
+- 70+ testfiler i `scripts/`
+- Mange duplikater og overlappende tester
+- 5 .cjs-filer
+- Ingen strukturert test-suite
+
+### Etter
+- Strukturert `tests/`-hierarki (unit, integration, e2e, fixtures)
+- ~15 konsoliderte testfiler
+- Alle tester i TypeScript
+- Klare test-scripts i package.json
+
+### Gevinster
+- Redusert vedlikeholdsbyrde (70+ til ~25 filer)
+- Tydelig teststruktur med klare kategorier
+- Enklere a kjore spesifikke testgrupper
+- Konsistent TypeScript-bruk
+
+### Nye test-kommandoer
+```bash
+npm run test:unit          # Enhetstester
+npm run test:integration   # Integrasjonstester (LIVE=1)
+npm run test:e2e           # E2E-tester (LIVE=1)
+npm run test:all           # Alle nye tester
+npm run test:watch         # Watch mode
+```
+
+### Beholdte scripts
+- `test-contract-matrikkel.ts` - Kontrakttester med nock-mocking
+- `test-contract-resultAssembler.ts` - Kontrakttester med nock-mocking
+- `test-full-chain.ts` - E2E-test som spawner tjenester
+- `test-api-smoke.ts` - Smoke-test mot live API
+
+Se `tests/README.md` for fullstendig dokumentasjon av teststrukturen.
+
+## GRANTS_MIGRATION (2025-12)
+
+### Bakgrunn
+Støtteordning-systemet hadde to parallelle implementasjoner:
+- **Legacy:** Excel → Python → JavaScript (1800+ linjer autogenerert kode)
+- **Grants:** JSON-basert tilskudd-katalog med strukturert innhold
+
+### Gjennomført migrering
+**Dato:** 2025-12-11
+
+**Fjernet:**
+- `src/data/stotteordningData.js` (1818 linjer)
+- 5 Python-skript i `scripts/python/` (stotteordning_cache.py, hent_stotteordninger_*.py)
+- 3 API-endepunkter i `src/api-server.ts` (/api/stotteordninger, /api/stotteordninger-live, /api/update-stotteordninger)
+- `useStotteordninger` legacy-hook i `shared.ts` (~70 linjer)
+- `StotteordningService` klasse i `src/services/stotteordning-service.ts` (113 linjer)
+- Miljøvariabler: VITE_FORCE_LEGACY_GRANTS, VITE_MIN_GRANT_COUNT, VITE_DEBUG_GRANTS
+
+**Forenklet:**
+- `useGrantAwareStotteordninger` hook: ~240 → ~100 linjer (fjernet fallback-logikk)
+- Alle 8 tiltak-komponenter: fjernet `legacyTiltakSlug`-parameter
+
+**Gevinst:**
+- ~2100 linjer kode fjernet
+- Ingen Python-avhengigheter for støtteordninger
+- Enklere vedlikehold (én datakilde)
+- Bedre type-sikkerhet (Zod-validert JSON vs. autogenerert JS)
+
+### Ny arkitektur
+```
+content/tiltak/*.json (grants: ["grant-id-1", "grant-id-2"])
+         ↓
+useGrantAwareStotteordninger (kun grants-basert)
+         ↓
+useTilskuddBatch (SWR-cache)
+         ↓
+content/tilskudd/*.json (strukturert tilskudd-innhold)
+```
+
+### Verifisering
+- ✅ Alle 8 tiltak har grants definert
+- ✅ Gul liste-varianter har audience-spesifikke grants
+- ✅ Støtteordninger vises korrekt i UI
+- ✅ Ingen console-errors relatert til støtteordninger
+- ✅ `npm run build` passerer
+
+## Solar-service TypeScript-migrering (2025-12)
+
+### Endringer
+- Konvertert `services/solar-service/index.js` (873 linjer) til TypeScript
+- Lagt til 15+ type-definisjoner i `types.ts` for WFS, takflater, API-kontrakter, og interne strukturer
+- Implementert strukturert logging med `[solar-service]`-prefiks (info, error, debug)
+- Refaktorert konfigurasjon til type-sikker `loadConfig()`-funksjon
+- Oppdatert `scripts/build-backend.mjs` og `package.json` til `.ts`-referanser
+
+### Type-definisjoner (types.ts)
+- `SolarServiceConfig` – Alle miljøvariabler og konfigurasjon
+- `Takflate` – Takflate fra WFS med tak_id, bygg_id, bygg_nr, area_m2, irr_kwh_m2_yr, kWh_tot
+- `ProjectedPoint` – UTM32-koordinater (east, north)
+- `AdridLookupResult` – ADRID-oppslag med punkt
+- `SolarQueryParams` / `SolarApiResponse` / `SolarErrorResponse` – API-kontrakt
+- `DeltaAttempt` / `CollectTakflaterResult` / `BuildingGroupSelection` / `SurfaceMetrics` – Interne strukturer
+- `WfsFeature` / `WfsFeatureCollection` / `WfsFeatureMember` – WFS/GML-parsing
+
+### Bevart funksjonalitet
+- ✅ Alle fire søkemodi (BYGG_ID, polygon, matrikkel, lat/lon)
+- ✅ Delta-strategi med auto-ekspansjon (1→3→5→8→12→18→25m)
+- ✅ ADRID-oppslag og fallback-logikk
+- ✅ Bygningsnummer-hydration via `hydrateBuildingSurfaces()`
+- ✅ Caching med NodeCache
+- ✅ Mock-modus for testing (`SOLAR_SERVICE_MOCK=1`)
+- ✅ API-kontrakt (validert mot `solar-validation.test.ts`)
+
+### Validering
+- Typecheck: `npm run typecheck`
+- Lint: `npm run lint`
+- Integrasjonstester: `npm run test:integration`
+- Full-chain test: `npm run test:full-chain`
+- Kontrakttester: `npm run test:contract`
+
+### Teknisk gjeld fjernet
+- ❌ JavaScript i services-mappen (solar-service var siste)
+- ❌ Ustrukturert logging med `console.log`
+- ❌ Manglende type-sikkerhet for WFS-parsing
+
+### Berørte filer
+| Fil | Endring |
+|-----|---------|
+| `services/solar-service/index.js` | Slettet |
+| `services/solar-service/index.ts` | **NY** – TypeScript-versjon |
+| `services/solar-service/types.ts` | **NY** – Type-definisjoner |
+| `scripts/build-backend.mjs` | Oppdatert til `.ts`-referanse |
+| `package.json` | Oppdatert `dev:solar` og `start:solar-service` |
+
+## Subsidy-service fjerning (2025-12)
+
+### Bakgrunn
+`subsidy-service` var en 30-linjers PoC-stub opprettet for å demonstrere Enova-støtte-integrasjon. Tjenesten returnerte hardkodede støttebeløp basert på tiltak-navn og var aldri integrert i applikasjonen. Grants-migreringen (2025-12-11) har fullstendig erstattet behovet for denne tjenesten.
+
+### Verifisering av ubrukt kode
+**Dato:** 2025-12-11
+
+**Grep-søk bekreftet:**
+- ✅ Ingen HTTP-kall til `/subsidy`-endepunktet i `src/`, `services/`, eller `scripts/`
+- ✅ Ingen imports av `subsidy-service` i applikasjonskode
+- ✅ Ingen referanser til `localhost:4001` i kode (kun i Vite-proxy)
+
+### Fjernet
+- `services/subsidy-service/` (hele mappen, 30 linjer kode)
+- npm-scripts: `dev:subsidy` i `package.json`
+- Oppdatert `dev:local` script til å ikke inkludere subsidy
+- Vite dev-proxy for `/subsidy` i `vite.config.ts`
+- Dokumentasjonsreferanser i `README.md`
+
+### Gevinst
+- Redusert forvirring (én mindre ubrukt tjeneste)
+- Enklere onboarding (færre services å forstå)
+- Mindre vedlikeholdsbyrde
+- Konsistent arkitektur (grants-basert støtteordning-system)
+
+### Validering
+- ✅ `npm run typecheck` – ingen type-feil
+- ✅ `npm run lint` – ingen lint-advarsler
+- ✅ `npm run test:contract` – kontrakttester passerer
+- ✅ `npm run test:full-chain` – E2E-test passerer
+- ✅ `npm run dev` – alle tjenester starter uten feil
+
+### Berørte filer
+| Fil | Endring |
+|-----|---------|
+| `services/subsidy-service/` | **SLETTET** – Hele mappen |
+| `package.json` | Fjernet `dev:subsidy`, oppdatert `dev:local` |
+| `vite.config.ts` | Fjernet `/subsidy`-proxy |
+| `README.md` | Fjernet subsidy-service referanser |
+| `Dokumentasjon/Utvikling/refaktor-oversikt.md` | Dokumentert fjerning |
+
+## TILTAK_COMPONENT_CONSOLIDATION (Desember 2024)
+
+### Bakgrunn
+Kodebasen hadde 16 tiltak-komponenter (8 standard + 8 Gul-varianter) med en `legacyComponents.ts` mapping-fil. Gul-variantene var kun 10-linjers wrappers som sendte `audience="gulliste"` til hovedkomponenten.
+
+### Endringer
+- ✅ Oppdatert `TiltakComponentProps` til å inkludere `audience?: ContentAudience`
+- ✅ Alle 8 hovedkomponenter aksepterer nå `audience`-prop direkte
+- ✅ Fjernet 8 Gul-wrapper-filer fra `GulListeTiltak/`
+- ✅ Slettet `legacyComponents.ts` mapping-fil
+- ✅ Oppdatert `WhiteInfoBox.tsx` til direkte komponent-mapping
+- ✅ Slettet `GulListeTiltak/`-mappen
+
+### Gevinster
+- **Redusert kompleksitet:** 16 → 8 komponenter (-50%)
+- **Enklere imports:** Kun én komponent per tiltak
+- **Eksplisitt audience-håndtering:** `audience`-prop synlig i alle brukspunkter
+- **Bedre vedlikeholdbarhet:** Én kilde til sannhet per tiltak
+
+### Migrering
+Eksisterende kode som bruker Gul-komponenter må oppdateres:
+```typescript
+// Før:
+import { VarmepumpeGul } from './Tiltak';
+<VarmepumpeGul {...props} />
+
+// Etter:
+import { Varmepumpe } from './Tiltak';
+<Varmepumpe {...props} audience="gulliste" />
+```
+
+### Validering
+- ✅ Typecheck: `npm run typecheck`
+- ✅ Lint: `npm run lint`
+- ✅ Build: `npm run build`
+- ✅ Manuell testing: WhiteInfoBox, PreviewPanel, MobileTiltakDetail
+
+### Berørte filer
+| Fil | Endring |
+|-----|---------|
+| `src/components/FigmaBlokk/components/Tiltak/shared.ts` | Lagt til `audience?: ContentAudience` i `TiltakComponentProps` |
+| `src/components/FigmaBlokk/components/Tiltak/*.tsx` | Oppdatert wrapper til å akseptere `audience`-prop |
+| `src/components/FigmaBlokk/components/Tiltak/index.tsx` | Fjernet Gul-komponent exports |
+| `src/components/FigmaBlokk/components/Tiltak/GulListeTiltak/` | **SLETTET** – Hele mappen |
+| `src/components/FigmaBlokk/components/Tiltak/legacyComponents.ts` | **SLETTET** |
+| `src/components/FigmaBlokk/components/WhiteInfoBox.tsx` | Direkte komponent-mapping med `TILTAK_COMPONENT_MAP` |
+
+## LOGGING_AND_CLEANUP_PHASE7 (Desember 2024)
+
+### Bakgrunn
+Kodebasen hadde inkonsistent logging med rå `console.log/warn/error`-kall spredt over 30+ filer, ingen sentral logging-utility, og deprecated funksjoner i `shared.ts` som ikke lenger var i bruk. Dette gjorde debugging vanskelig og skapte teknisk gjeld.
+
+### Endringer
+
+#### Strukturert logging
+- ✅ Opprettet `services/shared/logger.ts` og `src/utils/logger.ts` med `createLogger()`-factory
+- ✅ Migrert alle backend-services til strukturert logging med prefiks (e.g., `[building-info]`, `[solar-service]`)
+- ✅ Migrert alle frontend-services og komponenter til strukturert logging
+- ✅ Oppdatert `packages/config/src/runtime.ts` med nye debug-flags (`debugBuildingInfo`, `debugApi`, `debugBygningstype`)
+- ✅ Beholdt miljøvariabel-kontroll for debug-logging (`DEBUG_BUILDING_INFO=1`, `API_DEBUG=1`, etc.)
+
+#### Deprecated patterns cleanup
+- ✅ Fjernet `getOverskriftColor()` og `OVERSKRIFT_FARGER` fra `shared.ts` (ingen referanser)
+- ✅ Beholdt `LEGACY_OVERSKRIFT_FARGER` som **støttet intern fallback** i `useProviderColors()` – se begrunnelse nedenfor
+- ✅ Slettet `fordelsbokser.tsx` (tom placeholder uten referanser)
+
+#### LEGACY_OVERSKRIFT_FARGER – begrunnelse for bevaring
+`LEGACY_OVERSKRIFT_FARGER` i `src/components/FigmaBlokk/components/Tiltak/shared.ts` er **bevisst beholdt** som en støttet intern fallback-mekanisme. Begrunnelsen:
+
+1. **Bakoverkompatibilitet med eksterne datakilder:** Noen tilbydernavn kan komme fra eksterne API-er eller eldre datasett som ikke er oppdatert til å matche dictionary-navnene
+2. **Graceful degradation:** Hvis dictionary-oppslaget feiler eller returnerer tomme verdier, sikrer legacy-mappingen at UI-et fortsatt viser riktige farger
+3. **Ikke eksportert:** Konstanten er privat til modulen og brukes kun internt av `useProviderColors()` hook – den er ikke del av det offentlige API-et
+
+**Fremtidig fjerning:** Kan vurderes når alle kjente eksterne datakilder er verifisert å bruke dictionary-navnene. Inntil da skal legacy-fallback beholdes for stabilitet.
+
+### Gevinster
+- **Konsistent logging:** Alle services bruker samme pattern med prefix og miljøvariabel-kontroll
+- **Enklere debugging:** Strukturerte prefiks gjør det lett å filtrere logger per service
+- **Redusert teknisk gjeld:** Fjernet ~50 linjer deprecated kode og 1 ubrukt fil
+- **Bedre observability:** Logging-pattern klar for fremtidig integrasjon med Prometheus/Loki
+
+### Miljøvariabler for debug-logging
+| Variabel | Scope | Beskrivelse |
+|----------|-------|-------------|
+| `LOG_SOAP=1` | Backend | Aktiverer SOAP XML-logging i matrikkel-klienter |
+| `DEBUG_BUILDING_INFO=1` | building-info-service | Detaljert logging av bygningsvalg-logikk |
+| `API_DEBUG=1` | api-server | Debug-logging for API-forespørsler |
+| `DEBUG_BYGNINGSTYPE=1` | StoreClient | Logging av bygningstype-mapping |
+
+### Berørte filer (strukturert logging)
+| Fil | Endring |
+|-----|---------|
+| `services/shared/logger.ts` | **NY** – Sentral logger-factory for backend |
+| `src/utils/logger.ts` | **NY** – Sentral logger-factory for frontend |
+| `services/building-info-service/logging.ts` | Refaktorert til å bruke `createLogger()` |
+| `services/solar-service/index.ts` | Erstattet inline `infoLog` med logger |
+| `services/admin-server/index.ts` | Erstattet `console.warn` med logger |
+| `services/admin-api/*.ts` | Erstattet alle `console.*` med logger (6 filer) |
+| `src/api-server.ts` | Erstattet alle `console.*` med logger |
+| `src/utils/soapDump.ts`, `src/utils/bygningstypeMapping.ts` | Refaktorert til `createLogger()` |
+| `src/clients/StoreClient.ts` | Erstattet `console.warn` med logger (debug-only) |
+| `server/index.ts` | Erstattet `console.error` med logger |
+
+### Berørte filer (cleanup)
+| Fil | Endring |
+|-----|---------|
+| `src/components/FigmaBlokk/components/Tiltak/shared.ts` | Fjernet `getOverskriftColor()` og `OVERSKRIFT_FARGER` eksport |
+| `src/components/FigmaBlokk/components/Tiltak/fordelsbokser.tsx` | **SLETTET** – Ubrukt placeholder |
+
+### Validering
+- ✅ Typecheck: `npm run typecheck`
+- ✅ Lint: `npm run lint`
+- ✅ Kontrakttester: `npm run test:contract`
+- ✅ Full-chain test: `npm run test:full-chain`
+
+### Notater
+- Scripts i `scripts/` og tester i `tests/` beholder `console.log` for CLI-output (ikke produksjonskode)
+- Global error handlers i `server/index.ts` og `services/admin-api/index.ts` bruker logger for konsistens
+- Dev-only logging beholder `if (isDev)` guard i tillegg til logger der det er relevant

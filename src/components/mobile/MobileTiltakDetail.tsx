@@ -147,13 +147,10 @@ export const MobileTiltakDetail: React.FC<MobileTiltakDetailProps> = ({
     [resolvedContent]
   );
 
-  // Hent støtteordninger - gulliste brukes for legacy-fallback
+  // Hent støtteordninger basert på grants fra tiltak-innholdet
   // grantIds er allerede audience-filtrert via applyTiltakVariant
   const { stotteordninger, isLoading: grantsLoading } = useGrantAwareStotteordninger({
-    grantIds: resolvedContent?.grants ?? [],
-    legacyTiltakSlug: tiltakId,
-    buildingType,
-    gulliste: audience === 'gulliste',
+    grantIds: resolvedContent?.grants ?? []
   });
 
   const hasRegisteredGrants = stotteordninger.length > 0;

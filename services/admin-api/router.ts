@@ -13,6 +13,9 @@ import { createDictionaryRouter } from "./dictionaryRouter.js";
 import { createDraftsRouter } from "./draftsRouter.js";
 import { createPublishRouter } from "./publishRouter.js";
 import { HttpError } from "./httpError.js";
+import { createLogger } from "../shared/logger.js";
+
+const logger = createLogger({ prefix: 'admin-api' });
 
 export function createAdminApiRouter(config: AdminApiConfig): Router {
   const router = Router();
@@ -44,7 +47,7 @@ export function createAdminApiErrorHandler(): ErrorRequestHandler {
       return;
     }
 
-    console.error("[admin-api] Unexpected error", error);
+    logger.error("Unexpected error", error);
     res.status(500).json({
       error: "Uventet feil",
     });

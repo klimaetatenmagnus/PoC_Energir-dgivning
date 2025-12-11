@@ -135,7 +135,7 @@ async function main() {
 
   const solarEnv = useMockSolar ? { SOLAR_SERVICE_MOCK: '1' } : undefined;
 
-  startService('solar-service', ['services/solar-service/index.js'], { env: solarEnv });
+  startService('solar-service', ['--import', 'tsx', 'services/solar-service/index.ts'], { env: solarEnv });
   try {
     await waitForHttp('solar-service', SOLAR_HEALTH_URL, {
       acceptStatus: (status) => status < 500,

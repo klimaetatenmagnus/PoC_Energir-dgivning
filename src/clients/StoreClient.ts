@@ -193,9 +193,7 @@ function extractBygningstypeKodeId(tree: unknown): number | undefined {
         // VIKTIG: Matrikkelen returnerer ofte bare intern kode-ID (f.eks. 8)
         // som må mappes til faktisk bygningstype-kode (f.eks. 131 for rekkehus)
         // Dette krever trolig bruk av findAlleBygningstypeKoder fra BygningService
-        if (process.env.DEBUG_BYGNINGSTYPE === "1") {
-          console.warn(`Mottok intern bygningstype-kode ID: ${num} - dette må mappes til 3-sifret bygningstype`);
-        }
+        debugLog(`Mottok intern bygningstype-kode ID: ${num} - dette må mappes til 3-sifret bygningstype`);
         return num;
       }
     }
@@ -452,7 +450,7 @@ export class StoreClient {
           this.password
         );
       } catch (error) {
-        console.warn(`Kunne ikke mappe bygningstype-ID ${bygningstypeKodeId}:`, error);
+        warnLog(`Kunne ikke mappe bygningstype-ID ${bygningstypeKodeId}:`, error);
       }
     }
 
@@ -504,7 +502,7 @@ export class StoreClient {
         byggId: undefined // Ikke tilgjengelig i denne konteksten
       };
     } catch (error) {
-      console.warn(`Kunne ikke hente bruksenhet ${id}:`, error);
+      warnLog(`Kunne ikke hente bruksenhet ${id}:`, error);
       return null;
     }
   }

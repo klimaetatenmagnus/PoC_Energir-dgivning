@@ -72,8 +72,8 @@ export default function App() {
       .then((data) => {
         setSolarData(data);
       })
-      .catch((err) => {
-        console.warn('Kunne ikke hente soldata:', err);
+      .catch(() => {
+        // Stille feil - soldata er ikke kritisk
         setSolarData(null);
       });
   }, [result, isMobileView]);
@@ -305,7 +305,8 @@ export default function App() {
         <>
           {overlay}
           <MobileLanding
-            headerFadeOpacity={headerFadeOpacity}
+            headerShouldFadeOut={headerFadeOpacity < 1}
+            skylineShouldFadeOut={skylineFadeOpacity < 1}
             searchValue={searchValue}
             loading={loading}
             error={error}

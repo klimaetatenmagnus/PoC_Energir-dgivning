@@ -3,9 +3,9 @@ import {
   useProviderColors,
   getOverskriftLabel,
   openExternalLink,
-  TiltakComponentProps
+  TiltakComponentProps,
+  type Stotteordning
 } from './shared';
-import type { Stotteordning } from '../../../../services/stotteordning-service';
 import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type {
@@ -100,12 +100,9 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
   // All hooks must be called before any early return
   const {
     stotteordninger,
-    intendedSource,
     isLoading: grantLoading
   } = useGrantAwareStotteordninger({
-    grantIds,
-    legacyTiltakSlug: 'tetting',
-    buildingType
+    grantIds
   });
 
   // Show loading state after all hooks have been called
@@ -119,7 +116,7 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
-    : intendedSource === 'grants' && grantLoading
+    : grantLoading
       ? [
           {
             ordning: 'Henter støtteordninger …',
@@ -746,7 +743,7 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
 };
 
 export const Tetting: React.FC<TettingProps> = (props) => (
-  <TettingContentComponent {...props} audience="standard" />
+  <TettingContentComponent {...props} audience={props.audience ?? 'standard'} />
 );
 
 export { TettingContentComponent };

@@ -68,8 +68,11 @@ export default [{
     "**/*.test.{ts,tsx}",
     "**/*.spec.{ts,tsx}",
     "**/__tests__/**/*.{ts,tsx}",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
   ],
   rules: {
     "@typescript-eslint/no-explicit-any": "off",
+    "no-console": "off",
   },
 }, ...storybook.configs["flat/recommended"]];

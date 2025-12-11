@@ -5,9 +5,14 @@
 
 import { BygningClient, type BygningstypeKode, type MatrikkelContext } from "../clients/BygningClient.ts";
 import { matrikkelEndpoint } from "./endpoints.ts";
+import { createLogger } from "./logger.ts";
 
-const infoLog = (...args: unknown[]) => console.warn("[bygningstype-mapping]", ...args);
-const errorLog = (...args: unknown[]) => console.error("[bygningstype-mapping:error]", ...args);
+const logger = createLogger({
+  prefix: 'bygningstype-mapping',
+  debugEnvVar: 'DEBUG_BYGNINGSTYPE',
+});
+const infoLog = logger.info;
+const errorLog = logger.error;
 
 // Cache for bygningstype-koder
 let bygningstypeCache: Map<number, BygningstypeKode> | null = null;
@@ -103,9 +108,7 @@ export async function mapBygningstypeId(
     return kode.kodeverdi;
   }
   
-  if (process.env.DEBUG_BYGNINGSTYPE === "1") {
-    infoLog(`Ingen mapping funnet for bygningstype-ID ${internId}`);
-  }
+  logger.debug(`Ingen mapping funnet for bygningstype-ID ${internId}`);
   return undefined;
 }
 

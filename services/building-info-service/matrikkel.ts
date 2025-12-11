@@ -1075,6 +1075,7 @@ export async function resolveBuildingData(
         preferExpectedBuilding: true,
         handleRowHouses: true,
         considerBuildingAge: true,
+        filterHighNumberedBuildings: true,
         debug: DEBUG_IMPROVED,
       }) as ByggInfo & { id: number };
       selectedBygg = improved;

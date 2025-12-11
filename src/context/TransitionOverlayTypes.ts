@@ -16,11 +16,13 @@ export interface OverlayState {
   buildingType: BuildingKind | null;
   startRect: ViewportRect | null;
   targetRect: ViewportRect | null;
+  isMobile: boolean;
 }
 
 export interface BeginTransitionPayload {
   buildingType: BuildingKind;
   startRect: ViewportRect;
+  isMobile?: boolean;
 }
 
 export interface TransitionOverlayContextValue extends OverlayState {
@@ -38,6 +40,7 @@ export const initialOverlayState: OverlayState = {
   buildingType: null,
   startRect: null,
   targetRect: null,
+  isMobile: false,
 };
 
 export const TransitionOverlayContext = createContext<TransitionOverlayContextValue | undefined>(undefined);

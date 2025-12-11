@@ -11,6 +11,9 @@
 
 import axios from 'axios';
 import { getAppConfig } from '../runtimeConfig.ts';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger({ prefix: 'gul-liste-service' });
 
 const runtimeEnv = typeof process !== 'undefined' && process.env ? process.env : {};
 
@@ -80,13 +83,13 @@ async function finnTeigidFraGnrBnr(gnr: number, bnr: number): Promise<string | n
       .map((match) => match[1])
       .filter((id): id is string => Boolean(id));
     if (ids.length > 1) {
-      console.warn(`Flere teigid funnet for GNR ${gnr}, BNR ${bnr}:`, ids);
+      logger.warn(`Flere teigid funnet for GNR ${gnr}, BNR ${bnr}:`, ids);
       return ids[0]; // Returner første match
     }
 
     return null;
   } catch (error) {
-    console.error('Feil ved henting av teigid:', error);
+    logger.error('Feil ved henting av teigid:', error);
     return null;
   }
 }
@@ -132,7 +135,7 @@ async function sjekkGulListeForTeigid(teigid: string): Promise<GulListeResult> {
       teigid: teigid
     };
   } catch (error) {
-    console.error('Feil ved sjekk av Gul liste:', error);
+    logger.error('Feil ved sjekk av Gul liste:', error);
     return {
       erPaaGulListe: false,
       error: 'Kunne ikke sjekke Gul liste-status'
@@ -198,7 +201,7 @@ async function hentMatrikkelDataFraAdresse(adresse: string): Promise<MatrikkelDa
     
     return null;
   } catch (error) {
-    console.error('Feil ved henting av matrikkeldata:', error);
+    logger.error('Feil ved henting av matrikkeldata:', error);
     return null;
   }
 }
@@ -212,7 +215,7 @@ async function hentMatrikkelDataFraAdresse(adresse: string): Promise<MatrikkelDa
 export async function sjekkGulListe(adresse: string): Promise<GulListeResult> {
   try {
     // Steg 1: Hent GNR/BNR fra adresse
-    console.warn(`[gul-liste] Sjekker Gul liste for ${adresse}`);
+    logger.info(`Sjekker Gul liste for ${adresse}`);
     
     const matrikkelData = await hentMatrikkelDataFraAdresse(adresse);
     
@@ -224,8 +227,8 @@ export async function sjekkGulListe(adresse: string): Promise<GulListeResult> {
       };
     }
     
-    console.warn(
-      `[gul-liste] Fant GNR ${matrikkelData.gardsnummer}, BNR ${matrikkelData.bruksnummer}`
+    logger.info(
+      `Fant GNR ${matrikkelData.gardsnummer}, BNR ${matrikkelData.bruksnummer}`
     );
     
     // Steg 2: Finn teigid fra GNR/BNR
@@ -244,7 +247,7 @@ export async function sjekkGulListe(adresse: string): Promise<GulListeResult> {
       };
     }
     
-    console.warn(`[gul-liste] Fant teigid ${teigid}`);
+    logger.info(`Fant teigid ${teigid}`);
     
     // Steg 3: Sjekk om teigid er på Gul liste
     const gulListeResultat = await sjekkGulListeForTeigid(teigid);
@@ -255,9 +258,9 @@ export async function sjekkGulListe(adresse: string): Promise<GulListeResult> {
       bnr: matrikkelData.bruksnummer,
       adresse: adresse
     };
-    
+
   } catch (error) {
-    console.error('Feil i Gul liste-sjekk:', error);
+    logger.error('Feil i Gul liste-sjekk:', error);
     return {
       erPaaGulListe: false,
       error: 'En uventet feil oppstod',
@@ -291,9 +294,9 @@ export async function sjekkGulListeMedGnrBnr(gnr: number, bnr: number): Promise<
       gnr: gnr,
       bnr: bnr
     };
-    
+
   } catch (error) {
-    console.error('Feil i Gul liste-sjekk:', error);
+    logger.error('Feil i Gul liste-sjekk:', error);
     return {
       erPaaGulListe: false,
       gnr: gnr,

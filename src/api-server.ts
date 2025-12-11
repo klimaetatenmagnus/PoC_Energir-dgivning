@@ -11,9 +11,6 @@ import { Storage } from '@google-cloud/storage';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
 import { metricsRegistry } from '../services/building-info-service/metrics.js';
 import { energyRatingService } from './services/energyRatingService.js';
-import { execFile } from 'child_process';
-import type { ExecFileOptions } from 'child_process';
-import { promisify } from 'util';
 import { z } from 'zod';
 import { TiltakContentSchema, type TiltakContent, type TiltakBenefit } from '../content/tiltak/schema';
 import { TilskuddContentSchema, type TilskuddContent } from '../content/tilskudd/schema';
@@ -29,10 +26,8 @@ import type {
   TilskuddCatalogItem
 } from './types/contentCatalog';
 import type { ContentStatus } from '../content/schema-helpers';
+import { createLogger } from './utils/logger.js';
 
-const execFileAsync = promisify(execFile);
-
-const pythonScriptsDir = path.join(process.cwd(), 'scripts', 'python');
 const configDirectory = process.env.APP_CONFIG_DIR ?? path.join(process.cwd(), 'content');
 const solarServiceBaseUrl = (process.env.SOLAR_SERVICE_BASE_URL ?? 'http://localhost:4003').replace(/\/$/, '');
 const contentBucketName = process.env.CONTENT_BUCKET;
@@ -44,27 +39,12 @@ const storage = contentBucketName ? new Storage() : null;
 const app = express();
 const PORT = Number(process.env.API_PORT ?? process.env.PORT ?? 3001);
 
-const pythonCandidates = [
-  process.env.PYTHON_BINARY,
-  process.env.PYTHON_BIN,
-  process.env.PYTHON_PATH,
-  'python',
-  'python3',
-  'py'
-].filter((candidate): candidate is string => Boolean(candidate));
-
-const pythonEnv: NodeJS.ProcessEnv = {
-  ...process.env,
-  PYTHONIOENCODING: 'utf-8'
-};
-
-const debugEnabled = process.env.API_DEBUG === '1';
-const infoLog = (...args: unknown[]) => console.warn('[api-server]', ...args);
-const debugLog = (...args: unknown[]) => {
-  if (debugEnabled) {
-    console.warn('[api-server:debug]', ...args);
-  }
-};
+const logger = createLogger({
+  prefix: 'api-server',
+  debugEnvVar: 'API_DEBUG',
+});
+const infoLog = logger.info;
+const debugLog = logger.debug;
 
 interface GeonorgeAddress {
   adressenavn?: string;
@@ -83,8 +63,6 @@ interface GeonorgeResponse {
   adresser?: GeonorgeAddress[];
 }
 
-let pythonDetectionPromise: Promise<string> | null = null;
-let cachedPythonBinary: string | null = null;
 type JsonObject = Record<string, unknown>;
 
 type BucketJsonCacheEntry = {
@@ -380,7 +358,7 @@ async function loadJsonFile(relativePath: string): Promise<LoadedJsonFile> {
     try {
       return await loadJsonFromBucket(relativePath);
     } catch (error) {
-      console.error(`[api-server] Failed to load ${relativePath} from bucket, falling back to disk`, error);
+      logger.error(`Failed to load ${relativePath} from bucket, falling back to disk`, error);
     }
   }
 
@@ -394,7 +372,7 @@ async function loadAppConfig(): Promise<AppConfigResponse> {
     const { data: parsed } = await loadJsonFile('app.json');
     return createConfigFromSource(parsed, defaults);
   } catch (error) {
-    console.error('[api-server] Failed to load app config, using defaults', error);
+    logger.error('Failed to load app config, using defaults', error);
     return defaults;
   }
 }
@@ -438,7 +416,7 @@ function resolveBenefitsFromRefs(
     seen.add(ref);
     const entry = dictionary.get(ref);
     if (!entry) {
-      console.warn(`[api-server] Unknown benefit ref "${ref}" in ${context}`);
+      logger.warn(`Unknown benefit ref "${ref}" in ${context}`);
       continue;
     }
     resolved.push(entry);
@@ -522,7 +500,7 @@ function logLegacyContentWarning(relativePath: string, reason: string): void {
     return;
   }
   legacyContentWarnings.add(relativePath);
-  console.warn(`[api-server] Legacy content ${relativePath}: ${reason}`);
+  logger.warn(`Legacy content ${relativePath}: ${reason}`);
 }
 
 function parseDraftQueryParam(value: unknown): boolean {
@@ -720,8 +698,8 @@ function processLoadedContent(
   const config = contentCollectionConfigs[collection];
   const parsed = config.schema.safeParse(data);
   if (!parsed.success) {
-    console.error(
-      `[api-server] Validation failed for ${relativePath}`,
+    logger.error(
+      `Validation failed for ${relativePath}`,
       parsed.error.flatten()
     );
     throw new ContentValidationError(relativePath, parsed.error.issues);
@@ -730,8 +708,8 @@ function processLoadedContent(
   const includeDrafts = Boolean(options.includeDrafts);
   const status = parsed.data.metadata.status;
   if (!includeDrafts && status !== 'published') {
-    console.warn(
-      `[api-server] Blocked ${relativePath} because status=${status} (draft access disabled)`
+    logger.warn(
+      `Blocked ${relativePath} because status=${status} (draft access disabled)`
     );
     throw new ContentAccessError(relativePath, status);
   }
@@ -857,76 +835,11 @@ function computeCatalogEtag(catalog: ContentCatalogResponse): string | null {
     const digest = createHash('sha1').update(payload).digest('hex');
     return `catalog:${digest}`;
   } catch (error) {
-    console.error('[api-server] Failed to compute catalog etag', error);
+    logger.error('Failed to compute catalog etag', error);
     return null;
   }
 }
 
-
-async function detectPythonBinary(): Promise<string> {
-  const attempted: string[] = [];
-
-  for (const candidate of pythonCandidates) {
-    if (attempted.includes(candidate)) {
-      continue;
-    }
-
-    attempted.push(candidate);
-
-    try {
-      const { stdout, stderr } = await execFileAsync(candidate, ['--version'], { encoding: 'utf8' }) as { stdout: string; stderr: string };
-      const version = (stdout || stderr || '').trim();
-      infoLog(`Using ${candidate} for Python scripts${version ? ` (${version})` : ''}`);
-      return candidate;
-    } catch (error) {
-      const err = error as NodeJS.ErrnoException & { stderr?: string };
-      const stderr = typeof err.stderr === 'string' ? err.stderr.toLowerCase() : '';
-      const isMissing = err.code === 'ENOENT' || err.errno === 'ENOENT' || stderr.includes('not found') || stderr.includes('not recognized');
-
-      if (isMissing) {
-        continue;
-      }
-
-      throw error;
-    }
-  }
-
-  const attemptedList = attempted.length > 0 ? attempted.join(', ') : 'python, python3';
-  throw new Error(`Fant ikke Python-tolk i PATH (forsøkte: ${attemptedList}). Installer Python 3 eller sett PYTHON_BINARY.`);
-}
-
-async function getPythonBinary(): Promise<string> {
-  if (cachedPythonBinary) {
-    return cachedPythonBinary;
-  }
-
-  if (!pythonDetectionPromise) {
-    pythonDetectionPromise = detectPythonBinary()
-      .then((binary) => {
-        cachedPythonBinary = binary;
-        return binary;
-      })
-      .catch((error) => {
-        pythonDetectionPromise = null;
-        throw error;
-      });
-  }
-
-  return pythonDetectionPromise;
-}
-
-async function runPythonScript(script: string, args: string[] = [], options: ExecFileOptions = {}) {
-  const pythonBinary = await getPythonBinary();
-  const mergedEnv = { ...pythonEnv, ...(options.env ?? {}) };
-  const execOptions: ExecFileOptions = {
-    ...options,
-    env: mergedEnv
-  };
-
-  const scriptPath = path.join(pythonScriptsDir, script);
-
-  return execFileAsync(pythonBinary, [scriptPath, ...args], { ...execOptions, encoding: 'utf8' }) as Promise<{ stdout: string; stderr: string }>;
-}
 
 // Middleware
 app.use(cors({
@@ -940,7 +853,7 @@ app.get('/config/app.json', async (_req, res) => {
     const cfg = await loadAppConfig();
     res.json(cfg);
   } catch (error) {
-    console.error('[api-server] Failed to load app config', error);
+    logger.error('Failed to load app config', error);
     res.status(500).json({ error: 'Failed to load app config' });
   }
 });
@@ -964,7 +877,7 @@ app.get('/config/dictionaries/index.json', async (req, res) => {
 
     res.json(data);
   } catch (error) {
-    console.error('[api-server] Failed to load content dictionary', error);
+    logger.error('Failed to load content dictionary', error);
     res.status(500).json({ error: 'Failed to load content dictionary' });
   }
 });
@@ -996,7 +909,7 @@ app.get('/config/content/:collection/index.json', async (req, res) => {
     }
     res.json(catalog);
   } catch (error) {
-    console.error('[api-server] Failed to build content catalog', error);
+    logger.error('Failed to build content catalog', error);
     res.status(500).json({ error: 'Failed to build content catalog' });
   }
 });
@@ -1052,7 +965,7 @@ app.get(/^\/config\/content\/(.+)$/, async (req, res) => {
     if (err && (err.code === 'ENOENT' || err.code === 'ENOTDIR')) {
       res.status(404).json({ error: 'Content not found' });
     } else {
-      console.error(`[api-server] Failed to load content file ${safePath}`, error);
+      logger.error(`Failed to load content file ${safePath}`, error);
       res.status(500).json({ error: 'Failed to load content file' });
     }
   }
@@ -1070,7 +983,7 @@ app.get('/metrics', async (_req, res) => {
     res.set('Content-Type', metricsRegistry.contentType);
     res.send(await metricsRegistry.metrics());
   } catch (error) {
-    console.error('[api-server] Failed to render metrics', error);
+    logger.error('Failed to render metrics', error);
     res.status(500).json({ error: 'Failed to render metrics' });
   }
 });
@@ -1102,7 +1015,7 @@ async function handleSolarProxy(req: express.Request, res: express.Response): Pr
     const buffer = Buffer.from(await response.arrayBuffer());
     res.status(response.status).send(buffer);
   } catch (error) {
-    console.error('[api-server] Failed to proxy solar request', { targetUrl, error });
+    logger.error('Failed to proxy solar request', { targetUrl, error });
     res.status(502).json({ error: 'Failed to proxy solar service' });
   }
 }
@@ -1156,7 +1069,7 @@ app.post('/api/address-lookup', async (req, res) => {
     });
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`[API Server] Lookup failed after ${duration}ms:`, error);
+    logger.error(`Lookup failed after ${duration}ms:`, error);
     
     // Handle authentication errors specially
     if (error instanceof Error && error.message.includes('401')) {
@@ -1246,7 +1159,7 @@ app.get('/api/address-suggestions', async (req, res) => {
     });
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`[API Server] Address suggestions failed after ${duration}ms:`, error);
+    logger.error(`Address suggestions failed after ${duration}ms:`, error);
     
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -1316,145 +1229,11 @@ app.post('/api/energy-rating', async (req, res) => {
     });
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`[API Server] Energy rating calculation failed after ${duration}ms:`, error);
+    logger.error(`Energy rating calculation failed after ${duration}ms:`, error);
     
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Unknown error',
       address,
-      _meta: {
-        duration,
-        timestamp: new Date().toISOString()
-      }
-    });
-  }
-});
-
-// Støtteordninger endpoint - kjører Python script direkte
-app.get('/api/stotteordninger', async (req, res) => {
-  const { gulliste, tiltak, bygningstype } = req.query;
-  
-  if (!tiltak || !bygningstype) {
-    return res.status(400).json({ 
-      error: 'Missing required parameters: tiltak and bygningstype' 
-    });
-  }
-
-  const gullisteParam = gulliste === 'true' ? 'true' : 'false';
-  
-  infoLog(`Fetching støtteordninger: gulliste=${gullisteParam}, tiltak=${tiltak}, bygningstype=${bygningstype}`);
-  const startTime = Date.now();
-
-  try {
-    const tiltakParam = String(tiltak);
-    const bygningstypeParam = String(bygningstype);
-
-    const { stdout, stderr } = await runPythonScript(
-      'hent_stotteordninger_api_google.py',
-      [gullisteParam, tiltakParam, bygningstypeParam]
-    );
-    
-    if (stderr) {
-      console.error('[API Server] Python stderr:', stderr);
-    }
-    
-    // Parse JSON output
-    const data = JSON.parse(stdout);
-    const duration = Date.now() - startTime;
-    
-    infoLog(`Found ${Array.isArray(data) ? data.length : 0} støtteordninger in ${duration}ms`);
-    res.json(data);
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error(`[API Server] Støtteordninger fetch failed after ${duration}ms:`, error);
-    
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Unknown error',
-      _meta: {
-        duration,
-        timestamp: new Date().toISOString()
-      }
-    });
-  }
-});
-
-// Get støtteordninger directly from Excel
-app.get('/api/stotteordninger-live', async (req, res) => {
-  const { gulliste, tiltak, bygningstype } = req.query;
-  
-  if (!tiltak || !bygningstype) {
-    return res.status(400).json({ 
-      error: 'Mangler påkrevde parametre: tiltak og bygningstype' 
-    });
-  }
-  
-  infoLog(`Henter støtteordninger direkte fra Excel: gulliste=${gulliste}, tiltak=${tiltak}, bygningstype=${bygningstype}`);
-  const startTime = Date.now();
-  
-  try {
-    const tiltakParam = String(tiltak);
-    const bygningstypeParam = String(bygningstype);
-    const gullisteParam = (gulliste ?? 'false').toString();
-
-    const { stdout, stderr } = await runPythonScript(
-      'hent_stotteordninger_direkte_google.py',
-      [gullisteParam, tiltakParam, bygningstypeParam]
-    );
-    
-    if (stderr) {
-      console.error('[API Server] Python stderr:', stderr);
-    }
-    
-    const data = JSON.parse(stdout);
-    const duration = Date.now() - startTime;
-    
-    infoLog(`Hentet støtteordninger direkte i ${duration}ms`);
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.json(data);
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error(`[API Server] Direkte henting feilet etter ${duration}ms:`, error);
-    
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Unknown error',
-      _meta: {
-        duration,
-        timestamp: new Date().toISOString()
-      }
-    });
-  }
-});
-
-// Update støtteordninger cache endpoint
-app.post('/api/update-stotteordninger', async (req, res) => {
-  infoLog('Updating støtteordninger cache...');
-  const startTime = Date.now();
-  
-  try {
-    // Run the Python script to update cache
-    const { stdout, stderr } = await runPythonScript('stotteordning_cache.py');
-    
-    if (stderr) {
-      console.error('[API Server] Python stderr:', stderr);
-    }
-    
-    const duration = Date.now() - startTime;
-    infoLog(`Støtteordninger cache updated in ${duration}ms`);
-    
-    res.json({
-      success: true,
-      message: 'Støtteordninger cache updated successfully',
-      output: stdout,
-      _meta: {
-        duration,
-        timestamp: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error(`[API Server] Cache update failed after ${duration}ms:`, error);
-    
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Unknown error',
       _meta: {
         duration,
         timestamp: new Date().toISOString()

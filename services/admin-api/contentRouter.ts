@@ -18,6 +18,9 @@ import { resolveUserContext } from "./auth.js";
 import type { AdminApiConfig } from "./config.js";
 import { ContentStorage } from "./contentStorage.js";
 import { HttpError } from "./httpError.js";
+import { createLogger } from "../shared/logger.js";
+
+const logger = createLogger({ prefix: 'admin-api' });
 
 const TiltakBenefitRefSchema = z
   .string()
@@ -160,8 +163,8 @@ export function createContentRouter(
         expectedGeneration: body.generation,
       });
 
-      console.warn(
-        `[admin-api] ${actor.email} oppdaterte benefitRefs for tiltak ${tiltakId} (generation=${result.generation ?? "ukjent"})`
+      logger.info(
+        `${actor.email} oppdaterte benefitRefs for tiltak ${tiltakId} (generation=${result.generation ?? "ukjent"})`
       );
 
       res.json({
@@ -234,8 +237,8 @@ export function createContentRouter(
 
       const result = await storage.writeJson(draftPath, updatedContent, writeOptions);
 
-      console.warn(
-        `[admin-api] ${actor.email} lagret draft for tiltak ${tiltakId} (generation=${result.generation ?? "ukjent"})`
+      logger.info(
+        `${actor.email} lagret draft for tiltak ${tiltakId} (generation=${result.generation ?? "ukjent"})`
       );
 
       // Sjekk om publisert versjon finnes for å kunne gi hasDraft-info
@@ -337,8 +340,8 @@ export function createContentRouter(
       // Skriv til draft-fil
       const result = await storage.writeJson(draftPath, newTiltak);
 
-      console.warn(
-        `[admin-api] ${actor.email} opprettet nytt tiltak ${tiltakId}`
+      logger.info(
+        `${actor.email} opprettet nytt tiltak ${tiltakId}`
       );
 
       res.status(201).json({
@@ -396,8 +399,8 @@ export function createContentRouter(
       // Slett draft-filen
       await storage.deleteJson(draftPath);
 
-      console.warn(
-        `[admin-api] ${actor.email} publiserte tiltak ${tiltakId} (generation=${result.generation ?? "ukjent"})`
+      logger.info(
+        `${actor.email} publiserte tiltak ${tiltakId} (generation=${result.generation ?? "ukjent"})`
       );
 
       res.json({
@@ -432,8 +435,8 @@ export function createContentRouter(
       // Slett draft-filen
       await storage.deleteJson(draftPath);
 
-      console.warn(
-        `[admin-api] ${actor.email} forkastet draft for tiltak ${tiltakId}`
+      logger.info(
+        `${actor.email} forkastet draft for tiltak ${tiltakId}`
       );
 
       res.json({
@@ -519,8 +522,8 @@ export function createContentRouter(
       // Skriv til draft-fil
       const result = await storage.writeJson(draftPath, newTilskudd);
 
-      console.warn(
-        `[admin-api] ${actor.email} opprettet nytt tilskudd ${tilskuddId}`
+      logger.info(
+        `${actor.email} opprettet nytt tilskudd ${tilskuddId}`
       );
 
       res.status(201).json({
@@ -585,8 +588,8 @@ export function createContentRouter(
 
       const result = await storage.writeJson(draftPath, updatedContent, writeOptions);
 
-      console.warn(
-        `[admin-api] ${actor.email} lagret draft for tilskudd ${tilskuddId} (generation=${result.generation ?? "ukjent"})`
+      logger.info(
+        `${actor.email} lagret draft for tilskudd ${tilskuddId} (generation=${result.generation ?? "ukjent"})`
       );
 
       // Sjekk om publisert versjon finnes for å kunne gi hasDraft-info
@@ -647,8 +650,8 @@ export function createContentRouter(
       // Slett draft-filen
       await storage.deleteJson(draftPath);
 
-      console.warn(
-        `[admin-api] ${actor.email} publiserte tilskudd ${tilskuddId} (generation=${result.generation ?? "ukjent"})`
+      logger.info(
+        `${actor.email} publiserte tilskudd ${tilskuddId} (generation=${result.generation ?? "ukjent"})`
       );
 
       res.json({
@@ -683,8 +686,8 @@ export function createContentRouter(
       // Slett draft-filen
       await storage.deleteJson(draftPath);
 
-      console.warn(
-        `[admin-api] ${actor.email} forkastet draft for tilskudd ${tilskuddId}`
+      logger.info(
+        `${actor.email} forkastet draft for tilskudd ${tilskuddId}`
       );
 
       res.json({
@@ -740,8 +743,8 @@ export function createContentRouter(
       // Skriv til DRAFT-fil (ikke publisert) - slettingen må publiseres via wizard
       const result = await storage.writeJson(draftPath, deletedContent);
 
-      console.warn(
-        `[admin-api] ${actor.email} markerte tiltak ${tiltakId} for sletting (draft)`
+      logger.info(
+        `${actor.email} markerte tiltak ${tiltakId} for sletting (draft)`
       );
 
       res.json({
@@ -794,8 +797,8 @@ export function createContentRouter(
       // Skriv til DRAFT-fil (ikke publisert) - slettingen må publiseres via wizard
       const result = await storage.writeJson(draftPath, deletedContent);
 
-      console.warn(
-        `[admin-api] ${actor.email} markerte tilskudd ${tilskuddId} for sletting (draft)`
+      logger.info(
+        `${actor.email} markerte tilskudd ${tilskuddId} for sletting (draft)`
       );
 
       res.json({

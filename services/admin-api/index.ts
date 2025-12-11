@@ -5,12 +5,15 @@ import {
   createAdminApiRouter,
   createAdminApiErrorHandler,
 } from "./router.js";
+import { createLogger } from "../shared/logger.js";
+
+const logger = createLogger({ prefix: 'admin-api' });
 
 process.on("unhandledRejection", (error) => {
-  console.error("[admin-api] Unhandled rejection", error);
+  logger.error("Unhandled rejection", error);
 });
 process.on("uncaughtException", (error) => {
-  console.error("[admin-api] Uncaught exception", error);
+  logger.error("Uncaught exception", error);
 });
 
 const config = loadAdminApiConfig();
@@ -32,7 +35,7 @@ app.use("/admin/api", createAdminApiRouter(config));
 app.use(createAdminApiErrorHandler());
 
 app.listen(config.port, () => {
-  console.warn(
-    `[admin-api] listening on port ${config.port} (project=${config.projectId}, location=${config.cloudBuildLocation})`
+  logger.info(
+    `listening on port ${config.port} (project=${config.projectId}, location=${config.cloudBuildLocation})`
   );
 });

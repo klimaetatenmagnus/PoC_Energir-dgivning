@@ -6,6 +6,9 @@
  */
 
 import { sjekkGulListeMedGnrBnr } from './gul-liste-service';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger({ prefix: 'gul-liste-integration' });
 
 /**
  * Utvider BuildingInfo interface med gul liste-status
@@ -56,8 +59,8 @@ export async function berikBuildingInfoMedGulListe<T extends object>(
       }
     } as T & BuildingInfoMedGulListe;
   } catch (error) {
-    console.error('Feil ved berikelse med gul liste-data:', error);
-    
+    logger.error('Feil ved berikelse med gul liste-data:', error);
+
     // Returner building info uten gul liste-data hvis det feiler
     return {
       ...buildingInfo,

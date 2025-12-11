@@ -10,6 +10,7 @@
   overflow: hidden; /* Forhindrer scrolling på rot-elementet */
 }
 
+
 /* Header */
 .mobile-energy-solutions__header {
   display: flex;
@@ -585,4 +586,98 @@
 
 .mobile-energy-solutions .pkt-tag {
   font-size: 0.75rem;
+}
+
+/* Mobile Energy Solutions Fade-in Animation
+   Background transitions from green (matching MobileLanding) to white,
+   then content fades in with a delay for a smooth transition */
+.mobile-energy-solutions--fade-in {
+  animation: mobileBackgroundColorFade 0.8s ease-out forwards;
+}
+
+.mobile-energy-solutions--fade-in .mobile-energy-solutions__header,
+.mobile-energy-solutions--fade-in .mobile-energy-solutions__main {
+  opacity: 0;
+  animation: mobileContentFadeIn 0.5s ease-out 0.4s forwards;
+}
+
+/* Background color transition from green to white */
+@keyframes mobileBackgroundColorFade {
+  0% {
+    background-color: #034B45; /* Same green as MobileLanding */
+  }
+  100% {
+    background-color: var(--pkt-color-brand-neutrals-100, #f9f9f9);
+  }
+}
+
+@keyframes mobileContentFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* GPU acceleration for root container */
+.mobile-energy-solutions {
+  will-change: opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* GPU acceleration for animated elements */
+.mobile-energy-solutions__energy-box {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.mobile-energy-solutions__energy-box--active,
+.mobile-energy-solutions__energy-box--new {
+  will-change: transform, box-shadow;
+}
+
+.mobile-energy-solutions__scroll-indicator {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.mobile-energy-solutions__building-illustration {
+  will-change: auto; /* No animation, no will-change */
+  transform: translateZ(0);
+}
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-energy-solutions--fade-in {
+    animation: none !important;
+    background-color: var(--pkt-color-brand-neutrals-100, #f9f9f9);
+  }
+
+  .mobile-energy-solutions--fade-in .mobile-energy-solutions__header,
+  .mobile-energy-solutions--fade-in .mobile-energy-solutions__main {
+    opacity: 1;
+    animation: none !important;
+  }
+
+  .mobile-energy-solutions {
+    will-change: auto;
+  }
+
+  /* Disable energy box pulse animation */
+  .mobile-energy-solutions__energy-box--new {
+    animation: none !important;
+    transform: scale(1.15);
+  }
+
+  /* Disable scroll indicator bounce */
+  .mobile-energy-solutions__scroll-indicator {
+    animation: none !important;
+  }
+
+  /* Disable modal slide animations */
+  .mobile-energy-solutions__infobox-container {
+    animation: none !important;
+  }
 }

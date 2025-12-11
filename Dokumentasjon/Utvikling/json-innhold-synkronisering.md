@@ -2,6 +2,13 @@
 
 Opprettet: 2025-11-26
 
+> **Status: FULLFØRT OG LUKKET**
+>
+> Denne migrasjonen er fullført. `scripts/extract-tsx-content.mjs` og `GulListeTiltak/`-mappen med `*Gul.tsx`-filer er slettet.
+> Dokumentet beholdes for historisk referanse.
+
+---
+
 ## Problemstilling
 
 Under refaktoreringen av tiltakskomponentene fra hardkodet innhold til JSON-basert innhold, ble tekstene i enkelte tilfeller sammenfattet eller forkortet av en AI-agent i stedet for å bli kopiert ordrett. Dette har ført til avvik mellom:
@@ -45,9 +52,11 @@ For hvert tiltak må følgende felter ekstraheres fra TSX og oppdateres i JSON:
 
 ## Valgt løsning: Semi-automatisk ekstraksjon
 
-**Status:** ✅ Implementert og testet
+**Status:** ✅ Fullført og avsluttet (skriptet er nå slettet)
 
-Vi har implementert et Node.js-skript (`scripts/extract-tsx-content.mjs`) som ekstraherer tekstinnhold fra TSX-filer i main-branchen og oppdaterer tilsvarende JSON-filer.
+~~Vi har implementert et Node.js-skript (`scripts/extract-tsx-content.mjs`) som ekstraherer tekstinnhold fra TSX-filer i main-branchen og oppdaterer tilsvarende JSON-filer.~~
+
+> **MERK:** Skriptet `scripts/extract-tsx-content.mjs` er slettet da migrasjonen er fullført. Innholdet ligger nå i JSON-filene under `content/tiltak/`.
 
 ### Skriptets funksjonalitet
 
@@ -98,19 +107,21 @@ node scripts/extract-tsx-content.mjs varmepumpe --skip-gul
 | `variants[].introParagraphs` | Første `<p>` i gul liste TSX | Fra `*Gul.tsx`-filer |
 | `variants[].buildingTypeParagraphs` | Betinget rendrede `<p>` i gul liste TSX | Fra `*Gul.tsx`-filer |
 
-### Gul liste-støtte
+### Gul liste-støtte (UTGÅTT)
 
-Skriptet henter automatisk innhold fra gul liste-filer i `GulListeTiltak/`-mappen og oppdaterer `variants[]`-arrayen i JSON der `audience === "gulliste"`.
+> **MERK:** `GulListeTiltak/`-mappen og alle `*Gul.tsx`-filer er slettet. Gul liste-innhold håndteres nå via `variants`-arrayen med `audience: "gulliste"` i JSON-filene.
 
-Gul liste-filer som støttes:
-- `VarmepumpeGul.tsx`
-- `SolenergiGul.tsx`
-- `TettingGul.tsx`
-- `VentilasjonGul.tsx`
-- `TemperaturstyringGul.tsx`
-- `UtskiftningAvVinduGul.tsx`
-- `IsoleringAvKjellerOgLoftGul.tsx`
-- `EtterisoleringYtterveggGul.tsx`
+~~Skriptet henter automatisk innhold fra gul liste-filer i `GulListeTiltak/`-mappen og oppdaterer `variants[]`-arrayen i JSON der `audience === "gulliste"`.~~
+
+~~Gul liste-filer som støttes:~~
+- ~~`VarmepumpeGul.tsx`~~
+- ~~`SolenergiGul.tsx`~~
+- ~~`TettingGul.tsx`~~
+- ~~`VentilasjonGul.tsx`~~
+- ~~`TemperaturstyringGul.tsx`~~
+- ~~`UtskiftningAvVinduGul.tsx`~~
+- ~~`IsoleringAvKjellerOgLoftGul.tsx`~~
+- ~~`EtterisoleringYtterveggGul.tsx`~~
 
 ### Begrensninger
 
@@ -189,3 +200,4 @@ ls -la content/tiltak/*.json
 | 2025-11-26 | Testet gul liste-ekstraksjon på varmepumpe - fungerer korrekt |
 | 2025-11-26 | Fikset ekstraksjon for tiltak uten tabs (støtter nå begge strukturer) |
 | 2025-11-26 | Kjørt synkronisering for alle 8 tiltak - 7 av 8 oppdatert |
+| 2025-12-11 | Migrasjonen fullført. Slettet `scripts/extract-tsx-content.mjs` og dokumentert at `GulListeTiltak/`-mappen er fjernet |

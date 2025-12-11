@@ -141,3 +141,93 @@ export function shouldReportBuildingLevel(bygningstypeKodeId?: number): boolean 
   const strategy = determineBuildingTypeStrategy(bygningstypeKodeId);
   return strategy.reportingLevel === 'building';
 }
+
+/**
+ * BuildingKind type for transition overlay system
+ * Re-exported from TransitionOverlayTypes for convenience
+ */
+export type { BuildingKind } from '../context/TransitionOverlayTypes';
+
+/**
+ * Determine if a building is classified as 'enebolig' (single-family home) or 'blokk' (apartment block)
+ * based on building type data.
+ *
+ * This is the single source of truth for BuildingKind classification used across
+ * the transition overlay system and mobile components.
+ *
+ * Classification rules:
+ * - 'enebolig': single-family homes, duplexes, row houses (codes 11x, 12x, 13x)
+ * - 'blokk': apartment blocks, large residential buildings (codes 14x, 15x, 16x, 17x)
+ *
+ * @param building - Object containing building type information
+ * @returns 'enebolig' or 'blokk'
+ */
+export function getBuildingKind(building: {
+  csvData?: { bygningstypeNavn?: string };
+  bygningstypeKode?: string;
+  bygningstypeKodeId?: number;
+}): 'enebolig' | 'blokk' {
+  // Check CSV data first (most reliable when available)
+  const csvType = building.csvData?.bygningstypeNavn?.toLowerCase();
+  if (csvType) {
+    if (
+      csvType.includes('enebolig') ||
+      csvType.includes('tomannsbolig') ||
+      csvType.includes('rekkehus')
+    ) {
+      return 'enebolig';
+    }
+    // Explicit blokk detection from CSV
+    if (
+      csvType.includes('blokk') ||
+      csvType.includes('leilighet') ||
+      csvType.includes('boligbygg')
+    ) {
+      return 'blokk';
+    }
+  }
+
+  // Check building type code (standard Norwegian codes)
+  const buildingTypeCode = building.bygningstypeKode;
+  if (buildingTypeCode) {
+    const code = Number.parseInt(buildingTypeCode, 10);
+    if (Number.isInteger(code)) {
+      // Codes 110-139 are single-family/row houses -> 'enebolig'
+      if (code >= 110 && code < 140) {
+        return 'enebolig';
+      }
+      // Codes 140+ are larger residential buildings -> 'blokk'
+      if (code >= 140 && code < 200) {
+        return 'blokk';
+      }
+    }
+  }
+
+  // Check internal building type ID
+  const buildingTypeId = building.bygningstypeKodeId;
+  if (buildingTypeId) {
+    // Internal IDs for enebolig-type buildings
+    if ([1, 4, 5, 8].includes(buildingTypeId)) {
+      return 'enebolig';
+    }
+    // Internal IDs for blokk-type buildings
+    if ([10, 11, 12, 13, 14, 15, 16].includes(buildingTypeId)) {
+      return 'blokk';
+    }
+  }
+
+  // Default to 'blokk' when unable to determine
+  return 'blokk';
+}
+
+/**
+ * Check if a building result should be classified as 'enebolig'
+ * Convenience function that wraps getBuildingKind
+ */
+export function isEneboligBuilding(building: {
+  csvData?: { bygningstypeNavn?: string };
+  bygningstypeKode?: string;
+  bygningstypeKodeId?: number;
+}): boolean {
+  return getBuildingKind(building) === 'enebolig';
+}

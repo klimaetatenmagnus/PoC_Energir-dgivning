@@ -3,9 +3,9 @@ import {
   useProviderColors,
   getOverskriftLabel,
   openExternalLink,
-  TiltakComponentProps
+  TiltakComponentProps,
+  type Stotteordning
 } from './shared';
-import type { Stotteordning } from '../../../../services/stotteordning-service';
 import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type {
@@ -88,12 +88,9 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
 
   const {
     stotteordninger,
-    intendedSource,
     isLoading: grantLoading
   } = useGrantAwareStotteordninger({
-    grantIds: content?.grants ?? [],
-    legacyTiltakSlug: 'ventilasjon',
-    buildingType
+    grantIds: content?.grants ?? []
   });
 
   // Early return after all hooks
@@ -119,7 +116,7 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
 
   const displayedStotteordninger: Stotteordning[] = stotteordninger.length
     ? stotteordninger
-    : intendedSource === 'grants' && grantLoading
+    : grantLoading
       ? [
           {
             ordning: 'Henter støtteordninger …',
@@ -750,7 +747,7 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
 };
 
 export const Ventilasjon: React.FC<VentilasjonProps> = (props) => (
-  <VentilasjonContentComponent {...props} audience="standard" />
+  <VentilasjonContentComponent {...props} audience={props.audience ?? 'standard'} />
 );
 
 export { VentilasjonContentComponent };

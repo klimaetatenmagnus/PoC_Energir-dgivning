@@ -1,16 +1,8 @@
 export { Varmepumpe } from './Varmepumpe';
-export { VarmepumpeGul } from './GulListeTiltak/VarmepumpeGul';
 export { Solenergi } from './Solenergi';
-export { SolenergiGul } from './GulListeTiltak/SolenergiGul';
 export { Tetting } from './Tetting';
-export { Tetting as TettingGul } from './GulListeTiltak/TettingGul';
 export { Temperaturstyring } from './Temperaturstyring';
-export { Temperaturstyring as TemperaturstyringGul } from './GulListeTiltak/TemperaturstyringGul';
 export { UtskiftningAvVindu } from './UtskiftningAvVindu';
-export { UtskiftningAvVinduGul } from './GulListeTiltak/UtskiftningAvVinduGul';
 export { IsoleringAvKjellerOgLoft } from './IsoleringAvKjellerOgLoft';
-export { IsoleringAvKjellerOgLoftGul } from './GulListeTiltak/IsoleringAvKjellerOgLoftGul';
 export { EtterisoleringYttervegg } from './EtterisoleringYttervegg';
-export { EtterisoleringYtterveggGul } from './GulListeTiltak/EtterisoleringYtterveggGul';
 export { Ventilasjon } from './Ventilasjon';
-export { VentilasjonGul } from './GulListeTiltak/VentilasjonGul';

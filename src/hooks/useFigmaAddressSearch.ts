@@ -19,6 +19,8 @@ import { useLandingAnimation } from '../components/FigmaBlokk/hooks/useLandingAn
 import { computeFigmaViewportMetrics, DESIGN_HEIGHT, DESIGN_WIDTH } from '../components/FigmaBlokk/hooks/useFigmaViewportMetrics';
 import { BuildingKind } from '../context/TransitionOverlayTypes';
 import { useTransitionOverlay } from '../context/useTransitionOverlay';
+import { useResponsive } from './useResponsive';
+import { getBuildingKind as getBuildingKindFromUtils, isEneboligBuilding } from '../utils/buildingTypeUtils';
 
 const FADE_DURATION_MS = 2000;
 const DEBOUNCE_DELAY_MS = 300;
@@ -88,32 +90,19 @@ const TEST_TRIGGERS: Record<string, TestTrigger> = {
   },
 };
 
-const isEneboligResult = (building: AddressLookupResponse): boolean => {
-  const csvType = building.csvData?.bygningstypeNavn?.toLowerCase();
-  if (csvType) {
-    return (
-      csvType.includes('enebolig') ||
-      csvType.includes('tomannsbolig') ||
-      csvType.includes('rekkehus')
-    );
-  }
+/**
+ * Check if a building result should be classified as 'enebolig'
+ * Delegates to shared utility for consistent classification
+ */
+const isEneboligResult = (building: AddressLookupResponse): boolean =>
+  isEneboligBuilding(building);
 
-  const buildingTypeCode = building.bygningstypeKode;
-  if (buildingTypeCode) {
-    const code = Number.parseInt(buildingTypeCode, 10);
-    return Number.isInteger(code) && code >= 110 && code < 140;
-  }
-
-  const buildingTypeId = building.bygningstypeKodeId;
-  if (buildingTypeId) {
-    return [1, 4, 5, 8].includes(buildingTypeId);
-  }
-
-  return false;
-};
-
+/**
+ * Determine BuildingKind from building data
+ * Delegates to shared utility for consistent classification
+ */
 const getBuildingKind = (building: AddressLookupResponse): BuildingKind =>
-  isEneboligResult(building) ? 'enebolig' : 'blokk';
+  getBuildingKindFromUtils(building);
 
 export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
   const [mode, setMode] = useState<FigmaMode>('figma');
@@ -130,6 +119,7 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
   const [landingSnapshot, setLandingSnapshot] = useState<LandingSnapshot | null>(null);
   const [fadeCompleted, setFadeCompleted] = useState(false);
   const { beginTransition, forceReset: resetOverlay } = useTransitionOverlay();
+  const { isMobileView } = useResponsive();
 
   const { skylineFadeOpacity, headerFadeOpacity, startFade, resetFade } = useLandingAnimation({
     durationMs: FADE_DURATION_MS,
@@ -142,6 +132,57 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
     }
 
     requestAnimationFrame(() => {
+      // Mobile: direct viewport capture without Figma scaling
+      if (isMobileView) {
+        const eneboligEl = document.getElementById('mobile-anim-enebolig');
+        const blokkEl = document.getElementById('mobile-anim-blokk');
+
+        const selectedEl = buildingKind === 'enebolig' ? eneboligEl : blokkEl;
+        if (!selectedEl) {
+          // Element not found - log warning in development and reset state to avoid ambiguous intermediate phase
+          if (process.env.NODE_ENV === 'development') {
+            console.warn(
+              `[useFigmaAddressSearch] Expected mobile building element not found: mobile-anim-${buildingKind}. ` +
+              `Skipping transition animation and resetting landing snapshot.`
+            );
+          }
+          // Reset landing snapshot to keep UI consistent, skip beginTransition
+          setLandingSnapshot(null);
+          return;
+        }
+
+        const rect = selectedEl.getBoundingClientRect();
+        beginTransition({
+          buildingType: buildingKind,
+          startRect: {
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height,
+          },
+          isMobile: true,
+        });
+
+        // Store snapshot for consistency
+        const snapshot: BuildingSnapshot = {
+          left: rect.left,
+          bottom: window.innerHeight - rect.bottom,
+          width: rect.width,
+          height: rect.height,
+          viewport: {
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height,
+          },
+        };
+        setLandingSnapshot({
+          [buildingKind]: snapshot,
+        });
+        return;
+      }
+
+      // Desktop: existing Figma artboard logic
       const metrics = computeFigmaViewportMetrics();
       const { scaleFactor } = metrics;
       if (scaleFactor <= 0) {
@@ -194,7 +235,7 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
         });
       }
     });
-  }, [beginTransition]);
+  }, [beginTransition, isMobileView]);
 
   const beginLandingTransition = useCallback((buildingKind: BuildingKind) => {
     setFadeCompleted(false);

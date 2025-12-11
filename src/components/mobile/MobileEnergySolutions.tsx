@@ -14,6 +14,9 @@ import { ENERGY_SOLUTIONS } from '../FigmaBlokk/constants';
 import { MobileInfoBox } from './MobileInfoBox';
 import { MobileSavingsFooter } from './MobileSavingsFooter';
 import { calculateAnnualEnergyConsumption } from '../../utils/tekEnergyCalculations';
+import { useTransitionOverlay, toViewportRect } from '../../context/useTransitionOverlay';
+import type { BuildingKind } from '../../context/TransitionOverlayTypes';
+import { getBuildingKind } from '../../utils/buildingTypeUtils';
 import './MobileEnergySolutions.css';
 
 // Energy rating types and constants
@@ -205,6 +208,12 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   const [showInfoBox, setShowInfoBox] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const tiltakSectionRef = useRef<HTMLDivElement>(null);
+  const buildingIllustrationRef = useRef<HTMLDivElement>(null);
+  const { setTargetRect, buildingType, phase: overlayPhase } = useTransitionOverlay();
+
+  // Hide building illustration during animation phases (like desktop does)
+  const buildingIllustrationOpacity =
+    overlayPhase === 'captured' || overlayPhase === 'animating' ? 0 : 1;
 
   // Hent tiltakskatalog dynamisk
   const { data: catalogData, isLoading: isCatalogLoading } = useTiltakCatalog();
@@ -498,8 +507,66 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     }
   }, [displayTiltak]);
 
+  // Register target rect for building transition animation
+  // Uses shared getBuildingKind helper to ensure consistent classification with useFigmaAddressSearch
+  useEffect(() => {
+    if (!buildingType) return;
+
+    // Use shared helper for consistent BuildingKind classification
+    const currentBuildingKind: BuildingKind = getBuildingKind({
+      bygningstypeKode: buildingTypeCode,
+      csvData: { bygningstypeNavn: buildingTypeName },
+    });
+
+    // Defensive fallback: if buildingType is defined but doesn't match currentBuildingKind,
+    // still register a rect for buildingType so the overlay always receives a valid targetRect
+    const kindToRegister = buildingType === currentBuildingKind ? buildingType : buildingType;
+
+    let registered = false;
+
+    const registerRect = () => {
+      if (registered) return;
+      const svgEl = buildingIllustrationRef.current?.querySelector('svg');
+      if (svgEl) {
+        const rect = svgEl.getBoundingClientRect();
+        setTargetRect(kindToRegister, toViewportRect(rect));
+        registered = true;
+      }
+    };
+
+    // Try immediately
+    const rafId = requestAnimationFrame(registerRect);
+
+    // Fallback timeout if ref isn't ready
+    const timeoutId = setTimeout(() => {
+      if (!registered) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(
+            '[MobileEnergySolutions] Target rect registration delayed - using fallback rect'
+          );
+        }
+        // Fallback rect: center of viewport with estimated size
+        const fallbackRect = {
+          left: window.innerWidth / 2 - 60,
+          top: window.innerHeight * 0.3,
+          width: 120,
+          height: 150,
+        };
+        setTargetRect(kindToRegister, fallbackRect);
+        registered = true;
+      }
+    }, 500);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timeoutId);
+    };
+  }, [buildingType, buildingTypeCode, buildingTypeName, setTargetRect]);
+
   return (
-    <div className={`mobile-energy-solutions${showFooter ? ' mobile-energy-solutions--has-footer' : ''}`}>
+    <div
+      className={`mobile-energy-solutions${showFooter ? ' mobile-energy-solutions--has-footer' : ''} mobile-energy-solutions--fade-in`}
+    >
       {/* Header med tilbake-knapp */}
       <header className="mobile-energy-solutions__header">
         <div className="mobile-energy-solutions__header-content">
@@ -603,11 +670,18 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               })}
             </div>
             {/* Bygningsillustrasjon */}
-            <div className="mobile-energy-solutions__building-illustration">
+            <div
+              className="mobile-energy-solutions__building-illustration"
+              ref={buildingIllustrationRef}
+              style={{
+                opacity: buildingIllustrationOpacity,
+                transition: buildingIllustrationOpacity === 1 ? 'opacity 0.4s ease-in-out' : undefined,
+              }}
+            >
               {isBlokk ? (
-                <BlokkSvg className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--blokk" />
+                <BlokkSvg id="mobile-target-blokk" className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--blokk" />
               ) : (
-                <EneboligSvg className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--enebolig" />
+                <EneboligSvg id="mobile-target-enebolig" className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--enebolig" />
               )}
             </div>
           </div>

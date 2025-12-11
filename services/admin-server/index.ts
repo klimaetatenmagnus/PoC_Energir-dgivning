@@ -8,6 +8,9 @@ import {
   createAdminApiErrorHandler,
 } from "../admin-api/router.js";
 import { ContentStorage } from "../admin-api/contentStorage.js";
+import { createLogger } from "../shared/logger.js";
+
+const logger = createLogger({ prefix: 'admin-server' });
 
 const config = loadAdminApiConfig();
 const app = express();
@@ -16,7 +19,7 @@ const indexHtmlPath = path.join(distDir, "index.html");
 const port = Number(process.env.PORT ?? config.port ?? 8080);
 
 app.use((req, _res, next) => {
-  console.warn("[admin-server] request", req.method, req.path);
+  logger.info("request", req.method, req.path);
   next();
 });
 
@@ -100,7 +103,7 @@ app.get("/config/content/*splat", async (req: Request, res: Response) => {
       res.status(httpError.status).json({ error: httpError.message });
       return;
     }
-    console.error("[admin-server] Feil ved lesing av innhold:", error);
+    logger.error("Feil ved lesing av innhold:", error);
     res.status(500).json({ error: "Intern serverfeil ved lesing av innhold" });
   }
 });
@@ -129,7 +132,7 @@ app.get("/config/dictionaries/*splat", async (req: Request, res: Response) => {
       res.status(httpError.status).json({ error: httpError.message });
       return;
     }
-    console.error("[admin-server] Feil ved lesing av dictionary:", error);
+    logger.error("Feil ved lesing av dictionary:", error);
     res.status(500).json({ error: "Intern serverfeil ved lesing av dictionary" });
   }
 });
@@ -209,5 +212,5 @@ app.get(/^\/admin(\/.*)?$/, (_req: Request, res: Response) => {
 app.use(createAdminApiErrorHandler());
 
 app.listen(port, () => {
-  console.warn(`[admin-server] Listening on port ${port}`);
+  logger.info(`Listening on port ${port}`);
 });

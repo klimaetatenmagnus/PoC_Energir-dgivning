@@ -6,7 +6,18 @@ import { OsloLogo } from '../FigmaBlokk/components/OsloLogo';
 import { MiniSkyline } from './MiniSkyline';
 
 interface MobileLandingProps {
-  headerFadeOpacity: number;
+  /**
+   * When true, the header content fades out via CSS transition.
+   * This is a binary trigger: the actual fade animation is handled by CSS
+   * (adding the `--fading` class), not by continuous opacity values.
+   */
+  headerShouldFadeOut: boolean;
+  /**
+   * When true, the skyline fades out via CSS transition.
+   * This is a binary trigger: the actual fade animation is handled by CSS
+   * (adding the `--fading` class), not by continuous opacity values.
+   */
+  skylineShouldFadeOut: boolean;
   searchValue: string;
   loading: boolean;
   error: Error | null;
@@ -25,7 +36,8 @@ interface MobileLandingProps {
 }
 
 export const MobileLanding: React.FC<MobileLandingProps> = ({
-  headerFadeOpacity,
+  headerShouldFadeOut,
+  skylineShouldFadeOut,
   searchValue,
   loading,
   error,
@@ -45,11 +57,7 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
   return (
     <div className="mobile-landing">
       <div
-        className="mobile-landing__content"
-        style={{
-          opacity: headerFadeOpacity,
-          transition: 'opacity 1.5s ease-in-out',
-        }}
+        className={`mobile-landing__content${headerShouldFadeOut ? ' mobile-landing__content--fading' : ''}`}
       >
         {/* Logo */}
         <div className="mobile-landing__logo-container">
@@ -151,7 +159,10 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
       </div>
 
       {/* Mini-skyline i bunnen */}
-      <div className="mobile-landing__skyline-container" aria-hidden="true">
+      <div
+        className={`mobile-landing__skyline-container${skylineShouldFadeOut ? ' mobile-landing__skyline-container--fading' : ''}`}
+        aria-hidden="true"
+      >
         <MiniSkyline />
       </div>
     </div>
