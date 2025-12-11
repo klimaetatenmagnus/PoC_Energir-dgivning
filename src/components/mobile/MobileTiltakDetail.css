@@ -555,7 +555,7 @@
   font-family: 'Oslo Sans', sans-serif;
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
   border-radius: 2px;
 }
 
