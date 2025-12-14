@@ -34,8 +34,8 @@ import './MobileEnergySolutions.css';
 // Energy rating types and constants
 const ENERGY_RATING_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 
-// Farger for energikarakter-bokser
-const ENERGY_RATING_COLORS: Record<string, string> = {
+// Farger for energikarakter-bokser (tilgjengelig for fremtidig bruk)
+const _ENERGY_RATING_COLORS: Record<string, string> = {
   A: '#097E3E',
   B: '#32A548',
   C: '#96C133',
