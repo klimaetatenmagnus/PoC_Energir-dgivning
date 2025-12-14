@@ -3,98 +3,17 @@ import { ENERGY_SOLUTIONS } from '../constants';
 import { AddressLookupResponse } from '../../../services/buildingApi';
 import { useTiltakCatalog } from '../../../hooks/contentHooks';
 import type { TiltakCatalogItem } from '../../../types/contentCatalog';
+import {
+  calculateCombinedSavings,
+  getRateForTiltak,
+  type TiltakSavingsInfo,
+  type TekPeriodInput,
+  type Boligtype,
+} from '../../../utils/energySavingsData';
+import { calculateAnnualEnergyConsumption, determineBuildingType, calculateTEK } from '../../../utils/tekEnergyCalculations';
 import './EnergySolutionButtons.css';
 
-type EnergySavingsLookup = Record<string | number, Record<'småhus' | 'blokk', Record<string | number, number>>>;
-
 const ENERGY_RATING_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
-
-const ENERGY_SAVINGS_DATA: EnergySavingsLookup = {
-  eldre: {
-    blokk: {
-      0.75: 38.9,
-      1.2: 32.1,
-      etteriso_yttervegg: 81.7,
-      etteriso_takloft: 24.4,
-    },
-    småhus: {
-      0.75: 42.2,
-      1.2: 34.3,
-      etteriso_yttervegg: 94.1,
-      etteriso_takloft: 41.2,
-    },
-  },
-  49: {
-    blokk: {
-      0.75: 38.9,
-      1.2: 32.1,
-      etteriso_yttervegg: 81.7,
-      etteriso_takloft: 24.4,
-    },
-    småhus: {
-      0.75: 42.2,
-      1.2: 34.3,
-      etteriso_yttervegg: 94.1,
-      etteriso_takloft: 41.2,
-    },
-  },
-  69: {
-    blokk: {
-      0.75: 38.3,
-      1.2: 31.3,
-      etteriso_yttervegg: 39.7,
-      etteriso_takloft: 8.4,
-    },
-    småhus: {
-      0.75: 41.7,
-      1.2: 33.7,
-      etteriso_yttervegg: 27.7,
-      etteriso_takloft: 11.4,
-    },
-  },
-  87: {
-    blokk: {
-      0.75: 28.1,
-      1.2: 21,
-      etteriso_yttervegg: 9.7,
-      etteriso_takloft: 2.8,
-    },
-    småhus: {
-      0.75: 31.4,
-      1.2: 23.4,
-      etteriso_yttervegg: 15,
-      etteriso_takloft: 4.7,
-    },
-  },
-  97: {
-    blokk: {
-      0.75: 12.1,
-      1.2: 5,
-      etteriso_yttervegg: 7.3,
-      etteriso_takloft: 0.4,
-    },
-    småhus: {
-      0.75: 14.2,
-      1.2: 6.1,
-      etteriso_yttervegg: 3.7,
-      etteriso_takloft: 0.6,
-    },
-  },
-  7: {
-    blokk: {
-      0.75: 7.2,
-      1.2: 0,
-      etteriso_yttervegg: 1.3,
-      etteriso_takloft: 0.4,
-    },
-    småhus: {
-      0.75: 8.2,
-      1.2: 0,
-      etteriso_yttervegg: 0,
-      etteriso_takloft: 0,
-    },
-  },
-};
 
 const isRatingBetter = (first: string, second: string): boolean => {
   const index1 = ENERGY_RATING_ORDER.indexOf(first.toUpperCase() as typeof ENERGY_RATING_ORDER[number]);
@@ -103,18 +22,6 @@ const isRatingBetter = (first: string, second: string): boolean => {
     return false;
   }
   return index1 < index2;
-};
-
-const determineTek = (byggeaar: number): string => {
-  const threshold = 2;
-
-  if (byggeaar >= 2007 + threshold) return 'TEK7';
-  if (byggeaar >= 1997 + threshold) return 'TEK97';
-  if (byggeaar >= 1987 + threshold) return 'TEK87';
-  if (byggeaar >= 1969 + threshold) return 'TEK69';
-  if (byggeaar >= 1949 + threshold) return 'TEK49';
-
-  return 'eldre';
 };
 
 /**
@@ -361,88 +268,107 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       buildingTypeNameLower.includes('boligbygg') ||
       buildingTypeNameLower === 'store boligbygg';
   }, [buildingTypeCode, buildingTypeNameLower]);
-  const calculateSavingsForCategory = React.useCallback((
-    buildingCategory: 'småhus' | 'blokk',
-    measure: string,
-    tek: string
-  ): number => {
-    const tekNumber = tek.startsWith('TEK') ? Number.parseInt(tek.substring(3), 10) : tek;
-    const tekKey = Number.isNaN(tekNumber) ? tek : tekNumber;
-    const savingsData = ENERGY_SAVINGS_DATA[tekKey];
-    if (!savingsData || !bruksareal) {
-      return 0;
-    }
 
-    if (measure === 'Oppgradering av vindu') {
-      return (savingsData[buildingCategory][0.75] || 0) * bruksareal;
+  // Boligtype for energibesparelses-beregninger (småhus eller blokk)
+  const boligtype: Boligtype | null = React.useMemo(() => {
+    if (buildingTypeKey) {
+      if (['enebolig', 'tomannsbolig', 'rekkehus'].includes(buildingTypeKey)) {
+        return 'småhus';
+      }
+      if (buildingTypeKey === 'blokk') {
+        return 'blokk';
+      }
     }
-
-    if (measure === 'Etterisolering av yttervegg') {
-      return (savingsData[buildingCategory].etteriso_yttervegg || 0) * bruksareal;
+    if (['11', '12', '13'].includes(buildingTypeCode)) {
+      return 'småhus';
     }
-
-    if (measure === 'Isolering av kjeller og loft' || measure === 'Etterisolering av kjeller og loft') {
-      return (savingsData[buildingCategory].etteriso_takloft || 0) * bruksareal;
+    if (isBlokk) {
+      return 'blokk';
     }
+    return null;
+  }, [buildingTypeKey, buildingTypeCode, isBlokk]);
 
-    return 0;
-  }, [bruksareal]);
-
-  const calculateSavings = React.useCallback((measure: string): number => {
-    // Special handling for measures that don't need building year
-    if (measure === 'Solenergi') {
-      const solarEnergy = buildingData?.filteredSolarEnergy || 0;
-      return solarEnergy;
-    }
-    
+  // TEK-periode for energibesparelses-oppslag
+  const tekPeriod = React.useMemo(() => {
     const byggeaarCandidate = typeof buildingData?.byggeaar === 'number'
       ? buildingData.byggeaar
       : buildingData?.csvData?.byggeaar
         ? Number(buildingData.csvData.byggeaar)
         : undefined;
 
-    if (!byggeaarCandidate || Number.isNaN(byggeaarCandidate) || !yearlyConsumption) {
+    if (!byggeaarCandidate) return null;
+    return calculateTEK(byggeaarCandidate) as TekPeriodInput;
+  }, [buildingData]);
+
+  // Beregn estimert årlig energiforbruk basert på byggeår og areal (for bruk i prosent-beregninger)
+  const estimatedAnnualConsumption = React.useMemo(() => {
+    const byggeaarCandidate = typeof buildingData?.byggeaar === 'number'
+      ? buildingData.byggeaar
+      : buildingData?.csvData?.byggeaar
+        ? Number(buildingData.csvData.byggeaar)
+        : undefined;
+
+    const buildingType = determineBuildingType(
+      buildingData?.bygningstypeKode || buildingData?.csvData?.bygningstypekode,
+      buildingData?.bygningstype || buildingData?.csvData?.bygningstype
+    );
+
+    return calculateAnnualEnergyConsumption(byggeaarCandidate, bruksareal, buildingType);
+  }, [buildingData, bruksareal]);
+
+    // Beregn kombinert besparelse med multiplikativ metode
+  const totalSavingsKWh = React.useMemo(() => {
+    if (checkedItems.size === 0 || !boligtype || !tekPeriod) {
       return 0;
     }
 
-    const tek = determineTek(byggeaarCandidate);
-    const isSmåhus = ['11', '12', '13'].includes(buildingTypeCode);
-    const buildingCategory = isSmåhus ? 'småhus' : isBlokk ? 'blokk' : null;
-    
-    if (!buildingCategory) {
-      // Fallback to string matching if code is not available
-      const typeString = buildingTypeNameLower || buildingData?.csvData?.bygningstypeNavn?.toLowerCase() || '';
-      if (typeString.includes('enebolig') || typeString.includes('tomannsbolig') || 
-          typeString.includes('rekkehus') || typeString.includes('kjedehus')) {
-        return calculateSavingsForCategory('småhus', measure, tek);
-      } else if (typeString.includes('blokk') || typeString.includes('leilighet') || 
-                 typeString.includes('boligbygg')) {
-        return calculateSavingsForCategory('blokk', measure, tek);
+    // Bruk yearlyConsumption hvis tilgjengelig, ellers estimert forbruk
+    const consumptionNum = yearlyConsumption ? parseFloat(yearlyConsumption) : estimatedAnnualConsumption;
+    if (!Number.isFinite(consumptionNum) || consumptionNum <= 0) {
+      return 0;
+    }
+
+    // Bygg liste med tiltak og deres rates for multiplikativ beregning
+    const tiltakInfo: TiltakSavingsInfo[] = [];
+
+    checkedItems.forEach((tiltakId) => {
+      const tiltak = displayTiltak.find((t) => t.id === tiltakId);
+      if (!tiltak) return;
+
+      // Solenergi håndteres spesielt - det er produksjon, ikke besparelse
+      if (tiltak.title === 'Solenergi') {
+        const solarEnergy = buildingData?.filteredSolarEnergy || 0;
+        if (solarEnergy > 0) {
+          tiltakInfo.push({
+            title: tiltak.title,
+            rate: null,
+            solarProductionKwh: solarEnergy
+          });
+        }
+      } else {
+        // Hent rate for dette tiltaket
+        const rate = getRateForTiltak(tiltak.title, tekPeriod, boligtype);
+        if (rate !== null) {
+          tiltakInfo.push({
+            title: tiltak.title,
+            rate
+          });
+        }
       }
-      return 0;
-    }
-    
-    // Only return savings for measures that have actual calculations implemented
-    const savings = calculateSavingsForCategory(buildingCategory, measure, tek);
-    if (savings > 0) {
-      return savings;
-    }
+    });
 
-    if (!bruksareal) {
-      return 0;
-    }
-
-    return 0;
+    // Bruk den sentrale multiplikative beregningen
+    return calculateCombinedSavings(consumptionNum, tiltakInfo);
   }, [
-    bruksareal,
-    buildingData,
-    buildingTypeCode,
-    buildingTypeNameLower,
-    calculateSavingsForCategory,
-    isBlokk,
+    boligtype,
+    buildingData?.filteredSolarEnergy,
+    checkedItems,
+    displayTiltak,
+    estimatedAnnualConsumption,
+    tekPeriod,
     yearlyConsumption,
   ]);
-  
+
   const newRating = React.useMemo(() => {
     if (!estimatedRating || !yearlyConsumption || checkedItems.size === 0 || !bruksareal) {
       return null;
@@ -452,15 +378,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     if (!Number.isFinite(consumptionNum) || consumptionNum <= 0) {
       return null;
     }
-
-    let totalSavingsKWh = 0;
-    checkedItems.forEach((tiltakId) => {
-      // Finn tiltaket basert på ID og bruk tittelen for besparelses-beregning
-      const tiltak = displayTiltak.find((t) => t.id === tiltakId);
-      if (tiltak) {
-        totalSavingsKWh += calculateSavings(tiltak.title);
-      }
-    });
 
     const newConsumption = Math.max(0, consumptionNum - totalSavingsKWh);
     const newIntensity = newConsumption / bruksareal;
@@ -510,10 +427,9 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     bruksareal,
     buildingTypeCode,
     buildingTypeNameLower,
-    calculateSavings,
-    checkedItems,
-    displayTiltak,
+    checkedItems.size,
     estimatedRating,
+    totalSavingsKWh,
     yearlyConsumption,
   ]);
 
@@ -529,22 +445,12 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     });
   }, []);
   
-  // Calculate total savings whenever checked items change
+  // Send total savings til parent-komponenten når den endres
   useEffect(() => {
-    if (!onTotalSavingsChange) {
-      return;
+    if (onTotalSavingsChange) {
+      onTotalSavingsChange(totalSavingsKWh);
     }
-
-    let totalSavingsKWh = 0;
-    checkedItems.forEach((tiltakId) => {
-      const tiltak = displayTiltak.find((t) => t.id === tiltakId);
-      if (tiltak) {
-        totalSavingsKWh += calculateSavings(tiltak.title);
-      }
-    });
-
-    onTotalSavingsChange(totalSavingsKWh);
-  }, [calculateSavings, checkedItems, displayTiltak, onTotalSavingsChange]);
+  }, [onTotalSavingsChange, totalSavingsKWh]);
 
   // Oppdater scroll-status
   useEffect(() => {

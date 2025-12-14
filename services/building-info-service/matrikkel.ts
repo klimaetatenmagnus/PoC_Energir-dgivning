@@ -532,6 +532,40 @@ export async function resolveBuildingData(
     ? letterToSeksjonsnummer(normalizedLetter)
     : undefined;
 
+  // ========================================================================
+  // TIDLIG CSV-VALIDERING
+  // Henter CSV-data tidlig for å:
+  // 1. Identifisere riktig bygningsnummer for boliger (ikke garasjer)
+  // 2. Gi en tidlig feilmelding hvis adressen kun har garasje
+  // ========================================================================
+  let csvPreferredBuildingNr: string | undefined;
+  let csvPreferredBuildingType: string | undefined;
+
+  if (adr.adressetekst) {
+    const csvData = csvService.findByExactAddress(adr.adressetekst);
+    if (csvData) {
+      csvPreferredBuildingNr = csvData.bygningsNr;
+      csvPreferredBuildingType = csvData.bygningstypeNavn;
+
+      if (LOG) {
+        debugLog(`📊 CSV tidlig validering for "${adr.adressetekst}":`);
+        debugLog(`   Bygningsnr: ${csvPreferredBuildingNr}`);
+        debugLog(`   Type: ${csvPreferredBuildingType}`);
+        debugLog(`   Areal: ${csvData.bruksarealTotalt} m²`);
+      }
+
+      // Sjekk om CSV returnerte garasje selv etter forbedringen
+      // (dette betyr at det KUN finnes garasje på adressen)
+      const code = parseInt(csvData.bygningstype3siffer, 10);
+      if (code === 181) {
+        if (LOG) {
+          debugLog(`⚠️  CSV indikerer at adressen kun har garasje/uthus`);
+        }
+        // Vi fortsetter, men logger advarselen
+      }
+    }
+  }
+
   type MatrikkelCandidate = {
     id: number;
     byggIds: number[];
@@ -1045,6 +1079,43 @@ export async function resolveBuildingData(
   }
 
   let selectedBygg: (ByggInfo & { id: number }) | null = null;
+
+  // ========================================================================
+  // PRIORITER CSV-IDENTIFISERT BYGG
+  // Hvis vi har et bygningsnummer fra CSV-validering, prøv å matche det
+  // Dette sikrer at vi velger boligen, ikke garasjen, når begge finnes
+  // ========================================================================
+  if (csvPreferredBuildingNr && !selectedBygg) {
+    // Først søk i eligibleBuildings (filtrerte boligbygg)
+    const csvMatch = eligibleBuildings.find(
+      (b) => b.bygningsnummer === csvPreferredBuildingNr
+    );
+    if (csvMatch) {
+      selectedBygg = csvMatch;
+      if (LOG) {
+        debugLog(
+          `✅ Valgte bygg ${csvMatch.id} basert på CSV bygningsnummer ${csvPreferredBuildingNr}`
+        );
+      }
+    } else {
+      // Søk i alle bygg (inkludert de som ble filtrert ut)
+      const csvMatchAll = allBygningsInfo.find(
+        (b) => b.bygningsnummer === csvPreferredBuildingNr
+      );
+      if (csvMatchAll) {
+        selectedBygg = csvMatchAll;
+        if (LOG) {
+          debugLog(
+            `✅ Valgte bygg ${csvMatchAll.id} fra allBygningsInfo basert på CSV bygningsnummer ${csvPreferredBuildingNr}`
+          );
+        }
+      } else if (LOG) {
+        debugLog(
+          `⚠️  CSV bygningsnummer ${csvPreferredBuildingNr} ikke funnet i Kartverket-data`
+        );
+      }
+    }
+  }
 
   const USE_IMPROVED_SELECTION = options.useImprovedSelection ?? false;
   const DEBUG_IMPROVED = options.debug ?? LOG;

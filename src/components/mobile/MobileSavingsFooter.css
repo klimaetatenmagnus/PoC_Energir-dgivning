@@ -25,8 +25,12 @@
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
   border-top: 1px solid var(--pkt-color-brand-neutrals-200, #e5e5e5);
 
-  /* Animasjon for å gli inn */
-  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Standard posisjon etter animasjon */
+  transform: translateY(0);
+  opacity: 1;
+
+  /* Animasjon for å gli inn - ease-out uten overshoot */
+  animation: slideUp 0.4s ease-out;
 }
 
 /* Highlight-effekt når tiltak legges til - subtil gråtone fra Punkt grays */
@@ -51,20 +55,140 @@
   }
 }
 
+/* Exit-animasjon håndteres via inline styles i React */
+
+/* Toggle-knapp med chevron */
+.mobile-savings-footer__toggle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: none;
+  border: none;
+  padding: 0.25rem 1rem;
+  cursor: pointer;
+  color: var(--pkt-color-brand-neutrals-500, #737373);
+  transition: color 0.2s ease;
+  z-index: 1;
+}
+
+.mobile-savings-footer__toggle:hover {
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-savings-footer__toggle:focus-visible {
+  outline: 2px solid var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Kollapset innhold */
+.mobile-savings-footer__collapsed-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.25rem;
+  padding-top: 1.5rem; /* Plass til chevron */
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
+}
+
+.mobile-savings-footer__collapsed-text {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+/* Juster content padding for plass til chevron */
 .mobile-savings-footer__content {
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
-  padding: 0.875rem 1.25rem;
-  padding-bottom: calc(0.875rem + env(safe-area-inset-bottom, 0));
+  padding: 0.5rem 1.25rem;
+  padding-top: 1.5rem; /* Plass til chevron */
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
 }
 
-/* Overskrift øverst - matcher "Velg tiltak for din bolig" */
+/* Header med overskrift og energikarakter */
+.mobile-savings-footer__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Overskrift - matcher "Velg tiltak for din bolig" */
 .mobile-savings-footer__heading {
   margin: 0;
   font-family: 'Oslo Sans', sans-serif;
   font-size: 1.125rem;
   font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+/* Energikarakter-seksjon nederst - ekspanderer inn når den vises */
+.mobile-savings-footer__rating-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--pkt-color-brand-neutrals-200, #e5e5e5);
+  animation: ratingSectionExpand 0.4s ease-out;
+  overflow: hidden;
+}
+
+@keyframes ratingSectionExpand {
+  from {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    margin-top: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 50px;
+    padding-top: 0.5rem;
+  }
+}
+
+.mobile-savings-footer__rating-label {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-savings-footer__energy-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.mobile-savings-footer__rating-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-savings-footer__rating-box--new {
+  width: 32px;
+  height: 32px;
+  font-size: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.mobile-savings-footer__rating-arrow {
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
 }
 
@@ -271,6 +395,18 @@
   white-space: nowrap;
 }
 
+/* Advarsel når besparelse ikke kunne beregnes */
+.mobile-savings-footer__warning {
+  width: 100%;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pkt-color-status-orange-800, #9a3412);
+  background-color: var(--pkt-color-status-orange-100, #ffedd5);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  margin-top: 0.25rem;
+}
+
 /* Responsiv justering for veldig små skjermer */
 @media (max-width: 350px) {
   .mobile-savings-footer__amount-value {
@@ -287,8 +423,19 @@
   }
 
   .mobile-savings-footer__content {
-    padding: 0.875rem 1rem;
-    padding-bottom: calc(0.875rem + env(safe-area-inset-bottom, 0));
+    padding: 0.5rem 1rem;
+    padding-top: 1.5rem;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
+  }
+
+  .mobile-savings-footer__collapsed-content {
+    padding: 0.5rem 1rem;
+    padding-top: 1.5rem;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
+  }
+
+  .mobile-savings-footer__collapsed-text {
+    font-size: 0.875rem;
   }
 
   .mobile-savings-footer__axis-value {

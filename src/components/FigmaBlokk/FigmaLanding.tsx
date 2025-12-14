@@ -95,11 +95,12 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
                 <OsloLogo className="oslo-logo" />
               </div>
 
-              <h1 className="energiportalen-title">Energinøkkelen</h1>
+              <div className="energiportalen-header">
+                <h1 className="energiportalen-title">Energinøkkelen</h1>
+                <p className="energiportalen-subtitle">Søk på en adresse, og se hvor mye du kan spare</p>
+              </div>
 
               <div className="figma-search-wrapper" ref={wrapperRef}>
-                <label className="figma-search-label">Søk etter adresse</label>
-
                 <div className="figma-search-autocomplete-wrapper">
                   <div className="figma-search-input-group">
                     <input

@@ -1,13 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import {
-  ENERGY_SAVINGS_DATA,
   TiltakComponentProps,
   calculateTekPeriod,
   useProviderColors,
   getOverskriftLabel,
   openExternalLink,
   parseNumericValue,
-  resolveEnergyCategory,
+  formatNumberWithSpaces,
   type Stotteordning
 } from './shared';
 import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
@@ -17,6 +16,8 @@ import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type { TiltakContent, TiltakAccordionItem } from '../../../../../content/tiltak/schema';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
+import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../../../utils/tekEnergyCalculations';
+import { getEnergySavingsRate, calculateSavingsFromRate } from '../../../../utils/energySavingsData';
 
 type EtterisoleringYtterveggProps = TiltakComponentProps;
 type EtterisoleringYtterveggComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -296,7 +297,7 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
           const byggeaar = Math.trunc(
             parseNumericValue(buildingData?.byggeaar ?? buildingData?.csvData?.byggeaar)
           );
-          const buildingCategory = resolveEnergyCategory(buildingType);
+          const buildingCategory = determineBuildingType(buildingData?.bygningstypeKode, buildingType);
 
           if (!buildingCategory || byggeaar <= 0) {
             return (
@@ -318,9 +319,10 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
           }
 
           const tekPeriod = calculateTekPeriod(byggeaar);
-          const savingsData = ENERGY_SAVINGS_DATA[tekPeriod]?.[buildingCategory];
+          const originalEnergy = calculateAnnualEnergyConsumption(byggeaar, bruksareal, buildingCategory);
+          const savingsRate = getEnergySavingsRate('etterisolering_yttervegg', tekPeriod, buildingCategory);
 
-          if (!savingsData) {
+          if (savingsRate === null) {
             return (
               <text
                 x="589"
@@ -339,8 +341,7 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
             );
           }
 
-          const savingsPerM2 = savingsData.etteriso_yttervegg ?? 0;
-          const totalSavings = savingsPerM2 * bruksareal;
+          const totalSavings = calculateSavingsFromRate(originalEnergy, savingsRate);
 
           if (totalSavings <= 0) {
             return (
@@ -361,11 +362,9 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
             );
           }
 
-          const lowerSavings = Math.round((totalSavings * 0.9) / 1000) * 1000;
-          const upperSavings = Math.round((totalSavings * 1.1) / 1000) * 1000;
+          const roundedSavings = Math.round(totalSavings / 1000) * 1000;
           const norgespris = 1.1; // kr/kWh
-          const lowerKr = Math.round((lowerSavings * norgespris) / 1000) * 1000;
-          const upperKr = Math.round((upperSavings * norgespris) / 1000) * 1000;
+          const roundedKr = Math.round((roundedSavings * norgespris) / 1000) * 1000;
 
           return (
             <>
@@ -381,9 +380,9 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
                   fill="#FFFFFF"
                   dominantBaseline="hanging"
                 >
-                  {totalSavings === 0 ? '0 kWh' : `${lowerSavings} - ${upperSavings} kWh`}
+                  {`${formatNumberWithSpaces(roundedSavings)} kWh`}
                 </text>
-                
+
                 <text
                   x="589"
                   y="338"
@@ -396,7 +395,7 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
                   fill="#FFFFFF"
                   dominantBaseline="hanging"
                 >
-                  {totalSavings === 0 ? '0 kr' : `${lowerKr} - ${upperKr} kr`}
+                  {`${formatNumberWithSpaces(roundedKr)} kr`}
                 </text>
               </>
             );

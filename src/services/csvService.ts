@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { parse } from 'csv-parse/sync';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../utils/logger.ts';
 
 const logger = createLogger({ prefix: 'csv-service' });
 
@@ -179,21 +179,49 @@ export class CSVService {
   }
 
   /**
-   * Search for exact address match
+   * Search for exact address match.
+   * If multiple buildings exist at the same address, prioritizes residential
+   * buildings over garages/outbuildings.
    */
   findByExactAddress(address: string): MatrikkelCSVRecord | null {
     if (!this.isLoaded) return null;
-    
+
     const normalizedSearch = this.normalizeAddress(address);
     if (!normalizedSearch) {
       return null;
     }
-    
-    const record = this.data.find(r => 
+
+    // Find ALL records matching the address
+    const allMatches = this.data.filter(r =>
       this.normalizeAddress(r.gateAdresse) === normalizedSearch
     );
-    
-    return record || null;
+
+    if (allMatches.length === 0) {
+      return null;
+    }
+
+    // If only one match, return it
+    if (allMatches.length === 1) {
+      return allMatches[0];
+    }
+
+    // Multiple buildings at same address - prioritize residential over garages
+    // Building type codes: 181 = Garage/outbuilding, 111-149 = Residential
+    const residentialBuildings = allMatches.filter(r => {
+      const code = parseInt(r.bygningstype3siffer, 10);
+      // Include residential buildings (11x-14x) but exclude garages (18x)
+      return code >= 110 && code < 180;
+    });
+
+    // Return the residential building with the largest area (most likely the main building)
+    if (residentialBuildings.length > 0) {
+      return residentialBuildings.reduce((largest, current) =>
+        current.bruksarealTotalt > largest.bruksarealTotalt ? current : largest
+      );
+    }
+
+    // Fallback: return the first match if no residential buildings found
+    return allMatches[0];
   }
 
   /**

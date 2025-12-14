@@ -1,11 +1,29 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
+import { PktIcon } from '@oslokommune/punkt-react';
 import { convertKwhToNok, formatNumberWithSpaces } from '../../utils/energy';
 import './MobileSavingsFooter.css';
+
+// Energikarakter farger
+const ENERGY_RATING_COLORS: Record<string, string> = {
+  A: '#097E3E',
+  B: '#32A548',
+  C: '#96C133',
+  D: '#EFE61E',
+  E: '#F7AD24',
+  F: '#EA6927',
+  G: '#E31829',
+};
 
 interface MobileSavingsFooterProps {
   totalSavingsKwh: number;
   energyPricePerKwh?: number;
   isVisible: boolean;
+  /** Antall tiltak som ikke kunne beregnes (manglende data) */
+  uncalculableCount?: number;
+  /** Nåværende energikarakter (A-G) */
+  estimatedRating?: string | null;
+  /** Ny energikarakter etter tiltak (A-G), kun vist hvis bedre enn estimatedRating */
+  newRating?: string | null;
 }
 
 /**
@@ -44,9 +62,49 @@ export const MobileSavingsFooter: React.FC<MobileSavingsFooterProps> = ({
   totalSavingsKwh,
   energyPricePerKwh = 1.1,
   isVisible,
+  uncalculableCount = 0,
+  estimatedRating,
+  newRating,
 }) => {
   const prevSavingsRef = useRef(totalSavingsKwh);
   const [isGrowing, setIsGrowing] = useState(false);
+
+  // For kollapsbar footer
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // For exit-animasjon: hold komponenten synlig mens den animerer ut
+  const [shouldRender, setShouldRender] = useState(isVisible);
+  const [isExiting, setIsExiting] = useState(false);
+  // For å forsinke graf-animasjonen til boksen er ferdig med å gli inn
+  const [isEntering, setIsEntering] = useState(false);
+  const prevIsVisibleRef = useRef(isVisible);
+
+  useEffect(() => {
+    const wasVisible = prevIsVisibleRef.current;
+    prevIsVisibleRef.current = isVisible;
+
+    if (isVisible && !wasVisible) {
+      // Vises - render umiddelbart, men hold grafen på 0 mens boksen glir inn
+      setShouldRender(true);
+      setIsExiting(false);
+      setIsEntering(true);
+      // Start graf-animasjonen kort tid etter at boksen begynner å gli inn
+      const timer = setTimeout(() => {
+        setIsEntering(false);
+      }, 150);
+      return () => clearTimeout(timer);
+    } else if (!isVisible && wasVisible) {
+      // Skal skjules - vent en frame så nettleseren får oppdatert layout
+      requestAnimationFrame(() => {
+        setIsExiting(true);
+        const timer = setTimeout(() => {
+          setShouldRender(false);
+          setIsExiting(false);
+        }, 350);
+        return () => clearTimeout(timer);
+      });
+    }
+  }, [isVisible]);
 
   // Dynamisk skala - settes basert på første tiltak, utvides ved behov
   const [currentScale, setCurrentScale] = useState<number | null>(null);
@@ -253,71 +311,135 @@ export const MobileSavingsFooter: React.FC<MobileSavingsFooterProps> = ({
     return ticks;
   }, [zoomAnimation]);
 
-  if (!isVisible) {
+  if (!shouldRender) {
     return null;
   }
 
   const isAnimating = zoomAnimation !== null;
 
   return (
-    <div className={`mobile-savings-footer ${isGrowing ? 'mobile-savings-footer--highlight' : ''}`}>
-      <div className="mobile-savings-footer__content">
-        {/* Overskrift øverst */}
-        <h3 className="mobile-savings-footer__heading">Estimert besparelse</h3>
+    <div
+      className={`mobile-savings-footer ${isGrowing ? 'mobile-savings-footer--highlight' : ''} ${isCollapsed ? 'mobile-savings-footer--collapsed' : ''}`}
+      style={isExiting ? {
+        transform: 'translateY(100%)',
+        transition: 'transform 0.35s ease-in',
+      } : undefined}
+    >
+      {/* Chevron-knapp for å kollapse/ekspandere */}
+      <button
+        className="mobile-savings-footer__toggle"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        aria-expanded={!isCollapsed}
+        aria-label={isCollapsed ? 'Vis detaljer' : 'Skjul detaljer'}
+      >
+        <PktIcon
+          name={isCollapsed ? 'chevron-thin-up' : 'chevron-thin-down'}
+          className="pkt-icon--small"
+        />
+      </button>
 
-        {/* Graf/søyle under overskriften */}
-        <div className="mobile-savings-footer__graph">
-          <div className="mobile-savings-footer__bar-container">
-            <div
-              className={`mobile-savings-footer__bar ${isGrowing ? 'mobile-savings-footer__bar--growing' : ''} ${isAnimating ? 'mobile-savings-footer__bar--synced' : ''}`}
-              style={{ width: `${barWidthPercent}%` }}
-              role="progressbar"
-              aria-valuenow={barWidthPercent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`Besparelse: ${barWidthPercent.toFixed(0)}% av skala`}
-            />
+      {/* Kollapset visning - kun én linje */}
+      {isCollapsed ? (
+        <div className="mobile-savings-footer__collapsed-content">
+          <span className="mobile-savings-footer__collapsed-text">
+            Estimert besparelse per år: ~{formattedNok} kr
+          </span>
+        </div>
+      ) : (
+        <div className="mobile-savings-footer__content">
+          {/* Overskrift øverst */}
+          <div className="mobile-savings-footer__header">
+            <h3 className="mobile-savings-footer__heading">Estimert besparelse per år</h3>
           </div>
-          {/* X-akse med hakk og dynamiske verdier */}
-          <div className="mobile-savings-footer__axis">
-            {/* Hakk-linje med dynamiske posisjoner */}
-            <div className="mobile-savings-footer__ticks">
-              {tickPositions.map((tick, i) => (
+
+          {/* Graf/søyle under overskriften */}
+          <div className="mobile-savings-footer__graph">
+            <div className="mobile-savings-footer__bar-container">
+              <div
+                className={`mobile-savings-footer__bar ${isGrowing ? 'mobile-savings-footer__bar--growing' : ''} ${isAnimating ? 'mobile-savings-footer__bar--synced' : ''}`}
+                style={{ width: isEntering ? '0%' : `${barWidthPercent}%` }}
+                role="progressbar"
+                aria-valuenow={barWidthPercent}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`Besparelse: ${barWidthPercent.toFixed(0)}% av skala`}
+              />
+            </div>
+            {/* X-akse med hakk og dynamiske verdier */}
+            <div className="mobile-savings-footer__axis">
+              {/* Hakk-linje med dynamiske posisjoner */}
+              <div className="mobile-savings-footer__ticks">
+                {tickPositions.map((tick, i) => (
+                  <div
+                    key={i}
+                    className={`mobile-savings-footer__tick ${tick.isMajor ? 'mobile-savings-footer__tick--major' : ''}`}
+                    style={{
+                      left: `${tick.position}%`,
+                      opacity: tick.opacity,
+                      position: 'absolute',
+                      transform: 'translateX(-50%)',
+                    }}
+                  />
+                ))}
+              </div>
+              {/* Kroneverdier */}
+              <div className={`mobile-savings-footer__labels ${isAnimating ? 'mobile-savings-footer__labels--animating' : ''}`}>
+                {scaleValues.map((value, i) => (
+                  <span key={i} className="mobile-savings-footer__axis-value">
+                    {formatAxisValue(value)} kr
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Verdier nederst */}
+          <div className="mobile-savings-footer__values">
+            {totalSavingsKwh > 0 ? (
+              <>
+                <div className="mobile-savings-footer__amount">
+                  <span className="mobile-savings-footer__amount-prefix">~</span>
+                  <span className="mobile-savings-footer__amount-value">{formattedNok}</span>
+                  <span className="mobile-savings-footer__amount-suffix">kr/år</span>
+                </div>
+                <div className="mobile-savings-footer__kwh">
+                  ≈ {formattedKwh} kWh/år
+                </div>
+              </>
+            ) : null}
+            {/* Advarsel når noen tiltak ikke kunne beregnes */}
+            {uncalculableCount > 0 && (
+              <div className="mobile-savings-footer__warning">
+                {uncalculableCount === 1
+                  ? 'Kunne ikke beregne besparelse for 1 tiltak'
+                  : `Kunne ikke beregne besparelse for ${uncalculableCount} tiltak`}
+              </div>
+            )}
+          </div>
+
+          {/* Energikarakter-endring nederst - ekspanderer footeren når den vises */}
+          {estimatedRating && newRating && (
+            <div className="mobile-savings-footer__rating-section">
+              <span className="mobile-savings-footer__rating-label">Ny energikarakter:</span>
+              <div className="mobile-savings-footer__energy-rating">
                 <div
-                  key={i}
-                  className={`mobile-savings-footer__tick ${tick.isMajor ? 'mobile-savings-footer__tick--major' : ''}`}
-                  style={{
-                    left: `${tick.position}%`,
-                    opacity: tick.opacity,
-                    position: 'absolute',
-                    transform: 'translateX(-50%)',
-                  }}
-                />
-              ))}
+                  className="mobile-savings-footer__rating-box"
+                  style={{ backgroundColor: ENERGY_RATING_COLORS[estimatedRating] }}
+                >
+                  {estimatedRating}
+                </div>
+                <span className="mobile-savings-footer__rating-arrow">→</span>
+                <div
+                  className="mobile-savings-footer__rating-box mobile-savings-footer__rating-box--new"
+                  style={{ backgroundColor: ENERGY_RATING_COLORS[newRating] }}
+                >
+                  {newRating}
+                </div>
+              </div>
             </div>
-            {/* Kroneverdier */}
-            <div className={`mobile-savings-footer__labels ${isAnimating ? 'mobile-savings-footer__labels--animating' : ''}`}>
-              {scaleValues.map((value, i) => (
-                <span key={i} className="mobile-savings-footer__axis-value">
-                  {formatAxisValue(value)} kr
-                </span>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
-
-        {/* Verdier nederst */}
-        <div className="mobile-savings-footer__values">
-          <div className="mobile-savings-footer__amount">
-            <span className="mobile-savings-footer__amount-prefix">~</span>
-            <span className="mobile-savings-footer__amount-value">{formattedNok}</span>
-            <span className="mobile-savings-footer__amount-suffix">kr/år</span>
-          </div>
-          <div className="mobile-savings-footer__kwh">
-            ≈ {formattedKwh} kWh/år
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
