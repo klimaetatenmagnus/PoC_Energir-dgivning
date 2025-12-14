@@ -3,6 +3,7 @@ import {
   useProviderColors,
   getOverskriftLabel,
   openExternalLink,
+  formatNumberWithSpaces,
   TiltakComponentProps,
   type Stotteordning
 } from './shared';
@@ -306,7 +307,7 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
               fill="#FFFFFF"
               dominantBaseline="hanging"
             >
-              {`${Math.round((buildingData.filteredSolarEnergy * 0.9) / 1000) * 1000} - ${Math.round((buildingData.filteredSolarEnergy * 1.1) / 1000) * 1000} kWh`}
+              {`${formatNumberWithSpaces(Math.round((buildingData.filteredSolarEnergy * 0.9) / 1000) * 1000)} - ${formatNumberWithSpaces(Math.round((buildingData.filteredSolarEnergy * 1.1) / 1000) * 1000)} kWh`}
             </text>
             
             {/* Tilsvarer text - calculated based on kWh * Norgespris (1.1 kr/kWh) */}
@@ -328,7 +329,7 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
                 const baseKr = buildingData.filteredSolarEnergy * norgespris;
                 const lowerKr = Math.round((baseKr * 0.9) / 1000) * 1000;
                 const upperKr = Math.round((baseKr * 1.1) / 1000) * 1000;
-                return `${lowerKr} - ${upperKr} kr`;
+                return `${formatNumberWithSpaces(lowerKr)} - ${formatNumberWithSpaces(upperKr)} kr`;
               })()}
             </text>
           </>

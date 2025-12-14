@@ -324,6 +324,34 @@
   margin-top: var(--pkt-spacing-8, 0.5rem);
 }
 
+/* Kollaps-knapp med chevron - midtstilt over Nøkkelinformasjon */
+.mobile-info-box__collapse-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: var(--pkt-spacing-8, 0.5rem);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  transition: background-color 0.15s ease;
+}
+
+.mobile-info-box__collapse-button:hover,
+.mobile-info-box__collapse-button:active {
+  background-color: var(--pkt-color-brand-neutrals-100, #f9f9f9);
+}
+
+.mobile-info-box__collapse-button .pkt-icon {
+  transition: transform 0.2s ease;
+}
+
+.mobile-info-box__collapse-button:hover .pkt-icon,
+.mobile-info-box__collapse-button:active .pkt-icon {
+  transform: translateY(-2px);
+}
+
 /* Punkt accordion tilpasninger */
 .mobile-info-box .pkt-accordion {
   --pkt-accordion-bg: var(--pkt-color-brand-neutrals-white, #ffffff);
@@ -331,6 +359,18 @@
 
 .mobile-info-box .pkt-accordion-item__header {
   min-height: 56px;
+  justify-content: center;
+}
+
+/* Midtstill accordion-tittelen (Nøkkelinformasjon) */
+.mobile-info-box .pkt-accordion-item__title {
+  text-align: center;
+  flex: none;
+}
+
+/* Skjul chevron-ikonet i accordion siden vi har egen kollaps-knapp */
+.mobile-info-box .pkt-accordion-item__icon {
+  display: none;
 }
 
 /* Reduser padding mellom accordion-tittel og innhold */

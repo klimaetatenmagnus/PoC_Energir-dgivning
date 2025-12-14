@@ -11,6 +11,7 @@ import { Storage } from '@google-cloud/storage';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
 import { metricsRegistry } from '../services/building-info-service/metrics.js';
 import { energyRatingService } from './services/energyRatingService.js';
+import { sjekkGulListe, sjekkGulListeMedGnrBnr } from './services/gul-liste-service.js';
 import { z } from 'zod';
 import { TiltakContentSchema, type TiltakContent, type TiltakBenefit } from '../content/tiltak/schema';
 import { TilskuddContentSchema, type TilskuddContent } from '../content/tilskudd/schema';
@@ -1242,6 +1243,77 @@ app.post('/api/energy-rating', async (req, res) => {
   }
 });
 
+// Gul liste endpoints
+app.post('/api/gul-liste/sjekk-adresse', async (req, res) => {
+  const { adresse } = req.body;
+
+  if (!adresse || typeof adresse !== 'string') {
+    return res.status(400).json({
+      error: 'Adresse må oppgis',
+      erPaaGulListe: false
+    });
+  }
+
+  infoLog(`Sjekker gul liste for adresse: ${adresse}`);
+  const startTime = Date.now();
+
+  try {
+    const resultat = await sjekkGulListe(adresse);
+    const duration = Date.now() - startTime;
+
+    infoLog(`Gul liste-sjekk fullført i ${duration}ms: ${resultat.erPaaGulListe ? 'PÅ GUL LISTE' : 'ikke på gul liste'}`);
+    res.json(resultat);
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    logger.error(`Gul liste-sjekk feilet etter ${duration}ms:`, error);
+
+    res.status(500).json({
+      error: 'Feil ved sjekk av gul liste',
+      erPaaGulListe: false
+    });
+  }
+});
+
+app.post('/api/gul-liste/sjekk-gnr-bnr', async (req, res) => {
+  const { gnr, bnr } = req.body;
+
+  if (gnr === undefined || gnr === null || bnr === undefined || bnr === null) {
+    return res.status(400).json({
+      error: 'GNR og BNR må oppgis',
+      erPaaGulListe: false
+    });
+  }
+
+  const gnrNum = typeof gnr === 'number' ? gnr : parseInt(gnr, 10);
+  const bnrNum = typeof bnr === 'number' ? bnr : parseInt(bnr, 10);
+
+  if (isNaN(gnrNum) || isNaN(bnrNum)) {
+    return res.status(400).json({
+      error: 'GNR og BNR må være tall',
+      erPaaGulListe: false
+    });
+  }
+
+  infoLog(`Sjekker gul liste for GNR ${gnrNum}, BNR ${bnrNum}`);
+  const startTime = Date.now();
+
+  try {
+    const resultat = await sjekkGulListeMedGnrBnr(gnrNum, bnrNum);
+    const duration = Date.now() - startTime;
+
+    infoLog(`Gul liste-sjekk fullført i ${duration}ms: ${resultat.erPaaGulListe ? 'PÅ GUL LISTE' : 'ikke på gul liste'}`);
+    res.json(resultat);
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    logger.error(`Gul liste-sjekk feilet etter ${duration}ms:`, error);
+
+    res.status(500).json({
+      error: 'Feil ved sjekk av gul liste',
+      erPaaGulListe: false
+    });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   infoLog(`Running on http://localhost:${PORT}`);
@@ -1249,4 +1321,6 @@ app.listen(PORT, () => {
   debugLog(`Try: POST http://localhost:${PORT}/api/address-lookup`);
   debugLog(`Try: GET http://localhost:${PORT}/api/address-suggestions?query=karl`);
   debugLog(`Try: POST http://localhost:${PORT}/api/energy-rating`);
+  debugLog(`Try: POST http://localhost:${PORT}/api/gul-liste/sjekk-adresse`);
+  debugLog(`Try: POST http://localhost:${PORT}/api/gul-liste/sjekk-gnr-bnr`);
 });

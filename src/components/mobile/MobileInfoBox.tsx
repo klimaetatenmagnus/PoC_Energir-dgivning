@@ -5,6 +5,7 @@ import {
   PktAccordionItem,
   PktTag,
   PktAlert,
+  PktIcon,
 } from '@oslokommune/punkt-react';
 import { AddressLookupResponse } from '../../services/buildingApi';
 import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../utils/tekEnergyCalculations';
@@ -21,6 +22,7 @@ interface MobileInfoBoxProps {
   totalEnergySavings?: number;
   energyPricePerKwh?: number;
   onUpdateBuildingData?: (byggeaar: string, areal: string, arealLeilighet: string, energiforbruk: string) => void;
+  onCollapse?: () => void;
 }
 
 const roundToNearestThousandValue = (value: number): number => {
@@ -40,6 +42,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   totalEnergySavings = 0,
   energyPricePerKwh = 1.1,
   onUpdateBuildingData,
+  onCollapse,
 }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isGulListeInfoOpen, setIsGulListeInfoOpen] = useState(false);
@@ -173,6 +176,17 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
             </button>
           </PktAlert>
         </div>
+      )}
+
+      {/* Chevron for å kollapse visningen */}
+      {onCollapse && (
+        <button
+          className="mobile-info-box__collapse-button"
+          onClick={onCollapse}
+          aria-label="Lukk boliginformasjon"
+        >
+          <PktIcon name="chevron-thin-up" className="pkt-icon--medium" />
+        </button>
       )}
 
       {/* Nøkkelinformasjon */}

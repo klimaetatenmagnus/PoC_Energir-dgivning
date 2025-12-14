@@ -975,7 +975,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 /* Oslo logo container */
@@ -994,32 +994,41 @@
   flex-shrink: 0;
 }
 
+/* Energiportalen header group */
+.energiportalen-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* Energiportalen title */
 .energiportalen-title {
   margin: 0;
   font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 700;
   font-size: 5vw;
-  line-height: 1.4;
+  line-height: 1.2;
   letter-spacing: -0.325px;
   color: #F1FDFF;
+}
+
+/* Energiportalen subtitle */
+.energiportalen-subtitle {
+  margin: 0;
+  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 400;
+  font-size: 1.5vw;
+  line-height: 1.4;
+  letter-spacing: -0.2px;
+  color: #F1FDFF;
+  opacity: 0.9;
 }
 
 .figma-search-wrapper {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 25vw;
   min-width: 300px;
-}
-
-.figma-search-label {
-  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-weight: 500;
-  font-size: 1.1vw;
-  line-height: 1.5;
-  letter-spacing: -0.2px;
-  color: #FFFFFF;
 }
 
 .figma-search-input-group {
@@ -1227,13 +1236,16 @@
    =========================================== */
 
 .mobile-landing {
-  min-height: 100vh;
-  min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  /* Bruk fixed posisjon for å unngå at virtuelt tastatur forskyver innholdet */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   background: #034B45;
   display: flex;
   flex-direction: column;
-  position: relative;
   overflow: hidden;
 }
 

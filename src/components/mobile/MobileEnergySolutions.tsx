@@ -13,7 +13,19 @@ import { OsloLogo } from '../FigmaBlokk/components/OsloLogo';
 import { ENERGY_SOLUTIONS } from '../FigmaBlokk/constants';
 import { MobileInfoBox } from './MobileInfoBox';
 import { MobileSavingsFooter } from './MobileSavingsFooter';
-import { calculateAnnualEnergyConsumption } from '../../utils/tekEnergyCalculations';
+import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../utils/tekEnergyCalculations';
+import { calculateTekPeriod, parseNumericValue } from '../FigmaBlokk/components/Tiltak/shared';
+import {
+  getEnergySavingsRate,
+  getWindowEnergySavingsRate,
+  calculateSavingsFromRate,
+  calculateCombinedSavings,
+  getRateForTiltak,
+  type TiltakSavingsInfo,
+  type Boligtype,
+  type TekPeriodInput,
+} from '../../utils/energySavingsData';
+import { useGulListeStatus } from '../../hooks/useGulListeStatus';
 import { useTransitionOverlay, toViewportRect } from '../../context/useTransitionOverlay';
 import type { BuildingKind } from '../../context/TransitionOverlayTypes';
 import { getBuildingKind } from '../../utils/buildingTypeUtils';
@@ -22,49 +34,7 @@ import './MobileEnergySolutions.css';
 // Energy rating types and constants
 const ENERGY_RATING_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 
-// Besparelsesdata per TEK-periode og byggkategori (kWh/m² per tiltak)
-type EnergySavingsLookup = Record<string | number, Record<'småhus' | 'blokk', Record<string | number, number>>>;
-
-const ENERGY_SAVINGS_DATA: EnergySavingsLookup = {
-  eldre: {
-    blokk: { 0.75: 38.9, 1.2: 32.1, etteriso_yttervegg: 81.7, etteriso_takloft: 24.4 },
-    småhus: { 0.75: 42.2, 1.2: 34.3, etteriso_yttervegg: 94.1, etteriso_takloft: 41.2 },
-  },
-  49: {
-    blokk: { 0.75: 38.9, 1.2: 32.1, etteriso_yttervegg: 81.7, etteriso_takloft: 24.4 },
-    småhus: { 0.75: 42.2, 1.2: 34.3, etteriso_yttervegg: 94.1, etteriso_takloft: 41.2 },
-  },
-  69: {
-    blokk: { 0.75: 38.3, 1.2: 31.3, etteriso_yttervegg: 39.7, etteriso_takloft: 8.4 },
-    småhus: { 0.75: 41.7, 1.2: 33.7, etteriso_yttervegg: 27.7, etteriso_takloft: 11.4 },
-  },
-  87: {
-    blokk: { 0.75: 28.1, 1.2: 21, etteriso_yttervegg: 9.7, etteriso_takloft: 2.8 },
-    småhus: { 0.75: 31.4, 1.2: 23.4, etteriso_yttervegg: 15, etteriso_takloft: 4.7 },
-  },
-  97: {
-    blokk: { 0.75: 12.1, 1.2: 5, etteriso_yttervegg: 7.3, etteriso_takloft: 0.4 },
-    småhus: { 0.75: 14.2, 1.2: 6.1, etteriso_yttervegg: 3.7, etteriso_takloft: 0.6 },
-  },
-  7: {
-    blokk: { 0.75: 7.2, 1.2: 0, etteriso_yttervegg: 1.3, etteriso_takloft: 0.4 },
-    småhus: { 0.75: 8.2, 1.2: 0, etteriso_yttervegg: 0, etteriso_takloft: 0 },
-  },
-};
-
-/**
- * Bestem TEK-periode basert på byggeår
- */
-const determineTek = (byggeaar: number): string => {
-  const threshold = 2;
-  if (byggeaar >= 2007 + threshold) return 'TEK7';
-  if (byggeaar >= 1997 + threshold) return 'TEK97';
-  if (byggeaar >= 1987 + threshold) return 'TEK87';
-  if (byggeaar >= 1969 + threshold) return 'TEK69';
-  if (byggeaar >= 1949 + threshold) return 'TEK49';
-  return 'eldre';
-};
-
+// Farger for energikarakter-bokser
 const ENERGY_RATING_COLORS: Record<string, string> = {
   A: '#097E3E',
   B: '#32A548',
@@ -204,19 +174,27 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   totalEnergySavings: _totalEnergySavings = 0,
 }) => {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
-  const [showEnergyInfo, setShowEnergyInfo] = useState(false);
+  const [_showEnergyInfo, _setShowEnergyInfo] = useState(false); // Beholdes for fremtidig bruk i energibesparelses-boksen
   const [showInfoBox, setShowInfoBox] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const tiltakSectionRef = useRef<HTMLDivElement>(null);
   const buildingIllustrationRef = useRef<HTMLDivElement>(null);
-  const { setTargetRect, buildingType, phase: overlayPhase } = useTransitionOverlay();
+  const { setTargetRect, buildingType, phase: overlayPhase, finalizeTransition } = useTransitionOverlay();
 
   // Hide building illustration during animation phases (like desktop does)
+  // During 'settling', the static illustration should be visible BEHIND the overlay
+  // so when the overlay disappears, the static illustration is already in place (no blink)
   const buildingIllustrationOpacity =
     overlayPhase === 'captured' || overlayPhase === 'animating' ? 0 : 1;
 
   // Hent tiltakskatalog dynamisk
   const { data: catalogData, isLoading: isCatalogLoading } = useTiltakCatalog();
+
+  // Hent gul liste-status for bygningen
+  const { status: gulListeStatus } = useGulListeStatus({
+    adresse: searchAddress,
+  });
+  const erPaaGulListe = gulListeStatus?.erPaaGulListe ?? false;
 
   // Bygningstypedata
   const buildingTypeCode = useMemo(() => {
@@ -275,8 +253,39 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     );
   }, [buildingTypeCode, buildingTypeNameLower]);
 
-  // Beregn årlig energiforbruk hvis ikke oppgitt
-  const calculatedYearlyConsumption = useMemo(() => {
+  // Boligtype for energibesparelses-beregninger (småhus eller blokk)
+  const boligtype: Boligtype | null = useMemo(() => {
+    if (buildingTypeKey) {
+      if (['enebolig', 'tomannsbolig', 'rekkehus'].includes(buildingTypeKey)) {
+        return 'småhus';
+      }
+      if (buildingTypeKey === 'blokk') {
+        return 'blokk';
+      }
+    }
+    if (['11', '12', '13'].includes(buildingTypeCode)) {
+      return 'småhus';
+    }
+    if (isBlokk) {
+      return 'blokk';
+    }
+    return null;
+  }, [buildingTypeKey, buildingTypeCode, isBlokk]);
+
+  // TEK-periode for energibesparelses-oppslag
+  const tekPeriod: TekPeriodInput | null = useMemo(() => {
+    if (!buildingYear) return null;
+    return calculateTekPeriod(buildingYear);
+  }, [buildingYear]);
+
+  // Estimert årlig energiforbruk
+  const estimatedAnnualConsumption = useMemo(() => {
+    if (!buildingYear || !bruksareal || !boligtype) return 0;
+    return calculateAnnualEnergyConsumption(buildingYear, bruksareal, boligtype);
+  }, [buildingYear, bruksareal, boligtype]);
+
+  // Beregn årlig energiforbruk hvis ikke oppgitt (brukes for energikarakter-beregning)
+  const _calculatedYearlyConsumption = useMemo(() => {
     // Bruk prop hvis oppgitt
     if (yearlyConsumption) {
       return yearlyConsumption;
@@ -304,82 +313,105 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     return '';
   }, [yearlyConsumption, buildingData, buildingYear, bruksareal, buildingTypeCode, buildingTypeNameLower]);
 
-  // Beregn besparelse for en kategori
-  const calculateSavingsForCategory = useCallback(
-    (buildingCategory: 'småhus' | 'blokk', measure: string, tek: string): number => {
-      const tekNumber = tek.startsWith('TEK') ? Number.parseInt(tek.substring(3), 10) : tek;
-      const tekKey = Number.isNaN(Number(tekNumber)) ? tek : tekNumber;
-      const savingsData = ENERGY_SAVINGS_DATA[tekKey];
-      if (!savingsData || !bruksareal) {
-        return 0;
-      }
-
-      if (measure === 'Oppgradering av vindu' || measure === 'Oppgradering av vinduer') {
-        return (savingsData[buildingCategory][0.75] || 0) * bruksareal;
-      }
-      if (measure === 'Etterisolering av yttervegg') {
-        return (savingsData[buildingCategory].etteriso_yttervegg || 0) * bruksareal;
-      }
-      if (measure === 'Isolering av kjeller og loft' || measure === 'Etterisolering av kjeller og loft') {
-        return (savingsData[buildingCategory].etteriso_takloft || 0) * bruksareal;
-      }
-
-      return 0;
-    },
-    [bruksareal]
-  );
-
-  // Beregn besparelse for et tiltak
+  // Beregn besparelse for et tiltak med CSV-baserte prosentsatser
+  // Returnerer null hvis besparelse ikke kan beregnes (manglende data)
   const calculateSavings = useCallback(
-    (measure: string): number => {
+    (measure: string): number | null => {
       // Solenergi har egen beregning - bruk solarData prop eller buildingData som fallback
       if (measure === 'Solenergi') {
-        return solarData?.filteredSolarEnergy || buildingData?.filteredSolarEnergy || 0;
+        const solarValue = solarData?.filteredSolarEnergy || buildingData?.filteredSolarEnergy;
+        return solarValue && solarValue > 0 ? solarValue : null;
       }
 
-      if (!buildingYear || !calculatedYearlyConsumption) {
-        return 0;
-      }
+      // Temperaturstyring - validering som matcher desktop-implementasjon
+      if (measure === 'Temperaturstyring') {
+        // Bruk parseNumericValue for konsistent parsing (som desktop)
+        const parsedBruksareal = parseNumericValue(bruksareal);
+        const parsedByggeaar = Math.trunc(parseNumericValue(buildingYear));
 
-      const tek = determineTek(buildingYear);
-      const isSmåhus = ['11', '12', '13'].includes(buildingTypeCode);
-      const buildingCategory = isSmåhus ? 'småhus' : isBlokk ? 'blokk' : null;
+        // Bestem byggkategori med determineBuildingType (som desktop)
+        const buildingCategory = determineBuildingType(buildingTypeCode, buildingTypeName);
 
-      if (!buildingCategory) {
-        // Fallback til string matching
+        // Valider alle nødvendige inputs (matcher desktop)
         if (
-          buildingTypeNameLower.includes('enebolig') ||
-          buildingTypeNameLower.includes('tomannsbolig') ||
-          buildingTypeNameLower.includes('rekkehus') ||
-          buildingTypeNameLower.includes('kjedehus')
+          !buildingCategory ||
+          !Number.isFinite(parsedByggeaar) ||
+          parsedByggeaar <= 0 ||
+          !Number.isFinite(parsedBruksareal) ||
+          parsedBruksareal <= 0
         ) {
-          return calculateSavingsForCategory('småhus', measure, tek);
-        } else if (
-          buildingTypeNameLower.includes('blokk') ||
-          buildingTypeNameLower.includes('leilighet') ||
-          buildingTypeNameLower.includes('boligbygg')
-        ) {
-          return calculateSavingsForCategory('blokk', measure, tek);
+          return null;
         }
-        return 0;
+
+        // Bruk calculateTekPeriod fra shared (som desktop)
+        const tekPeriod = calculateTekPeriod(parsedByggeaar);
+        const originalEnergy = calculateAnnualEnergyConsumption(parsedByggeaar, parsedBruksareal, buildingCategory);
+        const rate = getEnergySavingsRate('temperaturstyring', tekPeriod, buildingCategory);
+
+        if (rate === null) {
+          return null;
+        }
+
+        const totalSavings = calculateSavingsFromRate(originalEnergy, rate);
+        return totalSavings > 0 ? totalSavings : null;
       }
 
-      return calculateSavingsForCategory(buildingCategory, measure, tek);
+      // Andre tiltak krever byggeår og bruksareal
+      const parsedBruksareal = parseNumericValue(bruksareal);
+      const parsedByggeaar = Math.trunc(parseNumericValue(buildingYear));
+
+      if (
+        !Number.isFinite(parsedByggeaar) ||
+        parsedByggeaar <= 0 ||
+        !Number.isFinite(parsedBruksareal) ||
+        parsedBruksareal <= 0
+      ) {
+        return null;
+      }
+
+      // Bestem byggkategori med determineBuildingType for konsistens
+      const buildingCategory = determineBuildingType(buildingTypeCode, buildingTypeName);
+      if (!buildingCategory) {
+        return null;
+      }
+
+      // Beregn TEK-periode og opprinnelig energiforbruk
+      const tekPeriod = calculateTekPeriod(parsedByggeaar);
+      const originalEnergy = calculateAnnualEnergyConsumption(parsedByggeaar, parsedBruksareal, buildingCategory);
+
+      // Map tiltak-navn til tiltak-ID og hent prosentsats
+      let rate: number | null = null;
+
+      if (measure === 'Oppgradering av vindu' || measure === 'Oppgradering av vinduer') {
+        rate = getWindowEnergySavingsRate(tekPeriod, buildingCategory, erPaaGulListe);
+      } else if (measure === 'Etterisolering av yttervegg') {
+        rate = getEnergySavingsRate('etterisolering_yttervegg', tekPeriod, buildingCategory);
+      } else if (measure === 'Isolering av kjeller og loft' || measure === 'Etterisolering av kjeller og loft') {
+        rate = getEnergySavingsRate('etterisolering_kjeller_loft', tekPeriod, buildingCategory);
+      }
+
+      if (rate === null) {
+        return null;
+      }
+
+      const totalSavings = calculateSavingsFromRate(originalEnergy, rate);
+      return totalSavings > 0 ? totalSavings : null;
     },
     [
       buildingData?.filteredSolarEnergy,
       buildingTypeCode,
-      buildingTypeNameLower,
+      buildingTypeName,
       buildingYear,
-      calculateSavingsForCategory,
-      isBlokk,
+      bruksareal,
+      erPaaGulListe,
       solarData,
-      calculatedYearlyConsumption,
     ]
   );
 
   // Beregn total besparelse basert på valgte tiltak
   const [calculatedSavings, setCalculatedSavings] = useState(0);
+  // Antall valgte tiltak som ikke kunne beregnes (manglende data)
+  const [uncalculableCount, setUncalculableCount] = useState(0);
 
   // Filtrer tiltak fra katalog
   const filteredTiltak = useMemo(() => {
@@ -407,17 +439,71 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     }));
   }, [isCatalogLoading, filteredTiltak]);
 
-  // Beregn total besparelse når valgte tiltak endres
+  // Beregn total besparelse med multiplikativ metode når valgte tiltak endres
+  // Holder også styr på hvor mange tiltak som ikke kunne beregnes
   useEffect(() => {
-    let total = 0;
+    if (checkedItems.size === 0) {
+      setCalculatedSavings(0);
+      setUncalculableCount(0);
+      return;
+    }
+
+    // Bruk yearlyConsumption hvis tilgjengelig, ellers estimert forbruk
+    const consumptionNum = yearlyConsumption ? parseFloat(yearlyConsumption) : estimatedAnnualConsumption;
+
+    // Bygg liste med tiltak og deres rates for multiplikativ beregning
+    const tiltakInfo: TiltakSavingsInfo[] = [];
+    let uncalculable = 0;
+
     checkedItems.forEach((tiltakId) => {
       const tiltak = displayTiltak.find((t) => t.id === tiltakId);
-      if (tiltak) {
-        total += calculateSavings(tiltak.title);
+      if (!tiltak) return;
+
+      // Solenergi håndteres spesielt - det er produksjon, ikke besparelse
+      if (tiltak.title === 'Solenergi') {
+        const solarValue = solarData?.filteredSolarEnergy || buildingData?.filteredSolarEnergy;
+        if (solarValue && solarValue > 0) {
+          tiltakInfo.push({
+            title: tiltak.title,
+            rate: null,
+            solarProductionKwh: solarValue
+          });
+        } else {
+          uncalculable += 1;
+        }
+      } else if (boligtype && tekPeriod) {
+        // Hent rate for dette tiltaket
+        const rate = getRateForTiltak(tiltak.title, tekPeriod, boligtype, erPaaGulListe);
+        if (rate !== null) {
+          tiltakInfo.push({
+            title: tiltak.title,
+            rate
+          });
+        } else {
+          uncalculable += 1;
+        }
+      } else {
+        // Mangler nødvendig data for beregning
+        uncalculable += 1;
       }
     });
+
+    // Bruk den sentrale multiplikative beregningen
+    const total = calculateCombinedSavings(consumptionNum, tiltakInfo);
+
     setCalculatedSavings(total);
-  }, [checkedItems, displayTiltak, calculateSavings]);
+    setUncalculableCount(uncalculable);
+  }, [
+    boligtype,
+    buildingData?.filteredSolarEnergy,
+    checkedItems,
+    displayTiltak,
+    erPaaGulListe,
+    estimatedAnnualConsumption,
+    solarData?.filteredSolarEnergy,
+    tekPeriod,
+    yearlyConsumption,
+  ]);
 
   // Beregn ny energikarakter basert på valgte tiltak
   const newRating = useMemo(() => {
@@ -482,7 +568,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   const districtName = buildingData.csvData?.bydelsnavn || '';
 
   // Sjekk om footer skal vises
-  const showFooter = checkedItems.size > 0 && calculatedSavings > 0;
+  // Viser footer hvis tiltak er valgt OG (besparelse > 0 ELLER det finnes tiltak som ikke kunne beregnes)
+  const showFooter = checkedItems.size > 0 && (calculatedSavings > 0 || uncalculableCount > 0);
 
   // Håndter scroll på tiltakslisten for å skjule scroll-indikatoren
   const handleTiltakScroll = useCallback(() => {
@@ -506,6 +593,14 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       return () => window.removeEventListener('resize', checkScrollable);
     }
   }, [displayTiltak]);
+
+  // Reset scroll-posisjon når komponenten monteres
+  // Dette forhindrer at scroll-offset fra forrige visning (f.eks. når tastatur var åpent) forplanter seg
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, []);
 
   // Register target rect for building transition animation
   // Uses shared getBuildingKind helper to ensure consistent classification with useFigmaAddressSearch
@@ -562,6 +657,22 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       clearTimeout(timeoutId);
     };
   }, [buildingType, buildingTypeCode, buildingTypeName, setTargetRect]);
+
+  // Finalize transition after settling phase (like desktop does in FigmaMainScript)
+  // This removes the overlay and makes the static illustration visible
+  useEffect(() => {
+    if (overlayPhase !== 'settling') {
+      return;
+    }
+
+    // Match desktop timing for smooth handoff
+    const SETTLE_DURATION_MS = 450;
+    const settleTimer = window.setTimeout(() => {
+      finalizeTransition();
+    }, SETTLE_DURATION_MS);
+
+    return () => window.clearTimeout(settleTimer);
+  }, [overlayPhase, finalizeTransition]);
 
   return (
     <div
@@ -620,80 +731,25 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
           </button>
         </section>
 
-        {/* Energiskala */}
-        <section className="mobile-energy-solutions__energy-section">
-          <div className="mobile-energy-solutions__energy-header">
-            <div className="mobile-energy-solutions__energy-title-row">
-              <h2 className="mobile-energy-solutions__section-title">
-                {estimatedRating ? 'Energikarakter' : 'Beregner...'}
-              </h2>
-              <button
-                className="mobile-energy-solutions__info-button"
-                onClick={() => setShowEnergyInfo(true)}
-                aria-label="Mer informasjon om energikarakter"
-              >
-                <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-                  <path
-                    d="M15.93 7.6C17.1356 7.5897 18.3022 8.02698 19.204 8.82721C20.1058 9.62744 20.6787 10.7337 20.8118 11.932C20.945 13.1303 20.6289 14.3354 19.9247 15.314C19.2206 16.2927 18.1785 16.9754 17 17.23H16.94V18.91H14.94V15.35H15.94C16.479 15.3516 17.0077 15.2019 17.4658 14.9179C17.924 14.634 18.2932 14.2271 18.5316 13.7437C18.77 13.2602 18.8679 12.7196 18.8142 12.1832C18.7606 11.6469 18.5574 11.1364 18.228 10.7098C17.8986 10.2831 17.456 9.95754 16.9507 9.76998C16.4453 9.58243 15.8975 9.54045 15.3695 9.64883C14.8415 9.75721 14.3545 10.0116 13.9639 10.383C13.5733 10.7545 13.2948 11.2281 13.16 11.75V11.92L11.16 11.53C11.3793 10.425 11.9741 9.42996 12.8436 8.71364C13.713 7.99731 14.8035 7.60384 15.93 7.6ZM16 3C13.4288 3 10.9154 3.76244 8.77759 5.1909C6.63975 6.61935 4.97351 8.64968 3.98957 11.0251C3.00563 13.4006 2.74818 16.0144 3.24979 18.5362C3.7514 21.0579 4.98953 23.3743 6.80761 25.1924C8.62569 27.0105 10.9421 28.2486 13.4638 28.7502C15.9856 29.2518 18.5994 28.9944 20.9749 28.0104C23.3503 27.0265 25.3806 25.3603 26.8091 23.2224C28.2376 21.0846 29 18.5712 29 16C29 12.5522 27.6304 9.24558 25.1924 6.80761C22.7544 4.36964 19.4478 3 16 3Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M17.65 22.38C17.648 22.7197 17.5455 23.0513 17.3553 23.3328C17.1651 23.6144 16.8958 23.8333 16.5813 23.9619C16.2669 24.0906 15.9213 24.1232 15.5884 24.0557C15.2554 23.9882 14.9498 23.8236 14.7103 23.5827C14.4707 23.3418 14.3079 23.0353 14.2424 22.7019C14.1768 22.3685 14.2114 22.0232 14.3419 21.7095C14.4724 21.3958 14.6928 21.1277 14.9755 20.9392C15.2581 20.7506 15.5902 20.65 15.93 20.65C16.3867 20.65 16.8198 20.8289 17.1498 21.1573C17.4798 21.4857 17.65 21.9233 17.65 22.38Z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </button>
-            </div>
+        {/* Tiltaksliste header - overskrift og bygningsillustrasjon på linje */}
+        <div className="mobile-energy-solutions__tiltak-header">
+          <h2 className="mobile-energy-solutions__section-title mobile-energy-solutions__tiltak-title">Velg tiltak for din bolig</h2>
+          {/* Bygningsillustrasjon */}
+          <div
+            className="mobile-energy-solutions__building-illustration"
+            ref={buildingIllustrationRef}
+            style={{
+              opacity: buildingIllustrationOpacity,
+              transition: overlayPhase === 'settling' ? 'none' : undefined,
+            }}
+          >
+            {isBlokk ? (
+              <BlokkSvg id="mobile-target-blokk" className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--blokk" />
+            ) : (
+              <EneboligSvg id="mobile-target-enebolig" className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--enebolig" />
+            )}
           </div>
-
-          {/* Energi-bokser med bygningsillustrasjon */}
-          <div className="mobile-energy-solutions__energy-row">
-            <div className="mobile-energy-solutions__energy-scale">
-              {ENERGY_RATING_ORDER.map((letter) => {
-                const isEstimated = estimatedRating === letter;
-                const isNew = newRating === letter;
-                const isActive = isEstimated || isNew;
-                return (
-                  <div
-                    key={letter}
-                    className={`mobile-energy-solutions__energy-box ${isActive ? 'mobile-energy-solutions__energy-box--active' : ''} ${isNew ? 'mobile-energy-solutions__energy-box--new' : ''}`}
-                    style={{ backgroundColor: ENERGY_RATING_COLORS[letter] }}
-                  >
-                    <span>{letter}</span>
-                    {isNew && (
-                      <span className="mobile-energy-solutions__energy-box-label">Ny</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            {/* Bygningsillustrasjon */}
-            <div
-              className="mobile-energy-solutions__building-illustration"
-              ref={buildingIllustrationRef}
-              style={{
-                opacity: buildingIllustrationOpacity,
-                transition: buildingIllustrationOpacity === 1 ? 'opacity 0.4s ease-in-out' : undefined,
-              }}
-            >
-              {isBlokk ? (
-                <BlokkSvg id="mobile-target-blokk" className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--blokk" />
-              ) : (
-                <EneboligSvg id="mobile-target-enebolig" className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--enebolig" />
-              )}
-            </div>
-          </div>
-          {newRating && (
-            <p className="mobile-energy-solutions__energy-improvement">
-              Med valgte tiltak kan du oppnå energikarakter {newRating}
-            </p>
-          )}
-        </section>
-
-        {/* Tiltaksliste - tittel fast, kort scrollbart */}
-        <h2 className="mobile-energy-solutions__section-title mobile-energy-solutions__tiltak-title">Velg tiltak for din bolig</h2>
+        </div>
 
         <section
           className="mobile-energy-solutions__tiltak-section"
@@ -722,7 +778,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                       skin="secondary"
                       size="small"
                       variant="label-only"
-                      onClick={() => onSelectTiltak(tiltak.id, calculateSavings(tiltak.title))}
+                      onClick={() => onSelectTiltak(tiltak.id, calculateSavings(tiltak.title) ?? undefined)}
                       className="mobile-energy-solutions__tiltak-button"
                     >
                       Les mer
@@ -733,8 +789,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
             )}
           </div>
 
-          {/* Scroll-indikator - vises kun når listen kan scrolles og brukeren ikke har scrollet ennå */}
-          {needsScrollIndicator && !hasScrolled && (
+          {/* Scroll-indikator - vises kun når listen kan scrolles, brukeren ikke har scrollet, og footeren ikke vises */}
+          {needsScrollIndicator && !hasScrolled && !showFooter && (
             <div className="mobile-energy-solutions__scroll-indicator">
               <PktIcon name="chevron-thin-down" className="pkt-icon--medium" />
             </div>
@@ -754,17 +810,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
             className="mobile-energy-solutions__infobox-container"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              className="mobile-energy-solutions__infobox-close"
-              onClick={() => setShowInfoBox(false)}
-              aria-label="Lukk"
-            >
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-            <MobileInfoBox
+              <MobileInfoBox
               addressOnly={addressOnly}
               districtName={districtName}
               buildingTypeName={buildingTypeName}
@@ -772,42 +818,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               mapCoordinates={mapCoordinates}
               showYellowBox={showYellowBox}
               totalEnergySavings={calculatedSavings}
+              onCollapse={() => setShowInfoBox(false)}
             />
-          </div>
-        </div>
-      )}
-
-      {/* Info-modal */}
-      {showEnergyInfo && (
-        <div
-          className="mobile-energy-solutions__modal-overlay"
-          onClick={() => setShowEnergyInfo(false)}
-        >
-          <div
-            className="mobile-energy-solutions__modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="mobile-energy-solutions__modal-close"
-              onClick={() => setShowEnergyInfo(false)}
-              aria-label="Lukk"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-            <h2 className="mobile-energy-solutions__modal-title">Om energikarakter</h2>
-            <div className="mobile-energy-solutions__modal-content">
-              <p>
-                Energikarakteren viser hvor energieffektiv bygningen din er på en skala fra A til G,
-                hvor A er best.
-              </p>
-              <p>
-                Karakteren beregnes ut fra bygningens årlige energiforbruk per kvadratmeter
-                (kWh/m²/år).
-              </p>
-            </div>
           </div>
         </div>
       )}
@@ -816,6 +828,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       <MobileSavingsFooter
         totalSavingsKwh={calculatedSavings}
         isVisible={showFooter}
+        uncalculableCount={uncalculableCount}
+        estimatedRating={estimatedRating}
+        newRating={newRating}
       />
     </div>
   );

@@ -4,8 +4,13 @@ import {
   getOverskriftLabel,
   openExternalLink,
   TiltakComponentProps,
-  type Stotteordning
+  type Stotteordning,
+  calculateTekPeriod,
+  parseNumericValue,
+  formatNumberWithSpaces
 } from './shared';
+import { determineBuildingType, calculateAnnualEnergyConsumption } from '../../../../utils/tekEnergyCalculations';
+import { getEnergySavingsRate, calculateSavingsFromRate } from '../../../../utils/energySavingsData';
 import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type {
@@ -58,6 +63,7 @@ function mapTemperaturstyringContent(content?: TiltakContent): Temperaturstyring
 const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProps> = ({
   onBack,
   buildingType,
+  buildingData,
   audience = 'standard'
 }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
@@ -311,34 +317,116 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
           </foreignObject>
         )}
 
-        <text
-          x="589"
-          y="284"
-          fontFamily="Oslo Sans"
-          fontWeight="100"
-          fontStyle="normal"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="0"
-          fill="#FFFFFF"
-          dominantBaseline="hanging"
-        >
-          Mangler data kWh
-        </text>
-        <text
-          x="589"
-          y="306"
-          fontFamily="Oslo Sans"
-          fontWeight="100"
-          fontStyle="normal"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="0"
-          fill="#FFFFFF"
-          dominantBaseline="hanging"
-        >
-          Mangler data kr
-        </text>
+        {/* Temperaturstyring savings text */}
+        {(() => {
+          const bruksareal = parseNumericValue(
+            buildingData?.bruksarealM2 ?? buildingData?.csvData?.bruksareal_totalt
+          );
+          const byggeaar = Math.trunc(
+            parseNumericValue(buildingData?.byggeaar ?? buildingData?.csvData?.byggeaar)
+          );
+          const buildingCategory = determineBuildingType(buildingData?.bygningstypeKode, buildingType);
+
+          if (!buildingCategory || !Number.isFinite(byggeaar) || byggeaar <= 0 || !Number.isFinite(bruksareal) || bruksareal <= 0) {
+            return (
+              <text
+                x="589"
+                y="295"
+                fontFamily="Oslo Sans"
+                fontWeight="100"
+                fontStyle="normal"
+                fontSize="14"
+                style={{ lineHeight: '22px' }}
+                letterSpacing="0"
+                fill="#FFFFFF"
+                dominantBaseline="hanging"
+              >
+                Kunne ikke beregne besparelse
+              </text>
+            );
+          }
+
+          const tekPeriod = calculateTekPeriod(byggeaar);
+          const originalEnergy = calculateAnnualEnergyConsumption(byggeaar, bruksareal, buildingCategory);
+          const savingsRate = getEnergySavingsRate('temperaturstyring', tekPeriod, buildingCategory);
+
+          if (savingsRate === null) {
+            return (
+              <text
+                x="589"
+                y="295"
+                fontFamily="Oslo Sans"
+                fontWeight="100"
+                fontStyle="normal"
+                fontSize="14"
+                style={{ lineHeight: '22px' }}
+                letterSpacing="0"
+                fill="#FFFFFF"
+                dominantBaseline="hanging"
+              >
+                Kunne ikke beregne besparelse
+              </text>
+            );
+          }
+
+          const totalSavings = calculateSavingsFromRate(originalEnergy, savingsRate);
+
+          if (totalSavings <= 0) {
+            return (
+              <text
+                x="589"
+                y="295"
+                fontFamily="Oslo Sans"
+                fontWeight="100"
+                fontStyle="normal"
+                fontSize="14"
+                style={{ lineHeight: '22px' }}
+                letterSpacing="0"
+                fill="#FFFFFF"
+                dominantBaseline="hanging"
+              >
+                Kunne ikke beregne besparelse
+              </text>
+            );
+          }
+
+          const roundedSavings = Math.round(totalSavings / 1000) * 1000;
+          const norgespris = 1.1; // kr/kWh
+          const roundedKr = Math.round((roundedSavings * norgespris) / 1000) * 1000;
+
+          return (
+            <>
+              <text
+                x="589"
+                y="284"
+                fontFamily="Oslo Sans"
+                fontWeight="100"
+                fontStyle="normal"
+                fontSize="14"
+                style={{ lineHeight: '22px' }}
+                letterSpacing="0"
+                fill="#FFFFFF"
+                dominantBaseline="hanging"
+              >
+                {`${formatNumberWithSpaces(roundedSavings)} kWh`}
+              </text>
+              <text
+                x="589"
+                y="306"
+                fontFamily="Oslo Sans"
+                fontWeight="100"
+                fontStyle="normal"
+                fontSize="14"
+                style={{ lineHeight: '22px' }}
+                letterSpacing="0"
+                fill="#FFFFFF"
+                dominantBaseline="hanging"
+              >
+                {`${formatNumberWithSpaces(roundedKr)} kr`}
+              </text>
+            </>
+          );
+        })()}
 
         <circle cx="170" cy="490" r="110" fill="#2A2859" />
         <text

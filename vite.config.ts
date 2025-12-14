@@ -30,6 +30,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    host: true,
     proxy: {
       "/lookup": "http://localhost:4002",
       "/solinnstraling": "http://localhost:4003",

@@ -4,8 +4,12 @@
 .mobile-tiltak-detail {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
+  /* Bruk fixed posisjon for konsistent layout uavhengig av virtuelt tastatur */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-color: var(--pkt-color-brand-neutrals-100, #f9f9f9);
   overflow: hidden;
 }

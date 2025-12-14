@@ -1,10 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import {
-  ENERGY_SAVINGS_DATA,
   TiltakComponentProps,
   calculateTekPeriod,
   parseNumericValue,
-  resolveEnergyCategory,
+  formatNumberWithSpaces,
   useProviderColors,
   getOverskriftLabel,
   openExternalLink,
@@ -17,6 +16,8 @@ import type { TiltakContent, TiltakAccordionItem } from '../../../../../content/
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
+import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../../../utils/tekEnergyCalculations';
+import { getEnergySavingsRate, calculateSavingsFromRate } from '../../../../utils/energySavingsData';
 
 type IsoleringAvKjellerOgLoftProps = TiltakComponentProps;
 type IsoleringAvKjellerOgLoftComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -290,7 +291,7 @@ const IsoleringAvKjellerOgLoftContentComponent: React.FC<IsoleringAvKjellerOgLof
         
         
         
-        {/* Etterisoleringyttervegg savings text */}
+        {/* Isolering kjeller/loft savings text */}
         {(() => {
           const bruksareal = parseNumericValue(
             buildingData?.bruksarealM2 ?? buildingData?.csvData?.bruksareal_totalt
@@ -298,7 +299,7 @@ const IsoleringAvKjellerOgLoftContentComponent: React.FC<IsoleringAvKjellerOgLof
           const byggeaar = Math.trunc(
             parseNumericValue(buildingData?.byggeaar ?? buildingData?.csvData?.byggeaar)
           );
-          const buildingCategory = resolveEnergyCategory(buildingType);
+          const buildingCategory = determineBuildingType(buildingData?.bygningstypeKode, buildingType);
 
           if (!buildingCategory || byggeaar <= 0) {
             return (
@@ -320,9 +321,10 @@ const IsoleringAvKjellerOgLoftContentComponent: React.FC<IsoleringAvKjellerOgLof
           }
 
           const tekPeriod = calculateTekPeriod(byggeaar);
-          const savingsData = ENERGY_SAVINGS_DATA[tekPeriod]?.[buildingCategory];
+          const originalEnergy = calculateAnnualEnergyConsumption(byggeaar, bruksareal, buildingCategory);
+          const savingsRate = getEnergySavingsRate('etterisolering_kjeller_loft', tekPeriod, buildingCategory);
 
-          if (!savingsData) {
+          if (savingsRate === null) {
             return (
               <text
                 x="589"
@@ -341,8 +343,7 @@ const IsoleringAvKjellerOgLoftContentComponent: React.FC<IsoleringAvKjellerOgLof
             );
           }
 
-          const savingsPerM2 = savingsData.etteriso_takloft ?? 0;
-          const totalSavings = savingsPerM2 * bruksareal;
+          const totalSavings = calculateSavingsFromRate(originalEnergy, savingsRate);
 
           if (totalSavings <= 0) {
             return (
@@ -363,11 +364,9 @@ const IsoleringAvKjellerOgLoftContentComponent: React.FC<IsoleringAvKjellerOgLof
             );
           }
 
-          const lowerSavings = Math.round((totalSavings * 0.9) / 1000) * 1000;
-          const upperSavings = Math.round((totalSavings * 1.1) / 1000) * 1000;
+          const roundedSavings = Math.round(totalSavings / 1000) * 1000;
           const norgespris = 1.1; // kr/kWh
-          const lowerKr = Math.round((lowerSavings * norgespris) / 1000) * 1000;
-          const upperKr = Math.round((upperSavings * norgespris) / 1000) * 1000;
+          const roundedKr = Math.round((roundedSavings * norgespris) / 1000) * 1000;
 
           return (
             <>
@@ -383,9 +382,9 @@ const IsoleringAvKjellerOgLoftContentComponent: React.FC<IsoleringAvKjellerOgLof
                   fill="#FFFFFF"
                   dominantBaseline="hanging"
                 >
-                  {totalSavings === 0 ? '0 kWh' : `${lowerSavings} - ${upperSavings} kWh`}
+                  {`${formatNumberWithSpaces(roundedSavings)} kWh`}
                 </text>
-                
+
                 <text
                   x="589"
                   y="338"
@@ -398,7 +397,7 @@ const IsoleringAvKjellerOgLoftContentComponent: React.FC<IsoleringAvKjellerOgLof
                   fill="#FFFFFF"
                   dominantBaseline="hanging"
                 >
-                  {totalSavings === 0 ? '0 kr' : `${lowerKr} - ${upperKr} kr`}
+                  {`${formatNumberWithSpaces(roundedKr)} kr`}
                 </text>
               </>
             );

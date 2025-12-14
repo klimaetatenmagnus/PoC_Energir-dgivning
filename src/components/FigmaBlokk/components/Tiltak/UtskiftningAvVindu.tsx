@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ENERGY_SAVINGS_DATA,
   TiltakComponentProps,
   calculateTekPeriod,
   parseNumericValue,
-  resolveEnergyCategory,
+  formatNumberWithSpaces,
   useProviderColors,
   getOverskriftLabel,
   openExternalLink,
@@ -12,6 +11,7 @@ import {
 } from './shared';
 import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
+import { useGulListeStatus } from '../../../../hooks/useGulListeStatus';
 import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
 import { BenefitChipSvg } from '../../../common/BenefitChip/BenefitChipSvg';
 import type {
@@ -22,6 +22,8 @@ import type {
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
 import { renderParagraphWithGlossary, dictionaryTermsToGlossary } from './glossaryHelpers';
+import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../../../utils/tekEnergyCalculations';
+import { getWindowEnergySavingsRate, calculateSavingsFromRate } from '../../../../utils/energySavingsData';
 
 type UtskiftningAvVinduProps = TiltakComponentProps;
 type UtskiftningAvVinduComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -114,6 +116,18 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
     () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? []),
     [dictionary?.glossaryTerms]
   );
+
+  // Sjekk gul liste-status for vindusberegning
+  const {
+    status: gulListeStatus,
+    loading: gulListeLoading,
+    error: gulListeError
+  } = useGulListeStatus({
+    adresse: buildingData?.adresse,
+    gnr: buildingData?.gnr,
+    bnr: buildingData?.bnr
+  });
+  const erPaaGulListe = gulListeStatus?.erPaaGulListe ?? false;
 
   // Derive values from content (use empty defaults when loading)
   const tabsSection = content?.tabs[0];
@@ -404,23 +418,61 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
         
         {/* Window upgrade savings text */}
         {(() => {
-          const determineEnergyCategory = (): 'småhus' | 'blokk' | undefined => {
-            const codePrefix =
-              buildingData?.bygningstypeKode?.substring(0, 2) ??
-              buildingData?.csvData?.bygningstypekode?.substring(0, 2) ??
-              buildingData?.csvData?.bygningstypeKode?.substring(0, 2);
+          // Show loading state while gul liste-status is being fetched
+          if (gulListeLoading) {
+            return (
+              <text
+                x="589"
+                y="307"
+                fontFamily="Oslo Sans"
+                fontWeight="100"
+                fontStyle="normal"
+                fontSize="14"
+                style={{ lineHeight: '22px' }}
+                letterSpacing="0"
+                fill="#FFFFFF"
+                dominantBaseline="hanging"
+              >
+                Sjekker vernestatus...
+              </text>
+            );
+          }
 
-            if (codePrefix) {
-              if (['11', '12', '13'].includes(codePrefix)) {
-                return 'småhus';
-              }
-              if (['14', '15', '16', '17'].includes(codePrefix)) {
-                return 'blokk';
-              }
-            }
-
-            return resolveEnergyCategory(buildingType);
-          };
+          // Show fallback message if gul liste-status could not be determined
+          if (gulListeError) {
+            return (
+              <>
+                <text
+                  x="589"
+                  y="296"
+                  fontFamily="Oslo Sans"
+                  fontWeight="100"
+                  fontStyle="normal"
+                  fontSize="12"
+                  style={{ lineHeight: '18px' }}
+                  letterSpacing="0"
+                  fill="#FFFFFF"
+                  dominantBaseline="hanging"
+                >
+                  Vernestatus utilgjengelig.
+                </text>
+                <text
+                  x="589"
+                  y="314"
+                  fontFamily="Oslo Sans"
+                  fontWeight="100"
+                  fontStyle="normal"
+                  fontSize="12"
+                  style={{ lineHeight: '18px' }}
+                  letterSpacing="0"
+                  fill="#FFFFFF"
+                  dominantBaseline="hanging"
+                >
+                  Beregning antar standard vinduer.
+                </text>
+              </>
+            );
+          }
 
           const bruksareal = parseNumericValue(
             buildingData?.bruksarealM2 ?? buildingData?.csvData?.bruksareal_totalt
@@ -428,7 +480,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           const byggeaar = Math.trunc(
             parseNumericValue(buildingData?.byggeaar ?? buildingData?.csvData?.byggeaar)
           );
-          const buildingCategory = determineEnergyCategory();
+          const buildingCategory = determineBuildingType(buildingData?.bygningstypeKode, buildingType);
 
           if (!buildingCategory || byggeaar <= 0) {
             return (
@@ -450,9 +502,10 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
           }
 
           const tekPeriod = calculateTekPeriod(byggeaar);
-          const savingsData = ENERGY_SAVINGS_DATA[tekPeriod]?.[buildingCategory];
+          const originalEnergy = calculateAnnualEnergyConsumption(byggeaar, bruksareal, buildingCategory);
+          const savingsRate = getWindowEnergySavingsRate(tekPeriod, buildingCategory, erPaaGulListe);
 
-          if (!savingsData) {
+          if (savingsRate === null) {
             return (
               <text
                 x="589"
@@ -471,8 +524,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
             );
           }
 
-          const savingsPerM2 = savingsData['0.75'] ?? 0;
-          const totalSavings = savingsPerM2 * bruksareal;
+          const totalSavings = calculateSavingsFromRate(originalEnergy, savingsRate);
 
           if (totalSavings <= 0) {
             return (
@@ -493,11 +545,9 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
             );
           }
 
-          const lowerSavings = Math.round((totalSavings * 0.9) / 1000) * 1000;
-          const upperSavings = Math.round((totalSavings * 1.1) / 1000) * 1000;
+          const roundedSavings = Math.round(totalSavings / 1000) * 1000;
           const norgespris = 1.1;
-          const lowerKr = Math.round((lowerSavings * norgespris) / 1000) * 1000;
-          const upperKr = Math.round((upperSavings * norgespris) / 1000) * 1000;
+          const roundedKr = Math.round((roundedSavings * norgespris) / 1000) * 1000;
 
           return (
             <>
@@ -513,7 +563,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
                 fill="#FFFFFF"
                 dominantBaseline="hanging"
               >
-                {`${lowerSavings} - ${upperSavings} kWh`}
+                {`${formatNumberWithSpaces(roundedSavings)} kWh`}
               </text>
 
               <text
@@ -528,7 +578,7 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
                 fill="#FFFFFF"
                 dominantBaseline="hanging"
               >
-                {`${lowerKr} - ${upperKr} kr`}
+                {`${formatNumberWithSpaces(roundedKr)} kr`}
               </text>
             </>
           );
