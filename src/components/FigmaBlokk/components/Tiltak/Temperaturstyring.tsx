@@ -21,6 +21,7 @@ import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
 import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
 import { BenefitChipSvg } from '../../../common/BenefitChip';
+import { GlossaryTerm, dictionaryTermsToGlossary } from './glossaryHelpers';
 
 type TemperaturstyringProps = TiltakComponentProps;
 type TemperaturstyringComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -68,6 +69,7 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
 }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
+  const [hoveredWord, setHoveredWord] = useState<string | null>(null);
 
   // Provider-farger fra dictionary
   const getProviderColor = useProviderColors();
@@ -98,6 +100,12 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
   const enrichedBenefits = useMemo(
     () => resolveTiltakBenefits(resolvedTiltakContent, dictionary, 4),
     [resolvedTiltakContent, dictionary]
+  );
+
+  // Ordforklaringer fra sentral ordliste
+  const glossary = useMemo(
+    () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? []),
+    [dictionary]
   );
 
   // Tidlig return etter alle hooks
@@ -348,9 +356,9 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
 
           const tekPeriod = calculateTekPeriod(byggeaar);
           const originalEnergy = calculateAnnualEnergyConsumption(byggeaar, bruksareal, buildingCategory);
-          const savingsRate = getEnergySavingsRate('temperaturstyring', tekPeriod, buildingCategory);
+          const savingsRates = getEnergySavingsRate('temperaturstyring', tekPeriod, buildingCategory);
 
-          if (savingsRate === null) {
+          if (savingsRates === null) {
             return (
               <text
                 x="589"
@@ -369,7 +377,8 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
             );
           }
 
-          const totalSavings = calculateSavingsFromRate(originalEnergy, savingsRate);
+          // Bruk romoppvarming rate for temperaturstyring (påvirker kun romoppvarming)
+          const totalSavings = calculateSavingsFromRate(originalEnergy, savingsRates.romoppvarming);
 
           if (totalSavings <= 0) {
             return (
@@ -720,7 +729,7 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
                       color: '#FFFFFF',
                       margin: 0
                     }}>
-                      Er tiltaket ditt søknadspliktig betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.
+                      Er tiltaket ditt <GlossaryTerm term="søknadspliktig" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>søknadspliktig</GlossaryTerm> betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.
                     </p>
                     <p style={{
                       fontFamily: 'Oslo Sans',
@@ -731,7 +740,7 @@ const TemperaturstyringContentComponent: React.FC<TemperaturstyringComponentProp
                       color: '#FFFFFF',
                       margin: '16px 0 0 0'
                     }}>
-                      Søknadsplikten skal hjelpe deg som tiltakshaver med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak som tar faglig ansvar for prosjektering og utførelse.
+                      Søknadsplikten skal hjelpe deg som <GlossaryTerm term="tiltakshaver" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>tiltakshaver</GlossaryTerm> med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve <GlossaryTerm term="ansvarlig foretak" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>ansvarlige foretak</GlossaryTerm> som tar faglig ansvar for prosjektering og utførelse.
                     </p>
                     <p style={{
                       fontFamily: 'Oslo Sans',

@@ -503,9 +503,9 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
 
           const tekPeriod = calculateTekPeriod(byggeaar);
           const originalEnergy = calculateAnnualEnergyConsumption(byggeaar, bruksareal, buildingCategory);
-          const savingsRate = getWindowEnergySavingsRate(tekPeriod, buildingCategory, erPaaGulListe);
+          const savingsRates = getWindowEnergySavingsRate(tekPeriod, buildingCategory, erPaaGulListe);
 
-          if (savingsRate === null) {
+          if (savingsRates === null) {
             return (
               <text
                 x="589"
@@ -524,7 +524,8 @@ const UtskiftningAvVinduContentComponent: React.FC<UtskiftningAvVinduComponentPr
             );
           }
 
-          const totalSavings = calculateSavingsFromRate(originalEnergy, savingsRate);
+          // Bruk romoppvarming rate for vinduer (påvirker kun romoppvarming)
+          const totalSavings = calculateSavingsFromRate(originalEnergy, savingsRates.romoppvarming);
 
           if (totalSavings <= 0) {
             return (

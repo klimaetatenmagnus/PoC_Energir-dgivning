@@ -7,9 +7,16 @@ import {
   PktAlert,
   PktIcon,
 } from '@oslokommune/punkt-react';
+import {
+  DISTRICT_BADGE,
+  getBuildingTypeBadgeConfig,
+  getDisplayBuildingTypeName,
+} from '../../config/badgeConfig';
 import { AddressLookupResponse } from '../../services/buildingApi';
+import '../../config/badges.css';
 import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../utils/tekEnergyCalculations';
 import { convertKwhToNok, formatCurrency, formatNumberWithSpaces } from '../../utils/energy';
+import { getOsloMapExportUrl } from '../../utils/coordinateUtils';
 import './MobileInfoBox.css';
 
 interface MobileInfoBoxProps {
@@ -47,8 +54,9 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   const [isEditMode, setIsEditMode] = useState(false);
   const [isGulListeInfoOpen, setIsGulListeInfoOpen] = useState(false);
 
-  // Bygningstypevisning
-  const displayBuildingTypeName = buildingTypeName === 'Store boligbygg' ? 'Blokk' : buildingTypeName;
+  // Bygningstypevisning (bruker sentral badge-konfigurasjon)
+  const displayBuildingTypeName = getDisplayBuildingTypeName(buildingTypeName);
+  const buildingBadgeConfig = getBuildingTypeBadgeConfig(buildingTypeName);
   const isBlockBuilding = buildingTypeName.toLowerCase() === 'blokk' || buildingTypeName === 'Store boligbygg';
 
   // Bygningsdata
@@ -148,12 +156,20 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
         <h2 className="mobile-info-box__address">{addressOnly}</h2>
         <div className="mobile-info-box__tags">
           {districtName && (
-            <PktTag skin="green">
+            <PktTag
+              skin={DISTRICT_BADGE.skin}
+              aria-label={`${DISTRICT_BADGE.ariaLabelPrefix}: ${districtName}`}
+            >
+              <PktIcon name={DISTRICT_BADGE.iconName} />
               <span>{districtName}</span>
             </PktTag>
           )}
           {displayBuildingTypeName && (
-            <PktTag skin="blue">
+            <PktTag
+              skin={buildingBadgeConfig.skin}
+              aria-label={`${buildingBadgeConfig.ariaLabelPrefix}: ${displayBuildingTypeName}`}
+            >
+              <PktIcon name={buildingBadgeConfig.iconName} />
               <span>{displayBuildingTypeName}</span>
             </PktTag>
           )}
@@ -316,33 +332,33 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
         </PktAccordionItem>
       </PktAccordion>
 
-      {/* Kart - vises direkte under nøkkelinformasjon */}
+      {/* Kart - vises direkte under nøkkelinformasjon (Oslo kommune karttjeneste) */}
       <div className="mobile-info-box__map-section">
         <h3 className="mobile-info-box__map-title">Kart</h3>
         <div className="mobile-info-box__map-container">
           {mapCoordinates ? (
-            <iframe
-              title={`Kart over ${addressOnly}`}
-              className="mobile-info-box__map-iframe"
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapCoordinates.lng - 0.003}%2C${mapCoordinates.lat - 0.002}%2C${mapCoordinates.lng + 0.003}%2C${mapCoordinates.lat + 0.002}&layer=mapnik&marker=${mapCoordinates.lat}%2C${mapCoordinates.lng}`}
-              loading="lazy"
-            />
+            <div className="mobile-info-box__map-wrapper">
+              <img
+                src={getOsloMapExportUrl(mapCoordinates.lat, mapCoordinates.lng, 400, 250)}
+                alt={`Kart over ${addressOnly}`}
+                className="mobile-info-box__map-image"
+                loading="lazy"
+              />
+              <div className="mobile-info-box__map-pin" aria-hidden="true">
+                <svg width="28" height="36" viewBox="0 0 28 36" fill="none">
+                  <path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.268 21.732 0 14 0zm0 19a5 5 0 110-10 5 5 0 010 10z" fill="#2A2859"/>
+                </svg>
+              </div>
+            </div>
           ) : (
             <div className="mobile-info-box__map-loading">
               Kartkoordinater ikke tilgjengelig
             </div>
           )}
         </div>
-        {mapCoordinates && (
-          <a
-            href={`https://www.openstreetmap.org/?mlat=${mapCoordinates.lat}&mlon=${mapCoordinates.lng}#map=17/${mapCoordinates.lat}/${mapCoordinates.lng}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mobile-info-box__map-link"
-          >
-            Åpne i OpenStreetMap
-          </a>
-        )}
+        <span className="mobile-info-box__map-attribution">
+          Kart: Bymiljøetaten, Oslo kommune
+        </span>
       </div>
 
       {/* Gul liste info modal */}

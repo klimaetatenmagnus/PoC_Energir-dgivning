@@ -859,7 +859,7 @@
 }
 
 /* Responsive */
-@media (max-width: 48rem) {
+@media (max-width: 768px) {
   .address-search__form {
     flex-direction: column;
   }
@@ -926,7 +926,7 @@
 
 /* Figma Design page styles */
 .figma-design-container {
-  background: var(--pkt-color-brand-blue-300, #D1F9FF);
+  background: #2A2859;
   position: relative;
 }
 
@@ -957,10 +957,8 @@
 }
 
 .figma-content {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
+  margin-top: 60px;
+  /* Content area for Figma design */
 }
 
 /* Oslo skyline positioning - removed absolute positioning since it's now in scaled container */
@@ -975,30 +973,31 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  align-items: stretch;
+  align-items: flex-start;
 }
 
 /* Oslo logo container */
 .oslo-logo-container {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 16px;
   width: 100%;
 }
 
 /* Oslo logo */
 .oslo-logo {
-  display: block;
-  height: clamp(56px, 3.9vw, 76px);
-  width: auto;
-  flex-shrink: 0;
+  width: 3.5vw;
+  height: auto;
+  min-width: 40px;
 }
 
-/* Energiportalen header group */
-.energiportalen-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* Oslo text */
+.oslo-text {
+  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 400;
+  font-size: 1.5vw;
+  line-height: 1;
+  color: #F1FDFF;
 }
 
 /* Energiportalen title */
@@ -1007,68 +1006,74 @@
   font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 700;
   font-size: 5vw;
-  line-height: 1.2;
-  letter-spacing: -0.325px;
-  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
-}
-
-/* Energiportalen subtitle */
-.energiportalen-subtitle {
-  margin: 0;
-  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-weight: 400;
-  font-size: 1.5vw;
   line-height: 1.4;
-  letter-spacing: -0.2px;
-  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
-  opacity: 0.9;
+  letter-spacing: -0.325px;
+  color: #F1FDFF;
 }
 
 .figma-search-wrapper {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 25vw;
   min-width: 300px;
+}
+
+.figma-search-label {
+  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 500;
+  font-size: 1.1vw;
+  line-height: 1.5;
+  letter-spacing: -0.2px;
+  color: #FFFFFF;
 }
 
 .figma-search-input-group {
   display: flex;
   gap: 8px;
-  align-items: stretch;
+  height: 3vw;
+  min-height: 40px;
 }
 
 .figma-search-input {
   flex: 1;
-  min-height: 3rem;
-  height: 3rem;
-  padding: 0.5rem 1rem;
-  background: var(--pkt-color-brand-neutrals-white, #FFFFFF);
-  border: 2px solid var(--pkt-color-brand-dark-blue-1000, #2A2859);
+  padding: 0.5vw 1vw;
+  background: #FFFFFF;
+  border: 4px solid #F9C66B;
   border-radius: 0;
   font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 300;
-  font-size: 1.125rem;
+  font-size: 1.1vw;
   line-height: 1.5;
   letter-spacing: -0.2px;
-  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
+  color: #333333;
   outline: none;
-  box-sizing: border-box;
-}
-
-.figma-search-wrapper.pkt-searchinput .pkt-input.figma-search-input {
-  border-color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
 }
 
 .figma-search-input::placeholder {
-  color: var(--pkt-color-text-placeholder, #666666);
+  color: #666666;
 }
 
-.figma-search-button.pkt-btn {
-  min-width: 3rem;
-  min-height: 3rem;
-  height: 3rem;
-  border-radius: 0;
-  -webkit-tap-highlight-color: transparent;
+.figma-search-button {
+  width: 3vw;
+  min-width: 40px;
+  height: 100%;
+  background: #F9C66B;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.figma-search-button:hover {
+  opacity: 0.9;
+}
+
+.figma-search-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Loading spinner for search button */
@@ -1221,288 +1226,8 @@
   color: #000000;
 }
 
-/* ===========================================
-   Mobile Landing Component
-   Responsiv versjon av FigmaLanding for mobil (<768px)
-   Følger Punkt designsystem breakpoints
-   =========================================== */
 
-.mobile-landing {
-  /* Bruk fixed posisjon for å unngå at virtuelt tastatur forskyver innholdet */
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  background: var(--pkt-color-brand-blue-300, #D1F9FF);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
 
-.mobile-landing__content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 16px;
-  padding-bottom: 120px; /* Plass til bakgrunn */
-  z-index: 2;
-  position: relative;
-  width: 100%;
-}
-
-/* Logo */
-.mobile-landing__logo-container {
-  margin-bottom: 24px;
-}
-
-.mobile-landing__logo {
-  height: 64px;
-  width: auto;
-}
-
-/* Tittel */
-.mobile-landing__title {
-  margin: 0 0 12px 0;
-  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-weight: 700;
-  font-size: 32px;
-  line-height: 1.2;
-  letter-spacing: -0.5px;
-  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
-  text-align: center;
-}
-
-.mobile-landing__subtitle {
-  margin: 0 0 28px 0;
-  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-weight: 400;
-  font-size: 18px;
-  line-height: 1.4;
-  letter-spacing: -0.2px;
-  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
-  opacity: 0.9;
-  text-align: center;
-}
-
-/* Søkefelt wrapper */
-.mobile-landing__search-wrapper {
-  width: 100%;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.mobile-landing__search-label {
-  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-weight: 500;
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
-}
-
-.mobile-landing__search-autocomplete {
-  position: relative;
-  width: 100%;
-}
-
-.mobile-landing__search-input-group {
-  display: flex;
-  gap: 8px; /* Padding mellom felt og knapp */
-  align-items: stretch;
-}
-
-.mobile-landing__search-input {
-  flex: 1;
-  min-height: 3rem; /* Punkt standard: 48px */
-  padding: 0.5rem 1rem;
-  background-color: var(--pkt-color-brand-neutrals-white, #FFFFFF);
-  border: 2px solid var(--pkt-color-brand-dark-blue-1000, #2A2859);
-  border-radius: 0; /* Punkt standard: ingen avrunding */
-  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-weight: 300; /* Punkt pkt-txt-18-light */
-  font-size: 1.125rem; /* 18px - Punkt standard */
-  line-height: 1.5;
-  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
-  outline: none;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.mobile-landing__search-input::placeholder {
-  color: var(--pkt-color-text-placeholder, #666666);
-  opacity: 1;
-}
-
-.mobile-landing__search-input:hover {
-  border-color: var(--pkt-color-brand-warm-blue-1000, #1F42AA);
-}
-
-.mobile-landing__search-input:focus {
-  border-color: var(--pkt-color-brand-warm-blue-1000, #1F42AA);
-  box-shadow: 0 0 0 2px var(--pkt-color-brand-warm-blue-1000, #1F42AA);
-}
-
-/* PktButton styling for søkeknapp - bruk Punkt standard */
-.mobile-landing__search-button.pkt-btn {
-  min-width: 3rem; /* 48px */
-  min-height: 3rem;
-  height: 3rem; /* Matcher søkefeltet */
-  border-radius: 0; /* Punkt standard: ingen avrunding */
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Suggestions dropdown */
-.mobile-landing__suggestions {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 4px;
-  background: #FFFFFF;
-  border: 1px solid #E0E0E0;
-  border-radius: 4px;
-  max-height: 240px;
-  overflow-y: auto;
-  z-index: 1000;
-  list-style: none;
-  padding: 0;
-  margin: 4px 0 0 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  -webkit-overflow-scrolling: touch;
-}
-
-.mobile-landing__suggestion {
-  padding: 16px; /* Touch-friendly padding */
-  min-height: 48px; /* Touch-friendly minimum */
-  cursor: pointer;
-  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 16px;
-  color: #333333;
-  border-bottom: 1px solid #F0F0F0;
-  display: flex;
-  align-items: center;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.mobile-landing__suggestion:last-child {
-  border-bottom: none;
-}
-
-.mobile-landing__suggestion:active,
-.mobile-landing__suggestion--selected {
-  background-color: #E8F4F8;
-}
-
-.mobile-landing__suggestion--loading {
-  color: #666666;
-  font-style: italic;
-  cursor: default;
-}
-
-/* Feilmelding - bruker PktAlert */
-.mobile-landing__error.pkt-alert {
-  margin-top: 8px;
-}
-
-/* Mini-skyline container */
-.mobile-landing__skyline-container {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 160px;
-  z-index: 1;
-  overflow: hidden;
-}
-
-.mini-skyline {
-  width: 100%;
-  height: 100%;
-}
-
-/* ===========================================
-   Z-INDEX HIERARCHY (Mobile)
-   ===========================================
-   - TransitionOverlayRenderer: 10000 (highest - building animation)
-   - Mobile suggestions dropdown: 1000
-   - Mobile modals/overlays: 1000
-   - Mobile header (sticky): 100
-   - Mobile skyline: 1
-   - Mobile content: 2
-   =========================================== */
-
-/* Mobile Landing Fade Animations */
-.mobile-landing__content--fading {
-  animation: mobileLandingFadeOut 2s ease-in-out forwards;
-}
-
-.mobile-landing__skyline-container--fading {
-  animation: mobileLandingFadeOut 2s ease-in-out forwards;
-}
-
-@keyframes mobileLandingFadeOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-/* GPU acceleration hints for smooth mobile performance */
-.mobile-landing__content,
-.mobile-landing__skyline-container {
-  will-change: opacity;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-/* Respect user's motion preferences */
-@media (prefers-reduced-motion: reduce) {
-  .mobile-landing__content--fading,
-  .mobile-landing__skyline-container--fading {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-
-  .mobile-landing__content,
-  .mobile-landing__skyline-container {
-    will-change: auto;
-  }
-}
-
-/* Phablet og oppover (>=576px) - litt mer plass */
-@media (min-width: 576px) {
-  .mobile-landing__content {
-    padding: 32px 24px;
-    padding-bottom: 140px;
-  }
-
-  .mobile-landing__logo {
-    height: 72px;
-  }
-
-  .mobile-landing__title {
-    font-size: 40px;
-    margin-bottom: 40px;
-  }
-
-  .mobile-landing__search-wrapper {
-    max-width: 480px;
-  }
-}
-
-/* ===========================================
-   Tiltak Overlay Animations
-   Animasjoner for energitiltak-overlays på bygningsillustrasjonene
-   Inkluderer fade-in/scale-effekter og pil-indikatorer
-   =========================================== */
 
 /* Tiltak overlay states */
 svg#blokk2_layer, svg#enebolig2_layer {
@@ -1513,7 +1238,7 @@ svg#blokk2_layer, svg#enebolig2_layer {
   transition: opacity 200ms ease, transform 400ms ease-in;
   pointer-events: none;
   transition-delay: 100ms;
-  transform: translateY(0px) scale(1.09);
+  transform: translateY(0px) scale(1.09); /* 1.04 */
   transform-origin: center;
 }
 .tiltak--visible {
@@ -1525,6 +1250,8 @@ svg#blokk2_layer, svg#enebolig2_layer {
 .tiltak-temperaturstyring.enebolig.tiltak--visible {
   transform: translateY(0px) scale(.7);
 }
+
+
 
 .tiltak-arrow {
   opacity: 0;
@@ -1550,6 +1277,7 @@ svg#blokk2_layer, svg#enebolig2_layer {
   animation: tiltak-poof-add .7s linear forwards;
   animation-delay: 190ms;
 }
+
 
 .tiltak-arrow--remove {
   animation: tiltak-poof-remove .7s linear forwards;

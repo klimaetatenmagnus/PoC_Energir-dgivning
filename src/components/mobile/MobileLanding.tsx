@@ -61,21 +61,20 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
       >
         {/* Logo */}
         <div className="mobile-landing__logo-container">
-          <OsloLogo className="mobile-landing__logo" />
+          <OsloLogo
+            className="mobile-landing__logo"
+            color="var(--pkt-color-brand-dark-blue-1000, #2A2859)"
+          />
         </div>
 
         {/* Tittel */}
         <h1 className="mobile-landing__title">Energinøkkelen</h1>
+        <p className="mobile-landing__subtitle">
+          Søk på en adresse og se hvor mye du kan spare
+        </p>
 
         {/* Søkefelt */}
         <div className="mobile-landing__search-wrapper" ref={wrapperRef}>
-          <label
-            className="pkt-inputwrapper__label mobile-landing__search-label"
-            htmlFor="mobile-address-search"
-          >
-            Søk etter adresse
-          </label>
-
           <div className="mobile-landing__search-autocomplete">
             <div className="mobile-landing__search-input-group">
               <input

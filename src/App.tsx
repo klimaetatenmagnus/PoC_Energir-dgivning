@@ -260,6 +260,7 @@ export default function App() {
             estimatedRating={estimatedRating}
             solarData={solarData}
             mapCoordinates={mapCoordinates}
+            audience={audienceForTiltak}
           />
         </>
       );
@@ -275,7 +276,7 @@ export default function App() {
           left: 0,
           width: '100vw',
           height: '100vh',
-          backgroundColor: '#f5f5f5',
+          backgroundColor: 'var(--pkt-color-brand-neutrals-100, #f9f9f9)',
           overflow: 'hidden',
           display: 'flex',
           justifyContent: 'center',

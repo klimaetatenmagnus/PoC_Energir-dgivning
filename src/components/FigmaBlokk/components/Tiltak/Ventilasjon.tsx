@@ -4,10 +4,14 @@ import {
   getOverskriftLabel,
   openExternalLink,
   TiltakComponentProps,
+  calculateTekPeriod,
+  parseNumericValue,
+  formatNumberWithSpaces,
   type Stotteordning
 } from './shared';
 import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
+import { GlossaryTerm, dictionaryTermsToGlossary } from './glossaryHelpers';
 import type {
   TiltakAccordionItem,
   TiltakContent
@@ -16,6 +20,12 @@ import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
 import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
 import { BenefitChipSvg } from '../../../common/BenefitChip';
+import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../../../utils/tekEnergyCalculations';
+import {
+  getRateForTiltak,
+  calculateCombinedSavings,
+  type TiltakSavingsInfo
+} from '../../../../utils/energySavingsData';
 
 type VentilasjonProps = TiltakComponentProps;
 type VentilasjonComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -58,10 +68,12 @@ function mapVentilasjonContent(content?: TiltakContent): VentilasjonContentView 
 const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
   onBack,
   buildingType,
+  buildingData,
   audience = 'standard'
 }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
+  const [hoveredWord, setHoveredWord] = useState<string | null>(null);
 
   // Provider-farger fra dictionary
   const getProviderColor = useProviderColors();
@@ -77,6 +89,12 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
   const enrichedBenefits = useMemo(
     () => resolveTiltakBenefits(resolvedTiltakContent, dictionary, 4),
     [resolvedTiltakContent, dictionary]
+  );
+
+  // Ordforklaringer fra sentral ordliste
+  const glossary = useMemo(
+    () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? []),
+    [dictionary]
   );
 
   const content = useMemo(
@@ -316,36 +334,99 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
           </foreignObject>
         )}
         
-        {/* Savings text - Display "Mangler data" with two rows */}
-        <text
-          x="589"
-          y="316"
-          fontFamily="Oslo Sans"
-          fontWeight="100"
-          fontStyle="normal"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="0"
-          fill="#FFFFFF"
-          dominantBaseline="hanging"
-        >
-          Mangler data kWh
-        </text>
-        
-        <text
-          x="589"
-          y="338"
-          fontFamily="Oslo Sans"
-          fontWeight="100"
-          fontStyle="normal"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="0"
-          fill="#FFFFFF"
-          dominantBaseline="hanging"
-        >
-          Mangler data kr
-        </text>
+        {/* Ventilasjon savings calculation */}
+        {(() => {
+          const bruksareal = parseNumericValue(
+            buildingData?.bruksarealM2 ?? buildingData?.csvData?.bruksareal_totalt
+          );
+          const byggeaar = Math.trunc(
+            parseNumericValue(buildingData?.byggeaar ?? buildingData?.csvData?.byggeaar)
+          );
+          const buildingCategory = determineBuildingType(
+            buildingData?.bygningstypeKode,
+            buildingType
+          );
+
+          if (!buildingCategory || byggeaar <= 0 || bruksareal <= 0) {
+            return (
+              <>
+                <text x="589" y="316" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                      fill="#FFFFFF" dominantBaseline="hanging">
+                  Kunne ikke beregne besparelse
+                </text>
+                <text x="589" y="338" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                      fill="#FFFFFF" dominantBaseline="hanging">
+                  Mangler bygningsdata
+                </text>
+              </>
+            );
+          }
+
+          const tekPeriod = calculateTekPeriod(byggeaar);
+          const originalEnergy = calculateAnnualEnergyConsumption(byggeaar, bruksareal, buildingCategory);
+          const rates = getRateForTiltak('Ventilasjonsgjenvinning', tekPeriod, buildingCategory);
+
+          if (rates === null) {
+            return (
+              <>
+                <text x="589" y="316" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                      fill="#FFFFFF" dominantBaseline="hanging">
+                  Mangler data for ventilasjon
+                </text>
+                <text x="589" y="338" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                      fill="#FFFFFF" dominantBaseline="hanging">
+                  og {tekPeriod} {buildingCategory}
+                </text>
+              </>
+            );
+          }
+
+          // Use calculateCombinedSavings for accurate calculation
+          const tiltakInfo: TiltakSavingsInfo[] = [{
+            title: 'Ventilasjonsgjenvinning',
+            rates
+          }];
+
+          const totalSavings = calculateCombinedSavings(
+            originalEnergy,
+            tiltakInfo,
+            tekPeriod,
+            buildingCategory,
+            bruksareal
+          );
+
+          if (totalSavings <= 0) {
+            return (
+              <>
+                <text x="589" y="316" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                      fill="#FFFFFF" dominantBaseline="hanging">
+                  Ingen besparelse for
+                </text>
+                <text x="589" y="338" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                      fill="#FFFFFF" dominantBaseline="hanging">
+                  ventilasjon i dette bygget
+                </text>
+              </>
+            );
+          }
+
+          const roundedSavings = Math.round(totalSavings / 1000) * 1000;
+          const norgespris = 1.1; // kr/kWh
+          const roundedKr = Math.round((roundedSavings * norgespris) / 1000) * 1000;
+
+          return (
+            <>
+              <text x="589" y="316" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                    fill="#FFFFFF" dominantBaseline="hanging">
+                {formatNumberWithSpaces(roundedSavings)} kWh
+              </text>
+              <text x="589" y="338" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                    fill="#FFFFFF" dominantBaseline="hanging">
+                {formatNumberWithSpaces(roundedKr)} kr
+              </text>
+            </>
+          );
+        })()}
         
         {/* Circle below main text */}
         <circle
@@ -711,7 +792,7 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
                   color: '#FFFFFF',
                   margin: 0
                 }}>
-                  Er tiltaket ditt søknadspliktig betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.
+                  Er tiltaket ditt <GlossaryTerm term="søknadspliktig" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>søknadspliktig</GlossaryTerm> betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.
                 </p>
                 <p style={{
                   fontFamily: 'Oslo Sans',
@@ -722,7 +803,7 @@ const VentilasjonContentComponent: React.FC<VentilasjonComponentProps> = ({
                   color: '#FFFFFF',
                   margin: '16px 0 0 0'
                 }}>
-                  Søknadsplikten skal hjelpe deg som tiltakshaver med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak som tar faglig ansvar for prosjektering og utførelse.
+                  Søknadsplikten skal hjelpe deg som <GlossaryTerm term="tiltakshaver" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>tiltakshaver</GlossaryTerm> med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve <GlossaryTerm term="ansvarlig foretak" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>ansvarlige foretak</GlossaryTerm> som tar faglig ansvar for prosjektering og utførelse.
                 </p>
                 <p style={{
                   fontFamily: 'Oslo Sans',

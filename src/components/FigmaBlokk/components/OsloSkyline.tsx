@@ -156,6 +156,9 @@ export const OsloSkyline: React.FC<OsloSkylineProps> = ({
         <path d="M406.174 339.674H418.482V351.999H406.174V339.674Z" fill="#2A2859"/>
         <path d="M350.783 302.697H381.554L350.783 271.883H320.013L350.783 302.697Z" fill="#2A2859"/>
         <path d="M313.862 339.674H326.17V351.999H313.862V339.674Z" fill="#2A2859"/>
+        {/* Enebolig windows - matching EneboligSvg design */}
+        <rect x="316.046" y="302.703" width="8.863" height="8.93" fill="#2A2859"/>
+        <rect x="361.73" y="319.003" width="8.863" height="17.92" fill="#2A2859"/>
         <path d="M61.5357 247.23H116.923L86.1525 216.416H30.7648L61.5357 247.23Z" fill="#2A2859"/>
         <path d="M61.5358 247.229H116.923V351.998H61.5358V247.229Z" fill="#F8F0DD"/>
         <path d="M30.7689 216.416L61.5399 247.23V351.999H30.7689H-0.00210571V247.23L30.7689 216.416Z" fill="#D0BFAE"/>
@@ -223,18 +226,28 @@ export const OsloSkyline: React.FC<OsloSkylineProps> = ({
       </g>
 
       {/* Enebolig clone that stays visible when pinEnebolig is true */}
+      {/* Uses same design as EneboligSvg from BuildingSprites.tsx, transformed to skyline coordinates */}
       <g
         id="landing-enebolig"
+        transform="translate(289.248, 271.003) scale(0.9925, 1)"
         style={{
           opacity: pinEnebolig ? 1 : 0,
           transition: 'opacity 1.5s ease-in-out',
           pointerEvents: 'none',
         }}
       >
-        <path d="M320.018 271.883L350.789 302.697V352H320.018H289.248V302.697L320.018 271.883Z" fill="#D0BFAE" />
-        <path d="M350.783 302.697H381.554V352H350.783V302.697Z" fill="#F8F0DD" />
-        <path d="M350.783 302.697H381.554L350.783 271.883H320.013L350.783 302.697Z" fill="#2A2859" />
-        <path d="M313.862 339.674H326.17V351.999H313.862V339.674Z" fill="#2A2859" />
+        {/* Right side wall */}
+        <rect x="62" y="31.7" width="31" height="49.3" fill="#F8F0DD" />
+        {/* Main house body */}
+        <polygon points="31 0.88 0 31.7 0 81 62 81 62 31.7 31 0.88" fill="#D0BFAE" />
+        {/* Roof */}
+        <polygon points="62 31.7 93 31.7 62 0.88 31 0.88 62 31.7" fill="#2A2859" />
+        {/* Door */}
+        <rect x="24.78" y="68.67" width="12.44" height="12.33" fill="#2A2859" />
+        {/* Left window */}
+        <rect x="27" y="31.7" width="8.93" height="8.93" fill="#2A2859" />
+        {/* Right window */}
+        <rect x="73.03" y="48" width="8.93" height="17.92" fill="#2A2859" />
       </g>
       
       {/* Block building that stays visible and animates */}

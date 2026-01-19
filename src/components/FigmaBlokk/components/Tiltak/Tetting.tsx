@@ -16,6 +16,7 @@ import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
 import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
 import { BenefitChipSvg } from '../../../common/BenefitChip/BenefitChipSvg';
+import { GlossaryTerm, dictionaryTermsToGlossary } from './glossaryHelpers';
 
 type TettingProps = TiltakComponentProps;
 type TettingComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -61,6 +62,7 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
 }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
+  const [hoveredWord, setHoveredWord] = useState<string | null>(null);
 
   // Provider-farger fra dictionary
   const getProviderColor = useProviderColors();
@@ -76,6 +78,12 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
   const enrichedBenefits = useMemo(
     () => resolveTiltakBenefits(resolvedTiltakContent, dictionary, 4),
     [resolvedTiltakContent, dictionary]
+  );
+
+  // Ordforklaringer fra sentral ordliste
+  const glossary = useMemo(
+    () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? []),
+    [dictionary]
   );
 
   const content = useMemo(
@@ -707,7 +715,7 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
                   color: '#FFFFFF',
                   margin: 0
                 }}>
-                  Er tiltaket ditt søknadspliktig betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.
+                  Er tiltaket ditt <GlossaryTerm term="søknadspliktig" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>søknadspliktig</GlossaryTerm> betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.
                 </p>
                 <p style={{
                   fontFamily: 'Oslo Sans',
@@ -718,7 +726,7 @@ const TettingContentComponent: React.FC<TettingComponentProps> = ({
                   color: '#FFFFFF',
                   margin: '16px 0 0 0'
                 }}>
-                  Søknadsplikten skal hjelpe deg som tiltakshaver med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak som tar faglig ansvar for prosjektering og utførelse.
+                  Søknadsplikten skal hjelpe deg som <GlossaryTerm term="tiltakshaver" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>tiltakshaver</GlossaryTerm> med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve <GlossaryTerm term="ansvarlig foretak" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>ansvarlige foretak</GlossaryTerm> som tar faglig ansvar for prosjektering og utførelse.
                 </p>
                 <p style={{
                   fontFamily: 'Oslo Sans',

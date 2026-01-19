@@ -33,14 +33,16 @@ const energyThresholds = {
 // TEK calculation function (samme som i EnergyRatingEstimator)
 export function calculateTEK(byggeaar: number): string {
   const terskel = 2; // lag i år i forhold til tek
-  
+
   // TEK years with threshold applied
-  if (byggeaar >= 2007 + terskel) return "TEK7";      // 2009 and newer
+  if (byggeaar >= 2017 + terskel) return "TEK17";     // 2019 and newer
+  if (byggeaar >= 2010 + terskel) return "TEK10";     // 2012-2018
+  if (byggeaar >= 2007 + terskel) return "TEK7";      // 2009-2011
   if (byggeaar >= 1997 + terskel) return "TEK97";     // 1999-2008
   if (byggeaar >= 1987 + terskel) return "TEK87";     // 1989-1998
   if (byggeaar >= 1969 + terskel) return "TEK69";     // 1971-1988
   if (byggeaar >= 1949 + terskel) return "TEK49";     // 1951-1970
-  
+
   // Older than 1951
   return "eldre";
 }
@@ -49,14 +51,24 @@ export function calculateTEK(byggeaar: number): string {
 export function getEnergyIntensityFromTEK(tek: string, buildingType: BuildingType, bruksareal: number): number {
   let base: number;
   let braTerm: number;
-  
+
   switch (tek) {
+    case 'TEK17':
+    case 'TEK10': {
+      // TEK17/TEK10 = mellom C og D (nyere bygg, bedre isolert)
+      const c = energyThresholds[buildingType].C;
+      const d = energyThresholds[buildingType].D;
+      base = Math.round((c.base + d.base) / 2);
+      braTerm = Math.round((c.braTerm + d.braTerm) / 2);
+      break;
+    }
+
     case 'TEK7':
       // TEK7 = D
       base = energyThresholds[buildingType].D.base;
       braTerm = energyThresholds[buildingType].D.braTerm;
       break;
-      
+
     case 'TEK97': {
       // TEK97 = mellom D og E
       const d = energyThresholds[buildingType].D;
@@ -65,19 +77,19 @@ export function getEnergyIntensityFromTEK(tek: string, buildingType: BuildingTyp
       braTerm = Math.round((d.braTerm + e.braTerm) / 2);
       break;
     }
-      
+
     case 'TEK87':
       // TEK87 = E
       base = energyThresholds[buildingType].E.base;
       braTerm = energyThresholds[buildingType].E.braTerm;
       break;
-      
+
     case 'TEK69':
       // TEK69 = F
       base = energyThresholds[buildingType].F.base;
       braTerm = energyThresholds[buildingType].F.braTerm;
       break;
-      
+
     case 'TEK49':
     case 'eldre': {
       // TEK49 og eldre = F + 10% (kun base-verdien, ikke BRA-leddet)
@@ -86,7 +98,7 @@ export function getEnergyIntensityFromTEK(tek: string, buildingType: BuildingTyp
       braTerm = f.braTerm; // Beholder samme BRA-ledd som F
       break;
     }
-      
+
     default: {
       // Fallback til F-nivå
       const f = energyThresholds[buildingType].F;
@@ -95,7 +107,7 @@ export function getEnergyIntensityFromTEK(tek: string, buildingType: BuildingTyp
       break;
     }
   }
-  
+
   return base + braTerm / bruksareal;
 }
 

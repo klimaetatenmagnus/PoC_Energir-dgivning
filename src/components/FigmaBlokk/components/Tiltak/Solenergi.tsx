@@ -14,6 +14,7 @@ import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
 import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
 import { BenefitChipSvg } from '../../../common/BenefitChip';
+import { GlossaryTerm, dictionaryTermsToGlossary } from './glossaryHelpers';
 
 type SolenergiComponentProps = TiltakComponentProps & { audience?: ContentAudience };
 
@@ -85,6 +86,12 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
   const enrichedBenefits = useMemo(
     () => resolveTiltakBenefits(resolvedTiltakContent, dictionary, 4),
     [resolvedTiltakContent, dictionary]
+  );
+
+  // Ordforklaringer fra sentral ordliste
+  const glossary = useMemo(
+    () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? []),
+    [dictionary]
   );
 
   const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
@@ -779,205 +786,7 @@ const SolenergiContentComponent: React.FC<SolenergiComponentProps> = ({
                   margin: 0,
                   position: 'relative'
                 }}>
-                  Er tiltaket ditt <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={() => setHoveredWord('søknadspliktig')}
-                    onMouseLeave={() => setHoveredWord(null)}
-                  >
-                    søknadspliktig
-                    {hoveredWord === 'søknadspliktig' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('søknadspliktig')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Søknadsplikt betyr at du må ha tillatelse fra Plan- og bygningsetaten før et tiltak – altså fysiske endringer på bygninger eller eiendom – kan settes i verk. Les mer om søknadsplikt <a 
-                            href="https://www.dibk.no/regelverk/sak/2/2/innledning" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span>, betyr ikke det at du får avslag. Tvert imot! Søknadsplikten skal sikre at arbeidet planlegges og gjennomføres med god kvalitet – både i papirene og på bygget. Målet er at du som <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={() => setHoveredWord('tiltakshaver')}
-                    onMouseLeave={() => setHoveredWord(null)}
-                  >
-                    tiltakshaver
-                    {hoveredWord === 'tiltakshaver' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('tiltakshaver')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Tiltakshaver er den personen eller virksomheten som utfører eller får utført tiltak – altså fysiske endringer på bygninger eller eiendom – som krever søknad og tillatelse etter plan- og bygningsloven. Les mer om tiltakshavers ansvar <a 
-                            href="https://www.dibk.no/regelverk/sak/3/12/12-1" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span> får det resultatet du ønsker deg, på en trygg og effektiv måte. I mer komplekse saker stilles det krav til <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={() => setHoveredWord('ansvarlige foretak')}
-                    onMouseLeave={() => setHoveredWord(null)}
-                  >
-                    ansvarlige foretak
-                    {hoveredWord === 'ansvarlige foretak' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('ansvarlige foretak')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Et ansvarlig foretak er et firma (for eksempel en arkitekt, byggmester eller entreprenør) som har fagkunnskap og tar ansvar for bestemte deler av et byggeprosjekt. Kommunen stiller krav til at slike firmaer må ha riktig kompetanse og erfaring.
-                          Les mer om ansvarsrett <a 
-                            href="https://www.dibk.no/regelverk/sak/3/12/innledning" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>, og hvilke tiltak som krever ansvarlig foretak <a 
-                            href="https://lovdata.no/dokument/NL/lov/2008-06-27-71/KAPITTEL_4-1#%C2%A720-3" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span>, nettopp for å sikre at de som gjør jobben har riktig kompetanse, og leverer løsninger som faktisk fungerer. Søknadsplikten hjelper deg altså i å lykkes med tiltaket ditt.
+                  Er tiltaket ditt <GlossaryTerm term="søknadspliktig" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>søknadspliktig</GlossaryTerm>, betyr ikke det at du får avslag. Tvert imot! Søknadsplikten skal sikre at arbeidet planlegges og gjennomføres med god kvalitet – både i papirene og på bygget. Målet er at du som <GlossaryTerm term="tiltakshaver" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>tiltakshaver</GlossaryTerm> får det resultatet du ønsker deg, på en trygg og effektiv måte. I mer komplekse saker stilles det krav til <GlossaryTerm term="ansvarlig foretak" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>ansvarlige foretak</GlossaryTerm>, nettopp for å sikre at de som gjør jobben har riktig kompetanse, og leverer løsninger som faktisk fungerer. Søknadsplikten hjelper deg altså i å lykkes med tiltaket ditt.
                 </p>
               </div>
                 </div>

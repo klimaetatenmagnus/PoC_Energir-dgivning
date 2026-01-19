@@ -17,7 +17,12 @@ import type { TiltakContent, TiltakAccordionItem } from '../../../../../content/
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
 import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../../../utils/tekEnergyCalculations';
-import { getEnergySavingsRate, calculateSavingsFromRate } from '../../../../utils/energySavingsData';
+import {
+  getEnergySavingsRate,
+  calculateCombinedSavings,
+  type TiltakSavingsInfo
+} from '../../../../utils/energySavingsData';
+import { GlossaryTerm, dictionaryTermsToGlossary } from './glossaryHelpers';
 
 type EtterisoleringYtterveggProps = TiltakComponentProps;
 type EtterisoleringYtterveggComponentProps = TiltakComponentProps & { audience?: ContentAudience };
@@ -88,6 +93,12 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
   const enrichedBenefits = useMemo(
     () => resolveTiltakBenefits(resolvedTiltakContent, dictionary, 4),
     [resolvedTiltakContent, dictionary]
+  );
+
+  // Ordforklaringer fra sentral ordliste
+  const glossary = useMemo(
+    () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? []),
+    [dictionary]
   );
 
   const content = useMemo(
@@ -299,20 +310,10 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
           );
           const buildingCategory = determineBuildingType(buildingData?.bygningstypeKode, buildingType);
 
-          if (!buildingCategory || byggeaar <= 0) {
+          if (!buildingCategory || byggeaar <= 0 || bruksareal <= 0) {
             return (
-              <text
-                x="589"
-                y="327"
-                fontFamily="Oslo Sans"
-                fontWeight="100"
-                fontStyle="normal"
-                fontSize="14"
-                style={{ lineHeight: '22px' }}
-                letterSpacing="0"
-                fill="#FFFFFF"
-                dominantBaseline="hanging"
-              >
+              <text x="589" y="327" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                    fill="#FFFFFF" dominantBaseline="hanging">
                 Kunne ikke beregne besparelse
               </text>
             );
@@ -320,43 +321,35 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
 
           const tekPeriod = calculateTekPeriod(byggeaar);
           const originalEnergy = calculateAnnualEnergyConsumption(byggeaar, bruksareal, buildingCategory);
-          const savingsRate = getEnergySavingsRate('etterisolering_yttervegg', tekPeriod, buildingCategory);
+          const savingsRates = getEnergySavingsRate('etterisolering_yttervegg', tekPeriod, buildingCategory);
 
-          if (savingsRate === null) {
+          if (savingsRates === null) {
             return (
-              <text
-                x="589"
-                y="327"
-                fontFamily="Oslo Sans"
-                fontWeight="100"
-                fontStyle="normal"
-                fontSize="14"
-                style={{ lineHeight: '22px' }}
-                letterSpacing="0"
-                fill="#FFFFFF"
-                dominantBaseline="hanging"
-              >
+              <text x="589" y="327" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                    fill="#FFFFFF" dominantBaseline="hanging">
                 Kunne ikke beregne besparelse
               </text>
             );
           }
 
-          const totalSavings = calculateSavingsFromRate(originalEnergy, savingsRate);
+          // Bruk ny logikk med calculateCombinedSavings
+          const tiltakInfo: TiltakSavingsInfo[] = [{
+            title: 'Etterisolering av yttervegg',
+            rates: savingsRates
+          }];
+
+          const totalSavings = calculateCombinedSavings(
+            originalEnergy,
+            tiltakInfo,
+            tekPeriod,
+            buildingCategory,
+            bruksareal
+          );
 
           if (totalSavings <= 0) {
             return (
-              <text
-                x="589"
-                y="327"
-                fontFamily="Oslo Sans"
-                fontWeight="100"
-                fontStyle="normal"
-                fontSize="14"
-                style={{ lineHeight: '22px' }}
-                letterSpacing="0"
-                fill="#FFFFFF"
-                dominantBaseline="hanging"
-              >
+              <text x="589" y="327" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                    fill="#FFFFFF" dominantBaseline="hanging">
                 Kunne ikke beregne besparelse
               </text>
             );
@@ -368,37 +361,16 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
 
           return (
             <>
-              <text
-                x="589"
-                y="316"
-                fontFamily="Oslo Sans"
-                  fontWeight="100"
-                  fontStyle="normal"
-                  fontSize="14"
-                  style={{ lineHeight: '22px' }}
-                  letterSpacing="0"
-                  fill="#FFFFFF"
-                  dominantBaseline="hanging"
-                >
-                  {`${formatNumberWithSpaces(roundedSavings)} kWh`}
-                </text>
-
-                <text
-                  x="589"
-                  y="338"
-                  fontFamily="Oslo Sans"
-                  fontWeight="100"
-                  fontStyle="normal"
-                  fontSize="14"
-                  style={{ lineHeight: '22px' }}
-                  letterSpacing="0"
-                  fill="#FFFFFF"
-                  dominantBaseline="hanging"
-                >
-                  {`${formatNumberWithSpaces(roundedKr)} kr`}
-                </text>
-              </>
-            );
+              <text x="589" y="316" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                    fill="#FFFFFF" dominantBaseline="hanging">
+                {formatNumberWithSpaces(roundedSavings)} kWh
+              </text>
+              <text x="589" y="338" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                    fill="#FFFFFF" dominantBaseline="hanging">
+                {formatNumberWithSpaces(roundedKr)} kr
+              </text>
+            </>
+          );
         })()}
         
         {/* Circle below main text */}
@@ -773,205 +745,7 @@ const EtterisoleringYtterveggContentComponent: React.FC<EtterisoleringYtterveggC
                   margin: 0,
                   position: 'relative'
                 }}>
-                  Er tiltaket ditt <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={() => setHoveredWord('søknadspliktig')}
-                    onMouseLeave={() => setHoveredWord(null)}
-                  >
-                    søknadspliktig
-                    {hoveredWord === 'søknadspliktig' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('søknadspliktig')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Søknadsplikt betyr at du må ha tillatelse fra Plan- og bygningsetaten før et tiltak – altså fysiske endringer på bygninger eller eiendom – kan settes i verk. Les mer om søknadsplikt <a 
-                            href="https://www.dibk.no/regelverk/sak/2/2/innledning" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span>, betyr ikke det at du får avslag. Tvert imot! Søknadsplikten skal sikre at arbeidet planlegges og gjennomføres med god kvalitet – både i papirene og på bygget. Målet er at du som <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={() => setHoveredWord('tiltakshaver')}
-                    onMouseLeave={() => setHoveredWord(null)}
-                  >
-                    tiltakshaver
-                    {hoveredWord === 'tiltakshaver' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('tiltakshaver')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Tiltakshaver er den personen eller virksomheten som utfører eller får utført tiltak – altså fysiske endringer på bygninger eller eiendom – som krever søknad og tillatelse etter plan- og bygningsloven. Les mer om tiltakshavers ansvar <a 
-                            href="https://www.dibk.no/regelverk/sak/3/12/12-1" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span> får det resultatet du ønsker deg, på en trygg og effektiv måte. I mer komplekse saker stilles det krav til <span 
-                    style={{ 
-                      textDecoration: 'underline', 
-                      textDecorationStyle: 'dotted', 
-                      textUnderlineOffset: '4px',
-                      cursor: 'pointer',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={() => setHoveredWord('ansvarlige foretak')}
-                    onMouseLeave={() => setHoveredWord(null)}
-                  >
-                    ansvarlige foretak
-                    {hoveredWord === 'ansvarlige foretak' && (
-                      <div 
-                        onMouseEnter={() => setHoveredWord('ansvarlige foretak')}
-                        onMouseLeave={() => setHoveredWord(null)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '100%',
-                          left: '0',
-                          width: '368px',
-                          backgroundColor: '#D1F9FF',
-                          padding: '12px',
-                          marginBottom: '0',
-                          zIndex: 1000
-                        }}>
-                        <h4 style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 700,
-                          fontStyle: 'normal',
-                          fontSize: '16px',
-                          lineHeight: '24px',
-                          letterSpacing: '-0.2px',
-                          color: '#000000',
-                          margin: '0 0 8px 0'
-                        }}>
-                          Ordforklaring
-                        </h4>
-                        <p style={{
-                          fontFamily: 'Oslo Sans',
-                          fontWeight: 300,
-                          fontSize: '14px',
-                          lineHeight: '22px',
-                          letterSpacing: '0px',
-                          color: '#000000',
-                          margin: 0
-                        }}>
-                          Et ansvarlig foretak er et firma (for eksempel en arkitekt, byggmester eller entreprenør) som har fagkunnskap og tar ansvar for bestemte deler av et byggeprosjekt. Kommunen stiller krav til at slike firmaer må ha riktig kompetanse og erfaring.
-                          Les mer om ansvarsrett <a 
-                            href="https://www.dibk.no/regelverk/sak/3/12/innledning" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>, og hvilke tiltak som krever ansvarlig foretak <a 
-                            href="https://lovdata.no/dokument/NL/lov/2008-06-27-71/KAPITTEL_4-1#%C2%A720-3" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: '#000000', 
-                              textDecoration: 'underline',
-                              fontFamily: 'Oslo Sans',
-                              fontWeight: 300,
-                              fontSize: '14px'
-                            }}
-                          >her</a>.
-                        </p>
-                      </div>
-                    )}
-                  </span>, nettopp for å sikre at de som gjør jobben har riktig kompetanse, og leverer løsninger som faktisk fungerer. Søknadsplikten hjelper deg altså i å lykkes med tiltaket ditt.
+                  Er tiltaket ditt <GlossaryTerm term="søknadspliktig" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>søknadspliktig</GlossaryTerm>, betyr ikke det at du får avslag. Tvert imot! Søknadsplikten skal sikre at arbeidet planlegges og gjennomføres med god kvalitet – både i papirene og på bygget. Målet er at du som <GlossaryTerm term="tiltakshaver" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>tiltakshaver</GlossaryTerm> får det resultatet du ønsker deg, på en trygg og effektiv måte. I mer komplekse saker stilles det krav til <GlossaryTerm term="ansvarlig foretak" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>ansvarlige foretak</GlossaryTerm>, nettopp for å sikre at de som gjør jobben har riktig kompetanse, og leverer løsninger som faktisk fungerer. Søknadsplikten hjelper deg altså i å lykkes med tiltaket ditt.
                 </p>
               </div>
                 </div>
