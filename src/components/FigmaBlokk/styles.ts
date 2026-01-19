@@ -17,7 +17,7 @@ export const getAnimationStyles = (fadeOpacity: number, showHeader: boolean) => 
 
 export const getLayoutStyles = () => ({
   container: {
-    background: '#034B45',
+    background: 'var(--pkt-color-brand-blue-300, #D1F9FF)',
     minHeight: '100vh',
     position: 'fixed' as const,
     top: 0,
@@ -58,7 +58,7 @@ export const getTitleStyles = () => ({
   fontSize: '24px',
   lineHeight: '36px',
   letterSpacing: '-0.2px',
-  color: 'white',
+  color: 'var(--pkt-color-brand-dark-blue-1000, #2a2859)',
 } as const);
 
 export const getButtonTextStyles = () => ({

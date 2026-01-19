@@ -16,3 +16,13 @@ export interface EnergyEstimatorBuildingData {
   };
   filteredSolarEnergy?: number;
 }
+
+// TEK-perioder inkludert nyere standarder
+export type TEKPeriod = 'Eldre' | 'TEK49' | 'TEK69' | 'TEK87' | 'TEK97' | 'TEK07' | 'TEK17' | 'TEK10';
+
+// Energitype-spesifikke rates for romoppvarming, tappevann og elspesifikt
+export interface EnergyTypeRates {
+  romoppvarming: number;  // Prosent gjenstående (f.eks. 0.85 = 85%)
+  tappevann: number;
+  elspesifikt: number;
+}

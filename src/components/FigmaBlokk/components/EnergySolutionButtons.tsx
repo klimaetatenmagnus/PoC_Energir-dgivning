@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { PktButton, PktCheckbox, PktIcon } from '@oslokommune/punkt-react';
 import { ENERGY_SOLUTIONS } from '../constants';
 import { AddressLookupResponse } from '../../../services/buildingApi';
 import { useTiltakCatalog } from '../../../hooks/contentHooks';
@@ -6,11 +7,14 @@ import type { TiltakCatalogItem } from '../../../types/contentCatalog';
 import {
   calculateCombinedSavings,
   getRateForTiltak,
+  hasEnergyEffect,
   type TiltakSavingsInfo,
   type TekPeriodInput,
   type Boligtype,
 } from '../../../utils/energySavingsData';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateTEK } from '../../../utils/tekEnergyCalculations';
+import { getCanonicalKey, type TiltakCanonicalKey } from '../utils/tiltakCanonicalKeys';
+import type { ContentAudience } from '../../../../content/schema-helpers';
 import './EnergySolutionButtons.css';
 
 const ENERGY_RATING_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
@@ -62,14 +66,18 @@ const determineBuildingTypeKey = (
 };
 
 /**
- * Filtrer tiltak basert på byggtype og byggår.
+ * Filtrer tiltak basert på byggtype, byggår og energieffekt.
  * - visibleForBuildingTypes: Tom array = vis for alle. Ellers vis kun for angitte byggtyper.
  * - minBuildingYear: Vis kun for bygg bygget FØR dette året.
+ * - Skjuler tiltak der alle tre rates er 100% (ingen effekt) for den aktuelle TEK-standarden.
  */
 const filterTiltakForBuilding = (
   tiltak: TiltakCatalogItem[],
   buildingTypeKey: string | undefined,
-  buildingYear: number | undefined
+  buildingYear: number | undefined,
+  tekPeriod: TekPeriodInput | null,
+  boligtype: Boligtype | null,
+  erPaaGulListe: boolean
 ): TiltakCatalogItem[] => {
   return tiltak.filter((t) => {
     // Byggtype-filter
@@ -82,7 +90,17 @@ const filterTiltakForBuilding = (
       t.minBuildingYear === undefined || // Ingen filter = vis alltid
       (buildingYear !== undefined && buildingYear < t.minBuildingYear);
 
-    return buildingTypeMatch && buildingYearMatch;
+    // Energieffekt-filter: skjul tiltak uten effekt for denne TEK-standarden
+    // Unntak: Solenergi har alltid effekt (det er produksjon, ikke besparelse)
+    let energyEffectMatch = true;
+    if (tekPeriod && boligtype && t.title !== 'Solenergi') {
+      const rates = getRateForTiltak(t.title, tekPeriod, boligtype, erPaaGulListe);
+      if (rates !== null && !hasEnergyEffect(rates)) {
+        energyEffectMatch = false; // Skjul tiltak uten effekt
+      }
+    }
+
+    return buildingTypeMatch && buildingYearMatch && energyEffectMatch;
   });
 };
 
@@ -93,42 +111,22 @@ interface EnergySolutionButtonsProps {
   onSelectSolution: (solution: string) => void;
   buildingData?: AddressLookupResponse;
   yearlyConsumption?: string;
-  onProcessClick?: () => void;
   onTotalSavingsChange?: (savings: number) => void;
+  /** Callback when tiltak selection changes. Uses canonical keys (not display titles) for stability. */
+  onSelectionChange?: (activeTiltak: TiltakCanonicalKey[], finalRating?: string | null) => void;
+  /** Audience for tiltak content - determines gul liste status */
+  audience?: ContentAudience;
 }
 
-export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onProcessClick, onTotalSavingsChange }) => {
-  // Add CSS for fade animation
-  React.useEffect(() => {
-    const style = document.createElement('style');
-    style.innerHTML = `
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      @keyframes slideUpFadeIn {
-        from { 
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to { 
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onSelectionChange, audience = 'standard' }) => {
+  // Utled gul liste-status fra audience prop (FigmaMainScript er "single source of truth" via PBE-oppslag)
+  const erPaaGulListe = audience === 'gulliste';
+  // Animasjoner (fadeIn, slideUpFadeIn) er definert i EnergySolutionButtons.css
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
-  const [hasClickedReadMore, setHasClickedReadMore] = useState<boolean>(false);
-  const [showEnergyInfo, setShowEnergyInfo] = useState<boolean>(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   // Scrollbar-refs og state
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLUListElement>(null);
   const [hasScroll, setHasScroll] = useState(false);
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
 
@@ -181,7 +179,46 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     return undefined;
   }, [buildingData]);
 
-  // Filtrer tiltak fra katalog basert på byggtype og byggår
+  // TEK-periode for energibesparelses-oppslag (moved up to use in filteredTiltak)
+  const tekPeriod = React.useMemo(() => {
+    const byggeaarCandidate = typeof buildingData?.byggeaar === 'number'
+      ? buildingData.byggeaar
+      : buildingData?.csvData?.byggeaar
+        ? Number(buildingData.csvData.byggeaar)
+        : undefined;
+
+    if (!byggeaarCandidate) return null;
+    return calculateTEK(byggeaarCandidate) as TekPeriodInput;
+  }, [buildingData]);
+
+  const isBlokk = React.useMemo(() => {
+    return ['14', '15', '16', '17'].includes(buildingTypeCode) ||
+      buildingTypeNameLower.includes('blokk') ||
+      buildingTypeNameLower.includes('leilighet') ||
+      buildingTypeNameLower.includes('boligbygg') ||
+      buildingTypeNameLower === 'store boligbygg';
+  }, [buildingTypeCode, buildingTypeNameLower]);
+
+  // Boligtype for energibesparelses-beregninger (småhus eller blokk)
+  const boligtype: Boligtype | null = React.useMemo(() => {
+    if (buildingTypeKey) {
+      if (['enebolig', 'tomannsbolig', 'rekkehus'].includes(buildingTypeKey)) {
+        return 'småhus';
+      }
+      if (buildingTypeKey === 'blokk') {
+        return 'blokk';
+      }
+    }
+    if (['11', '12', '13'].includes(buildingTypeCode)) {
+      return 'småhus';
+    }
+    if (isBlokk) {
+      return 'blokk';
+    }
+    return null;
+  }, [buildingTypeKey, buildingTypeCode, isBlokk]);
+
+  // Filtrer tiltak fra katalog basert på byggtype, byggår og energieffekt
   const filteredTiltak = useMemo(() => {
     if (!catalogData?.items || catalogData.items.length === 0) {
       return [];
@@ -192,22 +229,25 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       (t) => t.status === 'published'
     );
 
-    return filterTiltakForBuilding(publishedTiltak, buildingTypeKey, buildingYear);
-  }, [catalogData, buildingTypeKey, buildingYear]);
+    return filterTiltakForBuilding(publishedTiltak, buildingTypeKey, buildingYear, tekPeriod, boligtype, erPaaGulListe);
+  }, [catalogData, buildingTypeKey, buildingYear, tekPeriod, boligtype, erPaaGulListe]);
 
   // Dynamisk tiltak-liste: bruk katalog hvis tilgjengelig, ellers fallback til ENERGY_SOLUTIONS
-  const displayTiltak: Array<{ id: string; title: string }> = useMemo(() => {
+  // Each item includes a canonicalKey for stable SVG overlay matching
+  const displayTiltak: Array<{ id: string; title: string; canonicalKey: TiltakCanonicalKey | null }> = useMemo(() => {
     if (isCatalogLoading || filteredTiltak.length === 0) {
       // Fallback til hardkodede tiltak mens katalog lastes eller er tom
       return ENERGY_SOLUTIONS.map((title, index) => ({
         id: `fallback-${index}`,
-        title: title as string
+        title: title as string,
+        canonicalKey: getCanonicalKey(undefined, title as string)
       }));
     }
 
     return filteredTiltak.map((t) => ({
       id: t.id,
-      title: t.title
+      title: t.title,
+      canonicalKey: getCanonicalKey(t.id, t.title)
     }));
   }, [isCatalogLoading, filteredTiltak]);
 
@@ -261,45 +301,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
 
   const estimatedRating = enovaRating || calculatedRating;
 
-  const isBlokk = React.useMemo(() => {
-    return ['14', '15', '16', '17'].includes(buildingTypeCode) ||
-      buildingTypeNameLower.includes('blokk') ||
-      buildingTypeNameLower.includes('leilighet') ||
-      buildingTypeNameLower.includes('boligbygg') ||
-      buildingTypeNameLower === 'store boligbygg';
-  }, [buildingTypeCode, buildingTypeNameLower]);
-
-  // Boligtype for energibesparelses-beregninger (småhus eller blokk)
-  const boligtype: Boligtype | null = React.useMemo(() => {
-    if (buildingTypeKey) {
-      if (['enebolig', 'tomannsbolig', 'rekkehus'].includes(buildingTypeKey)) {
-        return 'småhus';
-      }
-      if (buildingTypeKey === 'blokk') {
-        return 'blokk';
-      }
-    }
-    if (['11', '12', '13'].includes(buildingTypeCode)) {
-      return 'småhus';
-    }
-    if (isBlokk) {
-      return 'blokk';
-    }
-    return null;
-  }, [buildingTypeKey, buildingTypeCode, isBlokk]);
-
-  // TEK-periode for energibesparelses-oppslag
-  const tekPeriod = React.useMemo(() => {
-    const byggeaarCandidate = typeof buildingData?.byggeaar === 'number'
-      ? buildingData.byggeaar
-      : buildingData?.csvData?.byggeaar
-        ? Number(buildingData.csvData.byggeaar)
-        : undefined;
-
-    if (!byggeaarCandidate) return null;
-    return calculateTEK(byggeaarCandidate) as TekPeriodInput;
-  }, [buildingData]);
-
   // Beregn estimert årlig energiforbruk basert på byggeår og areal (for bruk i prosent-beregninger)
   const estimatedAnnualConsumption = React.useMemo(() => {
     const byggeaarCandidate = typeof buildingData?.byggeaar === 'number'
@@ -341,26 +342,27 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         if (solarEnergy > 0) {
           tiltakInfo.push({
             title: tiltak.title,
-            rate: null,
+            rates: null,
             solarProductionKwh: solarEnergy
           });
         }
       } else {
-        // Hent rate for dette tiltaket
-        const rate = getRateForTiltak(tiltak.title, tekPeriod, boligtype);
-        if (rate !== null) {
+        // Hent rates for dette tiltaket (romoppvarming, tappevann, elspesifikt)
+        const rates = getRateForTiltak(tiltak.title, tekPeriod, boligtype);
+        if (rates !== null) {
           tiltakInfo.push({
             title: tiltak.title,
-            rate
+            rates
           });
         }
       }
     });
 
-    // Bruk den sentrale multiplikative beregningen
-    return calculateCombinedSavings(consumptionNum, tiltakInfo);
+    // Bruk den sentrale multiplikative beregningen med forbruksfordeling per energitype
+    return calculateCombinedSavings(consumptionNum, tiltakInfo, tekPeriod, boligtype, bruksareal);
   }, [
     boligtype,
+    bruksareal,
     buildingData?.filteredSolarEnergy,
     checkedItems,
     displayTiltak,
@@ -444,6 +446,25 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       return newSet;
     });
   }, []);
+
+  // Notify parent of selection changes for tiltak animations
+  // Map IDs to canonical keys so SVG components can match CSS classes (e.g., tiltak-ventilasjon)
+  // Using canonical keys ensures stability even if display titles change
+  useEffect(() => {
+    if (onSelectionChange) {
+      const activeTiltakCanonicalKeys = Array.from(checkedItems)
+        .map(id => displayTiltak.find(t => t.id === id)?.canonicalKey)
+        .filter((key): key is TiltakCanonicalKey => key !== undefined && key !== null);
+
+      // Log warning in development if IDs couldn't be mapped to canonical keys
+      if (process.env.NODE_ENV === 'development' && activeTiltakCanonicalKeys.length !== checkedItems.size) {
+        console.warn('[EnergySolutionButtons] Some tiltak IDs could not be mapped to canonical keys:',
+          Array.from(checkedItems).filter(id => !displayTiltak.find(t => t.id === id)?.canonicalKey));
+      }
+
+      onSelectionChange(activeTiltakCanonicalKeys, newRating);
+    }
+  }, [checkedItems, newRating, onSelectionChange, displayTiltak]);
   
   // Send total savings til parent-komponenten når den endres
   useEffect(() => {
@@ -477,449 +498,162 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
 
   return (
     <div
+      className="energy-solution-buttons"
       style={{
-        position: 'absolute',
-        left: '50%',
-        top: '180px',
-        transform: 'translateX(-50%)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
         opacity: showHeader && !isExpanded ? 1 : 0,
         transition: 'opacity 0.5s ease-in-out' + (showHeader && !isExpanded ? ' 0.5s' : isExpanded ? '' : ' 0.8s'),
-        zIndex: 1000,
         pointerEvents: showHeader && !isExpanded ? 'auto' : 'none'
       }}
     >
-      {/* Energy rating label */}
-      <div style={{
-        marginBottom: '10px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '20px',
-        width: '471px',
-        position: 'relative'
-      }}>
-        <label style={{
-          fontFamily: 'Oslo Sans, sans-serif',
-          fontWeight: 400,
-          fontSize: '24px',
-          lineHeight: '24px',
-          letterSpacing: '-0.2px',
-          color: 'white',
-          flexShrink: 0,
-          opacity: showEnergyInfo ? 0 : 1
-        }}>
-          {estimatedRating ? `${enovaRating ? 'Energikarakter fra Enova' : 'Estimert energikarakter'}: ${estimatedRating}` : 'Beregner energikarakter...'}
-        </label>
-        {/* Info icon aligned with right edge of G rating box */}
-        <svg 
-          width="32" 
-          height="32" 
-          viewBox="0 0 32 32" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-          style={{
-            position: 'absolute',
-            left: '439px', // 471px - 32px (icon width) = 439px to align with right edge
-            cursor: 'pointer',
-            opacity: showEnergyInfo ? 0 : 1
-          }}
-          onClick={() => setShowEnergyInfo(true)}
-        >
-          <path d="M15.93 7.6C17.1356 7.5897 18.3022 8.02698 19.204 8.82721C20.1058 9.62744 20.6787 10.7337 20.8118 11.932C20.945 13.1303 20.6289 14.3354 19.9247 15.314C19.2206 16.2927 18.1785 16.9754 17 17.23H16.94V18.91H14.94V15.35H15.94C16.479 15.3516 17.0077 15.2019 17.4658 14.9179C17.924 14.634 18.2932 14.2271 18.5316 13.7437C18.77 13.2602 18.8679 12.7196 18.8142 12.1832C18.7606 11.6469 18.5574 11.1364 18.228 10.7098C17.8986 10.2831 17.456 9.95754 16.9507 9.76998C16.4453 9.58243 15.8975 9.54045 15.3695 9.64883C14.8415 9.75721 14.3545 10.0116 13.9639 10.383C13.5733 10.7545 13.2948 11.2281 13.16 11.75V11.92L11.16 11.53C11.3793 10.425 11.9741 9.42996 12.8436 8.71364C13.713 7.99731 14.8035 7.60384 15.93 7.6ZM16 3C13.4288 3 10.9154 3.76244 8.77759 5.1909C6.63975 6.61935 4.97351 8.64968 3.98957 11.0251C3.00563 13.4006 2.74818 16.0144 3.24979 18.5362C3.7514 21.0579 4.98953 23.3743 6.80761 25.1924C8.62569 27.0105 10.9421 28.2486 13.4638 28.7502C15.9856 29.2518 18.5994 28.9944 20.9749 28.0104C23.3503 27.0265 25.3806 25.3603 26.8091 23.2224C28.2376 21.0846 29 18.5712 29 16C29 12.5522 27.6304 9.24558 25.1924 6.80761C22.7544 4.36964 19.4478 3 16 3ZM16 1C18.9667 1 21.8668 1.87973 24.3336 3.52796C26.8003 5.17618 28.7229 7.51886 29.8582 10.2597C30.9935 13.0006 31.2906 16.0166 30.7118 18.9264C30.133 21.8361 28.7044 24.5088 26.6066 26.6066C24.5088 28.7044 21.8361 30.133 18.9264 30.7118C16.0166 31.2906 13.0006 30.9935 10.2597 29.8582C7.51886 28.7229 5.17618 26.8003 3.52796 24.3336C1.87973 21.8668 1 18.9667 1 16C1 12.0218 2.58035 8.20644 5.3934 5.3934C8.20644 2.58035 12.0218 1 16 1Z" fill="white"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M17.65 22.38C17.648 22.7197 17.5455 23.0513 17.3553 23.3328C17.1651 23.6144 16.8958 23.8333 16.5813 23.9619C16.2669 24.0906 15.9213 24.1232 15.5884 24.0557C15.2554 23.9882 14.9498 23.8236 14.7103 23.5827C14.4707 23.3418 14.3079 23.0353 14.2424 22.7019C14.1768 22.3685 14.2114 22.0232 14.3419 21.7095C14.4724 21.3958 14.6928 21.1277 14.9755 20.9392C15.2581 20.7506 15.5902 20.65 15.93 20.65C16.1567 20.65 16.3812 20.6948 16.5905 20.7819C16.7999 20.8689 16.9899 20.9965 17.1498 21.1573C17.3096 21.3181 17.4361 21.5089 17.522 21.7187C17.6078 21.9285 17.6513 22.1533 17.65 22.38Z" fill="white"/>
-        </svg>
-      </div>
       
-      {/* Energy rating boxes */}
-      <div style={{
-          display: 'flex',
-          gap: '0', // We'll use margin on each box instead for dynamic spacing
-          marginBottom: '10px',
-          alignItems: 'flex-end',
-          width: '471px', // Fixed total width to match tiltak list
-          justifyContent: 'flex-start'
-        }}>
-        {[
-          { letter: 'A', color: '#097E3E' },
-          { letter: 'B', color: '#32A548' },
-          { letter: 'C', color: '#96C133' },
-          { letter: 'D', color: '#EFE61E' },
-          { letter: 'E', color: '#F7AD24' },
-          { letter: 'F', color: '#EA6927' },
-          { letter: 'G', color: '#E31829' }
-        ].map((rating, index, array) => {
-          const isEstimated = estimatedRating === rating.letter;
-          const isNew = newRating === rating.letter;
-          const size = (isEstimated || isNew) ? '73px' : '53.5px';
-          const fontSize = (isEstimated || isNew) ? '45px' : '33px';
-          
-          // Calculate total width of all boxes
-          const totalBoxWidth = array.reduce((acc, r) => {
-            const isLarge = (estimatedRating === r.letter || newRating === r.letter);
-            return acc + (isLarge ? 73 : 53.5);
-          }, 0);
-          
-          // Calculate gap to distribute evenly
-          const remainingSpace = 471 - totalBoxWidth;
-          const gapSize = remainingSpace / (array.length - 1);
-          
-          return (
-            <div
-              key={rating.letter}
-              style={{
-                width: size,
-                height: size,
-                backgroundColor: rating.color,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.3s ease',
-                position: 'relative',
-                border: isNew ? '3px solid white' : 'none',
-                marginRight: index < array.length - 1 ? `${gapSize}px` : '0'
-              }}
-            >
-              <span style={{
-                fontFamily: 'Oslo Sans, sans-serif',
-                fontWeight: 500,
-                fontStyle: 'normal',
-                fontSize: fontSize,
-                lineHeight: '22px',
-                letterSpacing: '-0.2px',
-                color: 'white'
-              }}>
-                {rating.letter}
-              </span>
-              {isNew && (
-                <div style={{
-                  position: 'absolute',
-                  bottom: '-20px',
-                  fontSize: '12px',
-                  fontFamily: 'Oslo Sans, sans-serif',
-                  color: 'white',
-                  whiteSpace: 'nowrap'
-                }}>
-                  Ny
-                </div>
-              )}
-            </div>
-          );
-        })}
-        </div>
-      
-      {/* Title text with toggle button */}
-      <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
-        <span
+      {/* Title text with info tooltip trigger */}
+      <div className="energy-solution-buttons__title-row">
+        <h2
           style={{
             fontFamily: 'Oslo Sans, sans-serif',
-            fontWeight: 500,
+            fontWeight: 700,
             fontStyle: 'normal',
-            fontSize: '24px',
+            fontSize: '26px',
             lineHeight: '36px',
             letterSpacing: '-0.2px',
-            color: 'white'
+            color: 'var(--pkt-color-brand-dark-blue-1000, #2a2859)',
+            margin: 0
           }}
         >
           Velg tiltak for din bolig
-        </span>
+        </h2>
+        <PktButton
+          skin="tertiary"
+          size="small"
+          variant="icon-only"
+          iconName="information"
+          aria-label="Hvordan fungerer siden?"
+          onClick={() => setShowInfoModal(true)}
+        />
       </div>
       {/* Scrollbar-container for tiltakslisten */}
       <div
         className={`tiltak-list-wrapper${hasScroll ? ' has-scroll' : ''}${scrolledToBottom ? ' scrolled-to-bottom' : ''}`}
       >
-        <div
+        <ul
           ref={scrollContainerRef}
-          className="tiltak-list-container"
+          className="tiltak-list-container energy-solution-buttons__list"
         >
-          {displayTiltak.map((tiltak) => (
-            <svg
-              key={tiltak.id}
-              width="471"
-              height="50"
-              viewBox="0 0 471 50"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              onMouseEnter={() => setHoveredIndex(displayTiltak.indexOf(tiltak))}
-              onMouseLeave={() => setHoveredIndex(null)}
-              style={{
-                cursor: 'pointer',
-                transition: 'all 0.3s ease-in-out',
-                flexShrink: 0
-              }}
-            >
-              <rect
-                x="1"
-                y="1"
-                width="469"
-                height="48"
-                stroke="#F9F9F9"
-                strokeWidth="2"
-                fill={hoveredIndex === displayTiltak.indexOf(tiltak) || checkedItems.has(tiltak.id) ? "#F8F0DD" : "none"}
-                style={{ transition: 'fill 0.3s ease-in-out' }}
-              />
-              <text
-                x="17"
-                y="29"
-                fontFamily="Oslo Sans, sans-serif"
-                fontWeight="500"
-                fontStyle="normal"
-                fontSize="18"
-                letterSpacing="-0.2"
-                fill={hoveredIndex === displayTiltak.indexOf(tiltak) || checkedItems.has(tiltak.id) ? "#2A2859" : "#F9F9F9"}
-                textAnchor="start"
-                style={{ transition: 'fill 0.3s ease-in-out' }}
+          {displayTiltak.map((tiltak) => {
+            const isSelected = checkedItems.has(tiltak.id);
+
+            return (
+              <li
+                key={tiltak.id}
+                className={`energy-solution-buttons__item${isSelected ? ' energy-solution-buttons__item--selected' : ''}`}
               >
-                {tiltak.title}
-              </text>
-              {/* Hover buttons - fade in/out */}
-              {(hoveredIndex === displayTiltak.indexOf(tiltak) || checkedItems.has(tiltak.id)) && (
-                <g
-                  style={{
-                    opacity: 1,
-                    animation: 'fadeIn 0.3s ease-in-out'
-                  }}
-                >
-                {/* Right rectangle: width 90px, 16px from right edge - clickable */}
-                <g
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleChecked(tiltak.id);
-                    setHasClickedReadMore(true);
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                    <rect x="365" y="10" width="90" height="30" fill="#2A2859"/>
-                    {/* "Legg til" text in right rectangle */}
-                    <text
-                      x="373"
-                      y="25"
-                      fontFamily="Oslo Sans, sans-serif"
-                      fontWeight="500"
-                      fontStyle="normal"
-                      fontSize="14"
-                      letterSpacing="-0.2"
-                      fill="#F9F9F9"
-                      textAnchor="start"
-                      dominantBaseline="middle"
-                    >
-                      Legg til
-                    </text>
-                    {/* Checkbox icon 8px from right edge */}
-                    <g transform="translate(431, 17)">
-                      {checkedItems.has(tiltak.id) ? (
-                        <>
-                          <rect x="1" y="1" width="14" height="14" fill="#2A2859"/>
-                          <rect x="1" y="1" width="14" height="14" stroke="#2A2859" strokeWidth="2"/>
-                          <path fillRule="evenodd" clipRule="evenodd" d="M11.8521 6.1071L6.99857 10.9607L4.14502 8.1071L4.85213 7.39999L6.99857 9.54644L11.145 5.39999L11.8521 6.1071Z" fill="white"/>
-                        </>
-                      ) : (
-                        <>
-                          <rect x="1" y="1" width="14" height="14" fill="white"/>
-                          <rect x="1" y="1" width="14" height="14" stroke="#2A2859" strokeWidth="2"/>
-                        </>
-                      )}
-                    </g>
-                  </g>
-                  {/* Left rectangle: width 70px, 8px gap to right rectangle */}
-                  <g
+                <div className="energy-solution-buttons__item-content">
+                  <PktCheckbox
+                    id={`tiltak-${tiltak.id}`}
+                    label={tiltak.title}
+                    checked={isSelected}
+                    onChange={() => toggleChecked(tiltak.id)}
+                  />
+                </div>
+                <div className="energy-solution-buttons__actions">
+                  <PktButton
+                    skin="secondary"
+                    size="small"
+                    variant="label-only"
                     onClick={(e) => {
                       e.stopPropagation();
                       onSelectSolution(tiltak.id);
                       onExpand(true);
                     }}
-                    style={{ cursor: 'pointer' }}
                   >
-                    <rect x="287" y="10" width="70" height="30" fill="#2A2859"/>
-                    {/* "Les mer" text centered in left rectangle */}
-                    <text
-                      x="322"
-                      y="25"
-                      fontFamily="Oslo Sans, sans-serif"
-                      fontWeight="500"
-                      fontStyle="normal"
-                      fontSize="14"
-                      letterSpacing="-0.2"
-                      fill="#F9F9F9"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      style={{ pointerEvents: 'none' }}
-                    >
-                      Les mer
-                    </text>
-                  </g>
-                </g>
-              )}
-            </svg>
-          ))}
-        </div>
+                    Les mer
+                  </PktButton>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </div>
-      
-      {/* New bottom box with #2A2859 background - only show if user has clicked "Legg til" */}
-      {hasClickedReadMore && (
-        <div
-          style={{
-            animation: 'slideUpFadeIn 0.4s ease-out forwards',
-            marginTop: '0px'
-          }}
-        >
-          <svg 
-            width="471" 
-            height="50" 
-            viewBox="0 0 471 50" 
-            fill="none" 
-            xmlns="http://www.w3.org/2000/svg"
-            style={{ 
-              cursor: 'pointer',
-              display: 'block'
-            }}
-            onClick={onProcessClick}
-          >
-            <rect 
-              x="0" 
-              y="0" 
-              width="471" 
-              height="50" 
-              fill="#2A2859"
-            />
-            <text 
-              x="17" 
-              y="29" 
-              fontFamily="Oslo Sans, sans-serif" 
-              fontWeight="500" 
-              fontStyle="normal"
-              fontSize="18" 
-              letterSpacing="-0.2"
-              fill="#F9F9F9" 
-              textAnchor="start"
-            >
-              Hvordan gjennomføre tiltakene
-            </text>
-            {/* Dropdown arrow icon - 16px from right edge, 8px from top */}
-            <svg x="431" y="8" width="24" height="28" viewBox="0 0 24 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path fillRule="evenodd" clipRule="evenodd" d="M12 16.56L4.7466 9.5L3.75 10.47L12 18.5L20.25 10.47L19.2534 9.5L12 16.56Z" fill="white"/>
-            </svg>
-          </svg>
-        </div>
-      )}
 
-      {/* Energy Info Modal */}
-      {showEnergyInfo && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'transparent',
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            zIndex: 1000,
-            pointerEvents: 'none'
-          }}
-        >
+      {/* Info modal - "Hvordan fungerer siden?" */}
+      {showInfoModal && (
+        <div className="energy-solution-buttons__modal-overlay" onClick={() => setShowInfoModal(false)}>
           <div
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '0px',
-              padding: '32px',
-              width: '471px',
-              height: '700px',
-              position: 'absolute',
-              bottom: '0px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              overflow: 'auto',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-              pointerEvents: 'auto'
-            }}
+            className="energy-solution-buttons__modal"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close button */}
             <button
-              onClick={() => setShowEnergyInfo(false)}
-              style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '8px'
-              }}
+              className="energy-solution-buttons__modal-close"
+              onClick={() => setShowInfoModal(false)}
+              aria-label="Lukk"
+              type="button"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M18 6L6 18" stroke="#333" strokeWidth="2" strokeLinecap="round"/>
-                <path d="M6 6L18 18" stroke="#333" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
+              <PktIcon name="close" />
             </button>
 
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '24px', color: '#333' }}>
+            <h2 className="energy-solution-buttons__modal-title">
               Hvordan fungerer siden?
             </h2>
 
-            <div style={{ color: '#555', lineHeight: '1.6' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '12px', color: '#333' }}>
+            <div className="energy-solution-buttons__modal-content">
+              <h3 className="energy-solution-buttons__modal-section-title">
                 Innhenting av data
               </h3>
-              <p style={{ marginBottom: '16px' }}>
-                Informasjon om bygningen din hentes automatisk fra Matrikkelen (Norges offisielle eiendomsregister). 
+              <p className="energy-solution-buttons__modal-paragraph">
+                Informasjon om bygningen din hentes automatisk fra Matrikkelen (Norges offisielle eiendomsregister).
                 Dette inkluderer bygningstype, byggeår, bruksareal (BRA) og om bygningen er på Gul liste.
               </p>
 
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '12px', marginTop: '24px', color: '#333' }}>
+              <h3 className="energy-solution-buttons__modal-section-title energy-solution-buttons__modal-section-title--spaced">
                 Energikarakter
               </h3>
-              <p style={{ marginBottom: '16px' }}>
-                Energikarakteren viser hvor energieffektiv bygningen din er på en skala fra A til G, hvor A er best. 
+              <p className="energy-solution-buttons__modal-paragraph">
+                Energikarakteren viser hvor energieffektiv bygningen din er på en skala fra A til G, hvor A er best.
                 Karakteren beregnes ut fra grenseverdier fra{' '}
-                <a 
-                  href="https://www.enova.no/energimerking/karakterskalaen" 
-                  target="_blank" 
+                <a
+                  href="https://www.enova.no/energimerking/karakterskalaen"
+                  target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: '#0066CC', textDecoration: 'underline' }}
+                  className="energy-solution-buttons__modal-link"
                 >
                   Enova
                 </a>
                 {' '}for bygningens årlige energiforbruk per kvadratmeter (kWh/m²/år).
               </p>
 
-              <p style={{ marginBottom: '16px' }}>
+              <p className="energy-solution-buttons__modal-paragraph">
                 {enovaRating ? (
                   isBlokk ? (
                     <>Blokkens energiforbruk beregnes fra energikarakteren til en av leilighetene. Deretter brukes de samme grenseverdiene fra Enova for å beregne energiforbruket for hele blokken basert på blokkens bruksareal.</>
                   ) : (
-                    <>Din nåværende energikarakteren og energiforbruk er hentet direkte fra bygningens energiattest registrert hos Enova.</>
+                    <>Din nåværende energikarakter og energiforbruk er hentet direkte fra bygningens energiattest registrert hos Enova.</>
                   )
                 ) : (
                   <>Siden bygningen ikke har en registrert energiattest, estimeres energiforbruket basert på byggeår og gjeldende teknisk forskrift (TEK) ved byggeåret. Vi bruker deretter de samme grenseverdiene fra Enova for å beregne en estimert energikarakter.</>
                 )}
               </p>
 
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '12px', marginTop: '24px', color: '#333' }}>
+              <h3 className="energy-solution-buttons__modal-section-title energy-solution-buttons__modal-section-title--spaced">
                 Beregning av besparelser
               </h3>
-              <p style={{ marginBottom: '16px' }}>
-                Besparelsene beregnes fra datasett som gir estimert besparelse basert på bygningstype, bruksareal (BRA) og 
+              <p className="energy-solution-buttons__modal-paragraph">
+                Besparelsene beregnes fra datasett som gir estimert besparelse basert på bygningstype, bruksareal (BRA) og
                 teknisk forskrift (TEK). Disse variablene hentes automatisk fra Matrikkelen, utenom TEK som estimeres ut fra byggeår. Dette er en forenkling som gjør at det ikke blir tatt hensyn til om bygget har tidligere blitt oppgradert.
               </p>
-              <p style={{ marginBottom: '16px' }}>
+              <p className="energy-solution-buttons__modal-paragraph">
                 For solenergi hentes data fra Oslo kommunes{' '}
-                <a 
-                  href="https://od2.pbe.oslo.kommune.no/solkart/" 
-                  target="_blank" 
+                <a
+                  href="https://od2.pbe.oslo.kommune.no/solkart/"
+                  target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: '#0066CC', textDecoration: 'underline' }}
+                  className="energy-solution-buttons__modal-link"
                 >
                   Solkart
                 </a>
-                . Alle takflater med solpotensial over 800 kWh/m² summeres og multipliseres. Deretter antas det at 85% av takarealet kan utnyttes til solceller, og at solcellene har en en virkningsgrad på 20%.
+                . Alle takflater med solpotensial over 800 kWh/m² summeres og multipliseres. Deretter antas det at 85% av takarealet kan utnyttes til solceller, og at solcellene har en virkningsgrad på 20%.
               </p>
 
-              <p style={{ marginTop: '16px', fontSize: '16px', color: '#555', fontWeight: 'bold', lineHeight: '1.6' }}>
+              <p className="energy-solution-buttons__modal-note">
                 Merk: Alle beregninger er estimater. Faktiske besparelser varierer ut ifra mange forskjellige faktorer.
               </p>
             </div>

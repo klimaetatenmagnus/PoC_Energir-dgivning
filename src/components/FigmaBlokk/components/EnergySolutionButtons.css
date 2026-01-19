@@ -1,16 +1,445 @@
-/* EnergySolutionButtons.css - Scrollbar-styling for tiltakslisten */
+/* EnergySolutionButtons.css - Styling for EnergySolutionButtons-komponenten */
 
-.tiltak-list-container {
-  max-height: 480px; /* Plass til 8 tiltak (8×50px + 7×10px gaps) */
-  overflow-y: auto;
-  width: 471px;
+/* ==========================================================================
+   CSS Custom Properties
+   ========================================================================== */
+
+.energy-solution-buttons {
+  --esb-bg-hover: var(--pkt-color-brand-neutrals-100, #f9f9f9);
+  --esb-bg-selected: var(--pkt-color-brand-neutrals-100, #f9f9f9);
+  --esb-bg-button: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  --esb-text-primary: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  --esb-text-light: var(--pkt-color-brand-neutrals-white, #ffffff);
+  --esb-border-color: var(--pkt-color-brand-neutrals-200, #e5e5e5);
+  --esb-list-bg: var(--pkt-color-brand-neutrals-white, #ffffff);
+  --esb-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --esb-font-family: 'Oslo Sans', sans-serif;
+  --esb-item-height: 56px; /* 8×7 - Punkt grid */
+  --esb-item-width: 440px; /* Smalere for å gi plass til sirkel bak huset */
+  --esb-bottom-offset: 120px; /* Increased from 64px to make room for "Hvordan gjennomføre" button */
+  --esb-transition-duration: 0.3s;
+  --esb-transition-easing: ease-in-out;
+  --esb-container-padding: var(--pkt-spacing-24, 1.5rem);
+}
+
+/* ==========================================================================
+   Animasjoner
+   ========================================================================== */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUpFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   Hovedcontainer
+   ========================================================================== */
+
+.energy-solution-buttons {
+  position: absolute;
+  /* Layout sentrert med 24px Punkt-spacing mellom elementer:
+   * Total: 488 + 24 + 520 + 24 + 360 = 1416px
+   * Marger: (1728 - 1416) / 2 = 156px
+   */
+  left: 156px;
+  bottom: var(--esb-bottom-offset); /* Align bottom with building + white info box */
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
+  z-index: 1000;
+
+  /* Hvit boks med skygge - Punkt designsystem stil */
+  background-color: var(--esb-list-bg);
+  box-shadow: var(--esb-box-shadow);
+  padding: var(--esb-container-padding);
+  padding-bottom: 0; /* Listen har sin egen padding */
+}
+
+.energy-solution-buttons--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.5s var(--esb-transition-easing) 0.5s;
+}
+
+.energy-solution-buttons--hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s var(--esb-transition-easing);
+}
+
+/* ==========================================================================
+   Energikarakter-seksjon
+   ========================================================================== */
+
+.energy-solution-buttons__rating-label {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: var(--esb-item-width);
+  position: relative;
+}
+
+.energy-solution-buttons__rating-text {
+  font-family: var(--esb-font-family);
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 24px;
+  letter-spacing: -0.2px;
+  color: var(--esb-text-primary);
+  flex-shrink: 0;
+  transition: opacity var(--esb-transition-duration) var(--esb-transition-easing);
+}
+
+.energy-solution-buttons__info-icon {
+  position: absolute;
+  left: 439px;
+  cursor: pointer;
+  transition: opacity var(--esb-transition-duration) var(--esb-transition-easing);
+}
+
+.energy-solution-buttons__rating-boxes {
+  display: flex;
+  gap: 0;
+  margin-bottom: 10px;
+  align-items: flex-end;
+  width: var(--esb-item-width);
+  justify-content: flex-start;
+}
+
+.energy-solution-buttons__rating-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--esb-transition-duration) ease;
+  position: relative;
+}
+
+.energy-solution-buttons__rating-box--active {
+  width: 73px;
+  height: 73px;
+}
+
+.energy-solution-buttons__rating-box--inactive {
+  width: 53.5px;
+  height: 53.5px;
+}
+
+.energy-solution-buttons__rating-box--new {
+  border: 3px solid white;
+}
+
+.energy-solution-buttons__rating-letter {
+  font-family: var(--esb-font-family);
+  font-weight: 500;
+  font-style: normal;
+  line-height: 22px;
+  letter-spacing: -0.2px;
+  color: var(--esb-text-light);
+}
+
+.energy-solution-buttons__rating-letter--active {
+  font-size: 45px;
+}
+
+.energy-solution-buttons__rating-letter--inactive {
+  font-size: 33px;
+}
+
+.energy-solution-buttons__rating-new-label {
+  position: absolute;
+  bottom: -20px;
+  font-size: 12px;
+  font-family: var(--esb-font-family);
+  color: var(--esb-text-primary);
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   Tittel
+   ========================================================================== */
+
+.energy-solution-buttons__title-section {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.energy-solution-buttons__main-title {
+  font-family: var(--esb-font-family);
+  font-weight: 500;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 36px;
+  letter-spacing: -0.2px;
+  color: var(--esb-text-primary);
+}
+
+.energy-solution-buttons__title-row {
+  margin-bottom: var(--pkt-spacing-16, 1rem);
+  display: flex;
+  align-items: center;
+  gap: var(--pkt-spacing-8, 0.5rem);
+}
+
+.energy-solution-buttons__info-trigger {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  background: transparent;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  font-family: var(--esb-font-family);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.energy-solution-buttons__info-trigger:hover {
+  background: var(--pkt-color-brand-neutrals-100, #f9f9f9);
+}
+
+/* ==========================================================================
+   Tiltak-liste
+   ========================================================================== */
+
+.energy-solution-buttons__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: var(--esb-item-width);
+  background-color: var(--esb-list-bg);
+  /* Border og shadow er nå på container-nivå */
+  border-top: 1px solid var(--esb-border-color);
+}
+
+.energy-solution-buttons__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem; /* pkt size-16 */
+  padding: 0.75rem 1rem; /* pkt size-12 vertical, size-16 horizontal */
+  min-height: var(--esb-item-height);
+  width: var(--esb-item-width);
+  border: none;
+  border-bottom: 1px solid var(--esb-border-color);
+  background-color: var(--esb-list-bg);
+  box-sizing: border-box;
+  transition: background-color var(--esb-transition-duration) var(--esb-transition-easing);
+}
+
+.energy-solution-buttons__item:hover,
+.energy-solution-buttons__item--selected {
+  background-color: var(--esb-bg-hover);
+}
+
+.energy-solution-buttons__item:active {
+  background-color: var(--pkt-color-brand-neutrals-200, #f2f2f2);
+}
+
+.energy-solution-buttons__item:last-child {
+  border-bottom: none;
+}
+
+.energy-solution-buttons__item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.energy-solution-buttons__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem; /* pkt size-8 */
+  opacity: 1;
+}
+
+.energy-solution-buttons__item .pkt-checkbox__label {
+  font-family: var(--esb-font-family);
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: var(--esb-text-primary);
+}
+
+.energy-solution-buttons__item .pkt-checkbox label,
+.energy-solution-buttons__item .pkt-checkbox__label,
+.energy-solution-buttons__item label {
+  font-weight: 500 !important;
+}
+
+/* ==========================================================================
+   "Hvordan gjennomføre tiltakene"-knapp
+   ========================================================================== */
+
+.energy-solution-buttons__process-wrapper {
+  position: absolute;
+  left: 156px; /* Align with tiltak list (sentrert layout) */
+  bottom: 48px; /* Position below tiltak list with gap */
+  /* Bredde = item-width + container-padding * 2 for å matche tiltaksboksen */
+  width: calc(var(--esb-item-width, 440px) + var(--esb-container-padding, 1.5rem) * 2);
+  display: flex;
+  justify-content: flex-start;
+  z-index: 1000;
+}
+
+.energy-solution-buttons__process-btn {
+  width: 100%;
+  height: var(--esb-item-height);
+  background-color: var(--esb-bg-button);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 17px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.energy-solution-buttons__process-btn:hover {
+  background-color: var(--esb-text-primary);
+}
+
+/* Punkt-knapp styling for "Hvordan gjennomføre tiltakene" */
+.energy-solution-buttons__process-btn--punkt {
+  width: 100%;
+  min-height: var(--esb-item-height);
+  justify-content: space-between;
+  padding-left: 17px !important;
+  padding-right: 17px !important;
+}
+
+.energy-solution-buttons__process-text {
+  font-family: var(--esb-font-family);
+  font-weight: 500;
+  font-style: normal;
+  font-size: 18px;
+  letter-spacing: -0.2px;
+  color: var(--esb-text-light);
+  text-align: left;
+}
+
+.energy-solution-buttons__process-icon {
+  width: 24px;
+  height: 28px;
+  color: white;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Info-modal
+   ========================================================================== */
+
+.energy-solution-buttons__modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.energy-solution-buttons__modal {
+  background-color: white;
+  border-radius: 0;
+  padding: 2rem; /* pkt size-32 */
+  width: var(--esb-item-width);
+  height: 700px;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  overflow: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  pointer-events: auto;
+}
+
+.energy-solution-buttons__modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.energy-solution-buttons__modal-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 24px;
+  color: #333;
+}
+
+.energy-solution-buttons__modal-content {
+  color: #555;
+  line-height: 1.6;
+}
+
+.energy-solution-buttons__modal-section-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.energy-solution-buttons__modal-section-title--spaced {
+  margin-top: 24px;
+}
+
+.energy-solution-buttons__modal-paragraph {
+  margin-bottom: 16px;
+}
+
+.energy-solution-buttons__modal-link {
+  color: #0066CC;
+  text-decoration: underline;
+}
+
+.energy-solution-buttons__modal-note {
+  margin-top: 16px;
+  font-size: 16px;
+  color: #555;
+  font-weight: bold;
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   Scrollbar-styling (eksisterende)
+   ========================================================================== */
+
+.tiltak-list-container {
+  max-height: 504px; /* 9 items × 56px - enough for 8 tiltak without scroll */
+  overflow-y: auto;
+  width: var(--esb-item-width, 440px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 
   /* Custom scrollbar - Firefox */
   scrollbar-width: thin;
-  scrollbar-color: #F8F0DD transparent;
+  scrollbar-color: var(--esb-border-color) transparent;
 }
 
 /* Custom scrollbar - Webkit (Chrome, Safari, Edge) */
@@ -24,12 +453,12 @@
 }
 
 .tiltak-list-container::-webkit-scrollbar-thumb {
-  background-color: #F8F0DD;
+  background-color: var(--esb-border-color);
   border-radius: 4px;
 }
 
 .tiltak-list-container::-webkit-scrollbar-thumb:hover {
-  background-color: #F9F9F9;
+  background-color: var(--esb-bg-hover);
 }
 
 /* Fade effect at bottom when scrollable */
@@ -47,7 +476,7 @@
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(42, 40, 89, 0.3) 100%
+    var(--esb-list-bg) 100%
   );
   pointer-events: none;
   opacity: 0;

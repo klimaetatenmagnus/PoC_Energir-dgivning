@@ -4,8 +4,12 @@ import {
   getOverskriftLabel,
   openExternalLink,
   TiltakComponentProps,
+  calculateTekPeriod,
+  parseNumericValue,
+  formatNumberWithSpaces,
   type Stotteordning
 } from './shared';
+import { GlossaryTerm, dictionaryTermsToGlossary } from './glossaryHelpers';
 import { useTiltakContent, useContentDictionary } from '../../../../hooks/contentHooks';
 import { useGrantAwareStotteordninger } from './useGrantAwareStotteordninger';
 import type { TiltakContent, TiltakAccordionItem } from '../../../../../content/tiltak/schema';
@@ -13,6 +17,12 @@ import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { applyTiltakVariant, normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
 import { resolveTiltakBenefits } from '../../../../utils/benefitUtils';
 import { BenefitChipSvg } from '../../../common/BenefitChip/BenefitChipSvg';
+import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../../../utils/tekEnergyCalculations';
+import {
+  getRateForTiltak,
+  calculateCombinedSavings,
+  type TiltakSavingsInfo
+} from '../../../../utils/energySavingsData';
 
 type VarmepumpeTab = {
   id: string;
@@ -81,12 +91,14 @@ type VarmepumpeProps = TiltakComponentProps;
 const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
   onBack,
   buildingType,
+  buildingData,
   audience = 'standard'
 }) => {
   const [isPermitOpen, setIsPermitOpen] = useState(false);
   const [activeButton, setActiveButton] = useState<string>('Generelt');
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const [showSourceTooltip, setShowSourceTooltip] = useState(false);
+  const [hoveredWord, setHoveredWord] = useState<string | null>(null);
 
   // Provider-farger fra dictionary
   const getProviderColor = useProviderColors();
@@ -106,6 +118,12 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
   const enrichedBenefits = useMemo(
     () => resolveTiltakBenefits(resolvedTiltakContent, dictionary, 4),
     [resolvedTiltakContent, dictionary]
+  );
+
+  // Ordforklaringer fra sentral ordliste
+  const glossary = useMemo(
+    () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? []),
+    [dictionary]
   );
 
   const buildingTypeKey = normaliseBuildingTypeKey(buildingType);
@@ -582,36 +600,122 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
           </foreignObject>
         )}
         
-        {/* Window upgrade savings text */}
-        <text
-          x="589"
-          y="296"
-          fontFamily="Oslo Sans"
-          fontWeight="100"
-          fontStyle="normal"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="0"
-          fill="#FFFFFF"
-          dominantBaseline="hanging"
-        >
-          Mangler data kWh
-        </text>
-        
-        <text
-          x="589"
-          y="318"
-          fontFamily="Oslo Sans"
-          fontWeight="100"
-          fontStyle="normal"
-          fontSize="14"
-          style={{ lineHeight: '22px' }}
-          letterSpacing="0"
-          fill="#FFFFFF"
-          dominantBaseline="hanging"
-        >
-          Mangler data kr
-        </text>
+        {/* Savings calculation based on active tab */}
+        {(() => {
+          const bruksareal = parseNumericValue(
+            buildingData?.bruksarealM2 ?? buildingData?.csvData?.bruksareal_totalt
+          );
+          const byggeaar = Math.trunc(
+            parseNumericValue(buildingData?.byggeaar ?? buildingData?.csvData?.byggeaar)
+          );
+          const buildingCategory = determineBuildingType(
+            buildingData?.bygningstypeKode,
+            buildingType
+          );
+
+          if (!buildingCategory || byggeaar <= 0 || bruksareal <= 0) {
+            return (
+              <>
+                <text x="589" y="296" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                      fill="#FFFFFF" dominantBaseline="hanging">
+                  Kunne ikke beregne besparelse
+                </text>
+                <text x="589" y="318" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                      fill="#FFFFFF" dominantBaseline="hanging">
+                  Mangler bygningsdata
+                </text>
+              </>
+            );
+          }
+
+          const tekPeriod = calculateTekPeriod(byggeaar);
+          const originalEnergy = calculateAnnualEnergyConsumption(byggeaar, bruksareal, buildingCategory);
+
+          // Map active tab to tiltak type
+          let tiltakTitle = '';
+          if (activeButton === 'Luft-luft') tiltakTitle = 'Luft-luft varmepumpe';
+          else if (activeButton === 'Luft-vann') tiltakTitle = 'Luft-væske varmepumpe';
+          else if (activeButton === 'Væske-vann') tiltakTitle = 'Væske-væske varmepumpe';
+          else if (activeButton === 'Ventilasjon') tiltakTitle = 'Ventilasjonsgjenvinning';
+          else {
+            // Generelt tab - show placeholder
+            return (
+              <>
+                <text x="589" y="296" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                      fill="#FFFFFF" dominantBaseline="hanging">
+                  Velg en varmepumpe-type
+                </text>
+                <text x="589" y="318" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                      fill="#FFFFFF" dominantBaseline="hanging">
+                  for å se besparelse
+                </text>
+              </>
+            );
+          }
+
+          const rates = getRateForTiltak(tiltakTitle, tekPeriod, buildingCategory);
+
+          if (rates === null) {
+            return (
+              <>
+                <text x="589" y="296" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                      fill="#FFFFFF" dominantBaseline="hanging">
+                  Mangler data for {activeButton}
+                </text>
+                <text x="589" y="318" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                      fill="#FFFFFF" dominantBaseline="hanging">
+                  og {tekPeriod} {buildingCategory}
+                </text>
+              </>
+            );
+          }
+
+          // Use calculateCombinedSavings for accurate calculation
+          const tiltakInfo: TiltakSavingsInfo[] = [{
+            title: tiltakTitle,
+            rates
+          }];
+
+          const totalSavings = calculateCombinedSavings(
+            originalEnergy,
+            tiltakInfo,
+            tekPeriod,
+            buildingCategory,
+            bruksareal
+          );
+
+          if (totalSavings <= 0) {
+            return (
+              <>
+                <text x="589" y="296" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                      fill="#FFFFFF" dominantBaseline="hanging">
+                  Ingen besparelse for
+                </text>
+                <text x="589" y="318" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                      fill="#FFFFFF" dominantBaseline="hanging">
+                  {activeButton} i dette bygget
+                </text>
+              </>
+            );
+          }
+
+          const roundedSavings = Math.round(totalSavings / 1000) * 1000;
+          const norgespris = 1.1; // kr/kWh
+          const roundedKr = Math.round((roundedSavings * norgespris) / 1000) * 1000;
+
+          return (
+            <>
+              <text x="589" y="296" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                    fill="#FFFFFF" dominantBaseline="hanging">
+                {formatNumberWithSpaces(roundedSavings)} kWh
+              </text>
+              <text x="589" y="318" fontFamily="Oslo Sans" fontWeight="100" fontSize="14"
+                    fill="#FFFFFF" dominantBaseline="hanging">
+                {formatNumberWithSpaces(roundedKr)} kr
+              </text>
+            </>
+          );
+        })()}
         
         {/* Circle below main text */}
         <circle
@@ -973,7 +1077,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
                   color: '#FFFFFF',
                   margin: 0
                 }}>
-                  Er tiltaket ditt søknadspliktig betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.
+                  Er tiltaket ditt <GlossaryTerm term="søknadspliktig" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>søknadspliktig</GlossaryTerm> betyr det at Plan- og bygningsetaten må godkjenne arbeidet før du setter i gang. Det handler ikke om å stoppe deg, men om å sikre at tiltaket planlegges og utføres med riktig kvalitet.
                 </p>
                 <p style={{
                   fontFamily: 'Oslo Sans',
@@ -984,7 +1088,7 @@ const VarmepumpeContentComponent: React.FC<VarmepumpeComponentProps> = ({
                   color: '#FFFFFF',
                   margin: '16px 0 0 0'
                 }}>
-                  Søknadsplikten skal hjelpe deg som tiltakshaver med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve ansvarlige foretak som tar faglig ansvar for prosjektering og utførelse.
+                  Søknadsplikten skal hjelpe deg som <GlossaryTerm term="tiltakshaver" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>tiltakshaver</GlossaryTerm> med å få det resultatet du ønsker – trygt og effektivt. I mer komplekse prosjekter kan kommunen kreve <GlossaryTerm term="ansvarlig foretak" glossary={glossary} hoveredTerm={hoveredWord} setHoveredTerm={setHoveredWord}>ansvarlige foretak</GlossaryTerm> som tar faglig ansvar for prosjektering og utførelse.
                 </p>
                 <p style={{
                   fontFamily: 'Oslo Sans',

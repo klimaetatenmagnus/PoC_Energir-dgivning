@@ -1,8 +1,10 @@
 import React from 'react';
+import { PktButton } from '@oslokommune/punkt-react';
 import { AddressLookupResponse } from '../services/buildingApi';
 import { useAddressCoordinates } from './FigmaBlokk/hooks/useAddressCoordinates';
 import { getLayoutStyles } from './FigmaBlokk/styles';
 import { EnergySolutionButtons } from './FigmaBlokk/components/EnergySolutionButtons';
+import type { TiltakCanonicalKey } from './FigmaBlokk/utils/tiltakCanonicalKeys';
 import { WhiteInfoBox } from './FigmaBlokk/components/WhiteInfoBox';
 import { OsloLogo } from './FigmaBlokk/components/OsloLogo';
 import { ProsessenVidere } from './FigmaBlokk/components/ProsessenVidere';
@@ -13,7 +15,7 @@ import { THERESES_11A_DATA } from '../testData/theresegate11a';
 import { calculateAnnualEnergyConsumption, determineBuildingType } from '../utils/tekEnergyCalculations';
 import { THERESES_44A_DATA } from '../testData/theresegate44a';
 import { useFigmaViewportMetrics } from './FigmaBlokk/hooks/useFigmaViewportMetrics';
-import { EneboligSvg, BlokkSvg } from './FigmaBlokk/components/BuildingSprites';
+import { Enebolig2LayerSvg, Blokk2LayerSvg } from './FigmaBlokk/components/BuildingSprites';
 import type { LandingSnapshot, BuildingSnapshot } from '../hooks/useFigmaAddressSearch';
 import { useTransitionOverlay, toViewportRect } from '../context/useTransitionOverlay';
 import { createLogger } from '../utils/logger';
@@ -24,12 +26,44 @@ const FIGMA_ARTBOARD_WIDTH = 1728;
 const FIGMA_ARTBOARD_CENTER = FIGMA_ARTBOARD_WIDTH / 2;
 const ENEBOLIG_START_LEFT = 289;
 const BLOKK_START_LEFT = 1051;
-const TARGET_TRANSLATION_X = 235.5 + 74;
+// Layout sentrert med 24px Punkt-spacing mellom elementer:
+// - Total bredde: 488 + 24 + 520 + 24 + 360 = 1416px
+// - Marger: (1728 - 1416) / 2 = 156px
+// - Tiltak-boks: 156-644px (156 + 488)
+// - Gap: 24px
+// - Sirkel: 668-1188px (520px diameter, center på 928px)
+// - Gap: 24px
+// - Info box: 1212-1572px (360px bred)
+// Building left edge for å sentrere i sirkel: 928 - 204 = 724px
+// With left: 864px (center), translateX = 724 - 864 = -140px
+const TARGET_TRANSLATION_X = -140;
 const FIGMA_ARTBOARD_CENTER_PX = `${FIGMA_ARTBOARD_CENTER}px`;
 const TARGET_TRANSLATION_PX = `${TARGET_TRANSLATION_X}px`;
-const FINAL_BOTTOM_OFFSET = 55;
+// Align building bottom with tiltak list bottom (same offset as list + info box)
+// Increased from 64 to 120 to make room for "Hvordan gjennomføre tiltakene" button
+const FINAL_BOTTOM_OFFSET = 120;
+// Ekstra vertikal offset for å sentrere huset i den hvite sirkelen
+const BUILDING_VERTICAL_LIFT = 110;
+// Blokk SVG has ~5.149px viewBox padding at the bottom (204 - 198.851), scaled by 3 in detail view.
+const BLOKK_VIEWBOX_HEIGHT = 204;
+const BLOKK_CONTENT_BOTTOM = 198.851;
+const BLOKK_BOTTOM_PADDING = BLOKK_VIEWBOX_HEIGHT - BLOKK_CONTENT_BOTTOM;
+const BLOKK_DETAIL_SCALE = 3;
+const ENEBOLIG_DETAIL_SCALE = 408 / 93;
+const BLOKK_FINAL_BOTTOM_OFFSET = FINAL_BOTTOM_OFFSET - BLOKK_BOTTOM_PADDING * BLOKK_DETAIL_SCALE;
 const SNAPSHOT_RESOLUTION_TIMEOUT_MS = 250;
 const DETAIL_FADE_DURATION_MS = 450;
+
+// Energy rating colors (A-G scale)
+const ENERGY_RATING_COLORS: Record<string, string> = {
+  A: '#097E3E',
+  B: '#32A548',
+  C: '#96C133',
+  D: '#EFE61E',
+  E: '#F7AD24',
+  F: '#EA6927',
+  G: '#E31829'
+};
 
 type BuildingStartCoordinates = {
   left: number;
@@ -202,13 +236,82 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   
   // State for total energy savings
   const [totalEnergySavings, setTotalEnergySavings] = React.useState<number>(0);
-  
+  const [newEnergyRating, setNewEnergyRating] = React.useState<string | null>(null);
+
+  // State for tiltak animations and arrow feedback
+  // Uses canonical keys (e.g., 'ventilasjon', 'solenergi') instead of display titles for stability
+  const [activeTiltak, setActiveTiltak] = React.useState<TiltakCanonicalKey[]>([]);
+  const [arrowState, setArrowState] = React.useState<'add' | 'remove' | null>(null);
+  const [arrowColor, setArrowColor] = React.useState<string>('#32A548'); // Default green (B rating)
+  const prevTiltak = React.useRef(new Set<TiltakCanonicalKey>());
+
+  const getEnergyRatingColor = React.useCallback((rating?: string | null): string => {
+    if (!rating) return '#32A548'; // Default to B rating color
+    return ENERGY_RATING_COLORS[rating.toUpperCase()] ?? '#32A548';
+  }, []);
+
+  const handleSelectionChange = React.useCallback((
+    nextList: TiltakCanonicalKey[],
+    finalRating?: string | null
+  ) => {
+    const next = new Set(nextList);
+    const prev = prevTiltak.current;
+
+    // Determine if a tiltak was added or removed
+    let mode: 'add' | 'remove' | null = null;
+
+    // Check for additions
+    for (const tiltak of next) {
+      if (!prev.has(tiltak)) {
+        mode = 'add';
+        break;
+      }
+    }
+
+    // Check for removals if no addition found
+    if (!mode) {
+      for (const tiltak of prev) {
+        if (!next.has(tiltak)) {
+          mode = 'remove';
+          break;
+        }
+      }
+    }
+
+    // Update states
+    setArrowColor(getEnergyRatingColor(finalRating));
+    setNewEnergyRating(finalRating ?? null);
+    setActiveTiltak(nextList);
+
+    if (mode) {
+      setArrowState(mode);
+    }
+
+    prevTiltak.current = next;
+  }, [getEnergyRatingColor]);
+
   // Delay enabling long transform transitions until after first paint to avoid initial jumps
   const [allowProcessTransition, setAllowProcessTransition] = React.useState(false);
   React.useEffect(() => {
     setAllowProcessTransition(true);
   }, []);
 
+  // Auto-clear arrow state after 900ms
+  React.useEffect(() => {
+    if (!arrowState) return;
+
+    const timer = setTimeout(() => {
+      setArrowState(null);
+    }, 900);
+
+    return () => clearTimeout(timer);
+  }, [arrowState]);
+
+  // Initialize arrow color from building's current energy rating
+  React.useEffect(() => {
+    const initialRating = buildingData?.energiattest?.energikarakter;
+    setArrowColor(getEnergyRatingColor(initialRating));
+  }, [buildingData, getEnergyRatingColor]);
 
   // Handle building data updates from WhiteInfoBox
   const handleUpdateBuildingData = React.useCallback((
@@ -404,10 +507,10 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
     return {
       position: 'absolute',
-      bottom: isFinal ? `${FINAL_BOTTOM_OFFSET}px` : `${eneboligStart.bottom}px`,
+      bottom: isFinal ? `${FINAL_BOTTOM_OFFSET + BUILDING_VERTICAL_LIFT}px` : `${eneboligStart.bottom}px`,
       left: isFinal ? FIGMA_ARTBOARD_CENTER_PX : `${eneboligStart.left}px`,
       transform: isFinal
-        ? `translateX(${TARGET_TRANSLATION_PX}) scale(5)`
+        ? `translateX(${TARGET_TRANSLATION_PX}) scale(${ENEBOLIG_DETAIL_SCALE})`
         : 'translateX(0) scale(1)',
       transformOrigin: 'bottom left',
       transition: forceFinalState
@@ -427,7 +530,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
     return {
       position: 'absolute',
-      bottom: isFinal ? `${FINAL_BOTTOM_OFFSET}px` : `${blokkStart.bottom}px`,
+      bottom: isFinal ? `${BLOKK_FINAL_BOTTOM_OFFSET + BUILDING_VERTICAL_LIFT}px` : `${blokkStart.bottom}px`,
       left: isFinal ? FIGMA_ARTBOARD_CENTER_PX : `${blokkStart.left}px`,
       transform: isFinal
         ? `translateX(${TARGET_TRANSLATION_PX}) scale(3)`
@@ -472,7 +575,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: '#034B45',
+        backgroundColor: 'var(--pkt-color-brand-blue-300, #D1F9FF)',
         zIndex: 0
       }} />
       <div className="figma-design-container" style={{ 
@@ -506,17 +609,18 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
             pointerEvents: showHeader && !isExpanded ? 'auto' : 'none'
           }}
         >
+        {/* Logo, title and back button stacked vertically */}
         <div style={{
           position: 'absolute',
-          left: 'calc(50% - 235.5px - 74px - 336px)', // Same as white info box
-          right: '40px',
-          height: '100%',
+          left: '156px', /* Sentrert layout - samme marg som tiltakslisten */
+          top: 0,
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          gap: '16px'
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <OsloLogo />
+            <OsloLogo color="var(--pkt-color-brand-dark-blue-1000, #2a2859)" />
             <span style={{
               marginLeft: '24px',
               marginBottom: '6px',
@@ -525,13 +629,17 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               fontSize: '24px',
               lineHeight: '40px',
               letterSpacing: '-0.2px',
-              color: 'white'
+              color: 'var(--pkt-color-brand-dark-blue-1000, #2a2859)'
             }}>
               Energinøkkelen
             </span>
           </div>
-          
-          <button
+
+          <PktButton
+            skin="secondary"
+            size="medium"
+            variant="icon-left"
+            iconName="arrow-return"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -540,61 +648,67 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               clones.forEach(clone => clone.remove());
               onBack();
             }}
-            style={{
-              position: 'relative',
-              background: 'transparent',
-              border: '2px solid #F9F9F9',
-              color: '#F9F9F9',
-              padding: '11px 18px',
-              fontFamily: 'Oslo Sans, sans-serif',
-              fontWeight: 500,
-              fontSize: '18px',
-              lineHeight: '28px',
-              letterSpacing: '-0.2px',
-              cursor: 'pointer',
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0',
-              zIndex: 100
-            }}
           >
-            <span style={{ marginRight: 'auto' }}>Tilbake</span>
-            <svg 
-              width="24" 
-              height="29" 
-              viewBox="0 0 24 29" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-              style={{ marginLeft: '18px', marginRight: '18px' }}
-            >
-              <path fillRule="evenodd" clipRule="evenodd" d="M9.09996 16.5539L7.49995 18.2472L2 12.3207L7.49995 6.5L9.09996 8.19329L6.29999 11.1566H19.4H21.6V13.4849V14.8961V19.0938V20.505V22.8333H19.4H9.8397V20.505H19.4V19.0938V14.8961V13.4849H6.19999L9.09996 16.5539Z" fill="white"/>
-            </svg>
-          </button>
+            Tilbake
+          </PktButton>
         </div>
       </div>
       
       {/* Tiltak buttons */}
-      <EnergySolutionButtons 
-        showHeader={showHeader} 
+      <EnergySolutionButtons
+        showHeader={showHeader}
         isExpanded={isExpanded}
         onExpand={setIsExpanded}
         onSelectSolution={setSelectedSolution}
         buildingData={{...updatedBuildingData, filteredSolarEnergy: solarData?.filteredSolarEnergy}}
         yearlyConsumption={energiforbruk}
-        onProcessClick={() => setShowProcess(true)}
         onTotalSavingsChange={setTotalEnergySavings}
+        onSelectionChange={handleSelectionChange}
+        audience={showYellowBox ? 'gulliste' : 'standard'}
       />
       
+      {/* White circle background for building */}
+      {showHeader && !isExpanded && (
+        <div
+          style={{
+            position: 'absolute',
+            /* Sentrert i layout med 24px Punkt-spacing:
+             * Sirkel center: 156 + 488 + 24 + 260 = 928px
+             * Bottom på linje med tiltakslisten og info box
+             */
+            left: '928px',
+            bottom: `${FINAL_BOTTOM_OFFSET}px`,
+            transform: 'translateX(-50%)',
+            width: '520px',
+            height: '520px',
+            borderRadius: '50%',
+            backgroundColor: 'var(--pkt-color-brand-neutrals-white, #ffffff)',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)',
+            zIndex: 2,
+            opacity: showHeader && !isExpanded ? 1 : 0,
+            transition: 'opacity 0.5s ease-in-out' + (showHeader && !isExpanded ? ' 0.5s' : isExpanded ? '' : ' 0.8s'),
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
       {/* Building animation */}
       {isEnebolig && eneboligStyle && (
         <div ref={eneboligRef} style={eneboligStyle}>
-          <EneboligSvg />
+          <Enebolig2LayerSvg
+            activeTiltak={activeTiltak}
+            arrowState={arrowState}
+            arrowColor={arrowColor}
+          />
         </div>
       )}
       {!isEnebolig && blokkStyle && (
         <div ref={blokkRef} style={blokkStyle}>
-          <BlokkSvg />
+          <Blokk2LayerSvg
+            activeTiltak={activeTiltak}
+            arrowState={arrowState}
+            arrowColor={arrowColor}
+          />
         </div>
       )}
 
@@ -608,6 +722,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         buildingTypeName={buildingTypeName}
         mapCoordinates={mapCoordinates}
         buildingData={updatedBuildingData}
+        newEnergyRating={newEnergyRating}
         onExpand={setIsExpanded}
         onBackToSolutions={handleTiltakBack}
         showYellowBox={showYellowBox}
@@ -615,6 +730,21 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         onUpdateBuildingData={handleUpdateBuildingData}
         totalEnergySavings={totalEnergySavings}
       />
+
+      {activeTiltak.length > 0 && !isExpanded && (
+        <div className="energy-solution-buttons__process-wrapper">
+          <PktButton
+            skin="secondary"
+            size="medium"
+            variant="icon-right"
+            iconName="chevron-thin-down"
+            onClick={() => setShowProcess(true)}
+            className="energy-solution-buttons__process-btn--punkt"
+          >
+            Hvordan gjennomføre tiltakene
+          </PktButton>
+        </div>
+      )}
     </div>
     
     {/* Prosessen videre component */}

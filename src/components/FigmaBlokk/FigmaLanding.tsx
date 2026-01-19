@@ -1,5 +1,6 @@
 import React, { RefObject } from 'react';
 import type { KeyboardEvent } from 'react';
+import { PktButton } from '@oslokommune/punkt-react';
 import { type AddressSuggestion } from '../../services/buildingApi';
 import { OsloLogo } from './components/OsloLogo';
 import { OsloSkyline } from './components/OsloSkyline';
@@ -52,12 +53,14 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
   const { scaleFactor, verticalOffset } = useFigmaViewportMetrics();
   const groundFillHeight = Math.max(verticalOffset, 0);
   const groundFillColor = 'var(--pkt-color-grays-gray-100, #F7F5F0)';
+  const landingBackground = 'var(--pkt-color-brand-blue-300, #D1F9FF)';
+  const landingForeground = 'var(--pkt-color-brand-dark-blue-1000, #2A2859)';
   const pinnedEnebolig = hasResult ? isEnebolig : undefined;
   const pinnedBlock = hasResult ? !isEnebolig : undefined;
   const artboardStyle: React.CSSProperties = {
     width: '1728px',
     height: '900px',
-    background: '#034B45',
+    background: landingBackground,
     boxSizing: 'border-box',
     position: 'absolute',
     top: '50%',
@@ -73,7 +76,7 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
       <div
         className="figma-design-container"
         style={{
-          background: '#034B45',
+          background: landingBackground,
           minHeight: '100vh',
           width: '100vw',
           height: '100vh',
@@ -92,7 +95,7 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
               }}
             >
               <div className="oslo-logo-container">
-                <OsloLogo className="oslo-logo" />
+                <OsloLogo className="oslo-logo" color={landingForeground} />
               </div>
 
               <div className="energiportalen-header">
@@ -100,51 +103,70 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
                 <p className="energiportalen-subtitle">Søk på en adresse, og se hvor mye du kan spare</p>
               </div>
 
-              <div className="figma-search-wrapper" ref={wrapperRef}>
+              <div
+                className="figma-search-wrapper pkt-searchinput pkt-searchinput--global"
+                ref={wrapperRef}
+                role="search"
+              >
                 <div className="figma-search-autocomplete-wrapper">
-                  <div className="figma-search-input-group">
+                  <div className="figma-search-input-group pkt-searchinput__field">
                     <input
-                      type="text"
+                      type="search"
                       placeholder="Skriv inn adresse..."
-                      className="figma-search-input"
+                      className="pkt-input figma-search-input"
                       value={searchValue}
                       onChange={(e) => handleInputChange(e.target.value)}
                       onKeyDown={handleKeyDown}
                       onFocus={openSuggestions}
                       disabled={loading}
                       autoComplete="off"
+                      role="combobox"
+                      aria-autocomplete="list"
+                      aria-expanded={showSuggestions && suggestions.length > 0}
+                      aria-controls="figma-address-suggestions"
+                      aria-activedescendant={
+                        selectedSuggestionIndex >= 0
+                          ? `figma-suggestion-${selectedSuggestionIndex}`
+                          : undefined
+                      }
                     />
 
-                    <button className="figma-search-button" onClick={handleSearch} disabled={loading}>
-                      {loading ? (
-                        <span className="loading-spinner-small">⟳</span>
-                      ) : (
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                          <path
-                            d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
-                            stroke="#FFFFFF"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
-                    </button>
+                    <PktButton
+                      skin="primary"
+                      size="medium"
+                      variant="icon-only"
+                      iconName="magnifying-glass-big"
+                      onClick={handleSearch}
+                      disabled={loading}
+                      aria-label="Søk"
+                      className="figma-search-button pkt-searchinput__button"
+                    />
                   </div>
 
                   {showSuggestions && suggestions.length > 0 && (
-                    <ul className="figma-search-suggestions" onMouseLeave={clearHighlightedSuggestion}>
+                    <ul
+                      id="figma-address-suggestions"
+                      className="figma-search-suggestions pkt-searchinput__suggestions"
+                      onMouseLeave={clearHighlightedSuggestion}
+                      role="listbox"
+                      aria-label="Adresseforslag"
+                    >
                       {suggestionsLoading ? (
-                        <li className="figma-search-suggestion figma-search-suggestion--loading">Søker...</li>
+                        <li className="figma-search-suggestion pkt-searchinput__suggestion figma-search-suggestion--loading">
+                          Søker...
+                        </li>
                       ) : (
                         suggestions.map((suggestion, index) => (
                           <li
                             key={suggestion.adresse ?? suggestion.adressetekst ?? `suggestion-${index}`}
-                            className={`figma-search-suggestion ${
+                            id={`figma-suggestion-${index}`}
+                            className={`figma-search-suggestion pkt-searchinput__suggestion ${
                               index === selectedSuggestionIndex ? 'figma-search-suggestion--selected' : ''
                             }`}
                             onClick={() => handleSuggestionSelect(suggestion)}
                             onMouseEnter={() => highlightSuggestion(index)}
+                            role="option"
+                            aria-selected={index === selectedSuggestionIndex}
                           >
                             {suggestion.adressetekst || suggestion.adresse}
                           </li>

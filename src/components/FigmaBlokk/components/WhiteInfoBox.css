@@ -1,0 +1,597 @@
+/* WhiteInfoBox - Desktop infoboks med Punkt designsystem */
+/* Migrert fra SVG-basert til HTML/CSS for bedre tilgjengelighet og vedlikehold */
+
+/* ==========================================================================
+   CSS Custom Properties (bygger på Punkt-variabler)
+   ========================================================================== */
+
+.white-info-box {
+  --wib-bg: var(--pkt-color-brand-neutrals-white, #ffffff);
+  --wib-text-primary: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  --wib-text-secondary: var(--pkt-color-brand-neutrals-600, #666666);
+  --wib-spacing-sm: var(--pkt-spacing-8, 0.5rem);
+  --wib-spacing-md: var(--pkt-spacing-16, 1rem);
+  --wib-spacing-lg: var(--pkt-spacing-24, 1.5rem);
+  --wib-spacing-xl: var(--pkt-spacing-32, 2rem);
+  --wib-font-family: 'Oslo Sans', sans-serif;
+  --wib-border-radius: 0;
+
+  /* Besparelseskort farger */
+  --wib-savings-bg: var(--pkt-color-status-green-95, #c7f6c9);
+  --wib-savings-text: var(--pkt-color-status-green-10, #102c2c);
+  --wib-savings-label: var(--pkt-color-status-green-25, #1b5145);
+  --wib-savings-unit: var(--pkt-color-status-green-20, #164136);
+
+  /* Gul liste farger */
+  --wib-gulliste-bg: var(--pkt-color-status-yellow-90, #ffe7bc);
+  --wib-gulliste-text: #000000;
+}
+
+/* ==========================================================================
+   Container og layout
+   ========================================================================== */
+
+.white-info-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  background-color: var(--wib-bg);
+  border: 1px solid var(--pkt-color-brand-neutrals-200, #e5e5e5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  font-family: var(--wib-font-family);
+  color: var(--wib-text-primary);
+  overflow: hidden;
+}
+
+.white-info-box__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wib-spacing-md);
+  padding: var(--wib-spacing-lg);
+}
+
+/* ==========================================================================
+   Header - Adresse og badges
+   ========================================================================== */
+
+.white-info-box__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wib-spacing-md);
+}
+
+.white-info-box__address {
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+  color: var(--wib-text-primary);
+  margin: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Skalering for lange adresser */
+.white-info-box__address--scaled {
+  font-size: calc(1.75rem * var(--address-scale, 1));
+}
+
+/* ==========================================================================
+   Badges (PktTag) - Bydel og bygningstype
+   ========================================================================== */
+
+.white-info-box__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wib-spacing-sm);
+}
+
+/* PktTag styling importeres fra sentral badges.css */
+
+/* ==========================================================================
+   Nøkkelinformasjon - Info rows
+   ========================================================================== */
+
+.white-info-box__section-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: var(--wib-text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.white-info-box__info-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wib-spacing-sm);
+}
+
+.white-info-box__info-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5ch;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  letter-spacing: -0.2px;
+}
+
+.white-info-box__info-label {
+  font-weight: 300;
+  color: var(--wib-text-primary);
+}
+
+.white-info-box__info-value {
+  font-weight: 500;
+  color: var(--wib-text-primary);
+}
+
+/* Vernestatus-rad med info-knapp */
+.white-info-box__info-row--vernestatus {
+  align-items: center;
+}
+
+.white-info-box__vernestatus-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #ffc857;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 22px;
+  margin-left: 0.25ch;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.white-info-box__vernestatus-button:hover,
+.white-info-box__vernestatus-button:focus {
+  background-color: #e6b34e;
+}
+
+/* ==========================================================================
+   Redigeringsmodus
+   ========================================================================== */
+
+.white-info-box__edit-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5ch;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  letter-spacing: -0.2px;
+}
+
+.white-info-box__edit-input {
+  border: none;
+  border-bottom: 1px solid var(--wib-text-primary);
+  padding: 0;
+  font-family: var(--wib-font-family);
+  font-size: 1.125rem;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: var(--wib-text-primary);
+  background: transparent;
+  outline: none;
+  min-width: 60px;
+}
+
+.white-info-box__edit-input:focus {
+  border-bottom-width: 2px;
+  border-bottom-color: var(--pkt-color-brand-blue-600, #2e85c8);
+}
+
+/* ==========================================================================
+   Energiforbruk-blokk
+   ========================================================================== */
+
+.white-info-box__energy-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: var(--wib-spacing-sm);
+}
+
+.white-info-box__energy-rating {
+  display: flex;
+  align-items: center;
+  column-gap: 0.5ch;
+  row-gap: 0.375rem;
+  flex-wrap: nowrap;
+}
+
+.white-info-box__energy-rating-label {
+  font-size: 1.125rem;
+  letter-spacing: -0.2px;
+  color: var(--wib-text-primary);
+  font-weight: 300;
+  margin-right: 0.25rem;
+  white-space: nowrap;
+}
+
+.white-info-box__energy-rating-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: nowrap;
+}
+
+.white-info-box__rating-box {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  border-radius: 4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.white-info-box__rating-box--new {
+  width: 32px;
+  height: 32px;
+  font-size: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.white-info-box__rating-arrow {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.white-info-box__energy-rating-empty {
+  font-size: 0.875rem;
+  font-weight: 300;
+  color: var(--wib-text-secondary);
+}
+
+.white-info-box__energy-label {
+  font-size: 1.125rem;
+  letter-spacing: -0.2px;
+  color: var(--wib-text-primary);
+  font-weight: 300;
+}
+
+.white-info-box__energy-value {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.white-info-box__energy-amount {
+  font-size: 1.125rem;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: var(--wib-text-primary);
+}
+
+.white-info-box__energy-unit {
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: var(--wib-text-primary);
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   Besparelseskort
+   ========================================================================== */
+
+.white-info-box__savings-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  padding: 16px 14px;
+  background-color: var(--wib-savings-bg);
+  box-shadow: 0px 18px 38px rgba(17, 59, 50, 0.15);
+  font-family: var(--wib-font-family);
+  color: var(--wib-savings-text);
+  transform-origin: left center;
+}
+
+/* "Estimert besparelse" - matcher "Nøkkelinformasjon" */
+.white-info-box__savings-label {
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: var(--wib-savings-text);
+}
+
+.white-info-box__savings-value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5ch;
+  color: var(--wib-savings-text);
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.white-info-box__savings-amount-wrapper {
+  display: flex;
+}
+
+.white-info-box__savings-amount {
+  font-size: 2.375rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--wib-savings-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* "kr/år" - matcher info-value (byggeår-verdier) */
+.white-info-box__savings-unit {
+  font-size: 1.125rem;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: var(--wib-savings-text);
+  white-space: nowrap;
+}
+
+/* "≈ xxx kWh/år" - matcher info-label (Byggeår:) */
+.white-info-box__savings-kwh {
+  font-size: 1.125rem;
+  font-weight: 300;
+  line-height: 1.75rem;
+  letter-spacing: -0.2px;
+  color: var(--wib-savings-text);
+}
+
+/* Animasjon for besparelseskort */
+.white-info-box__savings-card--animating {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.white-info-box__savings-card--visible {
+  opacity: 1;
+  transform: scale(1);
+  transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 320ms ease-out;
+}
+
+/* Rolling digits display (animert tallvisning) */
+.white-info-box__rolling-digits {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2ch;
+  font-size: 2.375rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--wib-savings-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.white-info-box__rolling-digit {
+  display: inline-flex;
+  width: 0.9ch;
+  min-width: 0.9ch;
+  justify-content: center;
+  height: 1.05em;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05em;
+  padding: 0 0.5px;
+}
+
+.white-info-box__rolling-digit-inner {
+  display: flex;
+  flex-direction: column;
+  transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.white-info-box__rolling-digit-value {
+  height: 1.05em;
+  line-height: 1.05em;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.white-info-box__rolling-digit-separator {
+  display: inline-block;
+  min-width: 0.5ch;
+  text-align: center;
+}
+
+/* ==========================================================================
+   Kart
+   ========================================================================== */
+
+.white-info-box__map {
+  width: 100%;
+  aspect-ratio: 360 / 204;
+  background-color: var(--pkt-color-brand-neutrals-200, #e5e5e5);
+  position: relative;
+  overflow: hidden;
+}
+
+.white-info-box__map-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 0.875rem;
+  color: var(--wib-text-secondary);
+}
+
+/* ==========================================================================
+   Gul liste overlay
+   ========================================================================== */
+
+.white-info-box__gul-liste-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: var(--wib-gulliste-bg);
+  display: flex;
+  flex-direction: column;
+  padding: var(--wib-spacing-lg);
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.white-info-box__gul-liste-close {
+  position: absolute;
+  top: var(--wib-spacing-md);
+  right: var(--wib-spacing-md);
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: var(--wib-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.white-info-box__gul-liste-title {
+  font-size: 1.625rem;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: var(--wib-gulliste-text);
+  margin: 0 0 var(--wib-spacing-md) 0;
+  padding-right: 48px;
+}
+
+.white-info-box__gul-liste-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wib-spacing-md);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--wib-gulliste-text);
+}
+
+.white-info-box__gul-liste-content p {
+  margin: 0;
+  font-weight: 300;
+}
+
+.white-info-box__gul-liste-content a {
+  color: var(--wib-gulliste-text);
+  text-decoration: underline;
+}
+
+/* Gul liste info-boks (mørk) */
+.white-info-box__gul-liste-info-box {
+  background-color: var(--wib-text-primary);
+  color: #ffffff;
+  padding: var(--wib-spacing-md);
+  font-weight: 400;
+}
+
+.white-info-box__gul-liste-info-box p {
+  color: #ffffff;
+}
+
+/* Tooltip for termer */
+.white-info-box__tooltip-term {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 4px;
+  cursor: help;
+  position: relative;
+}
+
+.white-info-box__tooltip {
+  position: absolute;
+  background-color: #ffffff;
+  padding: var(--wib-spacing-sm);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 0.75rem;
+  max-width: 200px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Nøkkelinformasjon seksjon
+   ========================================================================== */
+
+.white-info-box__section {
+  font-family: var(--wib-font-family);
+  color: var(--wib-text-primary);
+  padding: 0 14px;
+}
+
+.white-info-box__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--wib-spacing-sm);
+}
+
+.white-info-box__section-header .white-info-box__section-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: var(--wib-text-primary);
+}
+
+/* Nøkkelinformasjon innhold */
+.white-info-box__key-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.white-info-box__edit-label {
+  font-weight: 300;
+  color: var(--wib-text-primary);
+  white-space: nowrap;
+}
+
+.white-info-box__edit-actions {
+  display: flex;
+  gap: var(--wib-spacing-sm);
+  margin-top: var(--wib-spacing-sm);
+}
+
+/* ==========================================================================
+   Tiltak-preview (når utvidet)
+   ========================================================================== */
+
+.white-info-box__tiltak-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.white-info-box__tiltak-card {
+  width: 100%;
+  height: 100%;
+}
+
+/* ==========================================================================
+   Tilgjengelighet - Reduced motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .white-info-box__savings-card--visible {
+    transition: opacity 200ms ease-out;
+  }
+
+  .white-info-box__vernestatus-button,
+  .white-info-box__edit-input {
+    transition: none;
+  }
+}

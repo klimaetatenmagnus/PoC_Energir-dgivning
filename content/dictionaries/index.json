@@ -407,6 +407,58 @@
         "Et tiltak er reversibelt når det kan fjernes og byggverket tilbakeføres uten varige spor. Slike tiltak er ofte lettere å få godkjent i verneverdige bygg."
       ],
       "links": []
+    },
+    {
+      "id": "byantikvaren",
+      "term": "Byantikvarens",
+      "definition": [
+        "Oslo Byantikvar er kommunens faginstans for kulturminnevern og har ansvar for å ivareta Oslos kulturminner og kulturmiljøer."
+      ],
+      "links": [
+        {
+          "label": "Les mer om Byantikvaren",
+          "url": "https://www.oslo.kommune.no/etater-foretak-og-ombud/byantikvaren/"
+        }
+      ]
+    },
+    {
+      "id": "kommunalt-listefort",
+      "term": "kommunalt listeført",
+      "definition": [
+        "Kommunalt listeført betyr at bygget er registrert i Gul liste og vurdert som verneverdig av Oslo kommune. Listeføringen gir ikke juridisk vern, men signaliserer at kommunen ønsker å bevare byggets kulturhistoriske verdier."
+      ],
+      "links": [
+        {
+          "label": "Om Gul liste",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/kulturminner-og-vern/gul-liste/"
+        }
+      ]
+    },
+    {
+      "id": "vernet-pbl",
+      "term": "vernet etter plan- og bygningsloven",
+      "definition": [
+        "Vernet etter plan- og bygningsloven betyr at bygget er sikret gjennom kommuneplanen eller reguleringsplan. Dette gir juridisk vern og betyr at tiltak på bygget kan kreve dispensasjon."
+      ],
+      "links": [
+        {
+          "label": "Om reguleringsplaner",
+          "url": "https://www.oslo.kommune.no/plan-bygg-og-eiendom/planforslag-og-regulering/"
+        }
+      ]
+    },
+    {
+      "id": "fredet",
+      "term": "fredet",
+      "definition": [
+        "Fredet betyr at bygget er vernet etter kulturminneloven av Riksantikvaren eller fylkeskommunen. Dette er den sterkeste formen for vern, og alle endringer må godkjennes av kulturminnemyndighetene."
+      ],
+      "links": [
+        {
+          "label": "Om fredning hos Riksantikvaren",
+          "url": "https://www.riksantikvaren.no/veiledning/fredning/"
+        }
+      ]
     }
   ],
   "providers": [

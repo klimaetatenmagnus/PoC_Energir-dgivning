@@ -31,6 +31,8 @@
   gap: var(--pkt-spacing-8, 0.5rem);
 }
 
+/* PktTag styling importeres fra sentral badges.css */
+
 /* Besparelseskort */
 .mobile-info-box__savings-card {
   display: flex;
@@ -206,10 +208,24 @@
   border: 1px solid var(--pkt-color-brand-neutrals-200, #e5e5e5);
 }
 
-.mobile-info-box__map-iframe {
+.mobile-info-box__map-wrapper {
+  position: relative;
   width: 100%;
   height: 100%;
-  border: none;
+}
+
+.mobile-info-box__map-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mobile-info-box__map-pin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
 }
 
 .mobile-info-box__map-loading {
@@ -222,11 +238,10 @@
   color: var(--pkt-color-brand-neutrals-600, #666666);
 }
 
-.mobile-info-box__map-link {
+.mobile-info-box__map-attribution {
   font-family: 'Oslo Sans', sans-serif;
-  font-size: 0.875rem;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-  text-decoration: underline;
+  font-size: 0.75rem;
+  color: var(--pkt-color-brand-neutrals-600, #666666);
 }
 
 /* Modal */

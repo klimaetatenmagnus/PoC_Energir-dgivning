@@ -1,0 +1,40 @@
+/**
+ * Sentral styling for badges/tags i applikasjonen.
+ * Brukes sammen med badgeConfig.ts for visuell konsistens.
+ * Importeres i komponenter som bruker PktTag med ikoner.
+ */
+
+/* ==========================================================================
+   PktTag styling - matcher opprinnelig SVG-basert design
+   ========================================================================== */
+
+/* Base styling for alle badges med ikoner */
+.pkt-tag[aria-label] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px 0 14px;
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: -0.2px;
+  height: 30px;
+  box-sizing: border-box;
+  border-radius: 0;
+  line-height: 30px;
+}
+
+/* Ikon-styling */
+.pkt-tag[aria-label] .pkt-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  margin-right: 7px;
+}
+
+/* Tekst-styling */
+.pkt-tag[aria-label] > span {
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}

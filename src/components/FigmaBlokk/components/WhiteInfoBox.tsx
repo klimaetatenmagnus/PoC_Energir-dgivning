@@ -1,5 +1,21 @@
 import React from 'react';
+import {
+  PktTag,
+  PktIcon,
+  PktButton,
+} from '@oslokommune/punkt-react';
 import { LocationPin } from './LocationPin';
+import {
+  DISTRICT_BADGE,
+  getBuildingTypeBadgeConfig,
+  getDisplayBuildingTypeName,
+} from '../../../config/badgeConfig';
+import { useContentDictionary } from '../../../hooks/contentHooks';
+import {
+  renderParagraphWithGlossary,
+  dictionaryTermsToGlossary,
+} from './Tiltak/glossaryHelpers';
+import dictionaryData from '../../../../content/dictionaries/index.json';
 import {
   Varmepumpe,
   Solenergi,
@@ -13,9 +29,13 @@ import {
 import type { TiltakComponentProps } from './Tiltak/shared';
 import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../../utils/tekEnergyCalculations';
 import { convertKwhToNok, formatCurrency, formatNumberWithSpaces } from '../../../utils/energy';
+import { getOsloMapExportUrl } from '../../../utils/coordinateUtils';
 import { AddressLookupResponse } from '../../../services/buildingApi';
+import '../../../config/badges.css';
+import './WhiteInfoBox.css';
 
-const MAP_WIDTH = 336;
+const BOX_WIDTH = 360;
+const MAP_WIDTH = BOX_WIDTH;
 const MAP_HEIGHT = 204;
 const MAP_TOP_Y = 496;
 const SAVINGS_CARD_HEIGHT = 132;
@@ -29,9 +49,6 @@ const BADGE_ROW_Y = Math.max(
   BADGE_ROW_BASE_Y - HEADER_VERTICAL_OFFSET,
   ADDRESS_TOP_MARGIN + MIN_BADGE_GAP_FROM_ADDRESS
 );
-const BADGE_ROW_SHIFT = BADGE_ROW_Y - BADGE_ROW_BASE_Y;
-const DISTRICT_LABEL_Y = BADGE_ROW_Y + 20;
-const BUILDING_ICON_Y = BADGE_ROW_Y + 7;
 const BADGE_TOP_GAP = BADGE_ROW_Y - ADDRESS_TOP_MARGIN;
 // Compensate for the title font's ascenders so optical gap matches address-to-badge spacing.
 const SECTION_TITLE_ASCENT_ADJUSTMENT = 10;
@@ -39,14 +56,16 @@ const SECTION_TITLE_TOP_GAP = Math.max(0, BADGE_TOP_GAP - SECTION_TITLE_ASCENT_A
 const SECTION_TITLE_Y = BADGE_ROW_Y + BADGE_HEIGHT + SECTION_TITLE_TOP_GAP;
 const SECTION_TITLE_TO_INFO_GAP = MIN_BADGE_GAP_FROM_ADDRESS;
 const BASE_INFO_Y = SECTION_TITLE_Y + SECTION_TITLE_TO_INFO_GAP;
-const EDIT_BUTTON_RECT_OFFSET = -22;
-const EDIT_BUTTON_ICON_OFFSET = -12;
-const EDIT_BUTTON_TEXT_OFFSET = 0;
-const EDIT_BUTTON_RECT_Y = SECTION_TITLE_Y + EDIT_BUTTON_RECT_OFFSET;
-const EDIT_BUTTON_ICON_Y = SECTION_TITLE_Y + EDIT_BUTTON_ICON_OFFSET;
-const EDIT_BUTTON_TEXT_Y = SECTION_TITLE_Y + EDIT_BUTTON_TEXT_OFFSET;
 const INFO_ROW_GAP = 28;
-const INPUT_BASELINE_OFFSET = 18;
+const ENERGY_RATING_COLORS: Record<string, string> = {
+  A: '#097E3E',
+  B: '#32A548',
+  C: '#96C133',
+  D: '#EFE61E',
+  E: '#F7AD24',
+  F: '#EA6927',
+  G: '#E31829',
+};
 
 type TiltakSolutionSlug = {
   slug: string;
@@ -171,6 +190,7 @@ interface WhiteInfoBoxProps {
   buildingTypeName: string;
   mapCoordinates: { lat: number; lng: number } | null;
   buildingData: AddressLookupResponse;
+  newEnergyRating?: string | null;
   onExpand?: (expanded: boolean) => void;
   onBackToSolutions?: () => void;
   showYellowBox?: boolean;
@@ -190,6 +210,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   buildingTypeName,
   mapCoordinates,
   buildingData,
+  newEnergyRating = null,
   onExpand,
   onBackToSolutions,
   showYellowBox = true,
@@ -201,17 +222,20 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
 }) => {
   // State for delayed height expansion
   const [expandHeight, setExpandHeight] = React.useState(false);
-  
+
   const shouldShowYellowBox = showYellowBox && !gulListeLoading;
   const [isGulListeInfoOpen, setIsGulListeInfoOpen] = React.useState(false);
   const [isDropdownExpanded, setIsDropdownExpanded] = React.useState(false);
-  const [showDropdownContent, setShowDropdownContent] = React.useState(false);
-  const [showByantikvarTooltip, setShowByantikvarTooltip] = React.useState(false);
-  const [showKommunaltTooltip, setShowKommunaltTooltip] = React.useState(false);
-  const [showVernetTooltip, setShowVernetTooltip] = React.useState(false);
-  const [showFredetTooltip, setShowFredetTooltip] = React.useState(false);
+  const [hoveredGlossaryTerm, setHoveredGlossaryTerm] = React.useState<string | null>(null);
   const [isEditMode, setIsEditMode] = React.useState(false);
-  const DROPDOWN_EXPANSION_ADJUSTMENT = 50;
+
+  // Hent ordforklaringer fra sentralt dictionary (med fallback til statisk import)
+  const { data: dictionary } = useContentDictionary();
+
+  const glossaryEntries = React.useMemo(
+    () => dictionaryTermsToGlossary(dictionary?.glossaryTerms ?? dictionaryData.glossaryTerms ?? []),
+    [dictionary?.glossaryTerms]
+  );
   const prefersReducedMotion = usePrefersReducedMotion();
   const [hasShownSavings, setHasShownSavings] = React.useState(false);
   const [displayedSavings, setDisplayedSavings] = React.useState(0);
@@ -224,6 +248,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   const isApartmentBuilding =
     buildingTypeName === 'Store boligbygg' || buildingTypeName.toLowerCase() === 'blokk';
   const isBlockBuilding = buildingTypeName.toLowerCase() === 'blokk';
+  const buildingTypeCode = buildingData?.bygningstypeKode || buildingData?.csvData?.bygningstypekode || '';
+  const buildingTypeNameLower = (buildingTypeName || '').toLowerCase();
   const roundedSavingsKwh = React.useMemo(
     () => roundToNearestThousandValue(totalEnergySavings),
     [totalEnergySavings]
@@ -241,183 +267,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     [roundedSavingsNok]
   );
   
-  const renderVernestatusRow = (yPosition: number | string) => {
-    const parsedY = typeof yPosition === 'string' ? Number(yPosition) : yPosition;
-    const yValue = Number.isFinite(parsedY) ? parsedY : 0;
-    const top = yValue - 22;
-
-    return (
-      <foreignObject x="30" y={top} width="280" height="32">
-        <div
-          xmlns="http://www.w3.org/1999/xhtml"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.5ch',
-            fontFamily: 'Oslo Sans, sans-serif',
-            fontSize: '18px',
-            lineHeight: '28px',
-            letterSpacing: '-0.2px',
-            color: '#2A2859'
-          }}
-        >
-          <span style={{ fontWeight: 300 }}>Vernestatus:</span>
-          <span style={{ fontWeight: 500 }}>Gul liste</span>
-          <button
-            type="button"
-            onClick={() => {
-              setIsGulListeInfoOpen(true);
-              setIsDropdownExpanded(false);
-              setShowDropdownContent(false);
-              setShowByantikvarTooltip(false);
-              setShowKommunaltTooltip(false);
-              setShowVernetTooltip(false);
-              setShowFredetTooltip(false);
-            }}
-            title="Hva betyr Gul liste?"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '22px',
-              height: '22px',
-              borderRadius: '50%',
-              background: '#FFC857',
-              color: '#FFFFFF',
-              fontWeight: 700,
-              fontSize: '16px',
-              lineHeight: '22px',
-              marginLeft: '0.25ch',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer'
-            }}
-          >
-            !
-          </button>
-        </div>
-      </foreignObject>
-    );
-  };
-
-  const renderEnergyBlock = (
-    yPosition: number,
-    {
-      displayValue,
-      editableValue,
-      editable,
-      onChange
-    }: {
-      displayValue: string;
-      editable?: boolean;
-      editableValue?: string;
-      onChange?: (nextValue: string) => void;
-    }
-  ) => (
-    <foreignObject x="30" y={yPosition} width="276" height={editable ? 80 : 60}>
-      <div
-        xmlns="http://www.w3.org/1999/xhtml"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '6px',
-          fontFamily: 'Oslo Sans, sans-serif'
-        }}
-      >
-        <span
-          style={{
-            fontSize: '18px',
-            letterSpacing: '-0.2px',
-            color: '#2A2859'
-          }}
-        >
-          Estimert energiforbruk:
-        </span>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-end',
-            gap: '8px',
-            flexWrap: 'nowrap'
-          }}
-        >
-          {editable ? (
-            <div
-              style={{
-                flex: '1 1 auto',
-                minWidth: 0,
-                borderBottom: '1px solid #2A2859',
-                display: 'flex',
-                alignItems: 'flex-end',
-                gap: '6px',
-                paddingBottom: '2px'
-              }}
-            >
-              <input
-                type="text"
-                inputMode="numeric"
-                value={editableValue ?? ''}
-                onChange={(event) => {
-                  if (!onChange) {
-                    return;
-                  }
-                  const numericValue = event.target.value.replace(/[^0-9]/g, '');
-                  onChange(numericValue);
-                }}
-                style={{
-                  flex: '1 1 auto',
-                  border: 'none',
-                  fontSize: '18px',
-                  fontWeight: 500,
-                  letterSpacing: '-0.2px',
-                  color: '#2A2859',
-                  background: 'transparent',
-                  padding: 0,
-                  outline: 'none'
-                }}
-              />
-              <span
-                style={{
-                  fontSize: '16px',
-                  fontWeight: 500,
-                  letterSpacing: '-0.2px',
-                  color: '#2A2859',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                kWh/år
-              </span>
-            </div>
-          ) : (
-            <>
-              <span
-                style={{
-                  fontSize: '18px',
-                  fontWeight: 500,
-                  letterSpacing: '-0.2px',
-                  color: '#2A2859'
-                }}
-              >
-                {displayValue}
-              </span>
-              <span
-                style={{
-                  fontSize: '16px',
-                  fontWeight: 500,
-                  letterSpacing: '-0.2px',
-                  color: '#2A2859',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                kWh/år
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-    </foreignObject>
-  );
-
   React.useEffect(() => {
     if (shouldShowSavingsCard && !hasShownSavings) {
       setHasShownSavings(true);
@@ -488,35 +337,12 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   // State for address text scaling
   const [addressScale, setAddressScale] = React.useState(1);
   const textRef = React.useRef<SVGTextElement>(null);
-  
-  // Calculate dynamic box widths based on text length
-  const calculateTextWidth = (text: string, fontSize: number = 14): number => {
-    // More accurate character widths for different characters
-    let width = 0;
-    for (const char of text) {
-      if (char === ' ') width += fontSize * 0.25;
-      else if (char === '.' || char === 'i' || char === 'l') width += fontSize * 0.3;
-      else if (char.toUpperCase() === char && char !== ' ') width += fontSize * 0.7; // Uppercase
-      else width += fontSize * 0.5; // Lowercase
-    }
-    return width;
-  };
-  
-  const dynamicDistrictWidth = Math.max(
-    100, // Minimum width
-    Math.ceil(calculateTextWidth(districtName) + 52) // text width + icon (36px) + padding (16px)
-  );
 
-  // Use the display text for width calculation
-  const displayBuildingTypeName =
-    buildingTypeName === 'Store boligbygg' ? 'Blokk' : buildingTypeName;
-  const dynamicBuildingTypeWidth =
-    displayBuildingTypeName === 'Blokk'
-      ? 80 // Manuell bredde for "Blokk" - endre denne verdien
-      : Math.max(
-          100, // Minimum width
-          Math.ceil(calculateTextWidth(displayBuildingTypeName) + 43) // 14 (left padding) + 15 (icon) + 7 (gap) + text + 7 (right padding)
-        );
+  // Use the display text for building type (using central badge config)
+  const displayBuildingTypeName = getDisplayBuildingTypeName(buildingTypeName);
+
+  // Get badge configuration from central config
+  const buildingBadgeConfig = getBuildingTypeBadgeConfig(buildingTypeName);
 
   const tiltakBuildingType = React.useMemo(
     () => resolveTiltakBuildingType(buildingData, buildingTypeName),
@@ -595,6 +421,79 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   const [editedAreal, setEditedAreal] = React.useState(savedAreal);
   const [editedArealLeilighet, setEditedArealLeilighet] = React.useState(savedArealLeilighet);
   const [editedEnergiforbruk, setEditedEnergiforbruk] = React.useState(savedEnergiforbruk);
+
+  const energyRatingLabel = hasEnovaRating ? 'Energikarakter' : 'Estimert energikarakter';
+  const computedEnergyRating = React.useMemo(() => {
+    if (hasEnovaRating) {
+      return buildingData?.energiattest?.energikarakter?.toUpperCase() ?? null;
+    }
+
+    const consumptionNum = Number(savedEnergiforbruk);
+    const areaCandidate = savedAreal || (typeof buildingData?.bruksarealM2 === 'number'
+      ? String(buildingData.bruksarealM2)
+      : buildingData?.csvData?.bruksareal_totalt);
+    const areaNum = Number(areaCandidate);
+
+    if (!Number.isFinite(consumptionNum) || consumptionNum <= 0 || !Number.isFinite(areaNum) || areaNum <= 0) {
+      return null;
+    }
+
+    const intensity = consumptionNum / areaNum;
+    const isSmallHouse = ['11', '12', '13'].includes(buildingTypeCode) ||
+      buildingTypeNameLower.includes('enebolig') ||
+      buildingTypeNameLower.includes('tomannsbolig') ||
+      buildingTypeNameLower.includes('rekkehus') ||
+      buildingTypeNameLower.includes('kjedehus');
+
+    const isBlockCandidate = ['14', '15', '16', '17'].includes(buildingTypeCode) ||
+      buildingTypeNameLower.includes('blokk') ||
+      buildingTypeNameLower.includes('leilighet') ||
+      buildingTypeNameLower.includes('boligbygg') ||
+      buildingTypeNameLower === 'store boligbygg';
+
+    let rating = 'G';
+    if (isSmallHouse) {
+      if (intensity <= 95 + 800 / areaNum) rating = 'A';
+      else if (intensity <= 120 + 1600 / areaNum) rating = 'B';
+      else if (intensity <= 145 + 2500 / areaNum) rating = 'C';
+      else if (intensity <= 175 + 4100 / areaNum) rating = 'D';
+      else if (intensity <= 205 + 5800 / areaNum) rating = 'E';
+      else if (intensity <= 250 + 8000 / areaNum) rating = 'F';
+    } else if (isBlockCandidate) {
+      if (intensity <= 85 + 600 / areaNum) rating = 'A';
+      else if (intensity <= 95 + 1000 / areaNum) rating = 'B';
+      else if (intensity <= 100 + 1500 / areaNum) rating = 'C';
+      else if (intensity <= 135 + 2200 / areaNum) rating = 'D';
+      else if (intensity <= 160 + 3000 / areaNum) rating = 'E';
+      else if (intensity <= 200 + 4000 / areaNum) rating = 'F';
+    } else {
+      if (intensity <= 90 + 700 / areaNum) rating = 'A';
+      else if (intensity <= 107.5 + 1300 / areaNum) rating = 'B';
+      else if (intensity <= 122.5 + 2000 / areaNum) rating = 'C';
+      else if (intensity <= 155 + 3150 / areaNum) rating = 'D';
+      else if (intensity <= 182.5 + 4400 / areaNum) rating = 'E';
+      else if (intensity <= 225 + 6000 / areaNum) rating = 'F';
+    }
+
+    return rating;
+  }, [
+    buildingData?.energiattest?.energikarakter,
+    buildingData?.bruksarealM2,
+    buildingData?.csvData?.bruksareal_totalt,
+    buildingTypeCode,
+    buildingTypeNameLower,
+    hasEnovaRating,
+    savedAreal,
+    savedEnergiforbruk,
+  ]);
+
+  const normalizedCurrentRating = computedEnergyRating?.toUpperCase() ?? null;
+  const normalizedNewRating = newEnergyRating ? newEnergyRating.toUpperCase() : null;
+  const shouldShowNewRating = Boolean(
+    normalizedCurrentRating &&
+      normalizedNewRating &&
+      normalizedNewRating !== normalizedCurrentRating
+  );
   
   // Track if user has manually edited energy consumption
   const [hasUserEditedEnergy, setHasUserEditedEnergy] = React.useState(false);
@@ -636,75 +535,24 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     }
   }, [editedByggeaar, editedAreal, isEditMode, buildingData, buildingTypeName, hasUserEditedEnergy]);
   
-  // Calculate input width based on content
-  const calculateInputWidth = (value: string) => {
-    const minWidth = 60; // Increased min width for better appearance
-    const charWidth = 10; // Increased for 18px font to prevent scrolling
-    const padding = 20; // Extra padding for cursor and breathing room
-    return Math.max(minWidth, value.length * charWidth + padding);
-  };
-
-  const energyBlockHeight = isEditMode ? 80 : 60;
+  const energyBlockHeight = isEditMode ? 108 : 96;
   const trimmedApartmentArea = (savedArealLeilighet || '').trim();
   const hasApartmentAreaValue = trimmedApartmentArea.length > 0;
   const shouldShowApartmentAreaRow = isBlockBuilding && (isEditMode || hasApartmentAreaValue);
   const missingVernestatusGap = shouldShowYellowBox ? 0 : INFO_ROW_GAP;
 
-  const infoLayout = React.useMemo(() => {
+  // Calculate the last info row Y position for determining accordion height
+  const lastInfoBaseline = React.useMemo(() => {
     let cursor = BASE_INFO_Y;
-    const byggeaarY = cursor;
-    cursor += INFO_ROW_GAP;
-
-    const arealY = cursor;
-    cursor += INFO_ROW_GAP;
-
-    let eierTypeY: number | null = null;
-    if (isBlockBuilding) {
-      eierTypeY = cursor;
-      cursor += INFO_ROW_GAP;
-    }
-
-    let vernestatusY: number | null = null;
-    if (shouldShowYellowBox) {
-      vernestatusY = cursor;
-      cursor += INFO_ROW_GAP;
-    }
-
-    let apartmentAreaY: number | null = null;
-    if (shouldShowApartmentAreaRow) {
-      apartmentAreaY = cursor;
-      cursor += INFO_ROW_GAP;
-    }
-
-    const lastInfoBaseline =
-      (shouldShowApartmentAreaRow && apartmentAreaY !== null)
-        ? apartmentAreaY
-        : shouldShowYellowBox && vernestatusY !== null
-          ? vernestatusY
-          : isBlockBuilding && eierTypeY !== null
-            ? eierTypeY
-            : arealY;
-
-    return {
-      byggeaarY,
-      arealY,
-      eierTypeY,
-      vernestatusY,
-      apartmentAreaY,
-      lastInfoBaseline
-    };
+    cursor += INFO_ROW_GAP; // byggeaar
+    cursor += INFO_ROW_GAP; // areal
+    if (isBlockBuilding) cursor += INFO_ROW_GAP; // eierType
+    if (shouldShowYellowBox) cursor += INFO_ROW_GAP; // vernestatus
+    if (shouldShowApartmentAreaRow) cursor += INFO_ROW_GAP; // apartmentArea
+    return cursor - INFO_ROW_GAP; // Go back one to get the last row's Y
   }, [isBlockBuilding, shouldShowYellowBox, shouldShowApartmentAreaRow]);
 
-  const {
-    byggeaarY,
-    arealY,
-    eierTypeY,
-    vernestatusY,
-    apartmentAreaY,
-    lastInfoBaseline
-  } = infoLayout;
-
-  const energyInfoTop = (lastInfoBaseline ?? arealY) + INFO_ROW_GAP + missingVernestatusGap;
+  const energyInfoTop = lastInfoBaseline + INFO_ROW_GAP + missingVernestatusGap;
   const energyBlockBottom = energyInfoTop + energyBlockHeight;
   const precedingContentBottom = energyBlockBottom;
   const totalAvailableCardSpace =
@@ -743,22 +591,13 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
       const naturalWidth = bbox.width;
       
       // Calculate scale to fit within box with 30px margins
-      const availableWidth = 336 - 60; // 30px margin on each side
+      const availableWidth = BOX_WIDTH - 60; // 30px margin on each side
       const scale = Math.min(1, availableWidth / naturalWidth);
       
       setAddressScale(scale);
     }
   }, [addressOnly]);
 
-  React.useEffect(() => {
-    if (isDropdownExpanded) {
-      const timer = setTimeout(() => {
-        setShowDropdownContent(true);
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-    setShowDropdownContent(false);
-  }, [isDropdownExpanded]);
   
   // Handle sequential animation - expand height after width
   React.useEffect(() => {
@@ -774,8 +613,9 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   }, [isExpanded]);
   
   // Calculate expanded height to fill screen with equal margins
-  // Total container height is 900px, current bottom is 55px
-  const expandedBottom = 55; // Keep same bottom position
+  // Align bottom with tiltak list and building
+  // Increased from 64 to 120 to make room for "Hvordan gjennomføre" button
+  const expandedBottom = 120;
 
 const tiltakComponent = React.useMemo(
   () => selectedTiltakSlug ? TILTAK_COMPONENT_MAP[selectedTiltakSlug] : undefined,
@@ -803,29 +643,58 @@ const tiltakPreview = selectedTiltakSlug && tiltakComponent ? (
     </div>
   ) : null;
   
+  // Shadow dimensions match visible area of white info box
+  // Layout sentrert med 24px Punkt-spacing: info box left = 1212px
+  const shadowWidth = isExpanded ? 840 : 360;
+  const shadowHeight = 790 - 90; // Subtract clip-path top inset
+  const shadowLeft = isExpanded ? 1212 - 480 : 1212; // Adjust for transform
+
   return (
-    <div
-      style={{
-        position: 'absolute',
-        left: 'calc(50% - 235.5px - 74px - 336px)',
-        bottom: `${expandedBottom}px`,
-        width: 840,
-        height: 790,
-        clipPath: expandHeight 
-          ? 'inset(0 0 0 0)'  // Fully expanded
-          : isExpanded 
-            ? 'inset(90px 0 0 0)'  // Width expanded, height not
-            : 'inset(90px 504px 0 0)',  // Fully collapsed
-        opacity: showHeader ? 1 : 0,
-        transition: `opacity 1s ease-in-out 0.5s, clip-path ${
-          expandHeight && isExpanded ? '0.6s' : '0.8s'
-        } ease-in-out ${
-          expandHeight && isExpanded ? '0s' : '0s'
-        }`,
-        zIndex: 1000,
-        overflow: 'hidden'
-      }}
-    >
+    <>
+      {/* Shadow layer - outside clip-path to be visible */}
+      <div
+        style={{
+          position: 'absolute',
+          left: `${shadowLeft}px`,
+          bottom: `${expandedBottom}px`,
+          width: shadowWidth,
+          height: shadowHeight,
+          backgroundColor: 'white',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)',
+          opacity: showHeader ? 1 : 0,
+          transition: `opacity 1s ease-in-out 0.5s, width 0.8s ease-in-out, left 0.8s ease-in-out`,
+          zIndex: 999,
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          /* Layout sentrert med 24px Punkt-spacing:
+           * Info box left = 1212px (156 + 488 + 24 + 520 + 24)
+           * Container is 840px wide, but only 360px visible in collapsed state
+           * When expanded: translateX(-480px) moves container to left
+           */
+          left: '1212px',
+          bottom: `${expandedBottom}px`,
+          width: 840,
+          height: 790,
+          transform: isExpanded ? 'translateX(-480px)' : 'translateX(0)',
+          clipPath: expandHeight
+            ? 'inset(0 0 0 0)'  // Fully expanded
+            : isExpanded
+              ? 'inset(90px 0 0 0)'  // Width expanded, height not
+              : 'inset(90px 480px 0 0)',  // Fully collapsed - clip from RIGHT side (content is on left)
+          opacity: showHeader ? 1 : 0,
+          transition: `opacity 1s ease-in-out 0.5s, transform 0.8s ease-in-out, clip-path ${
+            expandHeight && isExpanded ? '0.6s' : '0.8s'
+          } ease-in-out ${
+            expandHeight && isExpanded ? '0s' : '0s'
+          }`,
+          zIndex: 1000,
+          overflow: 'hidden'
+        }}
+      >
       <div
         style={{
           position: 'absolute',
@@ -868,423 +737,280 @@ const tiltakPreview = selectedTiltakSlug && tiltakComponent ? (
         >
           {addressOnly}
         </text>
-        <rect width={dynamicDistrictWidth} height="30" transform={`translate(30 ${BADGE_ROW_Y})`} fill="#C7F6C9"/>
-        <g transform={`translate(0, ${BADGE_ROW_SHIFT})`}>
-          <path d="M44.7913 104.75C44.7913 105.302 45.2393 105.75 45.7913 105.75C46.3433 105.75 46.7913 105.302 46.7913 104.75C46.7913 104.198 46.3433 103.75 45.7913 103.75C45.2393 103.75 44.7913 104.198 44.7913 104.75Z" fill="#2A2859"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M42.32 104.804C42.32 102.886 43.874 101.332 45.7915 101.332C47.7086 101.332 49.263 102.887 49.263 104.804C49.263 105.421 49.1009 106.016 48.7931 106.547L53.7838 110.112L51.0298 113.416L47.8308 113.873L45.3703 116.825L38.1543 111.671L40.9083 108.366L43.7566 107.959L42.8624 106.668C42.51 106.116 42.32 105.473 42.32 104.804ZM46.997 109.218L48.239 107.38L52.3253 110.299L50.9016 112.007L46.997 109.218ZM45.8276 110.948L46.4369 110.047L49.9548 112.559L47.4959 112.911L42.2737 109.181L44.3935 108.878L45.8276 110.948ZM48.263 104.804C48.263 103.439 47.1563 102.332 45.7915 102.332C44.4263 102.332 43.32 103.439 43.32 104.804C43.32 105.281 43.4549 105.737 43.6949 106.114L45.8173 109.177L47.8769 106.13C48.1027 105.776 48.2348 105.371 48.2589 104.946L48.263 104.804ZM46.7501 113.607L41.1662 109.618L39.6123 111.483L45.1958 115.471L46.7501 113.607Z" fill="#2A2859"/>
-        </g>
-        <text 
-          x="66" 
-          y={DISTRICT_LABEL_Y} 
-          fontFamily="Oslo Sans, sans-serif" 
-          fontWeight="400"
-          fontStyle="normal"
-          fontSize="14" 
-          letterSpacing="-0.2"
-          fill="#2A2859"
-        >
-          {districtName}
-        </text>
-        
-        <rect width={dynamicBuildingTypeWidth} height="30" transform={`translate(${30 + dynamicDistrictWidth + 8} ${BADGE_ROW_Y})`} fill="#D1F9FF"/>
-        {/* Building type icon */}
-        <g transform={`translate(${30 + dynamicDistrictWidth + 8 + 14} ${BUILDING_ICON_Y})`}>
-          <path fillRule="evenodd" clipRule="evenodd" d="M13.5 14.43V0.429993H5.5V2.92999H1V14.43H0V15.43H15V14.43H13.5ZM5.5 14.43H4V11.43H5.5V14.43ZM7.5 14.43H6.5V10.43H3V14.43H2V3.92999H7.5V14.43ZM12.5 14.43H8.5V13.43H11.5V12.43H8.5V11.43H11.5V10.43H8.5V9.42999H11.5V8.42999H8.5V7.42999H11.5V6.42999H8.5V5.42999H11.5V4.42999H8.5V3.42999H11.5V2.42999H7.5V2.92999H6.5V1.42999H12.5V14.43Z" fill="#2A2859"/>
-          <path d="M3 7.86499H4V8.93499H3V7.86499ZM5.5 7.86499H6.5V8.93499H5.5V7.86499ZM3 5.35999H4V6.42999H3V5.35999ZM5.5 5.35999H6.5V6.42999H5.5V5.35999Z" fill="#2A2859"/>
-        </g>
-        <text 
-          x={30 + dynamicDistrictWidth + 8 + 36} 
-          y={DISTRICT_LABEL_Y} 
-          fontFamily="Oslo Sans, sans-serif" 
-          fontWeight="400"
-          fontStyle="normal"
-          fontSize="14" 
-          letterSpacing="-0.2"
-          fill="#2A2859"
-        >
-          {displayBuildingTypeName}
-        </text>
-        
-        {/* Nøkkelinformasjon text */}
-        <text 
-          x="30" 
-          y={SECTION_TITLE_Y} 
-          fontFamily="Oslo Sans, sans-serif" 
-          fontWeight="500"
-          fontStyle="normal"
-          fontSize="20" 
-          letterSpacing="-0.2"
-          fill="#2A2859"
-        >
-          Nøkkelinformasjon
-        </text>
-        
-        {/* Edit text and icon next to title */}
-        <g 
-          style={{ cursor: 'pointer' }}
-          onClick={() => {
-            if (isEditMode) {
-              // Save changes
-              setSavedByggeaar(editedByggeaar);
-              setSavedAreal(editedAreal);
-              setSavedArealLeilighet(editedArealLeilighet);
-              setSavedEnergiforbruk(editedEnergiforbruk);
-              setIsEditMode(false);
-              // Call the callback to update parent component
-              if (onUpdateBuildingData) {
-                onUpdateBuildingData(editedByggeaar, editedAreal, editedArealLeilighet, editedEnergiforbruk);
-              }
-            } else {
-              // Enter edit mode
-              setEditedByggeaar(savedByggeaar);
-              setEditedAreal(savedAreal);
-              setEditedArealLeilighet(savedArealLeilighet);
-              setEditedEnergiforbruk(savedEnergiforbruk);
-              setIsEditMode(true);
-              setHasUserEditedEnergy(false); // Reset when entering edit mode
-            }
-          }}
-        >
-          <rect x="218" y={EDIT_BUTTON_RECT_Y} width="120" height="32" fill="transparent" />
-          <text 
-            x="230" 
-            y={EDIT_BUTTON_TEXT_Y} 
-            fontFamily="Oslo Sans, sans-serif" 
-            fontWeight="400"
-            fontStyle="normal"
-            fontSize="16" 
-              letterSpacing="-0.2"
-            fill="#2A2859"
+        {/* Badges med PktTag - bruker sentral badge-konfigurasjon */}
+        <foreignObject x="30" y={BADGE_ROW_Y} width={BOX_WIDTH - 60} height="36">
+          <div
+            xmlns="http://www.w3.org/1999/xhtml"
+            className="white-info-box__badges"
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '8px',
+              alignItems: 'center'
+            }}
           >
-            ({isEditMode ? 'Lagre' : 'Rediger'}
-          </text>
-          <svg x="300" y={EDIT_BUTTON_ICON_Y} width="16" height="20" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path fillRule="evenodd" clipRule="evenodd" d="M19.5517 5.91012L16.0242 2.38184L5.73471 12.6705L4.51004 17.4114L9.25105 16.1875L9.97883 15.4598L16.982 8.47811L16.9828 8.47895L17.5252 7.93657L17.8668 7.59598L17.8663 7.59546L19.5517 5.91012ZM16.0237 4.14888L17.7837 5.9095L16.9825 6.71075L15.2225 4.95075L16.0237 4.14888ZM7.90938 12.2626L9.65959 14.0124L16.0975 7.5945L14.3381 5.8345L7.90938 12.2626ZM7.02558 13.1464L8.77476 14.8953L8.60808 15.062L6.24995 15.6708L6.85933 13.3126L7.02558 13.1464Z" fill="#2A2859"/>
-            <path d="M8.43789 4.51525V3.26525H0.00976562V20.7503H19.9969L19.9935 13.1931L18.7435 13.1937L18.7462 19.5001H1.25933V4.51513L8.43789 4.51525Z" fill="#2A2859"/>
-          </svg>
-          <text 
-            x="318" 
-            y={EDIT_BUTTON_TEXT_Y} 
-            fontFamily="Oslo Sans, sans-serif" 
-            fontWeight="400"
-            fontStyle="normal"
-            fontSize="16" 
-              letterSpacing="-0.2"
-            fill="#2A2859"
-          >
-            )
-          </text>
-        </g>
+            {districtName && (
+              <PktTag
+                skin={DISTRICT_BADGE.skin}
+                aria-label={`${DISTRICT_BADGE.ariaLabelPrefix}: ${districtName}`}
+              >
+                <PktIcon name={DISTRICT_BADGE.iconName} />
+                <span>{districtName}</span>
+              </PktTag>
+            )}
+            {displayBuildingTypeName && (
+              <PktTag
+                skin={buildingBadgeConfig.skin}
+                aria-label={`${buildingBadgeConfig.ariaLabelPrefix}: ${displayBuildingTypeName}`}
+              >
+                <PktIcon name={buildingBadgeConfig.iconName} />
+                <span>{displayBuildingTypeName}</span>
+              </PktTag>
+            )}
+          </div>
+        </foreignObject>
         
-        {/* Building info under Nøkkelinformasjon */}
-        {!isEditMode ? (
-          <>
-            <text 
-              x="30" 
-              y={byggeaarY} 
-              fontFamily="Oslo Sans, sans-serif" 
-              fontSize="18" 
-                  letterSpacing="-0.2"
-              fill="#2A2859"
-            >
-              <tspan fontWeight="300">Byggeår: </tspan>
-              <tspan fontWeight="500">{savedByggeaar || 'Ukjent'}</tspan>
-            </text>
-            <text 
-              x="30" 
-              y={arealY} 
-              fontFamily="Oslo Sans, sans-serif" 
-              fontSize="18" 
-                  letterSpacing="-0.2"
-              fill="#2A2859"
-            >
-              <tspan fontWeight="300">Areal: </tspan>
-              <tspan fontWeight="500">{savedAreal || 'Ukjent'} m²</tspan>
-            </text>
-            {isBlockBuilding && eierTypeY !== null && (
-              <text 
-                x="30" 
-                y={eierTypeY} 
-                fontFamily="Oslo Sans, sans-serif" 
-                fontSize="18" 
-                      letterSpacing="-0.2"
-                fill="#2A2859"
-              >
-                <tspan fontWeight="300">Eiertype: </tspan>
-                <tspan fontWeight="500">Borettslag</tspan>
-              </text>
-            )}
-            {shouldShowYellowBox && vernestatusY !== null && renderVernestatusRow(vernestatusY)}
-            {shouldShowApartmentAreaRow && apartmentAreaY !== null && (
-              <text 
-                x="30" 
-                y={apartmentAreaY} 
-                fontFamily="Oslo Sans, sans-serif" 
-                fontSize="18" 
-                      letterSpacing="-0.2"
-                fill="#2A2859"
-              >
-                <tspan fontWeight="300">Areal Leilighet: </tspan>
-                <tspan fontWeight="500">{savedArealLeilighet || 'Ukjent'} m²</tspan>
-              </text>
-            )}
-            {renderEnergyBlock(energyInfoTop, {
-              displayValue: savedEnergyDisplayValue
-            })}
-          </>
-        ) : (
-          <>
-            {/* Edit mode - show input fields */}
-            <text 
-              x="30" 
-              y={byggeaarY} 
-              fontFamily="Oslo Sans, sans-serif" 
-              fontSize="18" 
-                  letterSpacing="-0.2"
-              fill="#2A2859"
-            >
-              <tspan fontWeight="300">Byggeår: </tspan>
-            </text>
-            <foreignObject x="106" y={byggeaarY - INPUT_BASELINE_OFFSET} width={calculateInputWidth(editedByggeaar)} height="24">
-              <input
-                xmlns="http://www.w3.org/1999/xhtml"
-                type="text"
-                value={editedByggeaar}
-                onChange={(e) => setEditedByggeaar(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  border: 'none',
-                  borderBottom: '1px solid #2A2859',
-                  padding: '0',
-                  fontFamily: 'Oslo Sans, sans-serif',
-                  fontSize: '18px',
-                  lineHeight: '28px',
-                  letterSpacing: '-0.2px',
-                  fontWeight: '500',
-                  color: '#2A2859',
-                  background: 'transparent',
-                  outline: 'none'
+        {/* Nøkkelinformasjon - enkel seksjon med synlig innhold */}
+        <foreignObject
+          x="16"
+          y={SECTION_TITLE_Y - 12}
+          width={BOX_WIDTH - 32}
+          height={energyBlockBottom - SECTION_TITLE_Y + 40}
+        >
+          <div
+            xmlns="http://www.w3.org/1999/xhtml"
+            className="white-info-box__section"
+          >
+            <div className="white-info-box__section-header">
+              <h3 className="white-info-box__section-title">Nøkkelinformasjon</h3>
+              <PktButton
+                skin="tertiary"
+                size="small"
+                variant="icon-left"
+                iconName={isEditMode ? 'check' : 'edit'}
+                onClick={() => {
+                  if (isEditMode) {
+                    setSavedByggeaar(editedByggeaar);
+                    setSavedAreal(editedAreal);
+                    setSavedArealLeilighet(editedArealLeilighet);
+                    setSavedEnergiforbruk(editedEnergiforbruk);
+                    setIsEditMode(false);
+                    if (onUpdateBuildingData) {
+                      onUpdateBuildingData(editedByggeaar, editedAreal, editedArealLeilighet, editedEnergiforbruk);
+                    }
+                  } else {
+                    setEditedByggeaar(savedByggeaar);
+                    setEditedAreal(savedAreal);
+                    setEditedArealLeilighet(savedArealLeilighet);
+                    setEditedEnergiforbruk(savedEnergiforbruk);
+                    setIsEditMode(true);
+                    setHasUserEditedEnergy(false);
+                  }
                 }}
-              />
-            </foreignObject>
-            
-            <text 
-              x="30" 
-              y={arealY} 
-              fontFamily="Oslo Sans, sans-serif" 
-              fontSize="18" 
-                  letterSpacing="-0.2"
-              fill="#2A2859"
-            >
-              <tspan fontWeight="300">Areal: </tspan>
-            </text>
-            <foreignObject x="83" y={arealY - INPUT_BASELINE_OFFSET} width={calculateInputWidth(editedAreal)} height="24">
-              <input
-                xmlns="http://www.w3.org/1999/xhtml"
-                type="text"
-                value={editedAreal}
-                onChange={(e) => setEditedAreal(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  border: 'none',
-                  borderBottom: '1px solid #2A2859',
-                  padding: '0',
-                  fontFamily: 'Oslo Sans, sans-serif',
-                  fontSize: '18px',
-                  lineHeight: '28px',
-                  letterSpacing: '-0.2px',
-                  fontWeight: '500',
-                  color: '#2A2859',
-                  background: 'transparent',
-                  outline: 'none'
-                }}
-              />
-            </foreignObject>
-            <text 
-              x={83 + calculateInputWidth(editedAreal) + 3}
-              y={arealY} 
-              fontFamily="Oslo Sans, sans-serif" 
-              fontSize="18" 
-                  letterSpacing="-0.2"
-              fill="#2A2859"
-              fontWeight="500"
-            >
-              m²
-            </text>
-            
-            {isBlockBuilding && eierTypeY !== null && (
-              <text 
-                x="30" 
-                y={eierTypeY} 
-                fontFamily="Oslo Sans, sans-serif" 
-                fontSize="18" 
-                      letterSpacing="-0.2"
-                fill="#2A2859"
               >
-                <tspan fontWeight="300">Eiertype: </tspan>
-                <tspan fontWeight="500">Borettslag</tspan>
-              </text>
-            )}
-            
-            {shouldShowYellowBox && vernestatusY !== null && renderVernestatusRow(vernestatusY)}
-            
-            
-            {shouldShowApartmentAreaRow && apartmentAreaY !== null && (
-              <>
-                <text 
-                  x="30" 
-                  y={apartmentAreaY} 
-                  fontFamily="Oslo Sans, sans-serif" 
-                  fontSize="18" 
-                          letterSpacing="-0.2"
-                  fill="#2A2859"
-                >
-                  <tspan fontWeight="300">Areal Leilighet: </tspan>
-                </text>
-                <foreignObject
-                  x="153"
-                  y={apartmentAreaY - INPUT_BASELINE_OFFSET}
-                  width={calculateInputWidth(editedArealLeilighet)}
-                  height="24"
-                >
-                  <input
-                    xmlns="http://www.w3.org/1999/xhtml"
-                    type="text"
-                    value={editedArealLeilighet}
-                    onChange={(e) => setEditedArealLeilighet(e.target.value)}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      border: 'none',
-                      borderBottom: '1px solid #2A2859',
-                      padding: '0',
-                      fontFamily: 'Oslo Sans, sans-serif',
-                      fontSize: '18px',
-                      lineHeight: '28px',
-                      letterSpacing: '-0.2px',
-                      fontWeight: '500',
-                      color: '#2A2859',
-                      background: 'transparent',
-                      outline: 'none'
-                    }}
-                  />
-                </foreignObject>
-                <text 
-                  x={153 + calculateInputWidth(editedArealLeilighet) + 3}
-                  y={apartmentAreaY} 
-                  fontFamily="Oslo Sans, sans-serif" 
-                  fontSize="18" 
-                          letterSpacing="-0.2"
-                  fill="#2A2859"
-                  fontWeight="500"
-                >
-                  m²
-                </text>
-              </>
-            )}
-            
-            {renderEnergyBlock(energyInfoTop, {
-              displayValue: savedEnergyDisplayValue,
-              editable: true,
-              editableValue: editedEnergiforbruk,
-              onChange: (value) => {
-                setEditedEnergiforbruk(value);
-                setHasUserEditedEnergy(true);
-              }
-            })}
-          </>
-        )}
+                {isEditMode ? 'Lagre' : 'Rediger'}
+              </PktButton>
+            </div>
+            <div className="white-info-box__key-info">
+              {!isEditMode ? (
+                <>
+                  <div className="white-info-box__info-row">
+                    <span className="white-info-box__info-label">Byggeår:</span>
+                    <span className="white-info-box__info-value">{savedByggeaar || 'Ukjent'}</span>
+                  </div>
+                  <div className="white-info-box__info-row">
+                    <span className="white-info-box__info-label">Areal:</span>
+                    <span className="white-info-box__info-value">{savedAreal || 'Ukjent'} m²</span>
+                  </div>
+                  {isBlockBuilding && (
+                    <div className="white-info-box__info-row">
+                      <span className="white-info-box__info-label">Eiertype:</span>
+                      <span className="white-info-box__info-value">Borettslag</span>
+                    </div>
+                  )}
+                  {shouldShowYellowBox && (
+                    <div className="white-info-box__info-row white-info-box__info-row--vernestatus">
+                      <span className="white-info-box__info-label">Vernestatus:</span>
+                      <span className="white-info-box__info-value">Gul liste</span>
+                      <button
+                        type="button"
+                        className="white-info-box__vernestatus-button"
+                        onClick={() => {
+                          setIsGulListeInfoOpen(true);
+                          setHoveredGlossaryTerm(null);
+                        }}
+                        title="Hva betyr Gul liste?"
+                      >
+                        !
+                      </button>
+                    </div>
+                  )}
+                  {shouldShowApartmentAreaRow && (
+                    <div className="white-info-box__info-row">
+                      <span className="white-info-box__info-label">Areal Leilighet:</span>
+                      <span className="white-info-box__info-value">{savedArealLeilighet || 'Ukjent'} m²</span>
+                    </div>
+                  )}
+                  <div className="white-info-box__energy-block">
+                    <div className="white-info-box__energy-rating">
+                      <span className="white-info-box__energy-rating-label">{energyRatingLabel}:</span>
+                      <div className="white-info-box__energy-rating-value">
+                        {normalizedCurrentRating ? (
+                          <span
+                            className="white-info-box__rating-box"
+                            style={{ backgroundColor: ENERGY_RATING_COLORS[normalizedCurrentRating] }}
+                          >
+                            {normalizedCurrentRating}
+                          </span>
+                        ) : (
+                          <span className="white-info-box__energy-rating-empty">Ukjent</span>
+                        )}
+                        {shouldShowNewRating && normalizedNewRating ? (
+                          <>
+                            <span className="white-info-box__rating-arrow">{'\u2192'}</span>
+                            <span
+                              className="white-info-box__rating-box white-info-box__rating-box--new"
+                              style={{ backgroundColor: ENERGY_RATING_COLORS[normalizedNewRating] }}
+                            >
+                              {normalizedNewRating}
+                            </span>
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
+                    <span className="white-info-box__energy-label">Estimert energiforbruk:</span>
+                    <div className="white-info-box__energy-value">
+                      <span className="white-info-box__energy-amount">{savedEnergyDisplayValue}</span>
+                      <span className="white-info-box__energy-unit">kWh/år</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="white-info-box__edit-row">
+                    <label className="white-info-box__edit-label" htmlFor="edit-byggeaar-desktop">Byggeår:</label>
+                    <input
+                      id="edit-byggeaar-desktop"
+                      type="text"
+                      inputMode="numeric"
+                      className="white-info-box__edit-input"
+                      value={editedByggeaar}
+                      onChange={(e) => setEditedByggeaar(e.target.value.replace(/[^0-9]/g, ''))}
+                    />
+                  </div>
+                  <div className="white-info-box__edit-row">
+                    <label className="white-info-box__edit-label" htmlFor="edit-areal-desktop">Areal (m²):</label>
+                    <input
+                      id="edit-areal-desktop"
+                      type="text"
+                      inputMode="numeric"
+                      className="white-info-box__edit-input"
+                      value={editedAreal}
+                      onChange={(e) => setEditedAreal(e.target.value.replace(/[^0-9]/g, ''))}
+                    />
+                  </div>
+                  {isBlockBuilding && (
+                    <>
+                      <div className="white-info-box__info-row">
+                        <span className="white-info-box__info-label">Eiertype:</span>
+                        <span className="white-info-box__info-value">Borettslag</span>
+                      </div>
+                      <div className="white-info-box__edit-row">
+                        <label className="white-info-box__edit-label" htmlFor="edit-areal-leilighet-desktop">Areal leilighet (m²):</label>
+                        <input
+                          id="edit-areal-leilighet-desktop"
+                          type="text"
+                          inputMode="numeric"
+                          className="white-info-box__edit-input"
+                          value={editedArealLeilighet}
+                          onChange={(e) => setEditedArealLeilighet(e.target.value.replace(/[^0-9]/g, ''))}
+                        />
+                      </div>
+                    </>
+                  )}
+                  {shouldShowYellowBox && (
+                    <div className="white-info-box__info-row white-info-box__info-row--vernestatus">
+                      <span className="white-info-box__info-label">Vernestatus:</span>
+                      <span className="white-info-box__info-value">Gul liste</span>
+                      <button
+                        type="button"
+                        className="white-info-box__vernestatus-button"
+                        onClick={() => {
+                          setIsGulListeInfoOpen(true);
+                          setHoveredGlossaryTerm(null);
+                        }}
+                        title="Hva betyr Gul liste?"
+                      >
+                        !
+                      </button>
+                    </div>
+                  )}
+                  <div className="white-info-box__edit-row">
+                    <label className="white-info-box__edit-label" htmlFor="edit-energi-desktop">Energiforbruk (kWh/år):</label>
+                    <input
+                      id="edit-energi-desktop"
+                      type="text"
+                      inputMode="numeric"
+                      className="white-info-box__edit-input"
+                      value={editedEnergiforbruk}
+                      onChange={(e) => {
+                        setEditedEnergiforbruk(e.target.value.replace(/[^0-9]/g, ''));
+                        setHasUserEditedEnergy(true);
+                      }}
+                    />
+                  </div>
+                  <div className="white-info-box__edit-actions">
+                    <PktButton
+                      skin="secondary"
+                      size="small"
+                      onClick={() => {
+                        setEditedByggeaar(savedByggeaar);
+                        setEditedAreal(savedAreal);
+                        setEditedArealLeilighet(savedArealLeilighet);
+                        setEditedEnergiforbruk(savedEnergiforbruk);
+                        setIsEditMode(false);
+                      }}
+                    >
+                      Avbryt
+                    </PktButton>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </foreignObject>
         {shouldShowSavingsCard && (
           <foreignObject
-            x="30"
+            x="16"
             y={savingsCardY}
-            width="276"
+            width={BOX_WIDTH - 32}
             height={SAVINGS_CARD_HEIGHT}
             aria-label={`Estimert besparelse ${formattedSavingsCurrency}`}
           >
             <div
               xmlns="http://www.w3.org/1999/xhtml"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                width: '100%',
-                height: '100%',
-                padding: '18px 22px',
-                borderRadius: 0,
-                background: '#C7F6C9',
-                boxShadow: '0px 18px 38px rgba(17, 59, 50, 0.15)',
-                fontFamily: 'Oslo Sans, sans-serif',
-                color: '#113B32',
-                opacity: shouldAnimateSavingsCardIntro ? 0 : 1,
-                transform: shouldAnimateSavingsCardIntro ? 'scale(0.96)' : 'scale(1)',
-                transition: prefersReducedMotion
-                  ? 'opacity 200ms ease-out'
-                  : 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms ease-out',
-                transformOrigin: 'left center',
-                border: '1px solid rgba(17, 59, 50, 0.08)'
-              }}
+              className={`white-info-box__savings-card ${
+                shouldAnimateSavingsCardIntro
+                  ? 'white-info-box__savings-card--animating'
+                  : 'white-info-box__savings-card--visible'
+              }`}
             >
-              <span
-                style={{
-                  textTransform: 'uppercase',
-                  fontSize: '12px',
-                  letterSpacing: '0.08em',
-                  fontWeight: 600,
-                  color: '#1B5145'
-                }}
-              >
+              <span className="white-info-box__savings-label">
                 Estimert besparelse
               </span>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  gap: '8px',
-                  color: '#102C2C',
-                  flexWrap: 'nowrap',
-                  width: '100%'
-                }}
-              >
-                <div
-                  style={{
-                    flex: '1 1 auto',
-                    minWidth: 0,
-                    display: 'flex',
-                    marginRight: '4px'
-                  }}
-                >
+              <div className="white-info-box__savings-value">
+                <div className="white-info-box__savings-amount-wrapper">
                   <RollingDigitsDisplay
                     value={displayedSavings}
                     prefersReducedMotion={prefersReducedMotion}
                   />
                 </div>
-                <span
-                  style={{
-                    fontSize: '18px',
-                    fontWeight: 600,
-                    lineHeight: '24px',
-                    paddingBottom: '6px',
-                    color: '#164136',
-                    flex: '0 0 auto',
-                    paddingRight: '2px',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
+                <span className="white-info-box__savings-unit">
                   kr/år
                 </span>
               </div>
-              <div
-                style={{
-                  fontSize: '14px',
-                  lineHeight: '20px'
-                }}
-              >
-                <div style={{ fontWeight: 500, color: '#1E4C43' }}>
-                  ≈ {formattedSavingsKwh} kWh/år
-                </div>
+              <div className="white-info-box__savings-kwh">
+                ≈ {formattedSavingsKwh} kWh/år
               </div>
             </div>
           </foreignObject>
@@ -1293,64 +1019,28 @@ const tiltakPreview = selectedTiltakSlug && tiltakComponent ? (
         {/* Map placeholder rectangle */}
         <rect x="0" y={MAP_TOP_Y} width={MAP_WIDTH} height={MAP_HEIGHT} fill="#E5E5E5" stroke="#D0D0D0" strokeWidth="1"/>
         
-        {/* Map image if coordinates are available */}
-        {mapCoordinates && (() => {
-          const zoom = 17;
-          const n = Math.pow(2, zoom);
-          const x = n * ((mapCoordinates.lng + 180) / 360);
-          const y = n * (1 - (Math.log(Math.tan(mapCoordinates.lat * Math.PI / 180) + 1 / Math.cos(mapCoordinates.lat * Math.PI / 180)) / Math.PI)) / 2;
-          
-          // Calculate position within the tile (0-1)
-          const xOffset = x - Math.floor(x);
-          const yOffset = y - Math.floor(y);
-          
-          // Calculate how much to offset the map so the location is centered
-          // Map is 336x204, we want the location at center (168, 102)
-          const mapOffsetX = MAP_WIDTH / 2 - (xOffset * 256);
-          const mapOffsetY = MAP_HEIGHT / 2 - (yOffset * 256);
-          
-          // Get the center tile coordinates
-          const centerTileX = Math.floor(x);
-          const centerTileY = Math.floor(y);
-          
-          // Create a 3x3 grid of tiles to ensure full coverage
-          const tiles = [];
-          for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-              tiles.push({
-                x: centerTileX + dx,
-                y: centerTileY + dy,
-                offsetX: mapOffsetX + (dx * 256),
-                offsetY: MAP_TOP_Y + mapOffsetY + (dy * 256)
-              });
-            }
-          }
-          
-          return (
-            <>
-              <clipPath id="mapClip">
-                <rect x="0" y={MAP_TOP_Y} width={MAP_WIDTH} height={MAP_HEIGHT} />
-              </clipPath>
-              <g clipPath="url(#mapClip)">
-                {tiles.map((tile, index) => (
-                  <image
-                    key={index}
-                    x={tile.offsetX}
-                    y={tile.offsetY}
-                    width="256"
-                    height="256"
-                    href={`https://tile.openstreetmap.org/${zoom}/${tile.x}/${tile.y}.png`}
-                    preserveAspectRatio="none"
-                  />
-                ))}
-              </g>
-              {/* Location pin centered on map */}
-              <g transform={`translate(${MAP_WIDTH / 2 - 14} ${MAP_TOP_Y + MAP_HEIGHT / 2 - 32})`}>
-                <LocationPin />
-              </g>
-            </>
-          );
-        })()}
+        {/* Map image if coordinates are available - Oslo kommune karttjeneste */}
+        {mapCoordinates && (
+          <>
+            <clipPath id="mapClip">
+              <rect x="0" y={MAP_TOP_Y} width={MAP_WIDTH} height={MAP_HEIGHT} />
+            </clipPath>
+            <g clipPath="url(#mapClip)">
+              <image
+                x="0"
+                y={MAP_TOP_Y}
+                width={MAP_WIDTH}
+                height={MAP_HEIGHT}
+                href={getOsloMapExportUrl(mapCoordinates.lat, mapCoordinates.lng, MAP_WIDTH, MAP_HEIGHT)}
+                preserveAspectRatio="xMidYMid slice"
+              />
+            </g>
+            {/* Location pin centered on map */}
+            <g transform={`translate(${MAP_WIDTH / 2 - 14} ${MAP_TOP_Y + MAP_HEIGHT / 2 - 32})`}>
+              <LocationPin />
+            </g>
+          </>
+        )}
         
         {/* Map loading text */}
         {!mapCoordinates && (
@@ -1367,345 +1057,212 @@ const tiltakPreview = selectedTiltakSlug && tiltakComponent ? (
         )}
         </g>
 
-        {/* Gul liste info overlay */}
-        {shouldShowYellowBox && isGulListeInfoOpen && (
-          <g
-            style={{
-              opacity: 1,
-              transition: 'all 0.4s ease-in-out',
-              pointerEvents: 'auto'
-            }}
-          >
-            <rect 
-              x="0" 
-              y="0" 
-              width="336" 
-              height="760" 
-              fill="#FFE7BC"
-            />
-            
-            <g 
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                setIsGulListeInfoOpen(false);
-                setIsDropdownExpanded(false);
-                setShowDropdownContent(false);
-                setShowByantikvarTooltip(false);
-                setShowKommunaltTooltip(false);
-                setShowVernetTooltip(false);
-                setShowFredetTooltip(false);
-              }}
-            >
-              <rect 
-                x="274" 
-                y="16" 
-                width="32" 
-                height="32" 
-                fill="transparent"
-              />
-              <svg x="274" y="16" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fillRule="evenodd" clipRule="evenodd" d="M14.5333 16L5 6.46667L6.46667 5L16 14.5333L25.5333 5L27 6.46667L17.4667 16L27 25.5333L25.5333 27L16 17.4667L6.46667 27L5 25.5333L14.5333 16Z" fill="#2A2859"/>
-              </svg>
-            </g>
-            
-            <text 
-              x="30" 
-              y={80} 
-              fontFamily="Oslo Sans, sans-serif" 
-              fontWeight="500"
-              fontStyle="normal"
-              fontSize="26" 
-              letterSpacing="-0.2"
-              fill="#000000"
-              dominantBaseline="middle"
-            >
-              Hva er Gul liste?
-            </text>
-            
-            <foreignObject x="30" y={112} width="276" height="250" style={{ overflow: 'visible' }}>
-              <div xmlns="http://www.w3.org/1999/xhtml" style={{
-                fontFamily: 'Oslo Sans, sans-serif',
-                fontWeight: 300,
-                fontSize: '14px',
-                lineHeight: '22px',
-                letterSpacing: '0px',
-                color: '#000000'
-              }}>
-                Gul liste er <span 
-                  style={{ 
-                    textDecoration: 'underline', 
-                    textDecorationStyle: 'dotted', 
-                    textUnderlineOffset: '4px',
-                    cursor: 'pointer',
-                    position: 'relative'
-                  }}
-                  onMouseEnter={() => setShowByantikvarTooltip(true)}
-                  onMouseLeave={() => setShowByantikvarTooltip(false)}
-                >
-                  Byantikvarens
-                </span> oversikt over verneverdige bygninger og kulturmiljøer i Oslo. Den inneholder blant annet bolighus, hager, parker, broer og veier med kulturhistorisk verdi. Listen brukes som et verktøy i arbeidet med å ta vare på viktige deler av byens historie. Gul liste oppdateres jevnlig, men er ikke en fullstendig oversikt over alle kulturminner i Oslo. Kulturminnene på Gul liste er delt inn i tre grupper: De kan være <span 
-                  style={{ 
-                    textDecoration: 'underline', 
-                    textDecorationStyle: 'dotted', 
-                    textUnderlineOffset: '4px',
-                    cursor: 'pointer',
-                    position: 'relative'
-                  }}
-                  onMouseEnter={() => setShowKommunaltTooltip(true)}
-                  onMouseLeave={() => setShowKommunaltTooltip(false)}
-                >
-                  kommunalt listeført
-                </span>, <span 
-                  style={{ 
-                    textDecoration: 'underline', 
-                    textDecorationStyle: 'dotted', 
-                    textUnderlineOffset: '4px',
-                    cursor: 'pointer',
-                    position: 'relative'
-                  }}
-                  onMouseEnter={() => setShowVernetTooltip(true)}
-                  onMouseLeave={() => setShowVernetTooltip(false)}
-                >
-                  vernet etter plan- og bygningsloven
-                </span> eller <span 
-                  style={{ 
-                    textDecoration: 'underline', 
-                    textDecorationStyle: 'dotted', 
-                    textUnderlineOffset: '4px',
-                    cursor: 'pointer',
-                    position: 'relative'
-                  }}
-                  onMouseEnter={() => setShowFredetTooltip(true)}
-                  onMouseLeave={() => setShowFredetTooltip(false)}
-                >
-                  fredet
-                </span>.
-                <br/><br/>
-                <a 
-                  href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/kulturminner-og-vern/gul-liste/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{ 
-                    color: '#000000', 
-                    textDecoration: 'underline',
-                    fontFamily: 'Oslo Sans',
-                    fontWeight: 300,
-                    fontSize: '14px'
-                  }}
-                >
-                  Les mer om Gul liste her.
-                </a>
-              </div>
-            </foreignObject>
-            
-            {showByantikvarTooltip && (
-              <foreignObject 
-                x="30" 
-                y={160} 
-                width="200" 
-                height="60"
-                style={{ pointerEvents: 'none' }}
-              >
-                <div xmlns="http://www.w3.org/1999/xhtml" style={{
-                  fontFamily: 'Oslo Sans, sans-serif',
-                  fontSize: '12px',
-                  backgroundColor: 'white',
-                  padding: '8px',
-                  border: '1px solid rgba(0,0,0,0.2)',
-                  borderRadius: '4px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }}>
-                  Oslo Byantikvar er kommunens faginstans for kulturminnevern.
-                </div>
-              </foreignObject>
-            )}
-            
-            {showKommunaltTooltip && (
-              <foreignObject 
-                x="30" 
-                y={200} 
-                width="200" 
-                height="80"
-                style={{ pointerEvents: 'none' }}
-              >
-                <div xmlns="http://www.w3.org/1999/xhtml" style={{
-                  fontFamily: 'Oslo Sans, sans-serif',
-                  fontSize: '12px',
-                  backgroundColor: 'white',
-                  padding: '8px',
-                  border: '1px solid rgba(0,0,0,0.2)',
-                  borderRadius: '4px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }}>
-                  Kommunalt listeført betyr at bygget er registrert i Gul liste og vurdert som verneverdig av Oslo kommune.
-                </div>
-              </foreignObject>
-            )}
-            
-            {showVernetTooltip && (
-              <foreignObject 
-                x="30" 
-                y={240} 
-                width="210" 
-                height="80"
-                style={{ pointerEvents: 'none' }}
-              >
-                <div xmlns="http://www.w3.org/1999/xhtml" style={{
-                  fontFamily: 'Oslo Sans, sans-serif',
-                  fontSize: '12px',
-                  backgroundColor: 'white',
-                  padding: '8px',
-                  border: '1px solid rgba(0,0,0,0.2)',
-                  borderRadius: '4px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }}>
-                  Vernet etter plan- og bygningsloven betyr at bygget er sikret gjennom kommuneplanen eller reguleringsplan.
-                </div>
-              </foreignObject>
-            )}
-            
-            {showFredetTooltip && (
-              <foreignObject 
-                x="30" 
-                y={280} 
-                width="220" 
-                height="80"
-                style={{ pointerEvents: 'none' }}
-              >
-                <div xmlns="http://www.w3.org/1999/xhtml" style={{
-                  fontFamily: 'Oslo Sans, sans-serif',
-                  fontSize: '12px',
-                  backgroundColor: 'white',
-                  padding: '8px',
-                  border: '1px solid rgba(0,0,0,0.2)',
-                  borderRadius: '4px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }}>
-                  Fredet betyr at bygget er vernet av Riksantikvaren eller fylkeskommunen. Endringer må godkjennes av myndighetene.
-                </div>
-              </foreignObject>
-            )}
-            
-            <rect 
-              x="30" 
-              y={isDropdownExpanded ? 305 : 425} 
-              width="276" 
-              height="98" 
-              fill="#2A2859"
-              style={{ transition: 'transform 0.3s ease' }}
-            />
-            
-            <foreignObject x="46" y={isDropdownExpanded ? 321 : 441} width="244" height="66">
-              <div xmlns="http://www.w3.org/1999/xhtml" style={{
-                fontFamily: 'Oslo Sans, sans-serif',
-                fontWeight: 400,
-                fontSize: '14px',
-                lineHeight: '22px',
-                letterSpacing: '-0.2px',
-                color: 'white'
-              }}>
-                Du kan absolutt gjøre tiltak for å energieffektivisere det verneverdige bygget ditt!
-              </div>
-            </foreignObject>
-            
-            <g
-              onClick={() => setIsDropdownExpanded(!isDropdownExpanded)}
-              style={{ cursor: 'pointer' }}
-            >
-              <rect 
-                x="30" 
-                y={isDropdownExpanded ? (163 - DROPDOWN_EXPANSION_ADJUSTMENT) : 547} 
-                width="276" 
-                height={isDropdownExpanded ? (440 + DROPDOWN_EXPANSION_ADJUSTMENT) : 56} 
-                fill="#2A2859"
-                style={{ transition: 'all 0.3s ease' }}
-              />
-            
-              <text 
-                x="46" 
-                y={isDropdownExpanded ? (191 - DROPDOWN_EXPANSION_ADJUSTMENT) : 575} 
-                fontFamily="Oslo Sans, sans-serif" 
-                fontWeight="400"
-                fontSize="14" 
-                letterSpacing="-0.2"
-                fill="white"
-                dominantBaseline="middle"
-                style={{ 
-                  pointerEvents: 'none',
-                  opacity: isDropdownExpanded ? (showDropdownContent ? 1 : 0) : 1,
-                  transition: 'opacity 0.3s ease-in-out'
-                }}
-              >
-                Hvorfor ta vare på kulturminner
-              </text>
-            
-              <svg x="266" y={isDropdownExpanded ? (179 - DROPDOWN_EXPANSION_ADJUSTMENT) : 563} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ 
-                pointerEvents: 'none', 
-                transform: isDropdownExpanded ? 'rotate(180deg)' : 'rotate(0deg)', 
-                transformOrigin: `278px ${isDropdownExpanded ? (191 - DROPDOWN_EXPANSION_ADJUSTMENT) : 575}px`, 
-                transition: 'all 0.3s ease',
-                opacity: isDropdownExpanded ? (showDropdownContent ? 1 : 0) : 1
-              }}>
-                <path fillRule="evenodd" clipRule="evenodd" d="M12 14.56L4.7466 7.5L3.75 8.47002L12 16.5L20.25 8.47002L19.2534 7.5L12 14.56Z" fill="white"/>
-              </svg>
-            </g>
-            
-            {isDropdownExpanded && (
-              <foreignObject x="46" y={210 - DROPDOWN_EXPANSION_ADJUSTMENT} width="244" height={365 + DROPDOWN_EXPANSION_ADJUSTMENT}>
-                <div xmlns="http://www.w3.org/1999/xhtml" style={{
-                  fontFamily: 'Oslo Sans, sans-serif',
-                  fontWeight: 300,
-                  fontSize: '14px',
-                  lineHeight: '22px',
-                  letterSpacing: '0px',
-                  color: 'white',
-                  opacity: showDropdownContent ? 1 : 0,
-                  transition: 'opacity 0.3s ease-in-out'
-                }}>
-                  Kulturminner gir oss kunnskap om historien vår og hvordan tidligere generasjoner levde. De forteller om samfunnsutvikling, byggetradisjoner og arkitektoniske løsninger, og er en viktig del av vår identitet og felles hukommelse. Ved å bevare kulturminner tar vi vare på en ressurs som ikke kan erstattes – og som kan være både miljøvennlig og bærekraftig i bruk.
-                  <br/><br/>
-                  Gamle bygninger er ofte oppført i materialer og håndverk av høy kvalitet, og med riktige tiltak kan de tilpasses moderne behov uten å miste sitt særpreg. Bevaring gir ikke bare verdi til enkeltbygg, men styrker også byens mangfold og karakter.
-                  <br/><br/>
-                  Kulturminner er ikke bare fortiden – de er også en del av fremtidens løsninger.
-                  <br/><br/>
-                  <a href="#" style={{ color: 'white', textDecoration: 'underline' }}>Les mer fra Kulturminnefondet her.</a>
-                </div>
-              </foreignObject>
-            )}
-            
-            <foreignObject x="30" y="640" width="276" height="30">
-              <div xmlns="http://www.w3.org/1999/xhtml" style={{
-                fontFamily: 'Oslo Sans, sans-serif',
-                fontSize: '14px',
-                lineHeight: '22px'
-              }}>
-                <a 
-                  href="https://www.oslo.kommune.no/getfile.php/1315758-1611237956/Tjenester%20og%20tilbud/Plan%2C%20bygg%20og%20eiendom/Byggesaksveiledere%2C%20normer%20og%20skjemaer/Gul%20liste%20-%20Byantikvarens%20informasjonsark.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: '#000000',
-                    textDecoration: 'underline',
-                    display: 'block'
-                  }}
-                >
-                  Les mer om Gul liste
-                </a>
-              </div>
-            </foreignObject>
-          </g>
-        )}
+{/* Gul liste info overlay - plassert utenfor SVG for bedre tilgjengelighet */}
         
       </g>
       
       <defs>
         <clipPath id="clip0_325_12689">
-          <rect width="336" height="760" fill="white"/>
+          <rect width={BOX_WIDTH} height="760" fill="white"/>
         </clipPath>
       </defs>
     </svg>
       </div>
-      
+
+      {/* Gul liste info overlay - HTML/CSS-basert, matcher original SVG-design */}
+      {shouldShowYellowBox && isGulListeInfoOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: `${BOX_WIDTH}px`,
+            height: '700px',
+            backgroundColor: '#FFE7BC',
+            zIndex: 200,
+            fontFamily: 'Oslo Sans, sans-serif',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          {/* Lukkeknapp */}
+          <button
+            onClick={() => {
+              setIsGulListeInfoOpen(false);
+              setIsDropdownExpanded(false);
+              setHoveredGlossaryTerm(null);
+            }}
+            aria-label="Lukk Gul liste informasjon"
+            style={{
+              position: 'absolute',
+              top: '16px',
+              right: '30px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px',
+              zIndex: 10
+            }}
+          >
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <path fillRule="evenodd" clipRule="evenodd" d="M14.5333 16L5 6.46667L6.46667 5L16 14.5333L25.5333 5L27 6.46667L17.4667 16L27 25.5333L25.5333 27L16 17.4667L6.46667 27L5 25.5333L14.5333 16Z" fill="#2A2859"/>
+            </svg>
+          </button>
+
+          {/* Scrollbart innhold */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '50px 30px 30px 30px'
+            }}
+          >
+            {/* Tittel */}
+            <h2
+              style={{
+                fontSize: '26px',
+                fontWeight: 500,
+                letterSpacing: '-0.2px',
+                color: '#000000',
+                margin: '0 0 20px 0',
+                paddingRight: '30px'
+              }}
+            >
+              Hva er Gul liste?
+            </h2>
+
+            {/* Hovedtekst */}
+            <div
+              style={{
+                fontSize: '14px',
+                lineHeight: '22px',
+                fontWeight: 300,
+                color: '#000000',
+                marginBottom: '24px'
+              }}
+            >
+              {renderParagraphWithGlossary({
+                paragraph: 'Gul liste er Byantikvarens oversikt over verneverdige bygninger og kulturmiljøer i Oslo. Den inneholder blant annet bolighus, hager, parker, broer og veier med kulturhistorisk verdi. Listen brukes som et verktøy i arbeidet med å ta vare på viktige deler av byens historie. Gul liste oppdateres jevnlig, men er ikke en fullstendig oversikt over alle kulturminner i Oslo. Kulturminnene på Gul liste er delt inn i tre grupper: De kan være kommunalt listeført, vernet etter plan- og bygningsloven eller fredet.',
+                glossary: glossaryEntries,
+                hoveredTerm: hoveredGlossaryTerm,
+                setHoveredTerm: setHoveredGlossaryTerm
+              })}
+            </div>
+
+            {/* Info-boks med mørk bakgrunn */}
+            <div
+              style={{
+                backgroundColor: '#2A2859',
+                padding: '16px',
+                marginBottom: '16px'
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '14px',
+                  lineHeight: '22px',
+                  fontWeight: 400,
+                  letterSpacing: '-0.2px',
+                  color: '#ffffff'
+                }}
+              >
+                Du kan absolutt gjøre tiltak for å energieffektivisere det verneverdige bygget ditt!
+              </span>
+            </div>
+
+            {/* Custom accordion for "Hvorfor ta vare på kulturminner" */}
+            <div style={{ marginBottom: '24px' }}>
+              <button
+                onClick={() => setIsDropdownExpanded(!isDropdownExpanded)}
+                style={{
+                  width: '100%',
+                  backgroundColor: '#2A2859',
+                  border: 'none',
+                  padding: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 400,
+                    letterSpacing: '-0.2px',
+                    color: '#ffffff'
+                  }}
+                >
+                  Hvorfor ta vare på kulturminner
+                </span>
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  style={{
+                    transform: isDropdownExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.3s ease'
+                  }}
+                >
+                  <path fillRule="evenodd" clipRule="evenodd" d="M12 14.56L4.7466 7.5L3.75 8.47002L12 16.5L20.25 8.47002L19.2534 7.5L12 14.56Z" fill="white"/>
+                </svg>
+              </button>
+              {isDropdownExpanded && (
+                <div
+                  style={{
+                    backgroundColor: '#2A2859',
+                    padding: '0 16px 16px 16px',
+                    fontSize: '14px',
+                    lineHeight: '22px',
+                    fontWeight: 300,
+                    color: '#ffffff'
+                  }}
+                >
+                  <p style={{ margin: '0 0 16px 0' }}>
+                    Kulturminner gir oss kunnskap om historien vår og hvordan tidligere generasjoner levde.
+                    De forteller om samfunnsutvikling, byggetradisjoner og arkitektoniske løsninger,
+                    og er en viktig del av vår identitet og felles hukommelse.
+                    Ved å bevare kulturminner tar vi vare på en ressurs som ikke kan erstattes – og som kan være både miljøvennlig og bærekraftig i bruk.
+                  </p>
+                  <p style={{ margin: '0 0 16px 0' }}>
+                    Gamle bygninger er ofte oppført i materialer og håndverk av høy kvalitet,
+                    og med riktige tiltak kan de tilpasses moderne behov uten å miste sitt særpreg.
+                    Bevaring gir ikke bare verdi til enkeltbygg, men styrker også byens mangfold og karakter.
+                  </p>
+                  <p style={{ margin: '0 0 16px 0' }}>
+                    Kulturminner er ikke bare fortiden – de er også en del av fremtidens løsninger.
+                  </p>
+                  <a
+                    href="https://kulturminnefondet.no/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#ffffff', textDecoration: 'underline' }}
+                  >
+                    Les mer fra Kulturminnefondet her.
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Ekstern lenke */}
+            <a
+              href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/kulturminner-og-vern/gul-liste/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: '#000000',
+                textDecoration: 'underline',
+                fontSize: '14px',
+                lineHeight: '22px'
+              }}
+            >
+              Les mer om Gul liste
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Render tiltak preview outside SVG when expanded */}
       <div style={{ 
         position: 'absolute',
@@ -1721,6 +1278,7 @@ const tiltakPreview = selectedTiltakSlug && tiltakComponent ? (
         {tiltakPreview}
       </div>
     </div>
+    </>
   );
 };
 
@@ -1733,21 +1291,9 @@ interface RollingDigitProps {
 }
 
 const RollingDigit: React.FC<RollingDigitProps> = ({ digit, prefersReducedMotion }) => {
-  const baseStyles: React.CSSProperties = {
-    display: 'inline-flex',
-    width: '0.9ch',
-    minWidth: '0.9ch',
-    justifyContent: 'center',
-    height: `${DIGIT_HEIGHT_EM}em`,
-    overflow: 'hidden',
-    fontVariantNumeric: 'tabular-nums',
-    lineHeight: `${DIGIT_HEIGHT_EM}em`,
-    padding: '0 0.5px'
-  };
-
   if (!/^\d$/.test(digit) || prefersReducedMotion) {
     return (
-      <span style={baseStyles}>
+      <span className="white-info-box__rolling-digit">
         <span style={{ lineHeight: '1.1em' }}>{digit}</span>
       </span>
     );
@@ -1756,26 +1302,17 @@ const RollingDigit: React.FC<RollingDigitProps> = ({ digit, prefersReducedMotion
   const numericDigit = Number(digit);
 
   return (
-    <span style={baseStyles}>
+    <span className="white-info-box__rolling-digit">
       <span
+        className="white-info-box__rolling-digit-inner"
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          transform: `translateY(calc(-1 * ${numericDigit} * ${DIGIT_HEIGHT_EM}em))`,
-          transition: 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1)'
+          transform: `translateY(calc(-1 * ${numericDigit} * ${DIGIT_HEIGHT_EM}em))`
         }}
       >
         {DIGITS.map((stackDigit) => (
           <span
             key={stackDigit}
-            style={{
-              height: `${DIGIT_HEIGHT_EM}em`,
-              lineHeight: `${DIGIT_HEIGHT_EM}em`,
-              textAlign: 'center',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+            className="white-info-box__rolling-digit-value"
           >
             {stackDigit}
           </span>
@@ -1800,23 +1337,12 @@ const RollingDigitsDisplay: React.FC<RollingDigitsDisplayProps> = ({
   );
 
   return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'flex-end',
-        gap: '0.2ch',
-        fontSize: '38px',
-        fontWeight: 700,
-        lineHeight: 1,
-        color: '#102C2C',
-        fontVariantNumeric: 'tabular-nums'
-      }}
-    >
+    <span className="white-info-box__rolling-digits">
       {formattedValue.split('').map((character, index) => {
         if (/^\d$/.test(character)) {
           return (
             <RollingDigit
-            key={index}
+              key={index}
               digit={character}
               prefersReducedMotion={prefersReducedMotion}
             />
@@ -1826,7 +1352,7 @@ const RollingDigitsDisplay: React.FC<RollingDigitsDisplayProps> = ({
         return (
           <span
             key={`separator-${index}`}
-            style={{ display: 'inline-block', minWidth: '0.5ch', textAlign: 'center' }}
+            className="white-info-box__rolling-digit-separator"
           >
             {character}
           </span>

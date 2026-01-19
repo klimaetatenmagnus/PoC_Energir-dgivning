@@ -1,0 +1,5 @@
+Add 'energitiltak' illustrations to svg of enebolig and blokk.
+Add javascript logic to toggle illustrations on/off based on existing checkbox for different 'tiltak'.
+Add pluss and minus svg as additional elements to animate when toggling 'tiltak' on and off.
+Add javascript to set background color of pluss/ minus svg element based on what energi-color the current activated or deactivated 'tiltak' results in.
+Scaled down thermometer on enebolig.

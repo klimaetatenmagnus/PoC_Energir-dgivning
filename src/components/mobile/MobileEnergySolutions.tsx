@@ -6,6 +6,13 @@ import {
   PktIcon,
 } from '@oslokommune/punkt-react';
 import { AddressLookupResponse } from '../../services/buildingApi';
+import {
+  DISTRICT_BADGE,
+  BUILDING_YEAR_BADGE,
+  getBuildingTypeBadgeConfig,
+  getDisplayBuildingTypeName,
+} from '../../config/badgeConfig';
+import '../../config/badges.css';
 import { EneboligSvg, BlokkSvg } from '../FigmaBlokk/components/BuildingSprites';
 import { useTiltakCatalog } from '../../hooks/contentHooks';
 import type { TiltakCatalogItem } from '../../types/contentCatalog';
@@ -21,11 +28,12 @@ import {
   calculateSavingsFromRate,
   calculateCombinedSavings,
   getRateForTiltak,
+  hasEnergyEffect,
   type TiltakSavingsInfo,
   type Boligtype,
   type TekPeriodInput,
 } from '../../utils/energySavingsData';
-import { useGulListeStatus } from '../../hooks/useGulListeStatus';
+import type { ContentAudience } from '../../../content/schema-helpers';
 import { useTransitionOverlay, toViewportRect } from '../../context/useTransitionOverlay';
 import type { BuildingKind } from '../../context/TransitionOverlayTypes';
 import { getBuildingKind } from '../../utils/buildingTypeUtils';
@@ -106,6 +114,8 @@ interface MobileEnergySolutionsProps {
   mapCoordinates?: { lat: number; lng: number } | null;
   showYellowBox?: boolean;
   totalEnergySavings?: number;
+  /** Audience for tiltak content - determines gul liste status */
+  audience?: ContentAudience;
 }
 
 /**
@@ -141,12 +151,15 @@ const determineBuildingTypeKey = (
 };
 
 /**
- * Filtrer tiltak basert på byggtype og byggår
+ * Filtrer tiltak basert på byggtype, byggår og energieffekt
  */
 const filterTiltakForBuilding = (
   tiltak: TiltakCatalogItem[],
   buildingTypeKey: string | undefined,
-  buildingYear: number | undefined
+  buildingYear: number | undefined,
+  tekPeriod: TekPeriodInput | null,
+  boligtype: Boligtype | null,
+  erPaaGulListe: boolean
 ): TiltakCatalogItem[] => {
   return tiltak.filter((t) => {
     const buildingTypeMatch =
@@ -157,7 +170,16 @@ const filterTiltakForBuilding = (
       t.minBuildingYear === undefined ||
       (buildingYear !== undefined && buildingYear < t.minBuildingYear);
 
-    return buildingTypeMatch && buildingYearMatch;
+    // Energieffekt-filter (som desktop)
+    let energyEffectMatch = true;
+    if (tekPeriod && boligtype && t.title !== 'Solenergi') {
+      const rates = getRateForTiltak(t.title, tekPeriod, boligtype, erPaaGulListe);
+      if (rates !== null && !hasEnergyEffect(rates)) {
+        energyEffectMatch = false;
+      }
+    }
+
+    return buildingTypeMatch && buildingYearMatch && energyEffectMatch;
   });
 };
 
@@ -172,6 +194,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   mapCoordinates = null,
   showYellowBox = false,
   totalEnergySavings: _totalEnergySavings = 0,
+  audience = 'standard',
 }) => {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [_showEnergyInfo, _setShowEnergyInfo] = useState(false); // Beholdes for fremtidig bruk i energibesparelses-boksen
@@ -190,11 +213,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   // Hent tiltakskatalog dynamisk
   const { data: catalogData, isLoading: isCatalogLoading } = useTiltakCatalog();
 
-  // Hent gul liste-status for bygningen
-  const { status: gulListeStatus } = useGulListeStatus({
-    adresse: searchAddress,
-  });
-  const erPaaGulListe = gulListeStatus?.erPaaGulListe ?? false;
+  // Utled gul liste-status fra audience prop (App.tsx er "single source of truth" via PBE-oppslag)
+  const erPaaGulListe = audience === 'gulliste';
 
   // Bygningstypedata
   const buildingTypeCode = useMemo(() => {
@@ -420,8 +440,15 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     }
 
     const publishedTiltak = catalogData.items.filter((t) => t.status === 'published');
-    return filterTiltakForBuilding(publishedTiltak, buildingTypeKey, buildingYear);
-  }, [catalogData, buildingTypeKey, buildingYear]);
+    return filterTiltakForBuilding(
+      publishedTiltak,
+      buildingTypeKey,
+      buildingYear,
+      tekPeriod,
+      boligtype,
+      erPaaGulListe
+    );
+  }, [catalogData, buildingTypeKey, buildingYear, tekPeriod, boligtype, erPaaGulListe]);
 
   // Dynamisk tiltak-liste: bruk katalog hvis tilgjengelig, ellers fallback til ENERGY_SOLUTIONS
   const displayTiltak: Array<{ id: string; title: string }> = useMemo(() => {
@@ -465,19 +492,19 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         if (solarValue && solarValue > 0) {
           tiltakInfo.push({
             title: tiltak.title,
-            rate: null,
+            rates: null,
             solarProductionKwh: solarValue
           });
         } else {
           uncalculable += 1;
         }
       } else if (boligtype && tekPeriod) {
-        // Hent rate for dette tiltaket
-        const rate = getRateForTiltak(tiltak.title, tekPeriod, boligtype, erPaaGulListe);
-        if (rate !== null) {
+        // Hent rates for dette tiltaket (romoppvarming, tappevann, elspesifikt)
+        const rates = getRateForTiltak(tiltak.title, tekPeriod, boligtype, erPaaGulListe);
+        if (rates !== null) {
           tiltakInfo.push({
             title: tiltak.title,
-            rate
+            rates
           });
         } else {
           uncalculable += 1;
@@ -488,13 +515,14 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       }
     });
 
-    // Bruk den sentrale multiplikative beregningen
-    const total = calculateCombinedSavings(consumptionNum, tiltakInfo);
+    // Bruk den sentrale multiplikative beregningen med forbruksfordeling per energitype
+    const total = calculateCombinedSavings(consumptionNum, tiltakInfo, tekPeriod, boligtype, bruksareal);
 
     setCalculatedSavings(total);
     setUncalculableCount(uncalculable);
   }, [
     boligtype,
+    bruksareal,
     buildingData?.filteredSolarEnergy,
     checkedItems,
     displayTiltak,
@@ -703,17 +731,33 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
           <h1 className="mobile-energy-solutions__address">{addressOnly}</h1>
           <div className="mobile-energy-solutions__tags">
             {districtName && (
-              <PktTag skin="green">
+              <PktTag
+                skin={DISTRICT_BADGE.skin}
+                aria-label={`${DISTRICT_BADGE.ariaLabelPrefix}: ${districtName}`}
+              >
+                <PktIcon name={DISTRICT_BADGE.iconName} />
                 <span>{districtName}</span>
               </PktTag>
             )}
-            {buildingTypeName && (
-              <PktTag skin="blue">
-                <span>{buildingTypeName}</span>
-              </PktTag>
-            )}
+            {buildingTypeName && (() => {
+              const displayName = getDisplayBuildingTypeName(buildingTypeName);
+              const badgeConfig = getBuildingTypeBadgeConfig(buildingTypeName);
+              return (
+                <PktTag
+                  skin={badgeConfig.skin}
+                  aria-label={`${badgeConfig.ariaLabelPrefix}: ${displayName}`}
+                >
+                  <PktIcon name={badgeConfig.iconName} />
+                  <span>{displayName}</span>
+                </PktTag>
+              );
+            })()}
             {buildingYear && (
-              <PktTag skin="beige">
+              <PktTag
+                skin={BUILDING_YEAR_BADGE.skin}
+                aria-label={`${BUILDING_YEAR_BADGE.ariaLabelPrefix}: ${buildingYear}`}
+              >
+                <PktIcon name={BUILDING_YEAR_BADGE.iconName} />
                 <span>Byggeår {buildingYear}</span>
               </PktTag>
             )}
