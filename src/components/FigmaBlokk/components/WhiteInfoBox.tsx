@@ -16,18 +16,9 @@ import {
   dictionaryTermsToGlossary,
 } from './Tiltak/glossaryHelpers';
 import dictionaryData from '../../../../content/dictionaries/index.json';
-import {
-  Varmepumpe,
-  Solenergi,
-  Tetting,
-  Temperaturstyring,
-  UtskiftningAvVindu,
-  IsoleringAvKjellerOgLoft,
-  EtterisoleringYttervegg,
-  Ventilasjon
-} from './Tiltak';
-import type { TiltakComponentProps } from './Tiltak/shared';
+import { DesktopTiltakCard } from './Tiltak';
 import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../../utils/tekEnergyCalculations';
+
 import { convertKwhToNok, formatCurrency, formatNumberWithSpaces } from '../../../utils/energy';
 import { getOsloMapExportUrl } from '../../../utils/coordinateUtils';
 import { AddressLookupResponse } from '../../../services/buildingApi';
@@ -168,17 +159,6 @@ const roundToNearestThousandValue = (value: number): number => {
 
 const roundToNearestThousand = (value: number): string => {
   return formatNumberWithSpaces(roundToNearestThousandValue(value));
-};
-
-const TILTAK_COMPONENT_MAP: Record<string, React.ComponentType<TiltakComponentProps>> = {
-  'varmepumpe': Varmepumpe,
-  'solenergi': Solenergi,
-  'tetting': Tetting,
-  'temperaturstyring': Temperaturstyring,
-  'vinduer': UtskiftningAvVindu,
-  'etterisolering-kjeller-loft': IsoleringAvKjellerOgLoft,
-  'etterisolering-yttervegg': EtterisoleringYttervegg,
-  'ventilasjon': Ventilasjon
 };
 
 interface WhiteInfoBoxProps {
@@ -617,11 +597,6 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   // Increased from 64 to 120 to make room for "Hvordan gjennomføre" button
   const expandedBottom = 120;
 
-const tiltakComponent = React.useMemo(
-  () => selectedTiltakSlug ? TILTAK_COMPONENT_MAP[selectedTiltakSlug] : undefined,
-  [selectedTiltakSlug]
-);
-
 const previewWrapperStyle: React.CSSProperties = {
   width: '100%',
   height: '100%',
@@ -631,15 +606,16 @@ const previewWrapperStyle: React.CSSProperties = {
   overflowY: 'hidden'
 };
 
-const tiltakPreview = selectedTiltakSlug && tiltakComponent ? (
+const tiltakPreview = selectedTiltakSlug ? (
     <div style={previewWrapperStyle}>
-      {React.createElement(tiltakComponent, {
-        audience: tiltakAudience,
-        buildingType: tiltakBuildingType,
-        buildingData,
-        className: 'white-info-box__tiltak-card',
-        onBack: handleTiltakBack
-      })}
+      <DesktopTiltakCard
+        tiltakId={selectedTiltakSlug}
+        audience={tiltakAudience}
+        buildingType={tiltakBuildingType}
+        buildingData={buildingData}
+        className="white-info-box__tiltak-card"
+        onBack={handleTiltakBack}
+      />
     </div>
   ) : null;
   

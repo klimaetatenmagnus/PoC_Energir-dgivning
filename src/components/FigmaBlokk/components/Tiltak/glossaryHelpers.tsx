@@ -88,14 +88,22 @@ type GlossaryTooltipParams = {
   setHoveredTerm: (term: string | null) => void;
 };
 
+// Unik ID-generator for hver tooltip-instans
+let instanceCounter = 0;
+function generateInstanceId(): string {
+  return `glossary-${++instanceCounter}`;
+}
+
 function GlossaryTooltipTerm({
   term,
   entry,
   hoveredTerm,
   setHoveredTerm
 }: Omit<GlossaryTooltipParams, 'key'>): React.ReactElement {
-  const termKey = entry.term.toLowerCase();
-  const isHovered = hoveredTerm === termKey;
+  // Bruk unik instans-ID i stedet for bare term-nøkkel
+  const instanceIdRef = React.useRef<string>(generateInstanceId());
+  const instanceId = instanceIdRef.current;
+  const isHovered = hoveredTerm === instanceId;
   const spanRef = React.useRef<HTMLSpanElement>(null);
   const hideTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [tooltipPosition, setTooltipPosition] = React.useState({ top: 0, left: 0 });
@@ -105,8 +113,8 @@ function GlossaryTooltipTerm({
       clearTimeout(hideTimeoutRef.current);
       hideTimeoutRef.current = null;
     }
-    setHoveredTerm(termKey);
-  }, [setHoveredTerm, termKey]);
+    setHoveredTerm(instanceId);
+  }, [setHoveredTerm, instanceId]);
 
   const handleMouseLeave = React.useCallback(() => {
     hideTimeoutRef.current = setTimeout(() => {

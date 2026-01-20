@@ -1,0 +1,501 @@
+/* DesktopTiltakCard - Hovedkomponent for tiltakskort på desktop */
+
+.desktop-tiltak-card {
+  display: flex;
+  flex-direction: column;
+  width: 840px;
+  height: 700px;
+  font-family: var(--pkt-font-family, 'Oslo Sans', sans-serif);
+  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
+  background-color: var(--pkt-color-brand-neutrals-white, #FFFFFF);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.desktop-tiltak-card--loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.desktop-tiltak-card__loader {
+  font-size: 16px;
+  color: var(--pkt-color-grays-gray-600, #666666);
+}
+
+/* Header */
+.desktop-tiltak-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 30px 16px 30px;
+  flex-shrink: 0;
+}
+
+.desktop-tiltak-card__title {
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 32px;
+  letter-spacing: -0.2px;
+  margin: 0;
+  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
+}
+
+.desktop-tiltak-card__back-button {
+  flex-shrink: 0;
+}
+
+/* Tabs */
+.desktop-tiltak-card__tabs {
+  padding: 0 30px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.desktop-tiltak-card__tabs-list {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--pkt-color-grays-gray-200, #CCCCCC);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.desktop-tiltak-card__tab {
+  position: relative;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--pkt-color-grays-gray-600, #666666);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.desktop-tiltak-card__tab:hover {
+  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
+}
+
+.desktop-tiltak-card__tab--active {
+  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
+  font-weight: 500;
+}
+
+.desktop-tiltak-card__tab--active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--pkt-color-brand-blue-1000, #6FE9FF);
+}
+
+/* Body - Grid layout */
+.desktop-tiltak-card__body {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 24px;
+  padding: 0 30px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Main content area */
+.desktop-tiltak-card__main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.desktop-tiltak-card__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Content area */
+.desktop-tiltak-card__content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #CCCCCC #F5F5F5;
+}
+
+.desktop-tiltak-card__content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.desktop-tiltak-card__content::-webkit-scrollbar-track {
+  background: #F5F5F5;
+  border-radius: 3px;
+}
+
+.desktop-tiltak-card__content::-webkit-scrollbar-thumb {
+  background: #CCCCCC;
+  border-radius: 3px;
+}
+
+.desktop-tiltak-card__content::-webkit-scrollbar-thumb:hover {
+  background: #AAAAAA;
+}
+
+.desktop-tiltak-card__content p {
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 22px;
+  margin: 0 0 16px 0;
+}
+
+.desktop-tiltak-card__content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Benefits section */
+.desktop-tiltak-card__benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.desktop-tiltak-card__section-title {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  margin: 0 0 8px 0;
+  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
+}
+
+.desktop-tiltak-card__benefits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Savings box */
+.desktop-tiltak-card__savings {
+  background-color: var(--pkt-color-brand-dark-green-1000, #034B45);
+  padding: 16px;
+  color: var(--pkt-color-brand-neutrals-white, #FFFFFF);
+  position: relative;
+}
+
+.desktop-tiltak-card__savings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.desktop-tiltak-card__savings-label {
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.desktop-tiltak-card__savings-info {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.desktop-tiltak-card__savings-info:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.desktop-tiltak-card__savings-value {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.desktop-tiltak-card__savings-nok {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.desktop-tiltak-card__savings-kwh {
+  font-size: 16px;
+  font-weight: 300;
+}
+
+.desktop-tiltak-card__savings-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background-color: #D1F9FF;
+  color: #000000;
+  padding: 12px;
+  z-index: 10;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+}
+
+.desktop-tiltak-card__savings-tooltip h4 {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  letter-spacing: -0.2px;
+  margin: 0 0 8px 0;
+}
+
+.desktop-tiltak-card__savings-tooltip p {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 22px;
+  margin: 0;
+}
+
+.desktop-tiltak-card__savings--empty {
+  background-color: var(--pkt-color-grays-gray-100, #F5F5F5);
+  color: var(--pkt-color-grays-gray-600, #666666);
+}
+
+/* Footer */
+.desktop-tiltak-card__footer {
+  padding: 16px 30px 24px 30px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Grants table */
+.desktop-tiltak-card__grants {
+  display: flex;
+  flex-direction: column;
+}
+
+.desktop-tiltak-card__grants-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 120px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #CCCCCC #F5F5F5;
+}
+
+.desktop-tiltak-card__grant-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--pkt-color-grays-gray-100, #F5F5F5);
+}
+
+.desktop-tiltak-card__grant-row:last-child {
+  border-bottom: none;
+}
+
+.desktop-tiltak-card__grant-name {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
+}
+
+.desktop-tiltak-card__grant-provider {
+  font-size: 12px;
+  font-weight: 400;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.desktop-tiltak-card__grant-link {
+  font-size: 12px;
+  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
+  text-decoration: underline;
+}
+
+.desktop-tiltak-card__grant-link:hover {
+  text-decoration: none;
+}
+
+.desktop-tiltak-card__grants-empty {
+  font-size: 14px;
+  color: var(--pkt-color-grays-gray-600, #666666);
+  font-style: italic;
+}
+
+/* Permit accordion */
+.desktop-tiltak-card__permit {
+  border-top: 1px solid var(--pkt-color-grays-gray-200, #CCCCCC);
+  padding-top: 16px;
+}
+
+.desktop-tiltak-card__permit-trigger {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 12px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.desktop-tiltak-card__permit-trigger-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
+}
+
+.desktop-tiltak-card__permit-trigger-icon {
+  transition: transform 0.2s ease;
+}
+
+.desktop-tiltak-card__permit-trigger-icon--open {
+  transform: rotate(180deg);
+}
+
+.desktop-tiltak-card__permit-content {
+  padding: 16px 0;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.desktop-tiltak-card__permit-content p {
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 22px;
+  margin: 0 0 12px 0;
+}
+
+.desktop-tiltak-card__permit-content p:last-child {
+  margin-bottom: 0;
+}
+
+.desktop-tiltak-card__permit-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
+  text-decoration: underline;
+  margin-top: 8px;
+}
+
+.desktop-tiltak-card__permit-link:hover {
+  text-decoration: none;
+}
+
+.desktop-tiltak-card__permit-highlight {
+  background-color: var(--pkt-color-brand-light-green-1000, #C7F6C9);
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.desktop-tiltak-card__permit-highlight h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 8px 0;
+}
+
+.desktop-tiltak-card__permit-highlight p {
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 22px;
+  margin: 0;
+}
+
+/* Back button - bruker PktButton med icon-only */
+.desktop-tiltak-card__back-button {
+  flex-shrink: 0;
+}
+
+/* Les mer circle */
+.desktop-tiltak-card__read-more {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background-color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 40px 20px 20px 20px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.desktop-tiltak-card__read-more-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 12px 0;
+  text-align: center;
+}
+
+.desktop-tiltak-card__read-more-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.desktop-tiltak-card__read-more-link,
+.desktop-tiltak-card__read-more-link:link,
+.desktop-tiltak-card__read-more-link:visited,
+.desktop-tiltak-card__read-more-link:active {
+  font-size: 14px;
+  font-weight: 300;
+  color: white !important;
+  text-decoration: underline;
+  text-align: center;
+  line-height: 22px;
+  white-space: nowrap;
+}
+
+.desktop-tiltak-card__read-more-link:hover {
+  text-decoration: none;
+  color: white !important;
+}
+
+/* Footer layout with Les mer circle */
+.desktop-tiltak-card__footer-content {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.desktop-tiltak-card__footer-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
