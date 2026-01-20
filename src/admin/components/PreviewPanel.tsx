@@ -5,7 +5,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type ComponentType,
 } from "react";
 import {
   PktAccordion,
@@ -33,31 +32,8 @@ import type {
 import type { TilskuddContent } from "../../../content/tilskudd/schema";
 import "./PreviewPanel.css";
 
-// Import legacy tiltak content components for preview parity
-import { VarmepumpeContentComponent } from "../../components/FigmaBlokk/components/Tiltak/Varmepumpe";
-import { SolenergiContentComponent } from "../../components/FigmaBlokk/components/Tiltak/Solenergi";
-import { TettingContentComponent } from "../../components/FigmaBlokk/components/Tiltak/Tetting";
-import { TemperaturstyringContentComponent } from "../../components/FigmaBlokk/components/Tiltak/Temperaturstyring";
-import { UtskiftningAvVinduContentComponent } from "../../components/FigmaBlokk/components/Tiltak/UtskiftningAvVindu";
-import { IsoleringAvKjellerOgLoftContentComponent } from "../../components/FigmaBlokk/components/Tiltak/IsoleringAvKjellerOgLoft";
-import { EtterisoleringYtterveggContentComponent } from "../../components/FigmaBlokk/components/Tiltak/EtterisoleringYttervegg";
-import { VentilasjonContentComponent } from "../../components/FigmaBlokk/components/Tiltak/Ventilasjon";
-import type { TiltakComponentProps } from "../../components/FigmaBlokk/components/Tiltak/shared";
-
-// Map slug to legacy component for preview parity
-type LegacyTiltakComponentProps = TiltakComponentProps & { audience?: ContentAudience };
-type LegacyTiltakComponent = ComponentType<LegacyTiltakComponentProps>;
-
-const TILTAK_COMPONENT_MAP: Record<string, LegacyTiltakComponent> = {
-  'varmepumpe': VarmepumpeContentComponent,
-  'solenergi': SolenergiContentComponent,
-  'tetting': TettingContentComponent,
-  'temperaturstyring': TemperaturstyringContentComponent,
-  'vinduer': UtskiftningAvVinduContentComponent,
-  'etterisolering-kjeller-loft': IsoleringAvKjellerOgLoftContentComponent,
-  'etterisolering-yttervegg': EtterisoleringYtterveggContentComponent,
-  'ventilasjon': VentilasjonContentComponent,
-};
+// Import the refactored tiltak component
+import { DesktopTiltakCard } from "../../components/FigmaBlokk/components/Tiltak";
 
 type BuildingTypeOption = {
   id: string;
@@ -388,19 +364,10 @@ function TiltakPreviewCanvas({
   buildingType: string;
   audience: ContentAudience;
 }) {
-  const LegacyComponent = TILTAK_COMPONENT_MAP[tiltakId];
-
-  if (!LegacyComponent) {
-    return (
-      <div className="admin-preview__canvas">
-        <p>Ingen forhåndsvisning tilgjengelig for tiltak: {tiltakId}</p>
-      </div>
-    );
-  }
-
   return (
     <div className="admin-preview__canvas">
-      <LegacyComponent
+      <DesktopTiltakCard
+        tiltakId={tiltakId}
         buildingType={buildingType === "default" ? undefined : buildingType}
         audience={audience}
       />
