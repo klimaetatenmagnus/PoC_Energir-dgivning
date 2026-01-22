@@ -20,14 +20,14 @@ import { OsloLogo } from '../FigmaBlokk/components/OsloLogo';
 import { ENERGY_SOLUTIONS } from '../FigmaBlokk/constants';
 import { MobileInfoBox } from './MobileInfoBox';
 import { MobileSavingsFooter } from './MobileSavingsFooter';
-import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../utils/tekEnergyCalculations';
+import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from '../../utils/tekEnergyCalculations';
 import { calculateTekPeriod, parseNumericValue } from '../FigmaBlokk/components/Tiltak/shared';
 import {
   getEnergySavingsRate,
   getWindowEnergySavingsRate,
   calculateSavingsFromRate,
   calculateCombinedSavings,
-  getRateForTiltak,
+  getRateForTiltakId,
   hasEnergyEffect,
   type TiltakSavingsInfo,
   type Boligtype,
@@ -66,41 +66,17 @@ const isRatingBetter = (first: string, second: string): boolean => {
 };
 
 /**
- * Beregn energikarakter basert på kWh/m² og byggtype
+ * Lokal wrapper for beregning av energikarakter.
+ * Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
  */
-const calculateEnergyRating = (
+const calculateEnergyRatingLocal = (
   intensity: number,
   bruksareal: number,
   isSmåhus: boolean,
   isBlokk: boolean
 ): string => {
-  let rating = 'G';
-
-  if (isSmåhus) {
-    if (intensity <= 95 + 800 / bruksareal) rating = 'A';
-    else if (intensity <= 120 + 1600 / bruksareal) rating = 'B';
-    else if (intensity <= 145 + 2500 / bruksareal) rating = 'C';
-    else if (intensity <= 175 + 4100 / bruksareal) rating = 'D';
-    else if (intensity <= 205 + 5800 / bruksareal) rating = 'E';
-    else if (intensity <= 250 + 8000 / bruksareal) rating = 'F';
-  } else if (isBlokk) {
-    if (intensity <= 85 + 600 / bruksareal) rating = 'A';
-    else if (intensity <= 95 + 1000 / bruksareal) rating = 'B';
-    else if (intensity <= 100 + 1500 / bruksareal) rating = 'C';
-    else if (intensity <= 135 + 2200 / bruksareal) rating = 'D';
-    else if (intensity <= 160 + 3000 / bruksareal) rating = 'E';
-    else if (intensity <= 200 + 4000 / bruksareal) rating = 'F';
-  } else {
-    // Default/andre byggtyper
-    if (intensity <= 90 + 700 / bruksareal) rating = 'A';
-    else if (intensity <= 107.5 + 1300 / bruksareal) rating = 'B';
-    else if (intensity <= 122.5 + 2000 / bruksareal) rating = 'C';
-    else if (intensity <= 155 + 3150 / bruksareal) rating = 'D';
-    else if (intensity <= 182.5 + 4400 / bruksareal) rating = 'E';
-    else if (intensity <= 225 + 6000 / bruksareal) rating = 'F';
-  }
-
-  return rating;
+  const buildingType = isSmåhus ? 'småhus' : isBlokk ? 'blokk' : null;
+  return calculateEnergyRating(intensity, bruksareal, buildingType);
 };
 
 interface MobileEnergySolutionsProps {
@@ -172,8 +148,8 @@ const filterTiltakForBuilding = (
 
     // Energieffekt-filter (som desktop)
     let energyEffectMatch = true;
-    if (tekPeriod && boligtype && t.title !== 'Solenergi') {
-      const rates = getRateForTiltak(t.title, tekPeriod, boligtype, erPaaGulListe);
+    if (tekPeriod && boligtype && t.id !== 'solenergi') {
+      const rates = getRateForTiltakId(t.id, tekPeriod, boligtype, { erPaaGulListe });
       if (rates !== null && !hasEnergyEffect(rates)) {
         energyEffectMatch = false;
       }
@@ -487,11 +463,11 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       if (!tiltak) return;
 
       // Solenergi håndteres spesielt - det er produksjon, ikke besparelse
-      if (tiltak.title === 'Solenergi') {
+      if (tiltak.id === 'solenergi') {
         const solarValue = solarData?.filteredSolarEnergy || buildingData?.filteredSolarEnergy;
         if (solarValue && solarValue > 0) {
           tiltakInfo.push({
-            title: tiltak.title,
+            title: tiltak.id,
             rates: null,
             solarProductionKwh: solarValue
           });
@@ -500,10 +476,10 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         }
       } else if (boligtype && tekPeriod) {
         // Hent rates for dette tiltaket (romoppvarming, tappevann, elspesifikt)
-        const rates = getRateForTiltak(tiltak.title, tekPeriod, boligtype, erPaaGulListe);
+        const rates = getRateForTiltakId(tiltak.id, tekPeriod, boligtype, { erPaaGulListe });
         if (rates !== null) {
           tiltakInfo.push({
-            title: tiltak.title,
+            title: tiltak.id,
             rates
           });
         } else {
@@ -561,7 +537,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       buildingTypeNameLower.includes('leilighet') ||
       buildingTypeNameLower.includes('boligbygg');
 
-    const rating = calculateEnergyRating(newIntensity, bruksareal, isSmåhus, isBlokkType);
+    const rating = calculateEnergyRatingLocal(newIntensity, bruksareal, isSmåhus, isBlokkType);
 
     // Returner kun hvis bedre enn estimert
     if (!isRatingBetter(rating, estimatedRating)) {

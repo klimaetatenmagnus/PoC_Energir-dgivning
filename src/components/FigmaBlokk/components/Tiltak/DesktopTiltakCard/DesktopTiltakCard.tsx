@@ -12,7 +12,7 @@ import {
 } from '../shared';
 import { calculateAnnualEnergyConsumption } from '../../../../../utils/tekEnergyCalculations';
 import type { BuildingType } from '../../../../../utils/tekEnergyCalculations';
-import { calculateCombinedSavings, getRateForTiltak } from '../../../../../utils/energySavingsData';
+import { calculateCombinedSavings, getRateForTiltakId } from '../../../../../utils/energySavingsData';
 import type { TiltakSavingsInfo, Boligtype } from '../../../../../utils/energySavingsData';
 import { TiltakTabs } from './TiltakTabs';
 import { TiltakContent } from './TiltakContent';
@@ -23,24 +23,6 @@ import { TiltakPermit } from './TiltakPermit';
 import { TiltakReadMore } from './TiltakReadMore';
 import type { DesktopTiltakCardProps } from './types';
 import './DesktopTiltakCard.css';
-
-const VARMEPUMPE_TAB_TO_TILTAK: Record<string, string> = {
-  'luft-luft': 'Luft-luft varmepumpe',
-  'luft-vann': 'Luft-vann varmepumpe',
-  'vaeske-vann': 'Væske-vann varmepumpe',
-  'ventilasjon': 'Ventilasjon med varmegjenvinning'
-};
-
-const TILTAK_ID_TO_TITLE: Record<string, string> = {
-  'varmepumpe': 'Luft-luft varmepumpe',
-  'solenergi': 'Solenergi',
-  'vinduer': 'Oppgradering av vindu',
-  'etterisolering-yttervegg': 'Etterisolering av yttervegg',
-  'etterisolering-kjeller-loft': 'Isolering av kjeller og loft',
-  'temperaturstyring': 'Styringssystemer',
-  'tetting': 'Tetting',
-  'ventilasjon': 'Ventilasjon med varmegjenvinning'
-};
 
 export const DesktopTiltakCard: React.FC<DesktopTiltakCardProps> = ({
   tiltakId,
@@ -79,7 +61,8 @@ export const DesktopTiltakCard: React.FC<DesktopTiltakCardProps> = ({
   );
 
   const { stotteordninger, isLoading: grantsLoading } = useGrantAwareStotteordninger({
-    grantIds: resolvedContent?.grants ?? []
+    grantIds: resolvedContent?.grants ?? [],
+    buildingType
   });
 
   // Beregn besparelse
@@ -111,21 +94,17 @@ export const DesktopTiltakCard: React.FC<DesktopTiltakCardProps> = ({
       buildingTypeForCalc
     );
 
-    // For varmepumpe: bruk aktiv tab for å bestemme tiltakstype
-    let tiltakTitle: string;
-    if (tiltakId === 'varmepumpe' && activeTab !== 'generelt') {
-      tiltakTitle = VARMEPUMPE_TAB_TO_TILTAK[activeTab] ?? TILTAK_ID_TO_TITLE[tiltakId] ?? '';
-    } else {
-      tiltakTitle = TILTAK_ID_TO_TITLE[tiltakId] ?? resolvedContent?.title ?? '';
-    }
-
     const energyBuildingCategory: Boligtype = buildingCategory === 'blokk' ? 'blokk' : 'småhus';
-    const rates = getRateForTiltak(tiltakTitle, tekPeriod, energyBuildingCategory);
+
+    // Bruk tiltakId direkte for oppslag - uavhengig av visningsnavn
+    const rates = getRateForTiltakId(tiltakId, tekPeriod, energyBuildingCategory, {
+      varmepumpeTab: tiltakId === 'varmepumpe' ? activeTab : undefined,
+    });
 
     if (!rates) return 0;
 
     const tiltakInfo: TiltakSavingsInfo[] = [{
-      title: tiltakTitle,
+      title: tiltakId,
       rates: rates
     }];
 
@@ -138,7 +117,7 @@ export const DesktopTiltakCard: React.FC<DesktopTiltakCardProps> = ({
     );
 
     return savings;
-  }, [buildingData, buildingType, tiltakId, activeTab, resolvedContent?.title]);
+  }, [buildingData, buildingType, tiltakId, activeTab]);
 
   // Finn søknadsplikt-accordion
   const permitContent = useMemo(() => {

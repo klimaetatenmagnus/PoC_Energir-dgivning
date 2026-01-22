@@ -6,13 +6,13 @@ import { useTiltakCatalog } from '../../../hooks/contentHooks';
 import type { TiltakCatalogItem } from '../../../types/contentCatalog';
 import {
   calculateCombinedSavings,
-  getRateForTiltak,
+  getRateForTiltakId,
   hasEnergyEffect,
   type TiltakSavingsInfo,
   type TekPeriodInput,
   type Boligtype,
 } from '../../../utils/energySavingsData';
-import { calculateAnnualEnergyConsumption, determineBuildingType, calculateTEK } from '../../../utils/tekEnergyCalculations';
+import { calculateAnnualEnergyConsumption, determineBuildingType, calculateTEK, calculateEnergyRating } from '../../../utils/tekEnergyCalculations';
 import { getCanonicalKey, type TiltakCanonicalKey } from '../utils/tiltakCanonicalKeys';
 import type { ContentAudience } from '../../../../content/schema-helpers';
 import './EnergySolutionButtons.css';
@@ -93,8 +93,8 @@ const filterTiltakForBuilding = (
     // Energieffekt-filter: skjul tiltak uten effekt for denne TEK-standarden
     // Unntak: Solenergi har alltid effekt (det er produksjon, ikke besparelse)
     let energyEffectMatch = true;
-    if (tekPeriod && boligtype && t.title !== 'Solenergi') {
-      const rates = getRateForTiltak(t.title, tekPeriod, boligtype, erPaaGulListe);
+    if (tekPeriod && boligtype && t.id !== 'solenergi') {
+      const rates = getRateForTiltakId(t.id, tekPeriod, boligtype, { erPaaGulListe });
       if (rates !== null && !hasEnergyEffect(rates)) {
         energyEffectMatch = false; // Skjul tiltak uten effekt
       }
@@ -253,6 +253,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
 
   const enovaRating = buildingData?.energiattest?.energikarakter?.toUpperCase();
 
+  // Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
   const calculatedRating = React.useMemo(() => {
     const consumptionNum = parseFloat(yearlyConsumption);
     if (!Number.isFinite(consumptionNum) || consumptionNum <= 0 || !bruksareal) {
@@ -260,46 +261,12 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     }
 
     const intensity = consumptionNum / bruksareal;
-    const isSmåhus = ['11', '12', '13'].includes(buildingTypeCode) ||
-      buildingTypeNameLower.includes('enebolig') ||
-      buildingTypeNameLower.includes('tomannsbolig') ||
-      buildingTypeNameLower.includes('rekkehus') ||
-      buildingTypeNameLower.includes('kjedehus');
+    // boligtype er allerede beregnet og mapper til 'småhus' | 'blokk' | null
+    return calculateEnergyRating(intensity, bruksareal, boligtype);
+  }, [yearlyConsumption, bruksareal, boligtype]);
 
-    const isBlokkCandidate = ['14', '15', '16', '17'].includes(buildingTypeCode) ||
-      buildingTypeNameLower.includes('blokk') ||
-      buildingTypeNameLower.includes('leilighet') ||
-      buildingTypeNameLower.includes('boligbygg') ||
-      buildingTypeNameLower === 'store boligbygg';
-
-    let rating = 'G';
-    if (isSmåhus) {
-      if (intensity <= 95 + 800 / bruksareal) rating = 'A';
-      else if (intensity <= 120 + 1600 / bruksareal) rating = 'B';
-      else if (intensity <= 145 + 2500 / bruksareal) rating = 'C';
-      else if (intensity <= 175 + 4100 / bruksareal) rating = 'D';
-      else if (intensity <= 205 + 5800 / bruksareal) rating = 'E';
-      else if (intensity <= 250 + 8000 / bruksareal) rating = 'F';
-    } else if (isBlokkCandidate) {
-      if (intensity <= 85 + 600 / bruksareal) rating = 'A';
-      else if (intensity <= 95 + 1000 / bruksareal) rating = 'B';
-      else if (intensity <= 100 + 1500 / bruksareal) rating = 'C';
-      else if (intensity <= 135 + 2200 / bruksareal) rating = 'D';
-      else if (intensity <= 160 + 3000 / bruksareal) rating = 'E';
-      else if (intensity <= 200 + 4000 / bruksareal) rating = 'F';
-    } else {
-      if (intensity <= 90 + 700 / bruksareal) rating = 'A';
-      else if (intensity <= 107.5 + 1300 / bruksareal) rating = 'B';
-      else if (intensity <= 122.5 + 2000 / bruksareal) rating = 'C';
-      else if (intensity <= 155 + 3150 / bruksareal) rating = 'D';
-      else if (intensity <= 182.5 + 4400 / bruksareal) rating = 'E';
-      else if (intensity <= 225 + 6000 / bruksareal) rating = 'F';
-    }
-
-    return rating;
-  }, [yearlyConsumption, bruksareal, buildingTypeCode, buildingTypeNameLower]);
-
-  const estimatedRating = enovaRating || calculatedRating;
+  // Bruker ALLTID estimert karakter, ikke Enova-attest
+  const estimatedRating = calculatedRating;
 
   // Beregn estimert årlig energiforbruk basert på byggeår og areal (for bruk i prosent-beregninger)
   const estimatedAnnualConsumption = React.useMemo(() => {
@@ -337,21 +304,21 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       if (!tiltak) return;
 
       // Solenergi håndteres spesielt - det er produksjon, ikke besparelse
-      if (tiltak.title === 'Solenergi') {
+      if (tiltak.id === 'solenergi') {
         const solarEnergy = buildingData?.filteredSolarEnergy || 0;
         if (solarEnergy > 0) {
           tiltakInfo.push({
-            title: tiltak.title,
+            title: tiltak.id,
             rates: null,
             solarProductionKwh: solarEnergy
           });
         }
       } else {
         // Hent rates for dette tiltaket (romoppvarming, tappevann, elspesifikt)
-        const rates = getRateForTiltak(tiltak.title, tekPeriod, boligtype);
+        const rates = getRateForTiltakId(tiltak.id, tekPeriod, boligtype);
         if (rates !== null) {
           tiltakInfo.push({
-            title: tiltak.title,
+            title: tiltak.id,
             rates
           });
         }
@@ -371,6 +338,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     yearlyConsumption,
   ]);
 
+  // Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
   const newRating = React.useMemo(() => {
     if (!estimatedRating || !yearlyConsumption || checkedItems.size === 0 || !bruksareal) {
       return null;
@@ -384,41 +352,8 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     const newConsumption = Math.max(0, consumptionNum - totalSavingsKWh);
     const newIntensity = newConsumption / bruksareal;
 
-    const isSmåhus = ['11', '12', '13'].includes(buildingTypeCode) ||
-      buildingTypeNameLower.includes('enebolig') ||
-      buildingTypeNameLower.includes('tomannsbolig') ||
-      buildingTypeNameLower.includes('rekkehus') ||
-      buildingTypeNameLower.includes('kjedehus');
-
-    const isBlokkCandidate = ['14', '15', '16', '17'].includes(buildingTypeCode) ||
-      buildingTypeNameLower.includes('blokk') ||
-      buildingTypeNameLower.includes('leilighet') ||
-      buildingTypeNameLower.includes('boligbygg') ||
-      buildingTypeNameLower === 'store boligbygg';
-
-    let rating = 'G';
-    if (isSmåhus) {
-      if (newIntensity <= 95 + 800 / bruksareal) rating = 'A';
-      else if (newIntensity <= 120 + 1600 / bruksareal) rating = 'B';
-      else if (newIntensity <= 145 + 2500 / bruksareal) rating = 'C';
-      else if (newIntensity <= 175 + 4100 / bruksareal) rating = 'D';
-      else if (newIntensity <= 205 + 5800 / bruksareal) rating = 'E';
-      else if (newIntensity <= 250 + 8000 / bruksareal) rating = 'F';
-    } else if (isBlokkCandidate) {
-      if (newIntensity <= 85 + 600 / bruksareal) rating = 'A';
-      else if (newIntensity <= 95 + 1000 / bruksareal) rating = 'B';
-      else if (newIntensity <= 100 + 1500 / bruksareal) rating = 'C';
-      else if (newIntensity <= 135 + 2200 / bruksareal) rating = 'D';
-      else if (newIntensity <= 160 + 3000 / bruksareal) rating = 'E';
-      else if (newIntensity <= 200 + 4000 / bruksareal) rating = 'F';
-    } else {
-      if (newIntensity <= 90 + 700 / bruksareal) rating = 'A';
-      else if (newIntensity <= 107.5 + 1300 / bruksareal) rating = 'B';
-      else if (newIntensity <= 122.5 + 2000 / bruksareal) rating = 'C';
-      else if (newIntensity <= 155 + 3150 / bruksareal) rating = 'D';
-      else if (newIntensity <= 182.5 + 4400 / bruksareal) rating = 'E';
-      else if (newIntensity <= 225 + 6000 / bruksareal) rating = 'F';
-    }
+    // boligtype er allerede beregnet og mapper til 'småhus' | 'blokk' | null
+    const rating = calculateEnergyRating(newIntensity, bruksareal, boligtype);
 
     if (estimatedRating && !isRatingBetter(rating, estimatedRating)) {
       return estimatedRating;
@@ -427,8 +362,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     return rating;
   }, [
     bruksareal,
-    buildingTypeCode,
-    buildingTypeNameLower,
+    boligtype,
     checkedItems.size,
     estimatedRating,
     totalSavingsKWh,
