@@ -116,7 +116,10 @@ export const TransitionOverlayRenderer: React.FC = () => {
         }
       }}
     >
-      <BuildingComponent style={{ width: '100%', height: '100%' }} />
+      <BuildingComponent
+        style={{ width: '100%', height: '100%' }}
+        preserveAspectRatio="none"
+      />
     </div>
   );
 };

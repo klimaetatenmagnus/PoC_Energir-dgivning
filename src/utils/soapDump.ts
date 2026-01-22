@@ -65,7 +65,7 @@ export async function dumpSoap(
   phase: SoapPhase,
   xml: string
 ): Promise<void> {
-  if (process.env.LIVE !== "1") return; // bare i live-modus
+  return; // SOAP-dumping deaktivert - tidligere diagnostikk-funksjon
 
   try {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
