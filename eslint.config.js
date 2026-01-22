@@ -27,6 +27,7 @@ export default [{
     "scripts/**",
     "packages/**/dist/**",
     "**/*.d.ts",
+    "Dokumentasjon/**",
   ],
 }, {
   linterOptions: {
