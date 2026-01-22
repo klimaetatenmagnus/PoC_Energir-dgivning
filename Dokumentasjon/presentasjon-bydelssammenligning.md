@@ -236,7 +236,54 @@ Resultat fra 847 lignende boliger:
 
 ---
 
-## 6. Dataflyt og arkitektur
+## 6. Datakilder for brukerens bolig i sammenligningen
+
+### Prioritering av datakilder
+
+For å sikre "epler med epler"-sammenligning prioriterer systemet datakildene slik:
+
+| Prioritet | Datakilde | Beskrivelse |
+|-----------|-----------|-------------|
+| 1 | **Enova bulk-data** | Hvis brukerens bolig finnes i `enova-building-index.json` |
+| 2 | **TEK-estimering** | Beregnet basert på byggeår, areal og bygningstype |
+
+### Hvorfor prioritere Enova bulk-data?
+
+- **Samme datakilde**: Både brukerens kWh/m² og bydelsstatistikken kommer fra historiske Enova-attester
+- **Konsistent sammenligning**: Unngår å sammenligne estimerte verdier mot faktiske attester
+- **Ny karakterskala**: Enova gikk over til NS 3031:2025 ved nyttår 2026. Gamle attester vises ikke til bruker, men kan fortsatt brukes for konsistent sammenligning
+
+### Implementasjon
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Bruker slår opp: "Høybråtenveien 78B, 1088 Oslo"              │
+│                                                                 │
+│  1. Hent bygningsnummer/matrikkel fra adresseoppslag           │
+│     └── bygningsnummer: 80261640, gnr: 107, bnr: 617           │
+│                                                                 │
+│  2. Slå opp i enova-building-index.json                        │
+│     └── Funnet! kwhPerM2: 238.8, energikarakter: E             │
+│                                                                 │
+│  3. Bruk 238.8 kWh/m² i "Sammenlign deg med naboen"            │
+│     └── Sammenlignes mot bydelssnitt fra samme bulk-data       │
+│                                                                 │
+│  ✅ Resultat: Konsistent "epler med epler"-sammenligning       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Filer
+
+| Fil | Beskrivelse |
+|-----|-------------|
+| `scripts/aggregate-district-statistics.ts` | Genererer både bydelsstatistikk og bygnings-indeks |
+| `src/data/district-statistics-enova.json` | Aggregert statistikk per bydel/delbydel |
+| `src/data/enova-building-index.json` | Indeks for oppslag av enkelt-boliger (~88k boliger) |
+| `src/services/districtStatisticsService.ts` | Service med `lookupBuildingFromEnovaData()` |
+
+---
+
+## 7. Dataflyt og arkitektur
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

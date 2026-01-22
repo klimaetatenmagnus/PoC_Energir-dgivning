@@ -686,8 +686,9 @@ export function calculateCombinedSavings(
   const elRates: number[] = [];
 
   for (const t of tiltak) {
-    // Solenergi identifiseres ved tittel og har solarProductionKwh
-    if (t.title === 'Solenergi' && t.solarProductionKwh !== undefined) {
+    // Solenergi identifiseres ved tittel/id og har solarProductionKwh
+    // Støtter både 'Solenergi' (visningsnavn) og 'solenergi' (tiltakId)
+    if ((t.title === 'Solenergi' || t.title === 'solenergi') && t.solarProductionKwh !== undefined) {
       solarProduction += t.solarProductionKwh;
     } else if (t.rates !== null) {
       // Tillat rates > 1.0 for tiltak som øker forbruk (f.eks. ventilasjon øker elspesifikt)
@@ -707,6 +708,14 @@ export function calculateCombinedSavings(
   const kombinertRomRate = romRates.reduce((acc, rate) => acc * rate, 1);
   const kombinertTapRate = tapRates.reduce((acc, rate) => acc * rate, 1);
   const kombinertElRate = elRates.reduce((acc, rate) => acc * rate, 1);
+
+  // Sjekk om det finnes rate-baserte tiltak (ikke bare solenergi)
+  const hasRateBasedTiltak = romRates.length > 0 || tapRates.length > 0 || elRates.length > 0;
+
+  // Hvis kun solenergi er valgt (ingen rate-baserte tiltak), returner bare solproduksjon
+  if (!hasRateBasedTiltak) {
+    return solarProduction;
+  }
 
   // Forsøk å bruke ny metode med forbruksfordeling per energitype
   if (tekPeriod && boligtype && bruksareal && bruksareal > 0) {

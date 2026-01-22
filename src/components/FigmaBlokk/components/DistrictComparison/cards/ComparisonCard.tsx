@@ -42,7 +42,7 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
       {/* Visuell sammenligning med bars */}
       <div className="carousel-card__bars">
         <div className="carousel-card__bar-row">
-          <span className="carousel-card__bar-label">Din bolig</span>
+          <span className="carousel-card__bar-label">Din bolig*</span>
           <div className="carousel-card__bar-container">
             <div
               className={`carousel-card__bar ${isBetterThanAvg ? 'carousel-card__bar--good' : 'carousel-card__bar--neutral'}`}

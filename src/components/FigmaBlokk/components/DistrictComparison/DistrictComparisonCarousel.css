@@ -109,6 +109,24 @@
   text-align: center;
   padding-top: 8px;
   border-top: 1px solid var(--pkt-color-brand-neutrals-200, #f2f2f2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.district-carousel__source-info {
+  font-size: 0.6875rem;
+  font-style: italic;
+  line-height: 1.4;
+  padding: 0 8px;
+}
+
+.district-carousel__source-info--enova {
+  color: var(--pkt-color-brand-dark-green-1000, #034b45);
+}
+
+.district-carousel__source-info--estimated {
+  color: var(--pkt-color-brand-neutrals-500, #666);
 }
 
 /* ======================================

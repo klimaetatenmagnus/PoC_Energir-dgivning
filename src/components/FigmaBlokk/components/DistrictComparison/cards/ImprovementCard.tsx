@@ -57,7 +57,7 @@ export const ImprovementCard: React.FC<ImprovementCardProps> = ({
             title={`Din bolig: Topp ${currentPercentile}%`}
           >
             <div className="improvement-scale__marker-dot" />
-            <span className="improvement-scale__marker-label">Din bolig</span>
+            <span className="improvement-scale__marker-label">Din bolig*</span>
           </div>
 
           {/* Markør for projisert posisjon - invertert for speilet skala */}
@@ -95,7 +95,7 @@ export const ImprovementCard: React.FC<ImprovementCardProps> = ({
       {/* Statistikk-bokser */}
       <div className="improvement-stats">
         <div className="improvement-stat">
-          <div className="improvement-stat__label">Din bolig</div>
+          <div className="improvement-stat__label">Din bolig*</div>
           <div
             className="improvement-stat__grade"
             style={{ backgroundColor: currentEnergyGrade ? GRADE_COLORS[currentEnergyGrade] : '#ccc' }}

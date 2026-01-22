@@ -24,6 +24,8 @@ import {
   getStatsForDistrict,
   getStatsForSubdistrict,
   mapBuildingTypeToCategory,
+  lookupBuildingFromEnovaData,
+  type EnovaBuildingData,
 } from '../../../services/districtStatisticsService';
 import type { DistrictStats } from '../../../types/districtStatistics';
 
@@ -221,6 +223,10 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   const [isComparisonModalOpen, setIsComparisonModalOpen] = React.useState(false);
   const [districtStats, setDistrictStats] = React.useState<DistrictStats | null>(null);
   const [subdistrictStats, setSubdistrictStats] = React.useState<DistrictStats | null>(null);
+
+  // Enova bulk-data for brukerens bolig (for "Sammenlign deg med naboen")
+  // Brukes kun til sammenligning, ikke til energikarakter-visning
+  const [enovaBulkData, setEnovaBulkData] = React.useState<EnovaBuildingData | null>(null);
 
   // Hent delbydelsnavn fra csvData
   const subdistrictName = buildingData?.csvData?.delbydelsnavn || null;
@@ -535,6 +541,7 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   }, [addressOnly]);
 
   // Hent bydels- og delbydel-statistikk for sammenligning
+  // Slå også opp brukerens bolig i Enova bulk-data for å sikre "epler med epler"-sammenligning
   React.useEffect(() => {
     let cancelled = false;
 
@@ -555,22 +562,44 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
       } else {
         setSubdistrictStats(null);
       }
+
+      // Slå opp brukerens bolig i Enova bulk-data
+      // Dette brukes KUN for "Sammenlign deg med naboen"-modulen,
+      // slik at både brukerdata og bydelsstatistikk kommer fra samme kilde
+      const gnr = String(buildingData?.gnr || buildingData?.csvData?.gnr || '');
+      const bnr = String(buildingData?.bnr || buildingData?.csvData?.bnr || '');
+      const snr = String(buildingData?.seksjonsnummer || '0');
+      const bygningsnummer = buildingData?.bygningsnummer || '';
+
+      const enovaData = await lookupBuildingFromEnovaData(bygningsnummer, gnr, bnr, snr);
+      if (!cancelled) {
+        setEnovaBulkData(enovaData);
+      }
     }
 
     loadStats();
 
     return () => { cancelled = true; };
-  }, [districtName, subdistrictName, buildingTypeName]);
+  }, [districtName, subdistrictName, buildingTypeName, buildingData]);
 
   // Beregn kWh/m² for bydelssammenligning
+  // Prioriterer Enova bulk-data for å sikre "epler med epler"-sammenligning
+  // Hvis boligen ikke finnes i Enova bulk-data, brukes TEK-estimering
   const currentKwhPerM2 = React.useMemo(() => {
+    // Hvis brukerens bolig finnes i Enova bulk-data, bruk den verdien
+    // Dette sikrer at sammenligningen er basert på samme datakilde som bydelsstatistikken
+    if (enovaBulkData?.kwhPerM2 && enovaBulkData.kwhPerM2 > 0) {
+      return enovaBulkData.kwhPerM2;
+    }
+
+    // Fallback til TEK-estimering hvis Enova-data ikke finnes
     const consumption = Number(savedEnergiforbruk);
     const area = Number(savedAreal);
     if (!Number.isFinite(consumption) || consumption <= 0 || !Number.isFinite(area) || area <= 0) {
       return 0;
     }
     return consumption / area;
-  }, [savedEnergiforbruk, savedAreal]);
+  }, [enovaBulkData, savedEnergiforbruk, savedAreal]);
 
   // Beregn boligtype-kategori for bydelssammenligning
   const buildingCategory = React.useMemo(
@@ -1088,6 +1117,7 @@ const tiltakPreview = selectedTiltakSlug ? (
           subdistrictName={subdistrictName ?? undefined}
           subdistrictStats={subdistrictStats ?? undefined}
           buildingTypeCategory={buildingCategory}
+          isUsingEnovaBulkData={enovaBulkData !== null}
         />
       )}
 

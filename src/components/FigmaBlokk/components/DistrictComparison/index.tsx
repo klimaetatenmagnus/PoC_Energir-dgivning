@@ -42,6 +42,8 @@ interface DistrictComparisonCarouselProps {
   userEnergyGrade?: EnergyGrade | null;
   /** Boligtype-kategori for riktig sammenligningstekst */
   buildingTypeCategory?: BuildingTypeCategory;
+  /** Om brukerens energiforbruk er basert på Enova bulk-data (true) eller TEK-estimering (false) */
+  isUsingEnovaBulkData?: boolean;
 }
 
 type ComparisonLevel = 'district' | 'subdistrict';
@@ -81,6 +83,7 @@ export const DistrictComparisonCarousel: React.FC<DistrictComparisonCarouselProp
   subdistrictStats,
   userEnergyGrade,
   buildingTypeCategory = 'småhus',
+  isUsingEnovaBulkData = false,
 }) => {
   // Bestem riktig boligtekst basert på kategori
   const buildingTypeText = buildingTypeCategory === 'blokk' ? 'leiligheter' : 'eneboliger';
@@ -279,7 +282,16 @@ export const DistrictComparisonCarousel: React.FC<DistrictComparisonCarouselProp
 
       {/* Kildeinfo */}
       <div className="district-carousel__meta">
-        Basert på {activeStats.count.toLocaleString('nb-NO')} {buildingTypeText} i {activeAreaName}
+        <span>Basert på {activeStats.count.toLocaleString('nb-NO')} {buildingTypeText} i {activeAreaName}</span>
+        {isUsingEnovaBulkData ? (
+          <span className="district-carousel__source-info district-carousel__source-info--enova">
+            *Energiforbruket for din bolig er hentet fra registrert energiattest.
+          </span>
+        ) : (
+          <span className="district-carousel__source-info district-carousel__source-info--estimated">
+            *Energiforbruket for din bolig er estimert basert på byggeår og areal.
+          </span>
+        )}
       </div>
     </div>
   );

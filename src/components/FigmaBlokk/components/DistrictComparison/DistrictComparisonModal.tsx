@@ -37,6 +37,8 @@ interface DistrictComparisonModalProps {
   userEnergyGrade?: EnergyGrade | null;
   /** Boligtype-kategori for riktig sammenligningstekst */
   buildingTypeCategory?: BuildingTypeCategory;
+  /** Om brukerens energiforbruk er basert på Enova bulk-data (true) eller TEK-estimering (false) */
+  isUsingEnovaBulkData?: boolean;
 }
 
 export const DistrictComparisonModal: React.FC<DistrictComparisonModalProps> = ({
@@ -51,6 +53,7 @@ export const DistrictComparisonModal: React.FC<DistrictComparisonModalProps> = (
   subdistrictStats,
   userEnergyGrade,
   buildingTypeCategory,
+  isUsingEnovaBulkData,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -143,6 +146,7 @@ export const DistrictComparisonModal: React.FC<DistrictComparisonModalProps> = (
             subdistrictStats={subdistrictStats}
             userEnergyGrade={userEnergyGrade}
             buildingTypeCategory={buildingTypeCategory}
+            isUsingEnovaBulkData={isUsingEnovaBulkData}
           />
         </div>
       </div>

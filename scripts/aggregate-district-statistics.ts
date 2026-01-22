@@ -20,6 +20,7 @@ const ROOT_DIR = resolve(__dirname, '..');
 const ENOVA_CSV_PATH = resolve(ROOT_DIR, 'data/raw/enova-energimerker-oslo.csv');
 const POSTNUMMER_MAPPING_PATH = resolve(ROOT_DIR, 'data/raw/postnummer-bydel-mapping.json');
 const OUTPUT_PATH = resolve(ROOT_DIR, 'src/data/district-statistics-enova.json');
+const BUILDING_INDEX_PATH = resolve(ROOT_DIR, 'src/data/enova-building-index.json');
 
 // Oslo postnummer til bydel mapping (basert på offisielle data)
 // Denne mappingen er forenklet - en komplett mapping bør inkludere alle postnumre
@@ -583,6 +584,27 @@ interface EnovaCsvRow {
   bra: number;
   byggeaar: number;
   bygningsnummer?: string;
+  gnr?: string;
+  bnr?: string;
+  snr?: string;
+  kwhPerM2: number;
+}
+
+// Bygnings-indeks for oppslag av enkelt-boliger
+interface BuildingIndexEntry {
+  kwhPerM2: number;
+  energikarakter: string;
+  bygningskategori: string;
+  byggeaar: number;
+  bydel?: string;
+  delbydel?: string;
+}
+
+interface BuildingIndex {
+  lastUpdated: string;
+  source: 'enova-bulk';
+  // Nøkkel: bygningsnummer eller "gnr-bnr-snr"
+  buildings: Record<string, BuildingIndexEntry>;
 }
 
 interface BuildingStats {
@@ -693,6 +715,10 @@ function parseEnovaCsv(csvContent: string): EnovaCsvRow[] {
       bra: bra > 0 ? bra : 100, // Default to 100m² if not available
       byggeaar: parseInt(row['byggeaar'] || row['byggear'] || '0'),
       bygningsnummer: row['bygningsnummer'],
+      gnr: row['gnr'] || '',
+      bnr: row['bnr'] || '',
+      snr: row['snr'] || '',
+      kwhPerM2,
     });
   }
 
@@ -881,6 +907,50 @@ function aggregateStatistics(
   };
 }
 
+// Generate building index for individual building lookups
+function generateBuildingIndex(
+  rows: EnovaCsvRow[],
+  postnummerMapping: Record<string, { bydel: string; delbydel: string }>
+): BuildingIndex {
+  const buildings: Record<string, BuildingIndexEntry> = {};
+
+  for (const row of rows) {
+    // Skip unrealistic values
+    if (row.kwhPerM2 < 20 || row.kwhPerM2 > 500) continue;
+
+    const mapping = postnummerMapping[row.postnummer];
+
+    const entry: BuildingIndexEntry = {
+      kwhPerM2: Math.round(row.kwhPerM2 * 10) / 10, // Round to 1 decimal
+      energikarakter: row.energikarakter,
+      bygningskategori: row.bygningskategori,
+      byggeaar: row.byggeaar,
+      bydel: mapping?.bydel,
+      delbydel: mapping?.delbydel,
+    };
+
+    // Primary key: bygningsnummer (most reliable)
+    if (row.bygningsnummer) {
+      buildings[row.bygningsnummer] = entry;
+    }
+
+    // Secondary key: matrikkel (gnr-bnr-snr) - useful for lookups without bygningsnummer
+    if (row.gnr && row.bnr) {
+      const matrikkelKey = `${row.gnr}-${row.bnr}-${row.snr || '0'}`;
+      // Don't overwrite if bygningsnummer already set this entry
+      if (!buildings[matrikkelKey]) {
+        buildings[matrikkelKey] = entry;
+      }
+    }
+  }
+
+  return {
+    lastUpdated: new Date().toISOString().split('T')[0],
+    source: 'enova-bulk',
+    buildings,
+  };
+}
+
 // Main execution
 async function main() {
   console.log('🔄 Aggregerer bydelsstatistikk fra Enova bulk-data...\n');
@@ -911,9 +981,17 @@ async function main() {
   console.log('📈 Aggregerer statistikk...');
   const statistics = aggregateStatistics(rows, postnummerMapping);
 
-  // Write output
+  // Write district statistics output
   writeFileSync(OUTPUT_PATH, JSON.stringify(statistics, null, 2), 'utf-8');
-  console.log(`\n✅ Statistikk lagret til: ${OUTPUT_PATH}`);
+  console.log(`\n✅ Bydelsstatistikk lagret til: ${OUTPUT_PATH}`);
+
+  // Generate and write building index for individual lookups
+  console.log('\n🏠 Genererer bygnings-indeks...');
+  const buildingIndex = generateBuildingIndex(rows, postnummerMapping);
+  const buildingCount = Object.keys(buildingIndex.buildings).length;
+  writeFileSync(BUILDING_INDEX_PATH, JSON.stringify(buildingIndex, null, 2), 'utf-8');
+  console.log(`✅ Bygnings-indeks lagret til: ${BUILDING_INDEX_PATH}`);
+  console.log(`   ${buildingCount.toLocaleString()} unike boliger indeksert`);
 
   // Print summary
   console.log('\n📋 Sammendrag per bydel:\n');

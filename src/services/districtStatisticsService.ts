@@ -28,6 +28,122 @@ import type {
 
 let cachedData: DistrictStatisticsData | null = null;
 
+// =============================================================================
+// Bygnings-indeks for oppslag av enkelt-boliger fra Enova bulk-data
+// =============================================================================
+
+/**
+ * Enova-attestdata for en enkelt bolig
+ * Hentet fra bulk-data, ikke API-oppslag
+ */
+export interface EnovaBuildingData {
+  kwhPerM2: number;
+  energikarakter: string;
+  bygningskategori: string;
+  byggeaar: number;
+  bydel?: string;
+  delbydel?: string;
+}
+
+interface BuildingIndex {
+  lastUpdated: string;
+  source: 'enova-bulk';
+  buildings: Record<string, EnovaBuildingData>;
+}
+
+let cachedBuildingIndex: BuildingIndex | null = null;
+
+/**
+ * Laster bygnings-indeksen fra enova-building-index.json
+ */
+async function loadBuildingIndex(): Promise<BuildingIndex | null> {
+  try {
+    const indexModule = await import('../data/enova-building-index.json');
+    const indexData = indexModule.default as unknown as BuildingIndex;
+
+    if (indexData && indexData.source === 'enova-bulk') {
+      return indexData;
+    }
+  } catch {
+    // Indeks ikke tilgjengelig - dette er OK
+  }
+  return null;
+}
+
+/**
+ * Henter bygnings-indeksen (cached)
+ */
+export async function getBuildingIndex(): Promise<BuildingIndex | null> {
+  if (cachedBuildingIndex) return cachedBuildingIndex;
+
+  cachedBuildingIndex = await loadBuildingIndex();
+  return cachedBuildingIndex;
+}
+
+/**
+ * Slår opp Enova-attestdata for en bolig fra bulk-dataen
+ *
+ * Brukes i "Sammenlign deg med naboene dine"-modulen for å sikre
+ * at både brukerens data og bydelsstatistikken kommer fra samme kilde.
+ *
+ * @param bygningsnummer - Bygningsnummer (8-sifret)
+ * @param gnr - Gårdsnummer (fallback hvis bygningsnummer mangler)
+ * @param bnr - Bruksnummer
+ * @param snr - Seksjonsnummer (default "0")
+ * @returns Enova-attestdata eller null hvis ikke funnet
+ */
+export async function lookupBuildingFromEnovaData(
+  bygningsnummer?: string,
+  gnr?: string,
+  bnr?: string,
+  snr?: string
+): Promise<EnovaBuildingData | null> {
+  const index = await getBuildingIndex();
+  if (!index) return null;
+
+  // Prøv først bygningsnummer (mest pålitelig)
+  if (bygningsnummer && index.buildings[bygningsnummer]) {
+    return index.buildings[bygningsnummer];
+  }
+
+  // Fallback til matrikkel-nøkkel
+  if (gnr && bnr) {
+    const matrikkelKey = `${gnr}-${bnr}-${snr || '0'}`;
+    if (index.buildings[matrikkelKey]) {
+      return index.buildings[matrikkelKey];
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Synkron versjon for å slå opp bolig (krever at indeksen allerede er lastet)
+ */
+export function lookupBuildingFromEnovaDataSync(
+  bygningsnummer?: string,
+  gnr?: string,
+  bnr?: string,
+  snr?: string
+): EnovaBuildingData | null {
+  if (!cachedBuildingIndex) return null;
+
+  // Prøv først bygningsnummer
+  if (bygningsnummer && cachedBuildingIndex.buildings[bygningsnummer]) {
+    return cachedBuildingIndex.buildings[bygningsnummer];
+  }
+
+  // Fallback til matrikkel-nøkkel
+  if (gnr && bnr) {
+    const matrikkelKey = `${gnr}-${bnr}-${snr || '0'}`;
+    if (cachedBuildingIndex.buildings[matrikkelKey]) {
+      return cachedBuildingIndex.buildings[matrikkelKey];
+    }
+  }
+
+  return null;
+}
+
 /**
  * Forsøker å laste ekte Enova-data, faller tilbake til mock hvis ikke tilgjengelig
  *

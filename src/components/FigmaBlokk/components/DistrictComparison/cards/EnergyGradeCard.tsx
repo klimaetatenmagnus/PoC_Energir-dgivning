@@ -81,7 +81,7 @@ export const EnergyGradeCard: React.FC<EnergyGradeCardProps> = ({
               </span>
               <div className="energy-grade-row__markers">
                 {isUserGrade && (
-                  <span className="energy-grade-row__marker">Nå</span>
+                  <span className="energy-grade-row__marker">Nå*</span>
                 )}
                 {isProjectedGrade && (
                   <span className="energy-grade-row__marker energy-grade-row__marker--projected">Mål</span>
