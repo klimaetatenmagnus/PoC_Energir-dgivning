@@ -1,0 +1,159 @@
+/**
+ * Stiler for DistrictComparisonModal
+ * Modal sentrert på skjermen med backdrop
+ * Bruker Punkt designsystem tokens
+ */
+
+/* ======================================
+   BACKDROP - Mørk overlay bak modal
+   ====================================== */
+
+.district-modal__backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(42, 40, 89, 0.5); /* pkt-color-brand-dark-blue-1000 med alpha */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: var(--pkt-spacing-24, 1.5rem);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ======================================
+   MODAL - Hovedcontainer
+   ====================================== */
+
+.district-modal {
+  background-color: var(--pkt-color-background-default, #ffffff);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 10px 20px rgba(0, 0, 0, 0.15);
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ======================================
+   HEADER - Tittel og lukkeknapp
+   ====================================== */
+
+.district-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--pkt-spacing-16, 1rem) var(--pkt-spacing-24, 1.5rem);
+  border-bottom: 1px solid var(--pkt-color-brand-neutrals-200, #f2f2f2);
+  background-color: var(--pkt-color-background-default, #ffffff);
+}
+
+.district-modal__title {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  margin: 0;
+  flex: 1;
+  padding-right: var(--pkt-spacing-16, 1rem);
+}
+
+.district-modal__close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.district-modal__close-btn:hover {
+  background-color: var(--pkt-color-brand-neutrals-100, #f5f5f5);
+}
+
+.district-modal__close-btn:focus-visible {
+  outline: 2px solid var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  outline-offset: 2px;
+}
+
+.district-modal__close-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+/* ======================================
+   CONTENT - Innholdsområde
+   ====================================== */
+
+.district-modal__content {
+  padding: var(--pkt-spacing-16, 1rem) var(--pkt-spacing-24, 1.5rem) var(--pkt-spacing-24, 1.5rem);
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ======================================
+   RESPONSIVE - Tilpasninger for mindre skjermer
+   ====================================== */
+
+@media (max-width: 576px) {
+  .district-modal__backdrop {
+    padding: var(--pkt-spacing-16, 1rem);
+    align-items: flex-end;
+  }
+
+  .district-modal {
+    max-width: 100%;
+    max-height: 85vh;
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .district-modal__title {
+    font-size: 1.125rem;
+  }
+
+  .district-modal__content {
+    padding: var(--pkt-spacing-16, 1rem);
+  }
+}

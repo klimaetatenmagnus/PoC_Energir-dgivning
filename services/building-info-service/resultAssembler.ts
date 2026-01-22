@@ -51,6 +51,7 @@ export interface BuildingResult {
     tattIBrukDato: string;
     gateAdresse: string;
     bydelsnavn: string;
+    delbydelsnavn: string;
     antallEtasjer: number | null;
     bygningsstatusNavn: string;
   } | null;
@@ -273,6 +274,7 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
           tattIBrukDato: csvData.tattIBrukDato,
           gateAdresse: csvData.gateAdresse,
           bydelsnavn: csvData.bydelsnavn,
+          delbydelsnavn: csvData.delbydelsnavn,
           antallEtasjer: csvData.antallEtasjer,
           bygningsstatusNavn: csvData.bygningsstatusNavn,
         }

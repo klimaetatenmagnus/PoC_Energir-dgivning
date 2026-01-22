@@ -1,0 +1,512 @@
+/**
+ * Stiler for DistrictComparisonCarousel
+ * Bruker Punkt designsystem tokens
+ */
+
+/* ======================================
+   KARUSELL - Hovedcontainer
+   ====================================== */
+
+.district-carousel {
+  width: 100%;
+  padding: 8px 0;
+}
+
+/* ======================================
+   KARUSELL - Navigasjon
+   ====================================== */
+
+.district-carousel__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 4px 8px;
+  border-bottom: 1px solid var(--pkt-color-brand-neutrals-200, #f2f2f2);
+}
+
+.district-carousel__nav-btn {
+  flex-shrink: 0;
+}
+
+.district-carousel__nav-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+
+.district-carousel__nav-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.district-carousel__nav-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.district-carousel__nav-indicator {
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: var(--pkt-color-brand-neutrals-500, #666);
+}
+
+/* ======================================
+   KARUSELL - Innhold
+   ====================================== */
+
+.district-carousel__content {
+  padding: 12px 4px;
+}
+
+/* ======================================
+   KARUSELL - Dot-indikatorer
+   ====================================== */
+
+.district-carousel__dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.district-carousel__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--pkt-color-brand-neutrals-300, #ccc);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+  padding: 0;
+}
+
+.district-carousel__dot:hover {
+  background-color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+  transform: scale(1.2);
+}
+
+.district-carousel__dot--active {
+  background-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+/* ======================================
+   KARUSELL - Metadata/kildeinfo
+   ====================================== */
+
+.district-carousel__meta {
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+  text-align: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--pkt-color-brand-neutrals-200, #f2f2f2);
+}
+
+/* ======================================
+   KORT - Fellesstiler
+   ====================================== */
+
+.carousel-card {
+  padding: 8px 0;
+}
+
+.carousel-card__title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.carousel-card__message {
+  text-align: center;
+  margin-bottom: 12px;
+  padding: 8px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.carousel-card__summary {
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 8px 0;
+  padding: 6px 12px;
+}
+
+.carousel-card__summary--positive {
+  color: var(--pkt-color-brand-dark-green-1000, #034b45);
+  background-color: var(--pkt-color-surface-default-light-green, #e8f5e9);
+}
+
+.carousel-card__summary--negative {
+  color: var(--pkt-color-brand-red-1000, #ff8274);
+  background-color: var(--pkt-color-surface-default-light-red, #ffebee);
+}
+
+.carousel-card__summary--info {
+  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+  background-color: var(--pkt-color-background-subtle, #f9f9f9);
+}
+
+.carousel-card__meta {
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* ======================================
+   KORT 1: ComparisonCard - Bar-sammenligning
+   ====================================== */
+
+.carousel-card__bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.carousel-card__bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.carousel-card__bar-row--projected {
+  opacity: 0.8;
+}
+
+.carousel-card__bar-row--avg {
+  border-top: 1px dashed var(--pkt-color-brand-neutrals-200, #f2f2f2);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
+.carousel-card__bar-label {
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.carousel-card__bar-container {
+  flex: 1;
+  height: 16px;
+  background-color: var(--pkt-color-brand-neutrals-100, #f5f5f5);
+  overflow: hidden;
+}
+
+.carousel-card__bar {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.carousel-card__bar--good {
+  background-color: var(--pkt-color-brand-green-1000, #43F8B6);
+}
+
+.carousel-card__bar--neutral {
+  background-color: var(--pkt-color-brand-yellow-1000, #F9C66B);
+}
+
+.carousel-card__bar--projected {
+  background-color: var(--pkt-color-brand-light-green-1000, #C7F6C9);
+}
+
+.carousel-card__bar--avg {
+  background-color: var(--pkt-color-brand-neutrals-400, #999);
+}
+
+.carousel-card__bar-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  width: 40px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ======================================
+   KORT 2: EnergyGradeCard - A-G fordeling
+   ====================================== */
+
+.energy-grade-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.energy-grade-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  transition: background-color 0.15s ease;
+}
+
+.energy-grade-row--highlighted {
+  background-color: var(--pkt-color-surface-default-light-blue, #e3f2fd);
+}
+
+.energy-grade-row__grade {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  flex-shrink: 0;
+}
+
+.energy-grade-row__bar-container {
+  flex: 1;
+  height: 12px;
+  background-color: var(--pkt-color-brand-neutrals-100, #f5f5f5);
+  overflow: hidden;
+}
+
+.energy-grade-row__bar {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.energy-grade-row__percentage {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.energy-grade-row__markers {
+  display: flex;
+  gap: 4px;
+  min-width: 65px;
+  justify-content: flex-end;
+}
+
+.energy-grade-row__marker {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-800, #3d3a7a);
+  background-color: var(--pkt-color-surface-default-light-blue, #e3f2fd);
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+.energy-grade-row__marker--projected {
+  color: var(--pkt-color-brand-dark-green-1000, #034b45);
+  background-color: var(--pkt-color-surface-default-light-green, #e8f5e9);
+}
+
+.energy-grade-row--projected {
+  background-color: var(--pkt-color-surface-default-light-green, #e8f5e9);
+}
+
+/* ======================================
+   KORT 3: ImprovementCard - Percentil-skala
+   ====================================== */
+
+.improvement-scale {
+  margin: 16px 0;
+  padding: 0 8px;
+}
+
+.improvement-scale__labels {
+  display: flex;
+  font-size: 0.625rem;
+  font-weight: 300;
+  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+  margin-bottom: 20px; /* Økt fra 4px for å gi plass til "Med valgte tiltak"-etiketten */
+}
+
+.improvement-scale__labels span {
+  flex: 1;
+}
+
+.improvement-scale__labels span:first-child {
+  text-align: left;
+}
+
+.improvement-scale__labels span:nth-child(2) {
+  text-align: center;
+}
+
+.improvement-scale__labels span:last-child {
+  text-align: right;
+}
+
+.improvement-scale__track {
+  position: relative;
+  height: 24px;
+  background: linear-gradient(
+    to right,
+    var(--pkt-color-brand-red-1000, #FF8274) 0%,
+    var(--pkt-color-brand-yellow-1000, #F9C66B) 50%,
+    var(--pkt-color-brand-green-1000, #43F8B6) 100%
+  );
+}
+
+.improvement-scale__marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.improvement-scale__marker-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.improvement-scale__marker-dot--projected {
+  background-color: var(--pkt-color-brand-dark-green-1000, #034b45);
+}
+
+.improvement-scale__marker-label {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  white-space: nowrap;
+}
+
+/* Plasser etiketten over grafen i stedet for under */
+.improvement-scale__marker-label--top {
+  top: auto;
+  bottom: calc(100% + 4px);
+  color: var(--pkt-color-brand-dark-green-1000, #034b45);
+}
+
+.improvement-scale__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 4px;
+  background-color: var(--pkt-color-brand-dark-green-1000, #034b45);
+  opacity: 0.5;
+}
+
+.improvement-scale__ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.625rem;
+  font-weight: 300;
+  color: var(--pkt-color-brand-neutrals-500, #999);
+  margin-top: 20px; /* Økt fra 4px for å gi plass til "Din bolig"-etiketten */
+  padding: 0 8px;
+}
+
+/* ======================================
+   KORT 3: ImprovementCard - Statistikk-bokser
+   ====================================== */
+
+.improvement-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.improvement-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.improvement-stat__label {
+  font-size: 0.625rem;
+  font-weight: 300;
+  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+}
+
+.improvement-stat__grade {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.improvement-stat__value {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.improvement-stat__value--projected {
+  color: var(--pkt-color-brand-dark-green-1000, #034b45);
+}
+
+.improvement-stat__arrow {
+  font-size: 1.25rem;
+  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+}
+
+/* ======================================
+   BYDEL/DELBYDEL DROPDOWN
+   Plassert under navigasjons-tittelen, full bredde
+   ====================================== */
+
+.district-carousel__level-select {
+  padding: var(--pkt-spacing-8, 0.5rem) 0;
+}
+
+/* Override Punkt select for kompakt visning */
+.district-carousel__level-select .pkt-select {
+  margin-bottom: 0;
+}
+
+.district-carousel__level-select .pkt-select__label,
+.district-carousel__level-select label {
+  display: none !important; /* Skjul label - kontekst er tydelig fra valgteksten */
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.district-carousel__level-select .pkt-select__input {
+  font-size: 0.875rem;
+  padding: var(--pkt-spacing-8, 0.5rem) var(--pkt-spacing-32, 2rem) var(--pkt-spacing-8, 0.5rem) var(--pkt-spacing-12, 0.75rem);
+  min-height: auto;
+  border-color: var(--pkt-color-brand-neutrals-300, #ccc);
+}
+
+.district-carousel__level-select .pkt-select__input:focus {
+  border-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  box-shadow: 0 0 0 2px var(--pkt-color-surface-default-light-blue, #e3f2fd);
+}
+
+.district-carousel__select {
+  width: 100%;
+}

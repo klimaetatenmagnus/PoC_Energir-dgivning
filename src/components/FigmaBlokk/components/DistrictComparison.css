@@ -1,0 +1,133 @@
+/**
+ * Stiler for DistrictComparison-komponenten
+ * Bruker Punkt designsystem tokens
+ */
+
+.district-comparison {
+  padding: 0 14px;
+  width: 100%;
+}
+
+.district-comparison__toggle {
+  width: 100%;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--pkt-color-brand-neutrals-200, #f2f2f2);
+}
+
+.district-comparison__toggle:hover {
+  background-color: transparent;
+}
+
+/* Ekspanderbart innhold */
+.district-comparison__content {
+  overflow: hidden;
+  transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+}
+
+.district-comparison__content--collapsed {
+  max-height: 0;
+  opacity: 0;
+  padding: 0;
+}
+
+.district-comparison__content--expanded {
+  max-height: 300px;
+  opacity: 1;
+  padding: 12px 0;
+}
+
+/* Rad med label og verdi */
+.district-comparison__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.district-comparison__label {
+  font-size: 0.875rem;
+  font-weight: 300;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.district-comparison__value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.district-comparison__value--positive {
+  color: var(--pkt-color-brand-dark-green-1000, #034b45);
+}
+
+.district-comparison__value--negative {
+  color: var(--pkt-color-brand-red-1000, #ff8274);
+}
+
+/* Statistikk-sammenligning */
+.district-comparison__stats {
+  display: flex;
+  gap: 16px;
+  margin: 12px 0;
+  padding: 12px;
+  background-color: var(--pkt-color-background-subtle, #f9f9f9);
+  border-radius: 8px;
+}
+
+.district-comparison__stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.district-comparison__stat-label {
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+}
+
+.district-comparison__stat-value {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+/* Alert/motiverende melding */
+.district-comparison__alert {
+  margin-bottom: 12px;
+}
+
+.district-comparison__alert--projected {
+  margin-top: 8px;
+}
+
+.district-comparison__projected-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+  margin-bottom: 4px;
+}
+
+/* Oppsummering */
+.district-comparison__summary {
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-green-1000, #034b45);
+  margin: 8px 0;
+}
+
+/* Metadata/kildeinfo */
+.district-comparison__meta {
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+  text-align: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--pkt-color-brand-neutrals-200, #f2f2f2);
+}

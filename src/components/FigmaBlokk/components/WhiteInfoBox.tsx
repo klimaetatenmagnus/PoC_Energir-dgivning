@@ -17,7 +17,15 @@ import {
 } from './Tiltak/glossaryHelpers';
 import dictionaryData from '../../../../content/dictionaries/index.json';
 import { DesktopTiltakCard } from './Tiltak';
+import { DistrictComparisonModal } from './DistrictComparison/DistrictComparisonModal';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from '../../../utils/tekEnergyCalculations';
+import {
+  getDistrictStatistics,
+  getStatsForDistrict,
+  getStatsForSubdistrict,
+  mapBuildingTypeToCategory,
+} from '../../../services/districtStatisticsService';
+import type { DistrictStats } from '../../../types/districtStatistics';
 
 import { convertKwhToNok, formatCurrency, formatNumberWithSpaces } from '../../../utils/energy';
 import { getOsloMapExportUrl } from '../../../utils/coordinateUtils';
@@ -208,6 +216,14 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   const [isDropdownExpanded, setIsDropdownExpanded] = React.useState(false);
   const [hoveredGlossaryTerm, setHoveredGlossaryTerm] = React.useState<string | null>(null);
   const [isEditMode, setIsEditMode] = React.useState(false);
+
+  // State for bydelssammenligning (modal)
+  const [isComparisonModalOpen, setIsComparisonModalOpen] = React.useState(false);
+  const [districtStats, setDistrictStats] = React.useState<DistrictStats | null>(null);
+  const [subdistrictStats, setSubdistrictStats] = React.useState<DistrictStats | null>(null);
+
+  // Hent delbydelsnavn fra csvData
+  const subdistrictName = buildingData?.csvData?.delbydelsnavn || null;
 
   // Hent ordforklaringer fra sentralt dictionary (med fallback til statisk import)
   const { data: dictionary } = useContentDictionary();
@@ -485,6 +501,9 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   const shouldAnimateSavingsCardIntro =
     shouldShowSavingsCard && !hasShownSavings && animateSavings && !prefersReducedMotion;
 
+  // Knapp-høyde for bydelssammenligning (brukes for å plassere knappen på kartet)
+  const COMPARISON_BUTTON_HEIGHT = 40;
+
   // Call the callback with initial values when component mounts or when savedEnergiforbruk changes
   React.useEffect(() => {
     if (!onUpdateBuildingData) {
@@ -515,7 +534,55 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     }
   }, [addressOnly]);
 
-  
+  // Hent bydels- og delbydel-statistikk for sammenligning
+  React.useEffect(() => {
+    let cancelled = false;
+
+    async function loadStats() {
+      const data = await getDistrictStatistics();
+      if (cancelled || !districtName) return;
+
+      const buildingCategory = mapBuildingTypeToCategory(buildingTypeName);
+
+      // Hent bydel-statistikk
+      const stats = getStatsForDistrict(data, districtName, buildingCategory);
+      setDistrictStats(stats);
+
+      // Hent delbydel-statistikk hvis tilgjengelig
+      if (subdistrictName) {
+        const subStats = getStatsForSubdistrict(data, districtName, subdistrictName, buildingCategory);
+        setSubdistrictStats(subStats);
+      } else {
+        setSubdistrictStats(null);
+      }
+    }
+
+    loadStats();
+
+    return () => { cancelled = true; };
+  }, [districtName, subdistrictName, buildingTypeName]);
+
+  // Beregn kWh/m² for bydelssammenligning
+  const currentKwhPerM2 = React.useMemo(() => {
+    const consumption = Number(savedEnergiforbruk);
+    const area = Number(savedAreal);
+    if (!Number.isFinite(consumption) || consumption <= 0 || !Number.isFinite(area) || area <= 0) {
+      return 0;
+    }
+    return consumption / area;
+  }, [savedEnergiforbruk, savedAreal]);
+
+  // Beregn boligtype-kategori for bydelssammenligning
+  const buildingCategory = React.useMemo(
+    () => mapBuildingTypeToCategory(buildingTypeName),
+    [buildingTypeName]
+  );
+
+  // Beregn variabler for bydelssammenligning (må være etter currentKwhPerM2)
+  const showComparison = districtStats !== null && currentKwhPerM2 > 0;
+  // Kartet har fast posisjon (modal overlayer i stedet for å flytte kartet)
+  const dynamicMapTopY = MAP_TOP_Y;
+
   // Handle sequential animation - expand height after width
   React.useEffect(() => {
     if (isExpanded) {
@@ -929,19 +996,19 @@ const tiltakPreview = selectedTiltakSlug ? (
           </foreignObject>
         )}
 
-        {/* Map placeholder rectangle */}
-        <rect x="0" y={MAP_TOP_Y} width={MAP_WIDTH} height={MAP_HEIGHT} fill="#E5E5E5" stroke="#D0D0D0" strokeWidth="1"/>
-        
+        {/* Map placeholder rectangle - dynamisk posisjon basert på bydelssammenligning */}
+        <rect x="0" y={dynamicMapTopY} width={MAP_WIDTH} height={MAP_HEIGHT} fill="#E5E5E5" stroke="#D0D0D0" strokeWidth="1"/>
+
         {/* Map image if coordinates are available - Oslo kommune karttjeneste */}
         {mapCoordinates && (
           <>
             <clipPath id="mapClip">
-              <rect x="0" y={MAP_TOP_Y} width={MAP_WIDTH} height={MAP_HEIGHT} />
+              <rect x="0" y={dynamicMapTopY} width={MAP_WIDTH} height={MAP_HEIGHT} />
             </clipPath>
             <g clipPath="url(#mapClip)">
               <image
                 x="0"
-                y={MAP_TOP_Y}
+                y={dynamicMapTopY}
                 width={MAP_WIDTH}
                 height={MAP_HEIGHT}
                 href={getOsloMapExportUrl(mapCoordinates.lat, mapCoordinates.lng, MAP_WIDTH, MAP_HEIGHT)}
@@ -949,17 +1016,17 @@ const tiltakPreview = selectedTiltakSlug ? (
               />
             </g>
             {/* Location pin centered on map */}
-            <g transform={`translate(${MAP_WIDTH / 2 - 14} ${MAP_TOP_Y + MAP_HEIGHT / 2 - 32})`}>
+            <g transform={`translate(${MAP_WIDTH / 2 - 14} ${dynamicMapTopY + MAP_HEIGHT / 2 - 32})`}>
               <LocationPin />
             </g>
           </>
         )}
-        
+
         {/* Map loading text */}
         {!mapCoordinates && (
           <text
             x={MAP_WIDTH / 2}
-            y={MAP_TOP_Y + MAP_HEIGHT / 2}
+            y={dynamicMapTopY + MAP_HEIGHT / 2}
             fontFamily="Oslo Sans, sans-serif"
             fontSize="14"
             fill="#666666"
@@ -968,6 +1035,7 @@ const tiltakPreview = selectedTiltakSlug ? (
             Laster kart...
           </text>
         )}
+
         </g>
 
 {/* Gul liste info overlay - plassert utenfor SVG for bedre tilgjengelighet */}
@@ -980,7 +1048,48 @@ const tiltakPreview = selectedTiltakSlug ? (
         </clipPath>
       </defs>
     </svg>
+
+        {/* Knapp for bydelssammenligning - nederst venstre på kartet med Punkt spacing */}
+        {/* NB: +90 kompenserer for SVG viewBox offset (y starter på -90) */}
+        {showComparison && (
+          <div
+            className="white-info-box__comparison-button-container"
+            style={{
+              position: 'absolute',
+              left: '16px', /* --pkt-spacing-16 */
+              top: `${dynamicMapTopY + 90 + MAP_HEIGHT - COMPARISON_BUTTON_HEIGHT - 16}px`, /* --pkt-spacing-16 fra bunn av kart */
+              zIndex: 100,
+            }}
+          >
+            <PktButton
+              skin="primary"
+              size="small"
+              variant="icon-left"
+              iconName="eye"
+              onClick={() => setIsComparisonModalOpen(true)}
+              className="white-info-box__comparison-button"
+            >
+              <span>Sammenlign deg med naboene dine</span>
+            </PktButton>
+          </div>
+        )}
       </div>
+
+      {/* Modal for bydelssammenligning */}
+      {showComparison && districtStats && (
+        <DistrictComparisonModal
+          isOpen={isComparisonModalOpen}
+          onClose={() => setIsComparisonModalOpen(false)}
+          currentKwhPerM2={currentKwhPerM2}
+          totalEnergySavings={totalEnergySavings}
+          bruksareal={Number(savedAreal) || 0}
+          districtName={districtName}
+          districtStats={districtStats}
+          subdistrictName={subdistrictName ?? undefined}
+          subdistrictStats={subdistrictStats ?? undefined}
+          buildingTypeCategory={buildingCategory}
+        />
+      )}
 
       {/* Gul liste info overlay - HTML/CSS-basert, matcher original SVG-design */}
       {shouldShowYellowBox && isGulListeInfoOpen && (

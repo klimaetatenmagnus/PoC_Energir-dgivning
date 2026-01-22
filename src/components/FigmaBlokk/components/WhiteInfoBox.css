@@ -430,6 +430,34 @@
 }
 
 /* ==========================================================================
+   Bydelssammenligning - Knapp på kartet
+   Følger Punkt designsystem standarder for PktButton
+   ========================================================================== */
+
+.white-info-box__comparison-button-container {
+  /* Posisjonering styres via inline styles i JSX */
+}
+
+.white-info-box__comparison-button {
+  /* Skygge for god synlighet på kart-bakgrunn */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-width: calc(100% - 16px);
+  /* Juster padding for bedre lesbarhet (Punkt spacing) */
+  padding-left: var(--pkt-spacing-3, 0.75rem);
+  padding-right: var(--pkt-spacing-4, 1rem);
+}
+
+.white-info-box__comparison-button:hover,
+.white-info-box__comparison-button:focus {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Sikrer at knappen ikke bryter over flere linjer */
+.white-info-box__comparison-button-container .pkt-btn {
+  white-space: nowrap;
+}
+
+/* ==========================================================================
    Gul liste overlay
    ========================================================================== */
 

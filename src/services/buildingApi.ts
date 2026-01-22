@@ -72,6 +72,7 @@ export interface AddressLookupResponse {
     gnr?: string;
     bnr?: string;
     bydelsnavn?: string;
+    delbydelsnavn?: string;
     areal_leilighet?: string;
   };
 }
