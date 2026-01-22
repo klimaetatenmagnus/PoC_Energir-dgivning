@@ -71,13 +71,10 @@ export const DistrictComparison: React.FC<DistrictComparisonProps> = ({
     return ((districtStats.avgKwhPerM2 - currentKwhPerM2) / districtStats.avgKwhPerM2) * 100;
   }, [currentKwhPerM2, districtStats.avgKwhPerM2]);
 
-  // Ikke vis hvis vi ikke har gyldig data
-  if (currentPercentile === null) {
-    return null;
-  }
-
   // Hent motiverende melding basert på percentil (fra dokumentet seksjon 7.3)
+  // Må kalles før conditional return for å følge Rules of Hooks
   const motivationalMessage = useMemo(() => {
+    if (currentPercentile === null) return null;
     return getMotivationalMessage(currentPercentile, districtName);
   }, [currentPercentile, districtName]);
 
@@ -85,6 +82,11 @@ export const DistrictComparison: React.FC<DistrictComparisonProps> = ({
     if (!projectedData) return null;
     return getMotivationalMessage(projectedData.projectedPercentile, districtName);
   }, [projectedData, districtName]);
+
+  // Ikke vis hvis vi ikke har gyldig data
+  if (currentPercentile === null) {
+    return null;
+  }
 
   return (
     <div className="district-comparison">
@@ -110,11 +112,13 @@ export const DistrictComparison: React.FC<DistrictComparisonProps> = ({
         }`}
       >
         {/* Motiverende melding fra dokumentet seksjon 7.3 */}
-        <div className="district-comparison__alert">
-          <PktAlert skin={motivationalMessage.skin} compact>
-            {motivationalMessage.text}
-          </PktAlert>
-        </div>
+        {motivationalMessage && (
+          <div className="district-comparison__alert">
+            <PktAlert skin={motivationalMessage.skin} compact>
+              {motivationalMessage.text}
+            </PktAlert>
+          </div>
+        )}
 
         {/* Hvis tiltak er valgt, vis projisert melding */}
         {projectedData && projectedData.improvement > 0 && projectedMessage && (

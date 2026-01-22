@@ -42,9 +42,7 @@ async function loadStatisticsData(): Promise<DistrictStatisticsData> {
 
     // Sjekk om det er ekte Enova-data (ikke placeholder)
     if (enovaData && enovaData.source === 'enova-bulk' && enovaData.lastUpdated !== 'placeholder') {
-      console.log(
-        `📊 Bruker ekte Enova-statistikk (oppdatert: ${enovaData.lastUpdated})`
-      );
+      // Ekte Enova-statistikk lastet (oppdatert: enovaData.lastUpdated)
       return enovaData;
     }
   } catch {
