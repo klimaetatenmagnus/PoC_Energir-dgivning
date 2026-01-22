@@ -6,37 +6,37 @@
       "thresholds": [
         {
           "rating": "A",
-          "formula": "95 + 800/BRA",
+          "formula": "85 + 800/BRA",
           "description": "Svært energieffektiv bolig"
         },
         {
           "rating": "B",
-          "formula": "120 + 1600/BRA",
+          "formula": "95 + 1600/BRA",
           "description": "Energieffektiv bolig"
         },
         {
           "rating": "C",
-          "formula": "145 + 2500/BRA",
+          "formula": "155 + 2500/BRA",
           "description": "God energistandard"
         },
         {
           "rating": "D",
-          "formula": "175 + 4100/BRA",
+          "formula": "210 + 4100/BRA",
           "description": "Middels energistandard"
         },
         {
           "rating": "E",
-          "formula": "205 + 5800/BRA",
+          "formula": "265 + 5800/BRA",
           "description": "Under middels energistandard"
         },
         {
           "rating": "F",
-          "formula": "250 + 8000/BRA",
+          "formula": "315 + 8000/BRA",
           "description": "Dårlig energistandard"
         },
         {
           "rating": "G",
-          "formula": "> 250 + 8000/BRA",
+          "formula": "> 315 + 8000/BRA",
           "description": "Svært dårlig energistandard"
         }
       ]
@@ -47,41 +47,41 @@
       "thresholds": [
         {
           "rating": "A",
-          "formula": "85 + 600/BRA",
+          "formula": "80 + 600/BRA",
           "description": "Svært energieffektiv leilighet"
         },
         {
           "rating": "B",
-          "formula": "95 + 1000/BRA",
+          "formula": "95 + 700/BRA",
           "description": "Energieffektiv leilighet"
         },
         {
           "rating": "C",
-          "formula": "100 + 1500/BRA",
+          "formula": "140 + 900/BRA",
           "description": "God energistandard"
         },
         {
           "rating": "D",
-          "formula": "135 + 2200/BRA",
+          "formula": "185 + 1100/BRA",
           "description": "Middels energistandard"
         },
         {
           "rating": "E",
-          "formula": "160 + 3000/BRA",
+          "formula": "230 + 1300/BRA",
           "description": "Under middels energistandard"
         },
         {
           "rating": "F",
-          "formula": "200 + 4000/BRA",
+          "formula": "270 + 1500/BRA",
           "description": "Dårlig energistandard"
         },
         {
           "rating": "G",
-          "formula": "> 200 + 4000/BRA",
+          "formula": "> 270 + 1500/BRA",
           "description": "Svært dårlig energistandard"
         }
       ]
     }
   },
-  "note": "Grenseverdiene beregnes dynamisk basert på BRA (bruksareal). Energiintensitet må være lavere eller lik formelverdien for å oppnå tilhørende karakter."
+  "note": "Grenseverdiene beregnes dynamisk basert på BRA (bruksareal). Energiintensitet må være lavere eller lik formelverdien for å oppnå tilhørende karakter. Ny skala gjeldende fra 1.1.2026, basert på NS 3031:2025."
 }

@@ -82,25 +82,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
       buildingTypeName
     );
 
-    // For blokk med energikarakter, bruk estimat basert på karakter
-    if ((buildingTypeName === 'Blokk' || buildingTypeName === 'Store boligbygg') &&
-        buildingData?.energiattest?.energikarakter && bruksareal && bruksareal > 0) {
-      const energikarakter = buildingData.energiattest.energikarakter;
-
-      const thresholds: Record<string, number> = {
-        'A': 85 + 600 / bruksareal,
-        'B': 95 + 1000 / bruksareal,
-        'C': 100 + 1500 / bruksareal,
-        'D': 135 + 2200 / bruksareal,
-        'E': 160 + 3000 / bruksareal,
-        'F': 200 + 4000 / bruksareal,
-        'G': 250 + 5000 / bruksareal,
-      };
-
-      const estimatedIntensity = thresholds[energikarakter] || thresholds['E'];
-      return Math.round(estimatedIntensity * bruksareal);
-    }
-
+    // Bruker alltid TEK-basert estimering, ikke Enova-attest
     return calculateAnnualEnergyConsumption(parsedByggeaar, bruksareal, buildingType);
   }, [savedByggeaar, savedAreal, buildingData, buildingTypeName]);
 

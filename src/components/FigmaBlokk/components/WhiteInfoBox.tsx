@@ -17,7 +17,7 @@ import {
 } from './Tiltak/glossaryHelpers';
 import dictionaryData from '../../../../content/dictionaries/index.json';
 import { DesktopTiltakCard } from './Tiltak';
-import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../../utils/tekEnergyCalculations';
+import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from '../../../utils/tekEnergyCalculations';
 
 import { convertKwhToNok, formatCurrency, formatNumberWithSpaces } from '../../../utils/energy';
 import { getOsloMapExportUrl } from '../../../utils/coordinateUtils';
@@ -229,7 +229,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     buildingTypeName === 'Store boligbygg' || buildingTypeName.toLowerCase() === 'blokk';
   const isBlockBuilding = buildingTypeName.toLowerCase() === 'blokk';
   const buildingTypeCode = buildingData?.bygningstypeKode || buildingData?.csvData?.bygningstypekode || '';
-  const buildingTypeNameLower = (buildingTypeName || '').toLowerCase();
   const roundedSavingsKwh = React.useMemo(
     () => roundToNearestThousandValue(totalEnergySavings),
     [totalEnergySavings]
@@ -367,30 +366,7 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
       buildingTypeName
     );
     
-    // If building is apartment/large building and has energy rating, estimate based on that
-    if ((buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && 
-        buildingData?.energiattest?.energikarakter && bruksareal && bruksareal > 0) {
-      const energikarakter = buildingData.energiattest.energikarakter;
-      
-      // Get energy intensity thresholds from JSON file for apartments
-      const thresholds: Record<string, number> = {
-        'A': 85 + 600 / bruksareal,
-        'B': 95 + 1000 / bruksareal,
-        'C': 100 + 1500 / bruksareal,
-        'D': 135 + 2200 / bruksareal,
-        'E': 160 + 3000 / bruksareal,
-        'F': 200 + 4000 / bruksareal,
-        'G': 250 + 5000 / bruksareal // Use higher value for G
-      };
-      
-      // Use the threshold for the current rating as the estimated intensity
-      const estimatedIntensity = thresholds[energikarakter] || thresholds['E'];
-      
-      // Calculate total consumption: intensity * area
-      return Math.round(estimatedIntensity * bruksareal);
-    }
-    
-    // Otherwise use TEK-based calculation
+    // Bruker alltid TEK-basert estimering, ikke Enova-attest
     return calculateAnnualEnergyConsumption(parsedByggeaar, bruksareal, buildingType);
   }, [savedByggeaar, savedAreal, buildingData, buildingTypeName]);
   
@@ -402,12 +378,9 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   const [editedArealLeilighet, setEditedArealLeilighet] = React.useState(savedArealLeilighet);
   const [editedEnergiforbruk, setEditedEnergiforbruk] = React.useState(savedEnergiforbruk);
 
-  const energyRatingLabel = hasEnovaRating ? 'Energikarakter' : 'Estimert energikarakter';
+  // Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
+  const energyRatingLabel = 'Estimert energikarakter';
   const computedEnergyRating = React.useMemo(() => {
-    if (hasEnovaRating) {
-      return buildingData?.energiattest?.energikarakter?.toUpperCase() ?? null;
-    }
-
     const consumptionNum = Number(savedEnergiforbruk);
     const areaCandidate = savedAreal || (typeof buildingData?.bruksarealM2 === 'number'
       ? String(buildingData.bruksarealM2)
@@ -419,50 +392,14 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     }
 
     const intensity = consumptionNum / areaNum;
-    const isSmallHouse = ['11', '12', '13'].includes(buildingTypeCode) ||
-      buildingTypeNameLower.includes('enebolig') ||
-      buildingTypeNameLower.includes('tomannsbolig') ||
-      buildingTypeNameLower.includes('rekkehus') ||
-      buildingTypeNameLower.includes('kjedehus');
+    const buildingType = determineBuildingType(buildingTypeCode, buildingTypeName);
 
-    const isBlockCandidate = ['14', '15', '16', '17'].includes(buildingTypeCode) ||
-      buildingTypeNameLower.includes('blokk') ||
-      buildingTypeNameLower.includes('leilighet') ||
-      buildingTypeNameLower.includes('boligbygg') ||
-      buildingTypeNameLower === 'store boligbygg';
-
-    let rating = 'G';
-    if (isSmallHouse) {
-      if (intensity <= 95 + 800 / areaNum) rating = 'A';
-      else if (intensity <= 120 + 1600 / areaNum) rating = 'B';
-      else if (intensity <= 145 + 2500 / areaNum) rating = 'C';
-      else if (intensity <= 175 + 4100 / areaNum) rating = 'D';
-      else if (intensity <= 205 + 5800 / areaNum) rating = 'E';
-      else if (intensity <= 250 + 8000 / areaNum) rating = 'F';
-    } else if (isBlockCandidate) {
-      if (intensity <= 85 + 600 / areaNum) rating = 'A';
-      else if (intensity <= 95 + 1000 / areaNum) rating = 'B';
-      else if (intensity <= 100 + 1500 / areaNum) rating = 'C';
-      else if (intensity <= 135 + 2200 / areaNum) rating = 'D';
-      else if (intensity <= 160 + 3000 / areaNum) rating = 'E';
-      else if (intensity <= 200 + 4000 / areaNum) rating = 'F';
-    } else {
-      if (intensity <= 90 + 700 / areaNum) rating = 'A';
-      else if (intensity <= 107.5 + 1300 / areaNum) rating = 'B';
-      else if (intensity <= 122.5 + 2000 / areaNum) rating = 'C';
-      else if (intensity <= 155 + 3150 / areaNum) rating = 'D';
-      else if (intensity <= 182.5 + 4400 / areaNum) rating = 'E';
-      else if (intensity <= 225 + 6000 / areaNum) rating = 'F';
-    }
-
-    return rating;
+    return calculateEnergyRating(intensity, areaNum, buildingType);
   }, [
-    buildingData?.energiattest?.energikarakter,
     buildingData?.bruksarealM2,
     buildingData?.csvData?.bruksareal_totalt,
     buildingTypeCode,
-    buildingTypeNameLower,
-    hasEnovaRating,
+    buildingTypeName,
     savedAreal,
     savedEnergiforbruk,
   ]);
