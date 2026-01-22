@@ -10,7 +10,7 @@ import { useFigmaAddressSearch } from "./hooks/useFigmaAddressSearch";
 import { useResponsive } from "./hooks/useResponsive";
 import { useAddressCoordinates } from "./components/FigmaBlokk/hooks/useAddressCoordinates";
 import { fetchSolarData, SolarEnergyData } from "./services/solarEnergyService";
-import { calculateAnnualEnergyConsumption, determineBuildingType } from "./utils/tekEnergyCalculations";
+import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from "./utils/tekEnergyCalculations";
 import { sjekkGulListeMedGnrBnr } from "./services/gul-liste-service";
 
 export default function App() {
@@ -110,60 +110,24 @@ export default function App() {
   }, [result]);
 
   // Beregn estimert energikarakter (for mobil)
+  // Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
   const estimatedRating = useMemo(() => {
     if (!result) return null;
 
-    // Sjekk om det finnes energiattest med karakter
-    const enovaRating = result.energiattest?.energikarakter?.toUpperCase();
-    if (enovaRating) return enovaRating;
-
-    // Beregn basert på forbruk og bruksareal
     const consumption = parseFloat(yearlyConsumption);
     const bruksareal = result.bruksarealM2 || result.bruksareal_totalt ||
       result.csvData?.bruksareal_totalt || result.csvData?.bruksarealM2;
 
     if (!consumption || !bruksareal) return null;
 
-    const intensity = consumption / Number(bruksareal);
-    const buildingTypeCode = result.bygningstypeKode || result.csvData?.bygningstypekode || '';
-    const buildingTypeName = (result.bygningstype || result.csvData?.bygningstype || '').toLowerCase();
-
-    const isSmåhus = ['11', '12', '13'].includes(buildingTypeCode) ||
-      buildingTypeName.includes('enebolig') ||
-      buildingTypeName.includes('tomannsbolig') ||
-      buildingTypeName.includes('rekkehus');
-
-    const isBlokk = ['14', '15', '16', '17'].includes(buildingTypeCode) ||
-      buildingTypeName.includes('blokk') ||
-      buildingTypeName.includes('leilighet');
-
-    let rating = 'G';
     const bra = Number(bruksareal);
+    const intensity = consumption / bra;
+    const buildingType = determineBuildingType(
+      result.bygningstypeKode || result.csvData?.bygningstypekode,
+      result.bygningstype || result.csvData?.bygningstype
+    );
 
-    if (isSmåhus) {
-      if (intensity <= 95 + 800 / bra) rating = 'A';
-      else if (intensity <= 120 + 1600 / bra) rating = 'B';
-      else if (intensity <= 145 + 2500 / bra) rating = 'C';
-      else if (intensity <= 175 + 4100 / bra) rating = 'D';
-      else if (intensity <= 205 + 5800 / bra) rating = 'E';
-      else if (intensity <= 250 + 8000 / bra) rating = 'F';
-    } else if (isBlokk) {
-      if (intensity <= 85 + 600 / bra) rating = 'A';
-      else if (intensity <= 95 + 1000 / bra) rating = 'B';
-      else if (intensity <= 100 + 1500 / bra) rating = 'C';
-      else if (intensity <= 135 + 2200 / bra) rating = 'D';
-      else if (intensity <= 160 + 3000 / bra) rating = 'E';
-      else if (intensity <= 200 + 4000 / bra) rating = 'F';
-    } else {
-      if (intensity <= 90 + 700 / bra) rating = 'A';
-      else if (intensity <= 107.5 + 1300 / bra) rating = 'B';
-      else if (intensity <= 122.5 + 2000 / bra) rating = 'C';
-      else if (intensity <= 155 + 3150 / bra) rating = 'D';
-      else if (intensity <= 182.5 + 4400 / bra) rating = 'E';
-      else if (intensity <= 225 + 6000 / bra) rating = 'F';
-    }
-
-    return rating;
+    return calculateEnergyRating(intensity, bra, buildingType);
   }, [result, yearlyConsumption]);
 
   const handleSelectMobileTiltak = useCallback((tiltakId: string, savingsKwh?: number) => {

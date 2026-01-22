@@ -5,6 +5,7 @@ import {
   useState,
 } from 'react';
 import type { EnergyEstimatorBuildingData } from '../types/energy';
+import { calculateEnergyRating } from '../utils/tekEnergyCalculations';
 
 type SimulationMeasure =
   | 'vindu'
@@ -201,6 +202,7 @@ function detectBuildingCategory(
   return null;
 }
 
+// Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
 function determineRating(
   intensity: number,
   buildingCategory: BuildingCategory | null,
@@ -209,36 +211,7 @@ function determineRating(
   if (!bruksareal || !Number.isFinite(intensity)) {
     return 'G';
   }
-
-  const bra = bruksareal;
-
-  if (buildingCategory === 'småhus') {
-    if (intensity <= 95 + 800 / bra) return 'A';
-    if (intensity <= 120 + 1600 / bra) return 'B';
-    if (intensity <= 145 + 2500 / bra) return 'C';
-    if (intensity <= 175 + 4100 / bra) return 'D';
-    if (intensity <= 205 + 5800 / bra) return 'E';
-    if (intensity <= 250 + 8000 / bra) return 'F';
-    return 'G';
-  }
-
-  if (buildingCategory === 'blokk') {
-    if (intensity <= 85 + 600 / bra) return 'A';
-    if (intensity <= 95 + 1000 / bra) return 'B';
-    if (intensity <= 100 + 1500 / bra) return 'C';
-    if (intensity <= 135 + 2200 / bra) return 'D';
-    if (intensity <= 160 + 3000 / bra) return 'E';
-    if (intensity <= 200 + 4000 / bra) return 'F';
-    return 'G';
-  }
-
-  if (intensity <= 90 + 700 / bra) return 'A';
-  if (intensity <= 107.5 + 1300 / bra) return 'B';
-  if (intensity <= 122.5 + 2000 / bra) return 'C';
-  if (intensity <= 155 + 3150 / bra) return 'D';
-  if (intensity <= 182.5 + 4400 / bra) return 'E';
-  if (intensity <= 225 + 6000 / bra) return 'F';
-  return 'G';
+  return calculateEnergyRating(intensity, bruksareal, buildingCategory);
 }
 
 export function useEnergyRatingEstimator(

@@ -3,9 +3,12 @@ import type { TilskuddContent } from '../../../../../content/tilskudd/schema';
 import type { ProviderDictionaryEntry } from '../../../../../content/dictionaries/schema';
 import type { Stotteordning } from './shared';
 import { useTilskuddBatch, useContentDictionary } from '../../../../hooks/contentHooks';
+import { normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
 
 type UseGrantAwareStotteordningerOptions = {
   grantIds?: string[] | null;
+  /** Bygningstype for filtrering av støtteordninger */
+  buildingType?: string | null;
 };
 
 export type UseGrantAwareStotteordningerResult = {
@@ -95,11 +98,18 @@ function mapTilskuddToStotteordning(
 }
 
 export function useGrantAwareStotteordninger({
-  grantIds
+  grantIds,
+  buildingType
 }: UseGrantAwareStotteordningerOptions): UseGrantAwareStotteordningerResult {
   // Hent providers fra dictionary for å slå opp tilbydernavn
   const { data: dictionary } = useContentDictionary();
   const providers = dictionary?.providers;
+
+  // Normaliser buildingType for matching mot tilskuddets buildingTypes-array
+  const normalizedBuildingType = useMemo(
+    () => normaliseBuildingTypeKey(buildingType),
+    [buildingType]
+  );
 
   const uniqueGrantIds = useMemo(() => {
     const sanitisedIds = (grantIds ?? [])
@@ -129,10 +139,15 @@ export function useGrantAwareStotteordninger({
     if (!grantData?.length) {
       return [];
     }
-    // Tilskudd filtreres ikke på audience her - filtreringen skjer via grants-arrayet
-    // i tiltak-innholdet, som allerede er audience-spesifikt via applyTiltakVariant()
-    return grantData.map((tilskudd) => mapTilskuddToStotteordning(tilskudd, providers));
-  }, [grantData, providers]);
+    // Filtrer tilskudd basert på buildingType
+    // Hvis normalizedBuildingType er 'default', vis alle tilskudd (ingen filtrering)
+    const filteredGrants = normalizedBuildingType === 'default'
+      ? grantData
+      : grantData.filter((tilskudd) =>
+          tilskudd.buildingTypes.includes(normalizedBuildingType)
+        );
+    return filteredGrants.map((tilskudd) => mapTilskuddToStotteordning(tilskudd, providers));
+  }, [grantData, providers, normalizedBuildingType]);
 
   return {
     stotteordninger,
