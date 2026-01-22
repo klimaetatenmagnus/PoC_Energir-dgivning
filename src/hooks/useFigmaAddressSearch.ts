@@ -217,7 +217,7 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
       };
 
       const eneboligEl = document.getElementById('landing-enebolig');
-      const blokkEl = document.getElementById('block-building');
+      const blokkEl = document.getElementById('landing-blokk');
 
       const nextSnapshot: LandingSnapshot = {
         enebolig: eneboligEl ? toDesignCoords(eneboligEl.getBoundingClientRect()) : undefined,

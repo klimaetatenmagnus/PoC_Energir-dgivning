@@ -42,15 +42,15 @@ const TARGET_TRANSLATION_PX = `${TARGET_TRANSLATION_X}px`;
 // Align building bottom with tiltak list bottom (same offset as list + info box)
 // Increased from 64 to 120 to make room for "Hvordan gjennomføre tiltakene" button
 const FINAL_BOTTOM_OFFSET = 120;
-// Ekstra vertikal offset for å sentrere huset i den hvite sirkelen
-const BUILDING_VERTICAL_LIFT = 110;
+// Vertikal offset for bygningen - satt til 0 for å justere bunnkanten med tiltakslisten
+const BUILDING_VERTICAL_LIFT = 0;
 // Blokk SVG has ~5.149px viewBox padding at the bottom (204 - 198.851), scaled by 3 in detail view.
 const BLOKK_VIEWBOX_HEIGHT = 204;
 const BLOKK_CONTENT_BOTTOM = 198.851;
 const BLOKK_BOTTOM_PADDING = BLOKK_VIEWBOX_HEIGHT - BLOKK_CONTENT_BOTTOM;
 const BLOKK_DETAIL_SCALE = 3;
 const ENEBOLIG_DETAIL_SCALE = 408 / 93;
-const BLOKK_FINAL_BOTTOM_OFFSET = FINAL_BOTTOM_OFFSET - BLOKK_BOTTOM_PADDING * BLOKK_DETAIL_SCALE;
+const BLOKK_FINAL_BOTTOM_OFFSET = Math.round(FINAL_BOTTOM_OFFSET - BLOKK_BOTTOM_PADDING * BLOKK_DETAIL_SCALE);
 const SNAPSHOT_RESOLUTION_TIMEOUT_MS = 250;
 const DETAIL_FADE_DURATION_MS = 450;
 
@@ -89,7 +89,7 @@ function useBuildingStartCoordinates(
   debugLabel: string,
 ): { start: BuildingStartCoordinates | null; source: StartSource | null } {
   const [start, setStart] = React.useState<BuildingStartCoordinates | null>(() =>
-    snapshot ? { left: snapshot.left, bottom: snapshot.bottom } : null,
+    snapshot ? { left: Math.round(snapshot.left), bottom: Math.round(snapshot.bottom) } : null,
   );
   const [source, setSource] = React.useState<StartSource | null>(snapshot ? 'snapshot' : null);
   const fallbackTimerRef = React.useRef<number | null>(null);
@@ -100,7 +100,7 @@ function useBuildingStartCoordinates(
       return;
     }
 
-    setStart({ left: snapshot.left, bottom: snapshot.bottom });
+    setStart({ left: Math.round(snapshot.left), bottom: Math.round(snapshot.bottom) });
     setSource('snapshot');
     if (isDev) {
       console.warn(`[skyline-transition] ${debugLabel} start pinned to snapshot`, snapshot);
@@ -539,6 +539,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       transition: forceFinalState
         ? 'none'
         : 'transform 2s ease-in-out, bottom 2s ease-in-out, left 2s ease-in-out',
+      willChange: 'transform, bottom, left',
       zIndex: 3,
     };
   }, [animateBlokk, blokkStart, overlayActiveForThisBuilding, isEnebolig]);
@@ -578,6 +579,40 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         backgroundColor: 'var(--pkt-color-brand-blue-300, #D1F9FF)',
         zIndex: 0
       }} />
+
+      {/* Decorative corner element - fixed to viewport bottom-right (Oslo.kommune.no style) */}
+      {/* White square with cyan circle inside - creates a "cut-out" effect */}
+      {/* Hidden on mobile (viewport width <= 768px) via CSS class */}
+      {showHeader && !isExpanded && (
+        <div
+          className="decorative-corner-element"
+          style={{
+            position: 'fixed',
+            right: 0,
+            bottom: 0,
+            width: '120px',
+            height: '120px',
+            backgroundColor: 'var(--pkt-color-brand-neutrals-white, #ffffff)',
+            zIndex: 1,
+            opacity: showHeader && !isExpanded ? 1 : 0,
+            transition: 'opacity 0.5s ease-in-out' + (showHeader && !isExpanded ? ' 0.5s' : isExpanded ? '' : ' 0.8s'),
+            pointerEvents: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {/* Cyan circle - same color as background, creates cut-out effect */}
+          <div
+            style={{
+              width: '120px',
+              height: '120px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--pkt-color-brand-blue-300, #D1F9FF)',
+            }}
+          />
+        </div>
+      )}
       <div className="figma-design-container" style={{ 
         ...layoutStyles.container, 
         overflow: 'visible',
@@ -711,6 +746,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
           />
         </div>
       )}
+
 
       {/* White info box */}
       <WhiteInfoBox

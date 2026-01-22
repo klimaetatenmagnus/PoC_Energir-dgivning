@@ -30,9 +30,9 @@ const DEFAULT_STYLE: CSSProperties = {
 
 export const OsloSkyline: React.FC<OsloSkylineProps> = ({
   fadeOpacity,
-  blockTransform = DEFAULT_BLOCK_TRANSFORM,
-  isExpanded,
-  selectedSolution,
+  blockTransform: _blockTransform = DEFAULT_BLOCK_TRANSFORM,
+  isExpanded: _isExpanded,
+  selectedSolution: _selectedSolution,
   hideBlockAnimation = false,
   className = 'oslo-skyline',
   viewBox = DEFAULT_VIEW_BOX,
@@ -42,17 +42,7 @@ export const OsloSkyline: React.FC<OsloSkylineProps> = ({
   pinEnebolig = false,
   pinBlock,
 }) => {
-  // Check if we should zoom on window for "Tetting"
-  const shouldZoomWindow = isExpanded && selectedSolution === 'Tetting';
-  
-  // Apply zoom on top of existing block transform
-  const combinedTransform = shouldZoomWindow 
-    ? `${blockTransform} scale(3)` // Apply stronger zoom after the existing transform
-    : blockTransform;
-
   const { svgRef } = useSkylineLights({ enabled: enableLights });
-  const blockOpacity =
-    pinBlock === undefined ? (hideBlockAnimation ? fadeOpacity : 1) : pinBlock ? 1 : 0;
   const blockTransition = hideBlockAnimation
     ? 'opacity 1s ease-in-out'
     : 'transform 2s ease-in-out, opacity 1s ease-in-out';
@@ -250,30 +240,41 @@ export const OsloSkyline: React.FC<OsloSkylineProps> = ({
         <rect x="73.03" y="48" width="8.93" height="17.92" fill="#2A2859" />
       </g>
       
-      {/* Block building that stays visible and animates */}
-      <g 
-        id="block-building"
-        transform={hideBlockAnimation ? '' : combinedTransform}
-        style={{ 
-          opacity: blockOpacity,
+      {/* Blokk building - uses invisible bounding rect to match BlokkSvg viewBox dimensions */}
+      {/* The invisible rect extends getBoundingClientRect() to include full viewBox area (0,0 to 136,204) */}
+      {/* This ensures the captured rect matches what TransitionOverlayRenderer renders with BlokkSvg */}
+      <g
+        id="landing-blokk"
+        transform="translate(1051, 153.149)"
+        style={{
+          opacity: pinBlock === undefined ? (hideBlockAnimation ? fadeOpacity : 1) : pinBlock ? 1 : 0,
           transition: blockTransition,
-          transformOrigin: '1100px 352px', // Base of the block building
           pointerEvents: 'none',
         }}
       >
-        <path d="M1137.48 148.625L1149.78 160.951H1162.09V173.277H1174.4V185.602H1186.71V197.928H1174.4H1137.48V185.602H1100.55V148.625H1137.48Z" fill="#2A2859"/>
-        <path d="M1149.78 197.927H1186.71V351.999H1149.78V197.927Z" fill="#F8F0DD"/>
-        <path d="M1063.63 185.602V173.276H1075.93V160.951H1088.24L1100.55 148.625L1112.86 160.951H1125.17V173.276H1137.48V185.602H1149.78V197.928V351.999H1051.32V197.928V185.602H1063.63Z" fill="#D0BFAE"/>
-        <path d="M1094.4 339.674H1106.71V352H1094.4V339.674Z" fill="#2A2859"/>
-        <path d="M1119.01 210.253H1131.32V222.579H1119.01V210.253Z" fill="#2A2859"/>
-        <path d="M1094.4 210.253H1106.71V222.579H1094.4V210.253Z" fill="#2A2859"/>
-        <path d="M1069.78 210.253H1082.09V222.579H1069.78V210.253Z" fill="#2A2859"/>
-        <path d="M1119.01 234.904H1131.32V247.229H1119.01V234.904Z" fill="#2A2859"/>
-        <path d="M1094.4 234.904H1106.71V247.229H1094.4V234.904Z" fill="#2A2859"/>
-        <path d="M1069.78 234.904H1082.09V247.229H1069.78V234.904Z" fill="#2A2859"/>
-        <path d="M1119.01 259.555H1131.32V271.881H1119.01V259.555Z" fill="#2A2859"/>
-        <path d="M1094.4 259.555H1106.71V271.881H1094.4V259.555Z" fill="#2A2859"/>
-        <path d="M1069.78 259.555H1082.09V271.881H1069.78V259.555Z" fill="#2A2859"/>
+        {/* Invisible bounding rect - extends bounding box to match BlokkSvg viewBox (0 0 136 204) */}
+        {/* Using near-zero opacity to ensure rect is included in getBoundingClientRect() */}
+        <rect x="0" y="0" width="136" height="204" fill="#000000" fillOpacity="0.001" />
+        {/* Roof structure - matches BlokkSvg */}
+        <path d="M120.744,41.319v-12.023h-12.1v-12.023h-12.544c-3.42-3.489-6.839-6.979-10.259-10.468h-35.318c3.65,3.65,7.299,7.299,10.949,10.949h12.269v11.542h12.1v12.023h11.434v12.023h34.902v-12.023h-11.434Z" fill="#2A2859"/>
+        {/* Right side wall */}
+        <rect x="97.276" y="53.342" width="34.902" height="145.509" fill="#F8F0DD" />
+        {/* Main building body */}
+        <polygon points="85.842 41.319 85.842 29.296 73.742 29.296 73.742 17.754 61.473 17.754 50.524 6.805 39.575 17.754 27.317 17.754 27.317 29.296 15.217 29.296 15.217 41.319 3.783 41.319 3.783 53.342 3.783 198.851 97.276 198.851 97.276 53.342 97.276 41.319 85.842 41.319" fill="#D0BFAE" />
+        {/* Door */}
+        <rect x="44.967" y="187.725" width="11.126" height="11.126" fill="#2A2859" />
+        {/* Windows - row 1 (top) */}
+        <rect x="21.775" y="65.034" width="11.126" height="11.126" fill="#2A2859" />
+        <rect x="44.967" y="65.034" width="11.126" height="11.126" fill="#2A2859" />
+        <rect x="68.158" y="65.034" width="11.126" height="11.126" fill="#2A2859" />
+        {/* Windows - row 2 (middle) */}
+        <rect x="21.775" y="88.439" width="11.126" height="11.126" fill="#2A2859" />
+        <rect x="44.967" y="88.439" width="11.126" height="11.126" fill="#2A2859" />
+        <rect x="68.158" y="88.439" width="11.126" height="11.126" fill="#2A2859" />
+        {/* Windows - row 3 (bottom) */}
+        <rect x="21.775" y="111.844" width="11.126" height="11.126" fill="#2A2859" />
+        <rect x="44.967" y="111.844" width="11.126" height="11.126" fill="#2A2859" />
+        <rect x="68.158" y="111.844" width="11.126" height="11.126" fill="#2A2859" />
       </g>
     </svg>
   );
