@@ -30,6 +30,35 @@ export type TiltakType =
   | 'luft_vaeske_varmepumpe'
   | 'vaeske_vaeske_varmepumpe';
 
+/**
+ * Stabil mapping fra tiltakId (brukt i content-filer og URL-er) til intern TiltakType.
+ * Denne mappingen er uavhengig av visningsnavn/titler som kan endres i admin-verktøyet.
+ *
+ * VIKTIG: Ikke endre disse nøklene uten å oppdatere content-filene også.
+ */
+export const TILTAK_ID_TO_TYPE: Record<string, TiltakType | null> = {
+  'etterisolering-yttervegg': 'etterisolering_yttervegg',
+  'etterisolering-kjeller-loft': 'etterisolering_kjeller_loft',
+  'vinduer': 'vinduer_standard', // gul liste håndteres via erPaaGulListe parameter
+  'temperaturstyring': 'temperaturstyring',
+  'ventilasjon': 'ventilasjonsgjenvinning',
+  'varmepumpe': 'luft_luft_varmepumpe', // default, tabs kan overstyre
+  'solenergi': null, // solenergi bruker egen beregning, ikke rate-basert
+  'tetting': null, // ingen data i CSV ennå
+};
+
+/**
+ * Mapping fra varmepumpe-tab til TiltakType.
+ * Brukes når varmepumpe-kortet har aktiv tab som spesifiserer type.
+ */
+export const VARMEPUMPE_TAB_TO_TYPE: Record<string, TiltakType> = {
+  'luft-luft': 'luft_luft_varmepumpe',
+  'luft-vann': 'luft_vaeske_varmepumpe',
+  'luft-vaeske': 'luft_vaeske_varmepumpe',
+  'vaeske-vann': 'vaeske_vaeske_varmepumpe',
+  'vaeske-vaeske': 'vaeske_vaeske_varmepumpe',
+};
+
 // Re-export TEKPeriod from types/energy.ts
 export type { TEKPeriod } from '../types/energy';
 
@@ -430,6 +459,26 @@ function normalizeTekPeriod(tekPeriod: TekPeriodInput): TEKPeriod | null {
 }
 
 /**
+ * TEK-perioder som er eldre enn TEK69 og skal bruke TEK69-verdier som fallback.
+ * Dette gjelder bygg med byggeår før 1969 der vi ikke har spesifikke besparelsesdata.
+ */
+const PRE_TEK69_PERIODS: TEKPeriod[] = ['Eldre', 'TEK49'];
+
+/**
+ * Returnerer TEK-periode for dataoppslag. For TEK-perioder eldre enn TEK69
+ * returneres 'TEK69' som fallback, da vi bruker disse verdiene for eldre bygg.
+ *
+ * @param tekPeriod - Normalisert TEK-periode
+ * @returns TEK-periode for dataoppslag (TEK69 for pre-TEK69 bygg)
+ */
+function getTekPeriodForLookup(tekPeriod: TEKPeriod): TEKPeriod {
+  if (PRE_TEK69_PERIODS.includes(tekPeriod)) {
+    return 'TEK69';
+  }
+  return tekPeriod;
+}
+
+/**
  * Henter energibesparelsesrate for gitt tiltak, TEK-periode og boligtype
  *
  * @param tiltak - Type tiltak (f.eks. 'etterisolering_yttervegg', 'vinduer_standard', 'vinduer_gul_liste')
@@ -469,17 +518,19 @@ export function getEnergySavingsRate(
     return null;
   }
 
-  // Slå opp i datastrukturen
+  // Slå opp i datastrukturen - bruk TEK69 for pre-TEK69 bygg
+  const lookupTek = getTekPeriodForLookup(normalizedTek);
+
   const tiltakData = ENERGY_SAVINGS_RATES[actualTiltak];
   if (!tiltakData) {
     console.warn(`Mangler data for tiltak "${actualTiltak}"`);
     return null;
   }
 
-  const tekData = tiltakData[normalizedTek];
+  const tekData = tiltakData[lookupTek];
   if (!tekData) {
     console.warn(
-      `Mangler data for tiltak "${actualTiltak}" og TEK "${normalizedTek}"`
+      `Mangler data for tiltak "${actualTiltak}" og TEK "${lookupTek}"`
     );
     return null;
   }
@@ -487,7 +538,7 @@ export function getEnergySavingsRate(
   const rates = tekData[boligtype];
   if (rates === null || rates === undefined) {
     console.warn(
-      `Mangler data for tiltak "${actualTiltak}", TEK "${normalizedTek}", boligtype "${boligtype}"`
+      `Mangler data for tiltak "${actualTiltak}", TEK "${lookupTek}", boligtype "${boligtype}"`
     );
     return null;
   }
@@ -661,7 +712,9 @@ export function calculateCombinedSavings(
   if (tekPeriod && boligtype && bruksareal && bruksareal > 0) {
     const normalizedTek = normalizeTekPeriod(tekPeriod);
     if (normalizedTek) {
-      const distribution = ENERGY_CONSUMPTION_DISTRIBUTIONS[normalizedTek]?.[boligtype];
+      // Bruk TEK69 for pre-TEK69 bygg
+      const lookupTek = getTekPeriodForLookup(normalizedTek);
+      const distribution = ENERGY_CONSUMPTION_DISTRIBUTIONS[lookupTek]?.[boligtype];
 
       if (distribution) {
         // Beregn forbruk per energitype (i kWh, ikke kWh/m²)
@@ -762,6 +815,67 @@ export function getRateForTiltak(
 
   const tiltakType = getTiltakTypeFromTitle(title);
   if (!tiltakType) {
+    return null;
+  }
+
+  return getEnergySavingsRate(tiltakType, tekPeriod, boligtype);
+}
+
+/**
+ * Henter energibesparelsesrater basert på tiltakId (stabil ID fra content-filer).
+ *
+ * Denne funksjonen er foretrukket over getRateForTiltak() fordi den bruker
+ * stabile ID-er som ikke endres når visningsnavn oppdateres i admin-verktøyet.
+ *
+ * @param tiltakId - Tiltak-ID fra content-fil (f.eks. 'varmepumpe', 'vinduer')
+ * @param tekPeriod - TEK-periode
+ * @param boligtype - Boligtype ('småhus' eller 'blokk')
+ * @param options - Valgfrie innstillinger
+ * @param options.erPaaGulListe - Om bygningen er på gul liste (for vinduer)
+ * @param options.varmepumpeTab - Aktiv tab for varmepumpe (f.eks. 'luft-luft', 'luft-vann')
+ * @returns EnergyTypeRates eller null hvis tiltaket ikke har rate-data
+ *
+ * @example
+ * // Standard oppslag
+ * const rates = getRateForTiltakId('etterisolering-yttervegg', 'TEK69', 'småhus');
+ *
+ * @example
+ * // Vinduer med gul liste
+ * const rates = getRateForTiltakId('vinduer', 'TEK69', 'småhus', { erPaaGulListe: true });
+ *
+ * @example
+ * // Varmepumpe med spesifikk type
+ * const rates = getRateForTiltakId('varmepumpe', 'TEK69', 'småhus', { varmepumpeTab: 'luft-vann' });
+ */
+export function getRateForTiltakId(
+  tiltakId: string,
+  tekPeriod: TekPeriodInput,
+  boligtype: Boligtype,
+  options?: {
+    erPaaGulListe?: boolean;
+    varmepumpeTab?: string;
+  }
+): EnergyTypeRates | null {
+  const { erPaaGulListe = false, varmepumpeTab } = options ?? {};
+
+  // Spesialhåndtering for varmepumpe med tabs
+  if (tiltakId === 'varmepumpe' && varmepumpeTab && varmepumpeTab !== 'generelt') {
+    const varmepumpeType = VARMEPUMPE_TAB_TO_TYPE[varmepumpeTab];
+    if (varmepumpeType) {
+      return getEnergySavingsRate(varmepumpeType, tekPeriod, boligtype);
+    }
+  }
+
+  // Spesialhåndtering for vinduer med gul liste
+  if (tiltakId === 'vinduer') {
+    const vinduerType: TiltakType = erPaaGulListe ? 'vinduer_gul_liste' : 'vinduer_standard';
+    return getEnergySavingsRate(vinduerType, tekPeriod, boligtype);
+  }
+
+  // Standard oppslag via TILTAK_ID_TO_TYPE
+  const tiltakType = TILTAK_ID_TO_TYPE[tiltakId];
+  if (!tiltakType) {
+    // null betyr at tiltaket ikke har rate-data (f.eks. solenergi, tetting)
     return null;
   }
 

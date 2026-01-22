@@ -10,23 +10,23 @@
 
 export type BuildingType = 'småhus' | 'blokk';
 
-// Energikarakter grenser fra EnergyRatingEstimator
+// Energikarakter grenser - Ny skala gjeldende fra 1.1.2026 (NS 3031:2025)
 const energyThresholds = {
   småhus: {
-    A: { base: 95, braTerm: 800 },   // 95 + 800/BRA
-    B: { base: 120, braTerm: 1600 }, // 120 + 1600/BRA
-    C: { base: 145, braTerm: 2500 }, // 145 + 2500/BRA
-    D: { base: 175, braTerm: 4100 }, // 175 + 4100/BRA
-    E: { base: 205, braTerm: 5800 }, // 205 + 5800/BRA
-    F: { base: 250, braTerm: 8000 }, // 250 + 8000/BRA
+    A: { base: 85, braTerm: 800 },   // 85 + 800/BRA
+    B: { base: 95, braTerm: 1600 },  // 95 + 1600/BRA
+    C: { base: 155, braTerm: 2500 }, // 155 + 2500/BRA
+    D: { base: 210, braTerm: 4100 }, // 210 + 4100/BRA
+    E: { base: 265, braTerm: 5800 }, // 265 + 5800/BRA
+    F: { base: 315, braTerm: 8000 }, // 315 + 8000/BRA
   },
   blokk: {
-    A: { base: 85, braTerm: 600 },   // 85 + 600/BRA
-    B: { base: 95, braTerm: 1000 },  // 95 + 1000/BRA
-    C: { base: 100, braTerm: 1500 }, // 100 + 1500/BRA
-    D: { base: 135, braTerm: 2200 }, // 135 + 2200/BRA
-    E: { base: 160, braTerm: 3000 }, // 160 + 3000/BRA
-    F: { base: 200, braTerm: 4000 }, // 200 + 4000/BRA
+    A: { base: 80, braTerm: 600 },   // 80 + 600/BRA
+    B: { base: 95, braTerm: 700 },   // 95 + 700/BRA
+    C: { base: 140, braTerm: 900 },  // 140 + 900/BRA
+    D: { base: 185, braTerm: 1100 }, // 185 + 1100/BRA
+    E: { base: 230, braTerm: 1300 }, // 230 + 1300/BRA
+    F: { base: 270, braTerm: 1500 }, // 270 + 1500/BRA
   }
 };
 
@@ -135,6 +135,64 @@ export function calculateAnnualEnergyConsumption(
   // Beregn årlig forbruk og avrund til nærmeste 1000
   const consumption = energyIntensity * areaNum;
   return Math.round(consumption / 1000) * 1000;
+}
+
+/**
+ * Beregn energikarakter basert på energiintensitet og bruksareal.
+ * NY skala (NS 3031:2025) - gjeldende fra 1.1.2026.
+ *
+ * VIKTIG: Dette er den sentrale funksjonen for energikarakterberegning.
+ * Alle komponenter skal bruke denne funksjonen for konsistens.
+ */
+export function calculateEnergyRating(
+  intensity: number,
+  bruksareal: number,
+  buildingType: BuildingType | null
+): string {
+  if (!bruksareal || !Number.isFinite(intensity) || bruksareal <= 0) {
+    return 'G';
+  }
+
+  const thresholds = buildingType === 'småhus'
+    ? energyThresholds.småhus
+    : buildingType === 'blokk'
+      ? energyThresholds.blokk
+      : null;
+
+  if (thresholds) {
+    if (intensity <= thresholds.A.base + thresholds.A.braTerm / bruksareal) return 'A';
+    if (intensity <= thresholds.B.base + thresholds.B.braTerm / bruksareal) return 'B';
+    if (intensity <= thresholds.C.base + thresholds.C.braTerm / bruksareal) return 'C';
+    if (intensity <= thresholds.D.base + thresholds.D.braTerm / bruksareal) return 'D';
+    if (intensity <= thresholds.E.base + thresholds.E.braTerm / bruksareal) return 'E';
+    if (intensity <= thresholds.F.base + thresholds.F.braTerm / bruksareal) return 'F';
+    return 'G';
+  }
+
+  // Fallback: gjennomsnitt av småhus og blokk
+  if (intensity <= 82.5 + 700 / bruksareal) return 'A';
+  if (intensity <= 95 + 1150 / bruksareal) return 'B';
+  if (intensity <= 147.5 + 1700 / bruksareal) return 'C';
+  if (intensity <= 197.5 + 2600 / bruksareal) return 'D';
+  if (intensity <= 247.5 + 3550 / bruksareal) return 'E';
+  if (intensity <= 292.5 + 4750 / bruksareal) return 'F';
+  return 'G';
+}
+
+/**
+ * Beregn energikarakter basert på forbruk og bruksareal.
+ * Wrapper-funksjon som beregner intensitet først.
+ */
+export function calculateEnergyRatingFromConsumption(
+  yearlyConsumption: number,
+  bruksareal: number,
+  buildingType: BuildingType | null
+): string {
+  if (!bruksareal || bruksareal <= 0 || !yearlyConsumption || yearlyConsumption <= 0) {
+    return 'G';
+  }
+  const intensity = yearlyConsumption / bruksareal;
+  return calculateEnergyRating(intensity, bruksareal, buildingType);
 }
 
 // Bestem bygningstype basert på kode eller navn
