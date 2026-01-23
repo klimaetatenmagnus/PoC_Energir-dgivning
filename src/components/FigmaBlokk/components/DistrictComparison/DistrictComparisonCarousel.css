@@ -129,6 +129,13 @@
   color: var(--pkt-color-brand-neutrals-500, #666);
 }
 
+.district-carousel__data-source {
+  font-size: 0.625rem;
+  font-weight: 400;
+  color: var(--pkt-color-brand-neutrals-400, #999);
+  margin-top: 4px;
+}
+
 /* ======================================
    KORT - Fellesstiler
    ====================================== */

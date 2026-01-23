@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { PktButton, PktCheckbox, PktIcon } from '@oslokommune/punkt-react';
+import { PktButton, PktCheckbox, PktIcon, PktRadioButton } from '@oslokommune/punkt-react';
 import { ENERGY_SOLUTIONS } from '../constants';
 import { AddressLookupResponse } from '../../../services/buildingApi';
 import { useTiltakCatalog } from '../../../hooks/contentHooks';
@@ -18,6 +18,15 @@ import type { ContentAudience } from '../../../../content/schema-helpers';
 import './EnergySolutionButtons.css';
 
 const ENERGY_RATING_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
+
+// Varmepumpe-typer med energibesparelsesdata (fra CSV)
+const VARMEPUMPE_TYPES = [
+  { id: 'luft-luft', label: 'Luft-luft', description: 'Rimeligst, enkel installasjon' },
+  { id: 'luft-vann', label: 'Luft-vann', description: 'Varmer også tappevann' },
+  { id: 'vaeske-vann', label: 'Væske-vann', description: 'Høyest besparelse' },
+] as const;
+
+type VarmepumpeType = typeof VARMEPUMPE_TYPES[number]['id'];
 
 const isRatingBetter = (first: string, second: string): boolean => {
   const index1 = ENERGY_RATING_ORDER.indexOf(first.toUpperCase() as typeof ENERGY_RATING_ORDER[number]);
@@ -124,6 +133,10 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   // Animasjoner (fadeIn, slideUpFadeIn) er definert i EnergySolutionButtons.css
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [showInfoModal, setShowInfoModal] = useState(false);
+
+  // Varmepumpe-spesifikk state
+  const [selectedVarmepumpeType, setSelectedVarmepumpeType] = useState<VarmepumpeType>('luft-luft');
+  const [varmepumpeExpanded, setVarmepumpeExpanded] = useState(false);
 
   // Scrollbar-refs og state
   const scrollContainerRef = useRef<HTMLUListElement>(null);
@@ -315,7 +328,11 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         }
       } else {
         // Hent rates for dette tiltaket (romoppvarming, tappevann, elspesifikt)
-        const rates = getRateForTiltakId(tiltak.id, tekPeriod, boligtype);
+        // For varmepumpe: bruk valgt type fra state
+        const rates = getRateForTiltakId(tiltak.id, tekPeriod, boligtype, {
+          erPaaGulListe,
+          varmepumpeTab: tiltak.id === 'varmepumpe' ? selectedVarmepumpeType : undefined,
+        });
         if (rates !== null) {
           tiltakInfo.push({
             title: tiltak.id,
@@ -333,7 +350,9 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     buildingData?.filteredSolarEnergy,
     checkedItems,
     displayTiltak,
+    erPaaGulListe,
     estimatedAnnualConsumption,
+    selectedVarmepumpeType,
     tekPeriod,
     yearlyConsumption,
   ]);
@@ -475,34 +494,106 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         >
           {displayTiltak.map((tiltak) => {
             const isSelected = checkedItems.has(tiltak.id);
+            const isVarmepumpe = tiltak.id === 'varmepumpe';
 
+            // Standard tiltak-rad (ikke varmepumpe)
+            if (!isVarmepumpe) {
+              return (
+                <li
+                  key={tiltak.id}
+                  className={`energy-solution-buttons__item${isSelected ? ' energy-solution-buttons__item--selected' : ''}`}
+                >
+                  <div className="energy-solution-buttons__item-content">
+                    <PktCheckbox
+                      id={`tiltak-${tiltak.id}`}
+                      label={tiltak.title}
+                      checked={isSelected}
+                      onChange={() => toggleChecked(tiltak.id)}
+                    />
+                  </div>
+                  <div className="energy-solution-buttons__actions">
+                    <PktButton
+                      skin="secondary"
+                      size="small"
+                      variant="label-only"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectSolution(tiltak.id);
+                        onExpand(true);
+                      }}
+                    >
+                      Les mer
+                    </PktButton>
+                  </div>
+                </li>
+              );
+            }
+
+            // Varmepumpe med utvidbar seksjon
             return (
               <li
                 key={tiltak.id}
-                className={`energy-solution-buttons__item${isSelected ? ' energy-solution-buttons__item--selected' : ''}`}
+                className={`energy-solution-buttons__item energy-solution-buttons__item--expandable${isSelected ? ' energy-solution-buttons__item--selected' : ''}`}
               >
-                <div className="energy-solution-buttons__item-content">
-                  <PktCheckbox
-                    id={`tiltak-${tiltak.id}`}
-                    label={tiltak.title}
-                    checked={isSelected}
-                    onChange={() => toggleChecked(tiltak.id)}
-                  />
-                </div>
-                <div className="energy-solution-buttons__actions">
-                  <PktButton
-                    skin="secondary"
-                    size="small"
-                    variant="label-only"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectSolution(tiltak.id);
-                      onExpand(true);
-                    }}
+                <div className="energy-solution-buttons__varmepumpe-header">
+                  <button
+                    type="button"
+                    className="energy-solution-buttons__varmepumpe-toggle"
+                    onClick={() => setVarmepumpeExpanded(!varmepumpeExpanded)}
+                    aria-expanded={varmepumpeExpanded}
                   >
-                    Les mer
-                  </PktButton>
+                    <PktIcon
+                      name="chevron-thin-down"
+                      className={`energy-solution-buttons__chevron${varmepumpeExpanded ? ' energy-solution-buttons__chevron--expanded' : ''}`}
+                    />
+                    <span className="energy-solution-buttons__varmepumpe-label">{tiltak.title}</span>
+                  </button>
+                  <div className="energy-solution-buttons__actions">
+                    <PktButton
+                      skin="secondary"
+                      size="small"
+                      variant="label-only"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectSolution(tiltak.id);
+                        onExpand(true);
+                      }}
+                    >
+                      Les mer
+                    </PktButton>
+                  </div>
                 </div>
+
+                {/* Utvidbar seksjon for varmepumpe-typer */}
+                {varmepumpeExpanded && (
+                  <div className="energy-solution-buttons__varmepumpe-options">
+                    {VARMEPUMPE_TYPES.map((type) => {
+                      const isTypeSelected = isSelected && selectedVarmepumpeType === type.id;
+                      return (
+                        <div
+                          key={type.id}
+                          className={`energy-solution-buttons__varmepumpe-option${isTypeSelected ? ' energy-solution-buttons__varmepumpe-option--selected' : ''}`}
+                        >
+                          <PktRadioButton
+                            id={`varmepumpe-type-${type.id}`}
+                            name="varmepumpe-type"
+                            label={type.label}
+                            value={type.id}
+                            checked={isTypeSelected}
+                            checkHelptext={type.description}
+                            onChange={() => {
+                              setSelectedVarmepumpeType(type.id);
+                              // Sørg for at varmepumpe er valgt når en type velges
+                              if (!checkedItems.has('varmepumpe')) {
+                                toggleChecked('varmepumpe');
+                              }
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </li>
             );
           })}

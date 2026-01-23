@@ -607,6 +607,21 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     [buildingTypeName]
   );
 
+  // Beregn bruksareal for sammenligning med fallback-kjede
+  // Viktig: Må ha gyldig verdi for at projisert energikarakter skal beregnes
+  const bruksarealForComparison = React.useMemo(() => {
+    const fromSaved = Number(savedAreal);
+    if (fromSaved > 0) return fromSaved;
+
+    const fromBuildingData = Number(buildingData?.bruksarealM2);
+    if (fromBuildingData > 0) return fromBuildingData;
+
+    const fromCsv = Number(buildingData?.csvData?.bruksareal_totalt);
+    if (fromCsv > 0) return fromCsv;
+
+    return 0;
+  }, [savedAreal, buildingData?.bruksarealM2, buildingData?.csvData?.bruksareal_totalt]);
+
   // Beregn variabler for bydelssammenligning (må være etter currentKwhPerM2)
   const showComparison = districtStats !== null && currentKwhPerM2 > 0;
   // Kartet har fast posisjon (modal overlayer i stedet for å flytte kartet)
@@ -1111,7 +1126,7 @@ const tiltakPreview = selectedTiltakSlug ? (
           onClose={() => setIsComparisonModalOpen(false)}
           currentKwhPerM2={currentKwhPerM2}
           totalEnergySavings={totalEnergySavings}
-          bruksareal={Number(savedAreal) || 0}
+          bruksareal={bruksarealForComparison}
           districtName={districtName}
           districtStats={districtStats}
           subdistrictName={subdistrictName ?? undefined}

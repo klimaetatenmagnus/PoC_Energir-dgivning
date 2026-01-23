@@ -292,6 +292,9 @@ export const DistrictComparisonCarousel: React.FC<DistrictComparisonCarouselProp
             *Energiforbruket for din bolig er estimert basert på byggeår og areal.
           </span>
         )}
+        <span className="district-carousel__data-source">
+          Kilde: Enova energimerkeregisteret
+        </span>
       </div>
     </div>
   );

@@ -38,10 +38,9 @@ export const EnergyGradeCard: React.FC<EnergyGradeCardProps> = ({
 }) => {
   const maxPercentage = Math.max(...Object.values(districtStats.energyGradeDistribution));
 
-  // Sjekk om projisert karakter er forskjellig fra nåværende
-  const showProjected = hasActiveMeasures &&
-    projectedEnergyGrade &&
-    projectedEnergyGrade !== userEnergyGrade;
+  // Vis projisert karakter hvis tiltak er valgt
+  const showProjected = hasActiveMeasures && projectedEnergyGrade;
+  const gradeChanged = projectedEnergyGrade !== userEnergyGrade;
 
   return (
     <div className="carousel-card carousel-card--energy-grade">
@@ -54,7 +53,7 @@ export const EnergyGradeCard: React.FC<EnergyGradeCardProps> = ({
           const percentage = districtStats.energyGradeDistribution[grade];
           const barWidth = (percentage / maxPercentage) * 100;
           const isUserGrade = userEnergyGrade === grade;
-          const isProjectedGrade = showProjected && projectedEnergyGrade === grade;
+          const isProjectedGrade = showProjected && gradeChanged && projectedEnergyGrade === grade;
 
           return (
             <div
@@ -94,8 +93,11 @@ export const EnergyGradeCard: React.FC<EnergyGradeCardProps> = ({
 
       {/* Oppsummering av forbedring */}
       {showProjected && userEnergyGrade && projectedEnergyGrade && (
-        <div className="carousel-card__summary carousel-card__summary--positive">
-          {userEnergyGrade} → {projectedEnergyGrade} med valgte tiltak
+        <div className={`carousel-card__summary ${gradeChanged ? 'carousel-card__summary--positive' : 'carousel-card__summary--info'}`}>
+          {gradeChanged
+            ? `${userEnergyGrade} → ${projectedEnergyGrade} med valgte tiltak`
+            : `Beholder karakter ${userEnergyGrade} med valgte tiltak`
+          }
         </div>
       )}
 

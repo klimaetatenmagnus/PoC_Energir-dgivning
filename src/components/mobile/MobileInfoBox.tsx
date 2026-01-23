@@ -30,6 +30,10 @@ interface MobileInfoBoxProps {
   energyPricePerKwh?: number;
   onUpdateBuildingData?: (byggeaar: string, areal: string, arealLeilighet: string, energiforbruk: string) => void;
   onCollapse?: () => void;
+  /** Vis "Sammenlign med naboer"-knappen */
+  showCompareButton?: boolean;
+  /** Callback når sammenlign-knappen klikkes */
+  onCompareClick?: () => void;
 }
 
 const roundToNearestThousandValue = (value: number): number => {
@@ -50,6 +54,8 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   energyPricePerKwh = 1.1,
   onUpdateBuildingData,
   onCollapse,
+  showCompareButton = false,
+  onCompareClick,
 }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isGulListeInfoOpen, setIsGulListeInfoOpen] = useState(false);
@@ -313,6 +319,21 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
           </div>
         </PktAccordionItem>
       </PktAccordion>
+
+      {/* Sammenlign med naboer - knapp mellom Nøkkelinfo og Kart */}
+      {showCompareButton && onCompareClick && (
+        <div className="mobile-info-box__compare-section">
+          <PktButton
+            skin="primary"
+            size="medium"
+            variant="icon-left"
+            iconName="eye"
+            onClick={onCompareClick}
+          >
+            <span>Sammenlign med naboer</span>
+          </PktButton>
+        </div>
+      )}
 
       {/* Kart - vises direkte under nøkkelinformasjon (Oslo kommune karttjeneste) */}
       <div className="mobile-info-box__map-section">

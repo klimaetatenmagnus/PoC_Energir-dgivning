@@ -490,3 +490,93 @@
 .tiltak-list-wrapper.scrolled-to-bottom::after {
   opacity: 0;
 }
+
+/* ==========================================================================
+   Varmepumpe utvidbar seksjon
+   ========================================================================== */
+
+.energy-solution-buttons__item--expandable {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-height: auto;
+  height: auto;
+  padding: 0; /* Fjern padding fra parent, legg på child */
+}
+
+.energy-solution-buttons__varmepumpe-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  min-height: var(--esb-item-height);
+  padding: 0.75rem 1rem;
+  box-sizing: border-box;
+}
+
+.energy-solution-buttons__varmepumpe-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: var(--esb-font-family);
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: var(--esb-text-primary);
+  width: 100%;
+  text-align: left;
+}
+
+.energy-solution-buttons__varmepumpe-toggle:hover {
+  opacity: 0.8;
+}
+
+.energy-solution-buttons__chevron {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.energy-solution-buttons__chevron--expanded {
+  transform: rotate(180deg);
+}
+
+.energy-solution-buttons__varmepumpe-label {
+  flex: 1;
+}
+
+.energy-solution-buttons__varmepumpe-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border-top: 1px solid var(--esb-border-color);
+  background-color: var(--pkt-color-brand-neutrals-50, #fafafa);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.energy-solution-buttons__varmepumpe-option {
+  padding: 0.5rem 0;
+}
+
+.energy-solution-buttons__varmepumpe-option--selected {
+  background-color: var(--pkt-color-brand-neutrals-50, #fafafa);
+}
+
+/* Punkt RadioButton styling tilpasninger */
+.energy-solution-buttons__varmepumpe-option .pkt-radiobutton {
+  --pkt-radiobutton-label-font-weight: 400;
+}
+
+.energy-solution-buttons__varmepumpe-option .pkt-radiobutton__helptext {
+  font-size: 0.875rem;
+  color: var(--pkt-color-brand-neutrals-600, #666);
+  margin-top: 0.125rem;
+}

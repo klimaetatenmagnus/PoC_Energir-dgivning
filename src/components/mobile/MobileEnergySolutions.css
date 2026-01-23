@@ -334,6 +334,7 @@
   flex-shrink: 0;
   margin-bottom: var(--pkt-spacing-8, 0.5rem);
   padding-right: var(--pkt-spacing-8, 0.5rem);
+  overflow: visible; /* Tillat pil-animasjoner å vises utenfor */
 }
 
 /* Tiltaks-overskrift - inne i header */
@@ -455,6 +456,93 @@
 
 .mobile-energy-solutions__tiltak-button {
   flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Varmepumpe utvidbar seksjon (mobil)
+   ========================================================================== */
+
+.mobile-energy-solutions__tiltak-item--expandable {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+}
+
+.mobile-energy-solutions__varmepumpe-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pkt-spacing-8, 0.5rem);
+  padding: var(--pkt-spacing-12, 0.75rem) var(--pkt-spacing-16, 1rem);
+  min-height: 56px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mobile-energy-solutions__varmepumpe-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--pkt-spacing-8, 0.5rem);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  flex: 1;
+  text-align: left;
+}
+
+.mobile-energy-solutions__varmepumpe-toggle:hover {
+  opacity: 0.8;
+}
+
+.mobile-energy-solutions__chevron {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mobile-energy-solutions__chevron--expanded {
+  transform: rotate(180deg);
+}
+
+.mobile-energy-solutions__varmepumpe-label {
+  flex: 1;
+}
+
+.mobile-energy-solutions__varmepumpe-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: var(--pkt-spacing-8, 0.5rem) var(--pkt-spacing-16, 1rem) var(--pkt-spacing-12, 0.75rem) var(--pkt-spacing-40, 2.5rem);
+  border-top: 1px solid var(--pkt-color-grays-gray-100, #e6e6e6);
+  background-color: var(--pkt-color-brand-neutrals-50, #fafafa);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mobile-energy-solutions__varmepumpe-option {
+  padding: var(--pkt-spacing-8, 0.5rem) 0;
+}
+
+.mobile-energy-solutions__varmepumpe-option--selected {
+  background-color: transparent;
+}
+
+/* Punkt RadioButton styling tilpasninger for mobil */
+.mobile-energy-solutions__varmepumpe-option .pkt-radiobutton {
+  --pkt-radiobutton-label-font-weight: 400;
+}
+
+.mobile-energy-solutions__varmepumpe-option .pkt-radiobutton__helptext {
+  font-size: 0.875rem;
+  color: var(--pkt-color-brand-neutrals-600, #666);
+  margin-top: 0.125rem;
 }
 
 /* Oppsummering */
@@ -693,6 +781,65 @@
   transform: translateZ(0);
 }
 
+/* ==========================================================================
+   Tiltak-animasjoner for mobil
+   Justerer pil-animasjoner for mindre SVG-størrelser
+   ========================================================================== */
+
+/* Tillat at pil-elementer vises utenfor SVG viewBox */
+.mobile-energy-solutions__building-svg {
+  overflow: visible;
+}
+
+/* Container må også tillate overflow for at pilene skal synes */
+.mobile-energy-solutions__building-illustration {
+  overflow: visible;
+}
+
+/* Skalerte arrow-animasjoner for mobil */
+.mobile-energy-solutions__building-svg .tiltak-arrow {
+  opacity: 0;
+  pointer-events: none;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Pil-animasjon når tiltak legges til */
+.mobile-energy-solutions__building-svg .tiltak-arrow--add {
+  animation: mobile-tiltak-poof-add 0.8s ease-out forwards !important;
+}
+
+/* Pil-animasjon når tiltak fjernes */
+.mobile-energy-solutions__building-svg .tiltak-arrow--remove {
+  animation: mobile-tiltak-poof-remove 0.8s ease-out forwards !important;
+}
+
+/* Animasjon for "add" - pluss-tegn flyter opp */
+@keyframes mobile-tiltak-poof-add {
+  0%   { opacity: 0;   transform: scale(4) translate(35px, 50px); }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { opacity: 0;   transform: scale(4) translate(35px, 30px); }
+}
+
+/* Animasjon for "remove" - minus-tegn flyter ned */
+@keyframes mobile-tiltak-poof-remove {
+  0%   { opacity: 0;   transform: scale(4) translate(35px, 30px); }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { opacity: 0;   transform: scale(4) translate(35px, 50px); }
+}
+
+/* Sikre at tiltak-overlays vises korrekt */
+.mobile-energy-solutions__building-svg .tiltak-shape {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.mobile-energy-solutions__building-svg .tiltak-shape.tiltak--visible {
+  opacity: 1;
+}
+
 /* Respect user's motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .mobile-energy-solutions--fade-in {
@@ -724,5 +871,12 @@
   /* Disable modal slide animations */
   .mobile-energy-solutions__infobox-container {
     animation: none !important;
+  }
+
+  /* Disable tiltak arrow animations */
+  .mobile-energy-solutions__building-svg .tiltak-arrow--add,
+  .mobile-energy-solutions__building-svg .tiltak-arrow--remove {
+    animation: none !important;
+    opacity: 0 !important;
   }
 }

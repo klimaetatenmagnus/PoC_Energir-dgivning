@@ -1,0 +1,518 @@
+/**
+ * MobileDistrictComparison - Mobilstiler
+ * Modal med swipe-karusell for bydelssammenligning
+ * Bruker Punkt designsystem tokens
+ */
+
+/* ======================================
+   OVERLAY - Bakgrunn og posisjonering
+   ====================================== */
+
+.mobile-district-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* ======================================
+   MODAL - Hovedcontainer
+   ====================================== */
+
+.mobile-district-modal {
+  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: var(--pkt-spacing-16, 1rem);
+  padding-bottom: max(var(--pkt-spacing-24, 1.5rem), env(safe-area-inset-bottom));
+  animation: slideUp 0.3s ease-out;
+  border-radius: 16px 16px 0 0;
+}
+
+/* ======================================
+   HEADER - Kun lukk-knapp (høyrejustert)
+   ====================================== */
+
+.mobile-district-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: var(--pkt-spacing-8, 0.5rem);
+}
+
+/* ======================================
+   KORTTITTEL - Ikon + tittel + indikator (som desktop)
+   ====================================== */
+
+.mobile-district-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pkt-spacing-8, 0.5rem);
+  margin-bottom: var(--pkt-spacing-12, 0.75rem);
+  padding: 0 var(--pkt-spacing-16, 1rem);
+}
+
+.mobile-district-card-title__icon {
+  width: 20px;
+  height: 20px;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-district-card-title__text {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-district-card-title__indicator {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.75rem;
+  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+  margin-left: var(--pkt-spacing-4, 0.25rem);
+}
+
+/* ======================================
+   DROPDOWN - Bydel/delbydel-valg
+   ====================================== */
+
+.mobile-district-level-select {
+  margin-bottom: var(--pkt-spacing-16, 1rem);
+}
+
+.mobile-district-level-select .pkt-select__label,
+.mobile-district-level-select label {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.mobile-district-level-select .pkt-select {
+  margin-bottom: 0;
+}
+
+.mobile-district-level-select .pkt-select__input {
+  font-size: 0.875rem;
+  padding: var(--pkt-spacing-8, 0.5rem) var(--pkt-spacing-32, 2rem) var(--pkt-spacing-8, 0.5rem) var(--pkt-spacing-12, 0.75rem);
+  min-height: auto;
+  border-color: var(--pkt-color-brand-neutrals-300, #ccc);
+}
+
+.mobile-district-level-select .pkt-select__input:focus {
+  border-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  box-shadow: 0 0 0 2px var(--pkt-color-surface-default-light-blue, #e3f2fd);
+}
+
+/* ==========================================================================
+   KARUSELL med chevron-navigasjon og slide-animasjon
+   ========================================================================== */
+
+.mobile-district-carousel {
+  position: relative;
+  overflow: hidden;
+  min-height: 300px;
+  margin: 0 calc(-1 * var(--pkt-spacing-16, 1rem)); /* Utvid til kantene */
+  padding: 0 var(--pkt-spacing-16, 1rem);
+}
+
+.mobile-district-cards-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  position: relative;
+  touch-action: pan-y; /* Tillat vertikal scroll, fang horisontal */
+  height: 340px; /* Fast høyde for sømløs animasjon */
+  overflow: hidden; /* Klipp kort som animeres ut */
+}
+
+/* Kortene - fast høyde for sømløs animasjon */
+.mobile-district-card {
+  width: 100%;
+  max-width: 340px;
+  height: 320px; /* Fast høyde - alle kort like høye */
+  will-change: transform;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; /* Scroll hvis innhold er for stort */
+}
+
+/* Utgående kort (nåværende synlig kort) */
+.mobile-district-card--outgoing {
+  position: relative;
+  z-index: 2;
+  transform: translateX(0);
+}
+
+/* Innkommende kort (nytt kort som glir inn) */
+.mobile-district-card--incoming {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: 0 auto; /* Sentrer horisontalt */
+  z-index: 1;
+}
+
+/* Slide ut til venstre (når man går til neste kort) */
+.mobile-district-card--exit-left {
+  animation: cardSlideOutLeft 0.3s ease-out forwards;
+}
+
+/* Slide inn fra høyre (nytt kort kommer inn fra høyre) */
+.mobile-district-card--enter-left {
+  animation: cardSlideInFromRight 0.3s ease-out forwards;
+}
+
+/* Slide ut til høyre (når man går til forrige kort) */
+.mobile-district-card--exit-right {
+  animation: cardSlideOutRight 0.3s ease-out forwards;
+}
+
+/* Slide inn fra venstre (forrige kort kommer inn fra venstre) */
+.mobile-district-card--enter-right {
+  animation: cardSlideInFromLeft 0.3s ease-out forwards;
+}
+
+@keyframes cardSlideOutLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes cardSlideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes cardSlideOutRight {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes cardSlideInFromLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* ==========================================================================
+   CHEVRON-NAVIGASJON (minimalistisk, uten bakgrunn)
+   ========================================================================== */
+
+.mobile-district-chevron {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: transparent;
+  border: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  opacity: 0.6;
+}
+
+.mobile-district-chevron:hover {
+  opacity: 1;
+}
+
+.mobile-district-chevron:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.mobile-district-chevron--left {
+  left: 0;
+}
+
+.mobile-district-chevron--right {
+  right: 0;
+}
+
+.mobile-district-chevron .pkt-icon {
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  width: 28px;
+  height: 28px;
+}
+
+/* ==========================================================================
+   NAVIGASJON - Dots og swipe-hint
+   ========================================================================== */
+
+.mobile-district-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--pkt-spacing-8, 0.5rem);
+  padding-top: var(--pkt-spacing-16, 1rem);
+  border-top: 1px solid var(--pkt-color-brand-neutrals-200, #f2f2f2);
+}
+
+.mobile-district-dots {
+  display: flex;
+  justify-content: center;
+  gap: var(--pkt-spacing-16, 1rem);
+  padding: var(--pkt-spacing-16, 1rem) 0;
+}
+
+.mobile-district-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--pkt-color-brand-neutrals-300, #ccc);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+  /* Touch-target minimum 44px - usynlig padding */
+  padding: 17px;
+  margin: -17px;
+  background-clip: content-box;
+}
+
+.mobile-district-dot:hover {
+  background-color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+}
+
+.mobile-district-dot--active {
+  background-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  transform: scale(1.2);
+}
+
+/* Swipe-hint tekst - vises på første kort før første sveip */
+.mobile-district-swipe-hint {
+  position: absolute;
+  bottom: var(--pkt-spacing-8, 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.8125rem;
+  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+  background: var(--pkt-color-brand-neutrals-white, #ffffff);
+  padding: var(--pkt-spacing-4, 0.25rem) var(--pkt-spacing-12, 0.75rem);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+  z-index: 5;
+  animation: fadeInHint 0.3s ease-out;
+}
+
+@keyframes fadeInHint {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ======================================
+   FOOTER - Dropdown og kildeinfo
+   ====================================== */
+
+.mobile-district-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pkt-spacing-12, 0.75rem);
+  padding-top: var(--pkt-spacing-8, 0.5rem);
+}
+
+.mobile-district-footer .mobile-district-level-select {
+  margin-bottom: 0;
+}
+
+.mobile-district-meta {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mobile-district-source-info {
+  font-size: 0.6875rem;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--pkt-color-brand-neutrals-500, #666);
+}
+
+.mobile-district-data-source {
+  font-size: 0.625rem;
+  font-weight: 400;
+  color: var(--pkt-color-brand-neutrals-400, #999);
+  margin-top: 4px;
+}
+
+/* ======================================
+   KORT-TILPASNINGER FOR MOBIL
+   Overstyrer desktop-stiler for bedre mobilvisning
+   ====================================== */
+
+/* Kompaktere bar-labels */
+.mobile-district-modal .carousel-card__bar-label {
+  font-size: 0.8125rem;
+  width: 75px;
+}
+
+.mobile-district-modal .carousel-card__bar-value {
+  font-size: 0.9375rem;
+}
+
+/* Titler */
+.mobile-district-modal .carousel-card__title {
+  font-size: 0.9375rem;
+}
+
+/* Energikarakter-rader */
+.mobile-district-modal .energy-grade-row__grade {
+  width: 22px;
+  height: 22px;
+  font-size: 0.6875rem;
+}
+
+.mobile-district-modal .energy-grade-row__percentage {
+  font-size: 0.6875rem;
+  width: 28px;
+}
+
+.mobile-district-modal .energy-grade-row__markers {
+  min-width: 55px;
+}
+
+.mobile-district-modal .energy-grade-row__marker {
+  font-size: 0.5625rem;
+  padding: 1px 4px;
+}
+
+/* Improvement-skala */
+.mobile-district-modal .improvement-scale {
+  margin: 12px 0;
+  padding: 0 4px;
+}
+
+.mobile-district-modal .improvement-scale__labels {
+  font-size: 0.5625rem;
+}
+
+.mobile-district-modal .improvement-scale__ticks {
+  font-size: 0.5625rem;
+}
+
+.mobile-district-modal .improvement-scale__marker-label {
+  font-size: 0.5625rem;
+}
+
+/* Statistikk-bokser */
+.mobile-district-modal .improvement-stats {
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.mobile-district-modal .improvement-stat__label {
+  font-size: 0.5625rem;
+}
+
+.mobile-district-modal .improvement-stat__grade {
+  width: 32px;
+  height: 32px;
+  font-size: 0.875rem;
+}
+
+.mobile-district-modal .improvement-stat__arrow {
+  font-size: 1rem;
+}
+
+/* Summary-bokser */
+.mobile-district-modal .carousel-card__summary {
+  font-size: 0.8125rem;
+  padding: 4px 10px;
+}
+
+/* Meta-tekst - skjul i EnergyGradeCard siden det er i footer allerede */
+.mobile-district-modal .carousel-card--energy-grade .carousel-card__meta {
+  display: none;
+}
+
+.mobile-district-modal .carousel-card__meta {
+  font-size: 0.6875rem;
+}
+
+/* ======================================
+   ANIMASJONER
+   ====================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* ======================================
+   TILGJENGELIGHET - Reduced motion
+   ====================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-district-overlay,
+  .mobile-district-modal {
+    animation: none !important;
+  }
+
+  .mobile-district-dot,
+  .mobile-district-chevron {
+    transition: none !important;
+  }
+
+  .mobile-district-swipe-hint {
+    animation: none !important;
+  }
+
+  /* Disable slide animations for cards */
+  .mobile-district-card,
+  .mobile-district-card--exit-left,
+  .mobile-district-card--exit-right,
+  .mobile-district-card--enter-left,
+  .mobile-district-card--enter-right {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -4,6 +4,7 @@ import {
   PktCheckbox,
   PktTag,
   PktIcon,
+  PktRadioButton,
 } from '@oslokommune/punkt-react';
 import { AddressLookupResponse } from '../../services/buildingApi';
 import {
@@ -13,13 +14,15 @@ import {
   getDisplayBuildingTypeName,
 } from '../../config/badgeConfig';
 import '../../config/badges.css';
-import { EneboligSvg, BlokkSvg } from '../FigmaBlokk/components/BuildingSprites';
+import { Enebolig2LayerSvg, Blokk2LayerSvg } from '../FigmaBlokk/components/BuildingSprites';
+import { getCanonicalKey, type TiltakCanonicalKey } from '../FigmaBlokk/utils/tiltakCanonicalKeys';
 import { useTiltakCatalog } from '../../hooks/contentHooks';
 import type { TiltakCatalogItem } from '../../types/contentCatalog';
 import { OsloLogo } from '../FigmaBlokk/components/OsloLogo';
 import { ENERGY_SOLUTIONS } from '../FigmaBlokk/constants';
 import { MobileInfoBox } from './MobileInfoBox';
 import { MobileSavingsFooter } from './MobileSavingsFooter';
+import { MobileDistrictComparison } from './MobileDistrictComparison';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from '../../utils/tekEnergyCalculations';
 import { calculateTekPeriod, parseNumericValue } from '../FigmaBlokk/components/Tiltak/shared';
 import {
@@ -37,13 +40,19 @@ import type { ContentAudience } from '../../../content/schema-helpers';
 import { useTransitionOverlay, toViewportRect } from '../../context/useTransitionOverlay';
 import type { BuildingKind } from '../../context/TransitionOverlayTypes';
 import { getBuildingKind } from '../../utils/buildingTypeUtils';
+import {
+  getDistrictStatistics,
+  getStatsForDistrict,
+  getStatsForSubdistrict,
+} from '../../services/districtStatisticsService';
+import type { DistrictStats, EnergyGrade } from '../../types/districtStatistics';
 import './MobileEnergySolutions.css';
 
 // Energy rating types and constants
 const ENERGY_RATING_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 
-// Farger for energikarakter-bokser (tilgjengelig for fremtidig bruk)
-const _ENERGY_RATING_COLORS: Record<string, string> = {
+// Energy rating colors used for arrow animations
+const ENERGY_RATING_COLORS: Record<string, string> = {
   A: '#097E3E',
   B: '#32A548',
   C: '#96C133',
@@ -52,6 +61,20 @@ const _ENERGY_RATING_COLORS: Record<string, string> = {
   F: '#EA6927',
   G: '#E31829',
 };
+
+const getEnergyRatingColor = (rating?: string | null): string => {
+  if (!rating) return '#32A548';
+  return ENERGY_RATING_COLORS[rating.toUpperCase()] ?? '#32A548';
+};
+
+// Varmepumpe-typer med energibesparelsesdata (fra CSV)
+const VARMEPUMPE_TYPES = [
+  { id: 'luft-luft', label: 'Luft-luft', description: 'Rimeligst, enkel installasjon' },
+  { id: 'luft-vann', label: 'Luft-vann', description: 'Varmer også tappevann' },
+  { id: 'vaeske-vann', label: 'Væske-vann', description: 'Høyest besparelse' },
+] as const;
+
+type VarmepumpeType = typeof VARMEPUMPE_TYPES[number]['id'];
 
 /**
  * Sjekk om første rating er bedre enn andre (A er best, G er dårligst)
@@ -92,6 +115,8 @@ interface MobileEnergySolutionsProps {
   totalEnergySavings?: number;
   /** Audience for tiltak content - determines gul liste status */
   audience?: ContentAudience;
+  /** Om brukerens energiforbruk er basert på Enova-data (true) eller TEK-estimering (false) */
+  isUsingEnovaData?: boolean;
 }
 
 /**
@@ -171,14 +196,30 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   showYellowBox = false,
   totalEnergySavings: _totalEnergySavings = 0,
   audience = 'standard',
+  isUsingEnovaData = false,
 }) => {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [_showEnergyInfo, _setShowEnergyInfo] = useState(false); // Beholdes for fremtidig bruk i energibesparelses-boksen
   const [showInfoBox, setShowInfoBox] = useState(false);
+
+  // Bydelssammenligning state
+  const [showDistrictComparison, setShowDistrictComparison] = useState(false);
+  const [districtStats, setDistrictStats] = useState<DistrictStats | null>(null);
+  const [subdistrictStats, setSubdistrictStats] = useState<DistrictStats | null>(null);
+
+  // Varmepumpe-spesifikk state
+  const [selectedVarmepumpeType, setSelectedVarmepumpeType] = useState<VarmepumpeType>('luft-luft');
+  const [varmepumpeExpanded, setVarmepumpeExpanded] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const tiltakSectionRef = useRef<HTMLDivElement>(null);
   const buildingIllustrationRef = useRef<HTMLDivElement>(null);
   const { setTargetRect, buildingType, phase: overlayPhase, finalizeTransition } = useTransitionOverlay();
+
+  // State for tiltak animations and arrow feedback
+  const [activeTiltak, setActiveTiltak] = useState<TiltakCanonicalKey[]>([]);
+  const [arrowState, setArrowState] = useState<'add' | 'remove' | null>(null);
+  const [arrowColor, setArrowColor] = useState<string>('#32A548');
+  const prevTiltakRef = useRef(new Set<TiltakCanonicalKey>());
 
   // Hide building illustration during animation phases (like desktop does)
   // During 'settling', the static illustration should be visible BEHIND the overlay
@@ -427,18 +468,20 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   }, [catalogData, buildingTypeKey, buildingYear, tekPeriod, boligtype, erPaaGulListe]);
 
   // Dynamisk tiltak-liste: bruk katalog hvis tilgjengelig, ellers fallback til ENERGY_SOLUTIONS
-  const displayTiltak: Array<{ id: string; title: string }> = useMemo(() => {
+  const displayTiltak: Array<{ id: string; title: string; canonicalKey: TiltakCanonicalKey | null }> = useMemo(() => {
     if (isCatalogLoading || filteredTiltak.length === 0) {
       // Fallback til hardkodede tiltak mens katalog lastes eller er tom
       return ENERGY_SOLUTIONS.map((title, index) => ({
         id: `fallback-${index}`,
         title: title as string,
+        canonicalKey: getCanonicalKey(undefined, title as string)
       }));
     }
 
     return filteredTiltak.map((t) => ({
       id: t.id,
       title: t.title,
+      canonicalKey: getCanonicalKey(t.id, t.title)
     }));
   }, [isCatalogLoading, filteredTiltak]);
 
@@ -476,7 +519,11 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         }
       } else if (boligtype && tekPeriod) {
         // Hent rates for dette tiltaket (romoppvarming, tappevann, elspesifikt)
-        const rates = getRateForTiltakId(tiltak.id, tekPeriod, boligtype, { erPaaGulListe });
+        // For varmepumpe: bruk valgt type fra state
+        const rates = getRateForTiltakId(tiltak.id, tekPeriod, boligtype, {
+          erPaaGulListe,
+          varmepumpeTab: tiltak.id === 'varmepumpe' ? selectedVarmepumpeType : undefined,
+        });
         if (rates !== null) {
           tiltakInfo.push({
             title: tiltak.id,
@@ -504,6 +551,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     displayTiltak,
     erPaaGulListe,
     estimatedAnnualConsumption,
+    selectedVarmepumpeType,
     solarData?.filteredSolarEnergy,
     tekPeriod,
     yearlyConsumption,
@@ -555,6 +603,38 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     yearlyConsumption,
   ]);
 
+  // Sync checkedItems to activeTiltak and trigger arrow animations
+  useEffect(() => {
+    const nextCanonicalKeys = Array.from(checkedItems)
+      .map(id => displayTiltak.find(t => t.id === id)?.canonicalKey)
+      .filter((key): key is TiltakCanonicalKey => key !== undefined && key !== null);
+
+    const nextSet = new Set(nextCanonicalKeys);
+    const prevSet = prevTiltakRef.current;
+
+    let mode: 'add' | 'remove' | null = null;
+    for (const tiltak of nextSet) {
+      if (!prevSet.has(tiltak)) { mode = 'add'; break; }
+    }
+    if (!mode) {
+      for (const tiltak of prevSet) {
+        if (!nextSet.has(tiltak)) { mode = 'remove'; break; }
+      }
+    }
+
+    setArrowColor(getEnergyRatingColor(newRating ?? estimatedRating));
+    setActiveTiltak(nextCanonicalKeys);
+    if (mode) setArrowState(mode);
+    prevTiltakRef.current = nextSet;
+  }, [checkedItems, displayTiltak, newRating, estimatedRating]);
+
+  // Auto-clear arrow state after animation completes
+  useEffect(() => {
+    if (!arrowState) return;
+    const timer = setTimeout(() => setArrowState(null), 900);
+    return () => clearTimeout(timer);
+  }, [arrowState]);
+
   const toggleChecked = useCallback((tiltakId: string) => {
     setCheckedItems((prev) => {
       const newSet = new Set(prev);
@@ -570,6 +650,29 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   // Adresse og bydel
   const addressOnly = searchAddress.split(',')[0];
   const districtName = buildingData.csvData?.bydelsnavn || '';
+
+  // Hent bydelsstatistikk ved mount
+  useEffect(() => {
+    if (!districtName || !boligtype) return;
+
+    getDistrictStatistics().then(data => {
+      const bydelStats = getStatsForDistrict(data, districtName, boligtype);
+      setDistrictStats(bydelStats);
+
+      // Hent delbydel hvis tilgjengelig
+      const subdistrictName = buildingData.csvData?.delbydelsnavn;
+      if (subdistrictName) {
+        const delbydelStats = getStatsForSubdistrict(data, districtName, subdistrictName, boligtype);
+        setSubdistrictStats(delbydelStats);
+      }
+    });
+  }, [districtName, boligtype, buildingData.csvData?.delbydelsnavn]);
+
+  // Beregn kWh/m2 for bydelssammenligning
+  const currentKwhPerM2 = useMemo(() => {
+    const consumption = yearlyConsumption ? parseFloat(yearlyConsumption) : estimatedAnnualConsumption;
+    return bruksareal && bruksareal > 0 ? consumption / bruksareal : 0;
+  }, [yearlyConsumption, estimatedAnnualConsumption, bruksareal]);
 
   // Sjekk om footer skal vises
   // Viser footer hvis tiltak er valgt OG (besparelse > 0 ELLER det finnes tiltak som ikke kunne beregnes)
@@ -764,9 +867,21 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
             }}
           >
             {isBlokk ? (
-              <BlokkSvg id="mobile-target-blokk" className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--blokk" />
+              <Blokk2LayerSvg
+                id="mobile-target-blokk"
+                className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--blokk"
+                activeTiltak={activeTiltak}
+                arrowState={arrowState}
+                arrowColor={arrowColor}
+              />
             ) : (
-              <EneboligSvg id="mobile-target-enebolig" className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--enebolig" />
+              <Enebolig2LayerSvg
+                id="mobile-target-enebolig"
+                className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--enebolig"
+                activeTiltak={activeTiltak}
+                arrowState={arrowState}
+                arrowColor={arrowColor}
+              />
             )}
           </div>
         </div>
@@ -784,27 +899,96 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               <p className="mobile-energy-solutions__empty">Ingen tiltak tilgjengelig for denne bygningstypen.</p>
             ) : (
               <ul className="mobile-energy-solutions__tiltak-list">
-                {displayTiltak.map((tiltak, index) => (
-                  <li key={tiltak.id} className={`mobile-energy-solutions__tiltak-item ${index === displayTiltak.length - 1 ? 'mobile-energy-solutions__tiltak-item--last' : ''}`}>
-                    <div className="mobile-energy-solutions__tiltak-content">
-                      <PktCheckbox
-                        id={`tiltak-${tiltak.id}`}
-                        label={tiltak.title}
-                        checked={checkedItems.has(tiltak.id)}
-                        onChange={() => toggleChecked(tiltak.id)}
-                      />
-                    </div>
-                    <PktButton
-                      skin="secondary"
-                      size="small"
-                      variant="label-only"
-                      onClick={() => onSelectTiltak(tiltak.id, calculateSavings(tiltak.title) ?? undefined)}
-                      className="mobile-energy-solutions__tiltak-button"
-                    >
-                      Les mer
-                    </PktButton>
-                  </li>
-                ))}
+                {displayTiltak.map((tiltak, index) => {
+                  const isVarmepumpe = tiltak.id === 'varmepumpe';
+                  const isSelected = checkedItems.has(tiltak.id);
+                  const isLast = index === displayTiltak.length - 1;
+
+                  // Standard tiltak-rad (ikke varmepumpe)
+                  if (!isVarmepumpe) {
+                    return (
+                      <li key={tiltak.id} className={`mobile-energy-solutions__tiltak-item ${isLast ? 'mobile-energy-solutions__tiltak-item--last' : ''}`}>
+                        <div className="mobile-energy-solutions__tiltak-content">
+                          <PktCheckbox
+                            id={`tiltak-${tiltak.id}`}
+                            label={tiltak.title}
+                            checked={isSelected}
+                            onChange={() => toggleChecked(tiltak.id)}
+                          />
+                        </div>
+                        <PktButton
+                          skin="secondary"
+                          size="small"
+                          variant="label-only"
+                          onClick={() => onSelectTiltak(tiltak.id, calculateSavings(tiltak.title) ?? undefined)}
+                          className="mobile-energy-solutions__tiltak-button"
+                        >
+                          Les mer
+                        </PktButton>
+                      </li>
+                    );
+                  }
+
+                  // Varmepumpe med utvidbar seksjon
+                  return (
+                    <li key={tiltak.id} className={`mobile-energy-solutions__tiltak-item mobile-energy-solutions__tiltak-item--expandable ${isLast ? 'mobile-energy-solutions__tiltak-item--last' : ''}`}>
+                      <div className="mobile-energy-solutions__varmepumpe-header">
+                        <button
+                          type="button"
+                          className="mobile-energy-solutions__varmepumpe-toggle"
+                          onClick={() => setVarmepumpeExpanded(!varmepumpeExpanded)}
+                          aria-expanded={varmepumpeExpanded}
+                        >
+                          <PktIcon
+                            name="chevron-thin-down"
+                            className={`mobile-energy-solutions__chevron${varmepumpeExpanded ? ' mobile-energy-solutions__chevron--expanded' : ''}`}
+                          />
+                          <span className="mobile-energy-solutions__varmepumpe-label">{tiltak.title}</span>
+                        </button>
+                        <PktButton
+                          skin="secondary"
+                          size="small"
+                          variant="label-only"
+                          onClick={() => onSelectTiltak(tiltak.id, calculateSavings(tiltak.title) ?? undefined)}
+                          className="mobile-energy-solutions__tiltak-button"
+                        >
+                          Les mer
+                        </PktButton>
+                      </div>
+
+                      {/* Utvidbar seksjon for varmepumpe-typer */}
+                      {varmepumpeExpanded && (
+                        <div className="mobile-energy-solutions__varmepumpe-options">
+                          {VARMEPUMPE_TYPES.map((type) => {
+                            const isTypeSelected = isSelected && selectedVarmepumpeType === type.id;
+                            return (
+                              <div
+                                key={type.id}
+                                className={`mobile-energy-solutions__varmepumpe-option${isTypeSelected ? ' mobile-energy-solutions__varmepumpe-option--selected' : ''}`}
+                              >
+                                <PktRadioButton
+                                  id={`varmepumpe-type-${type.id}`}
+                                  name="varmepumpe-type"
+                                  label={type.label}
+                                  value={type.id}
+                                  checked={isTypeSelected}
+                                  checkHelptext={type.description}
+                                  onChange={() => {
+                                    setSelectedVarmepumpeType(type.id);
+                                    // Sørg for at varmepumpe er valgt når en type velges
+                                    if (!checkedItems.has('varmepumpe')) {
+                                      toggleChecked('varmepumpe');
+                                    }
+                                  }}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -839,15 +1023,38 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               showYellowBox={showYellowBox}
               totalEnergySavings={calculatedSavings}
               onCollapse={() => setShowInfoBox(false)}
+              showCompareButton={!!districtStats}
+              onCompareClick={() => {
+                setShowInfoBox(false);
+                setShowDistrictComparison(true);
+              }}
             />
           </div>
         </div>
       )}
 
+      {/* Bydelssammenligning modal */}
+      {districtStats && (
+        <MobileDistrictComparison
+          isOpen={showDistrictComparison}
+          onClose={() => setShowDistrictComparison(false)}
+          currentKwhPerM2={currentKwhPerM2}
+          totalEnergySavings={calculatedSavings}
+          bruksareal={bruksareal || 0}
+          districtName={districtName}
+          districtStats={districtStats}
+          subdistrictName={buildingData.csvData?.delbydelsnavn}
+          subdistrictStats={subdistrictStats ?? undefined}
+          userEnergyGrade={estimatedRating as EnergyGrade | null}
+          buildingTypeCategory={boligtype || 'småhus'}
+          isUsingEnovaBulkData={isUsingEnovaData}
+        />
+      )}
+
       {/* Besparelsesfooter - alltid synlig når tiltak er valgt */}
       <MobileSavingsFooter
         totalSavingsKwh={calculatedSavings}
-        isVisible={showFooter}
+        isVisible={showFooter && !showDistrictComparison}
         uncalculableCount={uncalculableCount}
         estimatedRating={estimatedRating}
         newRating={newRating}

@@ -100,23 +100,6 @@ export const Enebolig2LayerSvg: React.FC<BuildingWithTiltakProps> = ({
     viewBox="0 0 93 81"
     {...props}
   >
-    {/* Arrow indicators - scaled by 0.6846 */}
-    <polygon
-      id="ARROW_ADD"
-      className={`tiltak-arrow ${arrowState === 'add' ? 'tiltak-arrow--add' : ''}`}
-      points="8.58 2.61 5.97 2.61 5.97 0 2.61 0 2.61 2.61 0 2.61 0 5.97 2.61 5.97 2.61 8.58 5.97 8.58 5.97 5.97 8.58 5.97 8.58 2.61"
-      fill={arrowColor}
-    />
-
-    <rect
-      id="ARROW_SUBTRACT"
-      className={`tiltak-arrow ${arrowState === 'remove' ? 'tiltak-arrow--remove' : ''}`}
-      y="2.61"
-      width="8.58"
-      height="3.35"
-      fill={arrowColor}
-    />
-
     {/* Base building layer - matches EneboligSvg exactly for smooth transitions */}
     <g id="blokk2-01">
       <rect x="62" y="31.7" width="31" height="49.3" fill="#f8f0dd" />
@@ -225,6 +208,23 @@ export const Enebolig2LayerSvg: React.FC<BuildingWithTiltakProps> = ({
       <path d="M57.87,76.35l-3.52-2.09v4.09c1.4-.13,2.69-.87,3.52-2.01Z" fill="#2a2859" />
       <circle cx="53.89" cy="73.47" r="1.37" fill="#2a2859" />
     </g>
+
+    {/* Arrow indicators - rendered last to appear on top */}
+    <polygon
+      id="ARROW_ADD"
+      className={`tiltak-arrow ${arrowState === 'add' ? 'tiltak-arrow--add' : ''}`}
+      points="8.58 2.61 5.97 2.61 5.97 0 2.61 0 2.61 2.61 0 2.61 0 5.97 2.61 5.97 2.61 8.58 5.97 8.58 5.97 5.97 8.58 5.97 8.58 2.61"
+      fill={arrowColor}
+    />
+
+    <rect
+      id="ARROW_SUBTRACT"
+      className={`tiltak-arrow ${arrowState === 'remove' ? 'tiltak-arrow--remove' : ''}`}
+      y="2.61"
+      width="8.58"
+      height="3.35"
+      fill={arrowColor}
+    />
   </svg>
 );
 
@@ -250,23 +250,6 @@ export const Blokk2LayerSvg: React.FC<BuildingWithTiltakProps> = ({
     id="blokk2_layer"
     {...props}
   >
-    {/* Arrow indicators */}
-    <polygon
-      id="ARROW_ADD"
-      className={`tiltak-arrow ${arrowState === 'add' ? 'tiltak-arrow--add' : ''}`}
-      points="12.53 3.816 8.714 3.816 8.714 0 3.816 0 3.816 3.816 0 3.816 0 8.714 3.816 8.714 3.816 12.53 8.714 12.53 8.714 8.714 12.53 8.714 12.53 3.816"
-      fill={arrowColor}
-    />
-
-    <rect
-      id="ARROW_SUBTRACT"
-      className={`tiltak-arrow ${arrowState === 'remove' ? 'tiltak-arrow--remove' : ''}`}
-      y="3.816"
-      width="12.53"
-      height="4.898"
-      fill={arrowColor}
-    />
-
     {/* Tiltak: Solenergi - layer 03 (behind main building) */}
     <g className={`tiltak-shape tiltak-solenergi tiltak-solenergi-03 ${activeTiltak.includes('solenergi') ? 'tiltak--visible' : ''}`}>
       <polygon points="7.771 41.726 35.687 1.917 61.872 1.917 33.955 41.726 7.771 41.726" fill="#fff" />
@@ -433,5 +416,22 @@ export const Blokk2LayerSvg: React.FC<BuildingWithTiltakProps> = ({
       <path d="M11.895,63.304c5.924-1.091,6.809-1.975,7.899-7.899,1.091,5.924,1.975,6.809,7.899,7.899-5.924,1.091-6.809,1.975-7.899,7.899-1.091-5.924-1.975-6.809-7.899-7.899Z" fill="#fff" />
       <path d="M77.659,126.704c3.717-.684,4.272-1.239,4.956-4.956.684,3.717,1.239,4.272,4.956,4.956-3.717.684-4.272,1.239-4.956,4.956-.684-3.717-1.239-4.272-4.956-4.956Z" fill="#fff" />
     </g>
+
+    {/* Arrow indicators - rendered last to appear on top */}
+    <polygon
+      id="ARROW_ADD"
+      className={`tiltak-arrow ${arrowState === 'add' ? 'tiltak-arrow--add' : ''}`}
+      points="12.53 3.816 8.714 3.816 8.714 0 3.816 0 3.816 3.816 0 3.816 0 8.714 3.816 8.714 3.816 12.53 8.714 12.53 8.714 8.714 12.53 8.714 12.53 3.816"
+      fill={arrowColor}
+    />
+
+    <rect
+      id="ARROW_SUBTRACT"
+      className={`tiltak-arrow ${arrowState === 'remove' ? 'tiltak-arrow--remove' : ''}`}
+      y="3.816"
+      width="12.53"
+      height="4.898"
+      fill={arrowColor}
+    />
   </svg>
 );

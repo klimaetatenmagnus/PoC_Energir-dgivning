@@ -185,6 +185,13 @@
   margin-top: var(--pkt-spacing-8, 0.5rem);
 }
 
+/* Sammenlign med naboer - knapp */
+.mobile-info-box__compare-section {
+  display: flex;
+  justify-content: center;
+  padding: var(--pkt-spacing-8, 0.5rem) 0;
+}
+
 /* Kart */
 .mobile-info-box__map-section {
   display: flex;
