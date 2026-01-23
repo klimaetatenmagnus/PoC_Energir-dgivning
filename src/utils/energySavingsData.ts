@@ -730,6 +730,7 @@ export function calculateCombinedSavings(
         const romoppvarmingForbruk = distribution.romoppvarming * bruksareal;
         const tappevannsForbruk = distribution.tappevann * bruksareal;
         const elspesifiktForbruk = distribution.elspesifikt * bruksareal;
+        const totalForbrukFraDistribution = romoppvarmingForbruk + tappevannsForbruk + elspesifiktForbruk;
 
         // Beregn forbruk etter tiltak per energitype
         const romoppvarmingEtter = romoppvarmingForbruk * kombinertRomRate;
@@ -739,11 +740,12 @@ export function calculateCombinedSavings(
         // Beregn total forbruk etter tiltak
         const totalEtter = romoppvarmingEtter + tappevannsEtter + elspesifiktEtter;
 
-        // Beregn besparelse
-        let besparelse = opprinneligForbruk - totalEtter;
+        // Beregn besparelse som prosent av distribution-forbruk, deretter skaler til opprinneligForbruk
+        // Dette sikrer konsistens uansett hvilken metode som brukes for å beregne opprinnelig forbruk
+        const besparelseProsent = (totalForbrukFraDistribution - totalEtter) / totalForbrukFraDistribution;
+        let besparelse = opprinneligForbruk * besparelseProsent;
 
-        // Håndter edge case: hvis totalEtter > opprinneligForbruk (netto økning),
-        // returner 0 besparelse + solenergi (ikke negativ besparelse)
+        // Håndter edge case: negativ besparelse (netto økning)
         if (besparelse < 0) {
           besparelse = 0;
         }
@@ -889,4 +891,158 @@ export function getRateForTiltakId(
   }
 
   return getEnergySavingsRate(tiltakType, tekPeriod, boligtype);
+}
+
+/**
+ * Typisk kWh/m² per TEK-periode og boligtype (fra CSV)
+ * Brukes for å estimere "effektiv TEK-periode" basert på faktisk energiforbruk
+ */
+const TEK_TYPICAL_CONSUMPTION: Record<TEKPeriod, Record<Boligtype, number>> = {
+  'Eldre': { småhus: 240.3, blokk: 222.3 },  // Samme som TEK69
+  'TEK49': { småhus: 240.3, blokk: 222.3 },  // Samme som TEK69
+  'TEK69': { småhus: 240.3, blokk: 222.3 },
+  'TEK87': { småhus: 201.1, blokk: 171.4 },
+  'TEK97': { småhus: 166.8, blokk: 153.9 },
+  'TEK07': { småhus: 129.2, blokk: 112.5 },
+  'TEK10': { småhus: 121.0, blokk: 104.0 },  // Samme som TEK17
+  'TEK17': { småhus: 121.0, blokk: 104.0 },
+};
+
+/**
+ * Estimerer en "effektiv TEK-periode" basert på faktisk kWh/m² fra Enova-data.
+ *
+ * Når en bolig har Enova-attest som viser lavere forbruk enn forventet for byggeåret,
+ * betyr det at boligen allerede er oppgradert. For å beregne realistiske besparelser
+ * må vi bruke besparelsesfaktorer som matcher det faktiske energinivået.
+ *
+ * @param kwhPerM2 - Faktisk energiintensitet (kWh/m²/år) fra Enova-data
+ * @param boligtype - Boligtype ('småhus' eller 'blokk')
+ * @returns Nærmeste TEK-periode som matcher energinivået
+ *
+ * @example
+ * // Bolig med Enova-attest: 116 kWh/m² (småhus)
+ * // Typisk TEK17 småhus er 121 kWh/m²
+ * // → Returnerer 'TEK17' (nærmest match)
+ * estimateTekPeriodFromKwhPerM2(116, 'småhus'); // 'TEK17'
+ */
+export function estimateTekPeriodFromKwhPerM2(
+  kwhPerM2: number,
+  boligtype: Boligtype
+): TEKPeriod {
+  // Sorter TEK-perioder fra lavest til høyest forbruk
+  const tekPeriods: TEKPeriod[] = ['TEK17', 'TEK10', 'TEK07', 'TEK97', 'TEK87', 'TEK69'];
+
+  // Finn nærmeste TEK-periode basert på kwhPerM2
+  let closestTek: TEKPeriod = 'TEK69'; // Default til høyeste
+  let closestDiff = Infinity;
+
+  for (const tek of tekPeriods) {
+    const typicalValue = TEK_TYPICAL_CONSUMPTION[tek][boligtype];
+    const diff = Math.abs(kwhPerM2 - typicalValue);
+
+    if (diff < closestDiff) {
+      closestDiff = diff;
+      closestTek = tek;
+    }
+  }
+
+  return closestTek;
+}
+
+/**
+ * Beregner energibesparelser for sammenligningsmodulen basert på Enova-data.
+ *
+ * Denne funksjonen brukes når en bolig har Enova-attest som viser lavere forbruk
+ * enn TEK-estimatet fra byggeåret. I stedet for naiv skalering:
+ * 1. Estimerer en "effektiv TEK-periode" basert på Enova kwhPerM2
+ * 2. Henter besparelsesfaktorer fra CSV for denne TEK-perioden
+ * 3. Beregner besparelser basert på Enova-forbruk og disse faktorene
+ *
+ * @param enovaKwhPerM2 - Faktisk energiintensitet fra Enova-data
+ * @param bruksareal - Bruksareal i m²
+ * @param boligtype - Boligtype ('småhus' eller 'blokk')
+ * @param tiltak - Liste med valgte tiltak og deres info
+ * @returns Total besparelse i kWh
+ */
+export function calculateComparisonSavings(
+  enovaKwhPerM2: number,
+  bruksareal: number,
+  boligtype: Boligtype,
+  tiltak: TiltakSavingsInfo[]
+): number {
+  if (!Number.isFinite(enovaKwhPerM2) || enovaKwhPerM2 <= 0) {
+    return 0;
+  }
+  if (!Number.isFinite(bruksareal) || bruksareal <= 0) {
+    return 0;
+  }
+
+  // Estimer effektiv TEK-periode basert på Enova kwhPerM2
+  const effectiveTek = estimateTekPeriodFromKwhPerM2(enovaKwhPerM2, boligtype);
+
+  // Beregn faktisk forbruk fra Enova-data
+  const enovaForbruk = enovaKwhPerM2 * bruksareal;
+
+  // Separer solenergi fra andre tiltak og bygg opp rates
+  let solarProduction = 0;
+  const romRates: number[] = [];
+  const tapRates: number[] = [];
+  const elRates: number[] = [];
+
+  for (const t of tiltak) {
+    if ((t.title === 'Solenergi' || t.title === 'solenergi') && t.solarProductionKwh !== undefined) {
+      solarProduction += t.solarProductionKwh;
+    } else if (t.rates !== null) {
+      if (t.rates.romoppvarming > 0) romRates.push(t.rates.romoppvarming);
+      if (t.rates.tappevann > 0) tapRates.push(t.rates.tappevann);
+      if (t.rates.elspesifikt > 0) elRates.push(t.rates.elspesifikt);
+    }
+  }
+
+  // Hvis kun solenergi, returner bare solproduksjon
+  if (romRates.length === 0 && tapRates.length === 0 && elRates.length === 0) {
+    return solarProduction;
+  }
+
+  // Kombiner rates multiplikativt
+  const kombinertRomRate = romRates.reduce((acc, rate) => acc * rate, 1);
+  const kombinertTapRate = tapRates.reduce((acc, rate) => acc * rate, 1);
+  const kombinertElRate = elRates.reduce((acc, rate) => acc * rate, 1);
+
+  // Hent forbruksfordeling for den effektive TEK-perioden
+  const lookupTek = getTekPeriodForLookup(effectiveTek);
+  const distribution = ENERGY_CONSUMPTION_DISTRIBUTIONS[lookupTek]?.[boligtype];
+
+  if (!distribution) {
+    // Fallback: bruk gjennomsnitt av rates
+    const kombinertRate = (kombinertRomRate + kombinertTapRate + kombinertElRate) / 3;
+    return enovaForbruk * (1 - kombinertRate) + solarProduction;
+  }
+
+  // Beregn forbruk per energitype basert på effektiv TEK fordeling
+  const totalDistribution = distribution.romoppvarming + distribution.tappevann + distribution.elspesifikt;
+  const romAndel = distribution.romoppvarming / totalDistribution;
+  const tapAndel = distribution.tappevann / totalDistribution;
+  const elAndel = distribution.elspesifikt / totalDistribution;
+
+  // Fordel Enova-forbruket på energityper
+  const romoppvarmingForbruk = enovaForbruk * romAndel;
+  const tappevannsForbruk = enovaForbruk * tapAndel;
+  const elspesifiktForbruk = enovaForbruk * elAndel;
+
+  // Beregn forbruk etter tiltak
+  const romoppvarmingEtter = romoppvarmingForbruk * kombinertRomRate;
+  const tappevannsEtter = tappevannsForbruk * kombinertTapRate;
+  const elspesifiktEtter = elspesifiktForbruk * kombinertElRate;
+
+  // Total besparelse
+  const totalEtter = romoppvarmingEtter + tappevannsEtter + elspesifiktEtter;
+  let besparelse = enovaForbruk - totalEtter;
+
+  // Ikke returner negativ besparelse
+  if (besparelse < 0) {
+    besparelse = 0;
+  }
+
+  return besparelse + solarProduction;
 }

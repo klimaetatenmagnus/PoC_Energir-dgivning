@@ -26,10 +26,8 @@ import { MobileDistrictComparison } from './MobileDistrictComparison';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from '../../utils/tekEnergyCalculations';
 import { calculateTekPeriod, parseNumericValue } from '../FigmaBlokk/components/Tiltak/shared';
 import {
-  getEnergySavingsRate,
-  getWindowEnergySavingsRate,
-  calculateSavingsFromRate,
   calculateCombinedSavings,
+  calculateComparisonSavings,
   getRateForTiltakId,
   hasEnergyEffect,
   type TiltakSavingsInfo,
@@ -44,6 +42,8 @@ import {
   getDistrictStatistics,
   getStatsForDistrict,
   getStatsForSubdistrict,
+  lookupBuildingFromEnovaData,
+  type EnovaBuildingData,
 } from '../../services/districtStatisticsService';
 import type { DistrictStats, EnergyGrade } from '../../types/districtStatistics';
 import './MobileEnergySolutions.css';
@@ -196,7 +196,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   showYellowBox = false,
   totalEnergySavings: _totalEnergySavings = 0,
   audience = 'standard',
-  isUsingEnovaData = false,
+  isUsingEnovaData: _isUsingEnovaData = false,
 }) => {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [_showEnergyInfo, _setShowEnergyInfo] = useState(false); // Beholdes for fremtidig bruk i energibesparelses-boksen
@@ -206,6 +206,10 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   const [showDistrictComparison, setShowDistrictComparison] = useState(false);
   const [districtStats, setDistrictStats] = useState<DistrictStats | null>(null);
   const [subdistrictStats, setSubdistrictStats] = useState<DistrictStats | null>(null);
+
+  // Enova bulk-data for brukerens bolig (for "Sammenlign deg med naboen")
+  // Brukes kun til sammenligning, ikke til tiltaksberegninger
+  const [enovaBulkData, setEnovaBulkData] = useState<EnovaBuildingData | null>(null);
 
   // Varmepumpe-spesifikk state
   const [selectedVarmepumpeType, setSelectedVarmepumpeType] = useState<VarmepumpeType>('luft-luft');
@@ -351,46 +355,14 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   }, [yearlyConsumption, buildingData, buildingYear, bruksareal, buildingTypeCode, buildingTypeNameLower]);
 
   // Beregn besparelse for et tiltak med CSV-baserte prosentsatser
+  // Bruker samme metode som desktop (getRateForTiltakId + calculateCombinedSavings)
   // Returnerer null hvis besparelse ikke kan beregnes (manglende data)
-  const calculateSavings = useCallback(
-    (measure: string): number | null => {
+  const calculateSavingsForTiltak = useCallback(
+    (tiltakId: string): number | null => {
       // Solenergi har egen beregning - bruk solarData prop eller buildingData som fallback
-      if (measure === 'Solenergi') {
+      if (tiltakId === 'solenergi') {
         const solarValue = solarData?.filteredSolarEnergy || buildingData?.filteredSolarEnergy;
         return solarValue && solarValue > 0 ? solarValue : null;
-      }
-
-      // Temperaturstyring - validering som matcher desktop-implementasjon
-      if (measure === 'Temperaturstyring') {
-        // Bruk parseNumericValue for konsistent parsing (som desktop)
-        const parsedBruksareal = parseNumericValue(bruksareal);
-        const parsedByggeaar = Math.trunc(parseNumericValue(buildingYear));
-
-        // Bestem byggkategori med determineBuildingType (som desktop)
-        const buildingCategory = determineBuildingType(buildingTypeCode, buildingTypeName);
-
-        // Valider alle nødvendige inputs (matcher desktop)
-        if (
-          !buildingCategory ||
-          !Number.isFinite(parsedByggeaar) ||
-          parsedByggeaar <= 0 ||
-          !Number.isFinite(parsedBruksareal) ||
-          parsedBruksareal <= 0
-        ) {
-          return null;
-        }
-
-        // Bruk calculateTekPeriod fra shared (som desktop)
-        const tekPeriod = calculateTekPeriod(parsedByggeaar);
-        const originalEnergy = calculateAnnualEnergyConsumption(parsedByggeaar, parsedBruksareal, buildingCategory);
-        const rate = getEnergySavingsRate('temperaturstyring', tekPeriod, buildingCategory);
-
-        if (rate === null) {
-          return null;
-        }
-
-        const totalSavings = calculateSavingsFromRate(originalEnergy, rate);
-        return totalSavings > 0 ? totalSavings : null;
       }
 
       // Andre tiltak krever byggeår og bruksareal
@@ -413,25 +385,34 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       }
 
       // Beregn TEK-periode og opprinnelig energiforbruk
-      const tekPeriod = calculateTekPeriod(parsedByggeaar);
+      const tekPeriodCalc = calculateTekPeriod(parsedByggeaar);
       const originalEnergy = calculateAnnualEnergyConsumption(parsedByggeaar, parsedBruksareal, buildingCategory);
 
-      // Map tiltak-navn til tiltak-ID og hent prosentsats
-      let rate: number | null = null;
+      // Bruk getRateForTiltakId direkte med tiltakId (samme som desktop)
+      const energyBuildingCategory: Boligtype = buildingCategory === 'blokk' ? 'blokk' : 'småhus';
+      const rates = getRateForTiltakId(tiltakId, tekPeriodCalc, energyBuildingCategory, {
+        erPaaGulListe,
+        varmepumpeTab: tiltakId === 'varmepumpe' ? selectedVarmepumpeType : undefined,
+      });
 
-      if (measure === 'Oppgradering av vindu' || measure === 'Oppgradering av vinduer') {
-        rate = getWindowEnergySavingsRate(tekPeriod, buildingCategory, erPaaGulListe);
-      } else if (measure === 'Etterisolering av yttervegg') {
-        rate = getEnergySavingsRate('etterisolering_yttervegg', tekPeriod, buildingCategory);
-      } else if (measure === 'Isolering av kjeller og loft' || measure === 'Etterisolering av kjeller og loft') {
-        rate = getEnergySavingsRate('etterisolering_kjeller_loft', tekPeriod, buildingCategory);
-      }
-
-      if (rate === null) {
+      if (!rates) {
         return null;
       }
 
-      const totalSavings = calculateSavingsFromRate(originalEnergy, rate);
+      // Bruk calculateCombinedSavings for konsistent beregning med desktop
+      const tiltakInfo: TiltakSavingsInfo[] = [{
+        title: tiltakId,
+        rates: rates
+      }];
+
+      const totalSavings = calculateCombinedSavings(
+        originalEnergy,
+        tiltakInfo,
+        tekPeriodCalc,
+        energyBuildingCategory,
+        parsedBruksareal
+      );
+
       return totalSavings > 0 ? totalSavings : null;
     },
     [
@@ -441,6 +422,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       buildingYear,
       bruksareal,
       erPaaGulListe,
+      selectedVarmepumpeType,
       solarData,
     ]
   );
@@ -486,7 +468,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   }, [isCatalogLoading, filteredTiltak]);
 
   // Beregn total besparelse med multiplikativ metode når valgte tiltak endres
-  // Holder også styr på hvor mange tiltak som ikke kunne beregnes
+  // VIKTIG: Bruker ALLTID TEK/byggtype-basert beregning for energibesparelser
+  // (Enova-data brukes KUN i sammenligningsmodulen)
   useEffect(() => {
     if (checkedItems.size === 0) {
       setCalculatedSavings(0);
@@ -494,8 +477,36 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       return;
     }
 
-    // Bruk yearlyConsumption hvis tilgjengelig, ellers estimert forbruk
-    const consumptionNum = yearlyConsumption ? parseFloat(yearlyConsumption) : estimatedAnnualConsumption;
+    // Beregn verdier direkte
+    const parsedBruksareal = parseNumericValue(bruksareal);
+    const parsedByggeaar = Math.trunc(parseNumericValue(buildingYear));
+
+    // Valider inputs
+    if (
+      !Number.isFinite(parsedByggeaar) ||
+      parsedByggeaar <= 0 ||
+      !Number.isFinite(parsedBruksareal) ||
+      parsedBruksareal <= 0
+    ) {
+      // Kan ikke beregne - merk alle som uncalculable
+      setCalculatedSavings(0);
+      setUncalculableCount(checkedItems.size);
+      return;
+    }
+
+    // Bestem byggkategori og TEK-periode direkte
+    const buildingCategory = determineBuildingType(buildingTypeCode, buildingTypeName);
+    if (!buildingCategory) {
+      setCalculatedSavings(0);
+      setUncalculableCount(checkedItems.size);
+      return;
+    }
+
+    const tekPeriodCalc = calculateTekPeriod(parsedByggeaar);
+    const energyBuildingCategory: Boligtype = buildingCategory === 'blokk' ? 'blokk' : 'småhus';
+
+    // ALLTID bruk TEK-basert beregning for energibesparelser (ikke Enova-data)
+    const consumptionNum = calculateAnnualEnergyConsumption(parsedByggeaar, parsedBruksareal, energyBuildingCategory);
 
     // Bygg liste med tiltak og deres rates for multiplikativ beregning
     const tiltakInfo: TiltakSavingsInfo[] = [];
@@ -517,10 +528,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         } else {
           uncalculable += 1;
         }
-      } else if (boligtype && tekPeriod) {
+      } else {
         // Hent rates for dette tiltaket (romoppvarming, tappevann, elspesifikt)
-        // For varmepumpe: bruk valgt type fra state
-        const rates = getRateForTiltakId(tiltak.id, tekPeriod, boligtype, {
+        const rates = getRateForTiltakId(tiltak.id, tekPeriodCalc, energyBuildingCategory, {
           erPaaGulListe,
           varmepumpeTab: tiltak.id === 'varmepumpe' ? selectedVarmepumpeType : undefined,
         });
@@ -532,29 +542,31 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         } else {
           uncalculable += 1;
         }
-      } else {
-        // Mangler nødvendig data for beregning
-        uncalculable += 1;
       }
     });
 
     // Bruk den sentrale multiplikative beregningen med forbruksfordeling per energitype
-    const total = calculateCombinedSavings(consumptionNum, tiltakInfo, tekPeriod, boligtype, bruksareal);
+    const total = calculateCombinedSavings(
+      consumptionNum,
+      tiltakInfo,
+      tekPeriodCalc,
+      energyBuildingCategory,
+      parsedBruksareal
+    );
 
     setCalculatedSavings(total);
     setUncalculableCount(uncalculable);
   }, [
-    boligtype,
     bruksareal,
     buildingData?.filteredSolarEnergy,
+    buildingTypeCode,
+    buildingTypeName,
+    buildingYear,
     checkedItems,
     displayTiltak,
     erPaaGulListe,
-    estimatedAnnualConsumption,
     selectedVarmepumpeType,
     solarData?.filteredSolarEnergy,
-    tekPeriod,
-    yearlyConsumption,
   ]);
 
   // Beregn ny energikarakter basert på valgte tiltak
@@ -668,11 +680,114 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     });
   }, [districtName, boligtype, buildingData.csvData?.delbydelsnavn]);
 
+  // Hent Enova bulk-data for brukerens bolig (for "Sammenlign deg med naboen")
+  // Dette sikrer at sammenligningen bruker samme datakilde som bydelsstatistikken
+  useEffect(() => {
+    const gnr = String(buildingData?.gnr || buildingData?.csvData?.gnr || '');
+    const bnr = String(buildingData?.bnr || buildingData?.csvData?.bnr || '');
+    const snr = String(buildingData?.seksjonsnummer || '0');
+    const bygningsnummer = buildingData?.bygningsnummer || '';
+
+    lookupBuildingFromEnovaData(bygningsnummer, gnr, bnr, snr)
+      .then(setEnovaBulkData);
+  }, [buildingData]);
+
   // Beregn kWh/m2 for bydelssammenligning
+  // Prioriterer Enova bulk-data for å sikre "epler med epler"-sammenligning
+  // Hvis boligen ikke finnes i Enova bulk-data, brukes TEK-estimering
   const currentKwhPerM2 = useMemo(() => {
+    // Hvis brukerens bolig finnes i Enova bulk-data, bruk den verdien
+    // Dette sikrer at sammenligningen er basert på samme datakilde som bydelsstatistikken
+    if (enovaBulkData?.kwhPerM2 && enovaBulkData.kwhPerM2 > 0) {
+      return enovaBulkData.kwhPerM2;
+    }
+
+    // Fallback til TEK-estimering hvis Enova-data ikke finnes
     const consumption = yearlyConsumption ? parseFloat(yearlyConsumption) : estimatedAnnualConsumption;
     return bruksareal && bruksareal > 0 ? consumption / bruksareal : 0;
-  }, [yearlyConsumption, estimatedAnnualConsumption, bruksareal]);
+  }, [enovaBulkData, yearlyConsumption, estimatedAnnualConsumption, bruksareal]);
+
+  // Beregn besparelse for sammenligningsmodulen
+  // Hvis Enova-data finnes, bruker vi calculateComparisonSavings som:
+  // 1. Estimerer en "effektiv TEK-periode" basert på Enova kwhPerM2
+  // 2. Henter besparelsesfaktorer fra CSV for denne TEK-perioden
+  // 3. Beregner besparelser basert på Enova-forbruk og disse faktorene
+  // Dette gir realistiske besparelser for allerede oppgraderte boliger
+  const comparisonSavings = useMemo(() => {
+    // Hvis ingen Enova-data eller ingen valgte tiltak, bruk calculatedSavings uendret
+    if (!enovaBulkData?.kwhPerM2 || enovaBulkData.kwhPerM2 <= 0 || !boligtype || !bruksareal || bruksareal <= 0) {
+      return calculatedSavings;
+    }
+
+    // Beregn TEK-basert forbruk
+    const tekBasedKwhPerM2 = estimatedAnnualConsumption / bruksareal;
+
+    // Hvis Enova-forbruk er høyere enn eller lik TEK, bruk calculatedSavings uendret
+    // (boligen er ikke oppgradert, så TEK-basert beregning er riktig)
+    if (enovaBulkData.kwhPerM2 >= tekBasedKwhPerM2) {
+      return calculatedSavings;
+    }
+
+    // Bygg tiltak-liste med rates for Enova-basert beregning
+    const tiltakInfo: TiltakSavingsInfo[] = [];
+
+    checkedItems.forEach((tiltakId) => {
+      const tiltak = displayTiltak.find((t) => t.id === tiltakId);
+      if (!tiltak) return;
+
+      // Solenergi håndteres spesielt - det er produksjon, ikke besparelse
+      if (tiltak.id === 'solenergi') {
+        const solarValue = solarData?.filteredSolarEnergy || buildingData?.filteredSolarEnergy;
+        if (solarValue && solarValue > 0) {
+          tiltakInfo.push({
+            title: tiltak.id,
+            rates: null,
+            solarProductionKwh: solarValue
+          });
+        }
+      } else {
+        // Hent rates for dette tiltaket basert på effektiv TEK
+        // (calculateComparisonSavings vil hente riktig TEK basert på Enova kwhPerM2)
+        const rates = getRateForTiltakId(tiltak.id, tekPeriod || 'TEK69', boligtype, {
+          erPaaGulListe,
+          varmepumpeTab: tiltak.id === 'varmepumpe' ? selectedVarmepumpeType : undefined,
+        });
+        if (rates !== null) {
+          tiltakInfo.push({
+            title: tiltak.id,
+            rates
+          });
+        }
+      }
+    });
+
+    // Hvis ingen tiltak med rates, bruk calculatedSavings
+    if (tiltakInfo.length === 0) {
+      return calculatedSavings;
+    }
+
+    // Bruk calculateComparisonSavings som beregner besparelser basert på
+    // effektiv TEK-periode (estimert fra Enova kwhPerM2)
+    return calculateComparisonSavings(
+      enovaBulkData.kwhPerM2,
+      bruksareal,
+      boligtype,
+      tiltakInfo
+    );
+  }, [
+    enovaBulkData,
+    calculatedSavings,
+    estimatedAnnualConsumption,
+    bruksareal,
+    boligtype,
+    checkedItems,
+    displayTiltak,
+    tekPeriod,
+    erPaaGulListe,
+    selectedVarmepumpeType,
+    solarData?.filteredSolarEnergy,
+    buildingData?.filteredSolarEnergy,
+  ]);
 
   // Sjekk om footer skal vises
   // Viser footer hvis tiltak er valgt OG (besparelse > 0 ELLER det finnes tiltak som ikke kunne beregnes)
@@ -920,7 +1035,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                           skin="secondary"
                           size="small"
                           variant="label-only"
-                          onClick={() => onSelectTiltak(tiltak.id, calculateSavings(tiltak.title) ?? undefined)}
+                          onClick={() => onSelectTiltak(tiltak.id, calculateSavingsForTiltak(tiltak.id) ?? undefined)}
                           className="mobile-energy-solutions__tiltak-button"
                         >
                           Les mer
@@ -949,7 +1064,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                           skin="secondary"
                           size="small"
                           variant="label-only"
-                          onClick={() => onSelectTiltak(tiltak.id, calculateSavings(tiltak.title) ?? undefined)}
+                          onClick={() => onSelectTiltak(tiltak.id, calculateSavingsForTiltak(tiltak.id) ?? undefined)}
                           className="mobile-energy-solutions__tiltak-button"
                         >
                           Les mer
@@ -1039,7 +1154,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
           isOpen={showDistrictComparison}
           onClose={() => setShowDistrictComparison(false)}
           currentKwhPerM2={currentKwhPerM2}
-          totalEnergySavings={calculatedSavings}
+          totalEnergySavings={comparisonSavings}
           bruksareal={bruksareal || 0}
           districtName={districtName}
           districtStats={districtStats}
@@ -1047,7 +1162,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
           subdistrictStats={subdistrictStats ?? undefined}
           userEnergyGrade={estimatedRating as EnergyGrade | null}
           buildingTypeCategory={boligtype || 'småhus'}
-          isUsingEnovaBulkData={isUsingEnovaData}
+          isUsingEnovaBulkData={enovaBulkData !== null}
         />
       )}
 
