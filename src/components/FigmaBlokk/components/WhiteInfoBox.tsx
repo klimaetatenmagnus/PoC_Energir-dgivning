@@ -190,6 +190,7 @@ interface WhiteInfoBoxProps {
   gulListeLoading?: boolean;
   energyPricePerKwh?: number;
   animateSavings?: boolean;
+  onShowInfo?: () => void;
 }
 
 export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
@@ -209,7 +210,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   totalEnergySavings = 0,
   gulListeLoading = false,
   energyPricePerKwh = 1.1,
-  animateSavings = true
+  animateSavings = true,
+  onShowInfo
 }) => {
   // State for delayed height expansion
   const [expandHeight, setExpandHeight] = React.useState(false);
@@ -850,7 +852,19 @@ const tiltakPreview = selectedTiltakSlug ? (
             className="white-info-box__section"
           >
             <div className="white-info-box__section-header">
-              <h3 className="white-info-box__section-title">Nøkkelinformasjon</h3>
+              <div className="white-info-box__section-title-row">
+                <h3 className="white-info-box__section-title">Nøkkelinformasjon</h3>
+                {onShowInfo && (
+                  <PktButton
+                    skin="tertiary"
+                    size="small"
+                    variant="icon-only"
+                    iconName="information"
+                    aria-label="Hvordan fungerer siden?"
+                    onClick={onShowInfo}
+                  />
+                )}
+              </div>
               <PktButton
                 skin="tertiary"
                 size="small"

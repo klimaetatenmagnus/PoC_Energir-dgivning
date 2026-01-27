@@ -9,14 +9,14 @@
  * For å beregne besparelse:
  * besparelse = opprinneligEnergibruk * (1 - rate)
  *
- * Kilde: Dokumentasjon/Utvikling/Input til modellen-Tabell 1.csv
+ * Kilde: data/raw/Input til modellen-Tabell 1.csv
  * Data parses dynamisk fra CSV-filen ved build-time.
  */
 
 import type { EnergyTypeRates, TEKPeriod } from '../types/energy';
 
 // Import CSV file as raw text - Vite handles this with ?raw suffix
-import csvRawData from '../../Dokumentasjon/Utvikling/Input til modellen-Tabell 1.csv?raw';
+import csvRawData from '../../data/raw/Input til modellen-Tabell 1.csv?raw';
 
 // Type for tiltak som støttes
 export type TiltakType =

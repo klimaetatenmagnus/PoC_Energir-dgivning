@@ -565,12 +565,23 @@
   margin-bottom: var(--wib-spacing-sm);
 }
 
+/* Kompenser for PktButton intern padding på høyre side */
+.white-info-box__section-header > .pkt-btn:last-child {
+  margin-right: -0.5rem; /* Juster for knappens interne padding */
+}
+
 .white-info-box__section-header .white-info-box__section-title {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 500;
   letter-spacing: -0.2px;
   color: var(--wib-text-primary);
+}
+
+.white-info-box__section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem; /* 2px - Punkt size-2 */
 }
 
 /* Nøkkelinformasjon innhold */

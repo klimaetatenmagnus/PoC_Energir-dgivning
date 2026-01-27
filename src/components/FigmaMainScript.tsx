@@ -233,6 +233,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const [animateBlokk, setAnimateBlokk] = React.useState(false);
   // State for process slide animation
   const [showProcess, setShowProcess] = React.useState(false);
+  const [showInfoModal, setShowInfoModal] = React.useState(false);
   
   // State for total energy savings
   const [totalEnergySavings, setTotalEnergySavings] = React.useState<number>(0);
@@ -459,6 +460,71 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   // Shared viewport metrics (keeps layout in sync with landing page skyline)
   const { scaleFactor } = useFigmaViewportMetrics();
 
+  // Calculate decorative corner element dimensions dynamically
+  // Element should go from white info box bottom-right corner to viewport bottom-right corner
+  const decorativeCornerDimensions = React.useMemo(() => {
+    if (typeof window === 'undefined') return { width: 120, height: 120 };
+
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Artboard dimensions
+    const artboardWidth = 1728;
+    const artboardHeight = 900;
+
+    // White info box position in artboard coordinates
+    const infoBoxRight = 1212 + 360; // 1572px
+    const infoBoxBottom = 120; // FINAL_BOTTOM_OFFSET
+
+    // Calculate artboard position in viewport (centered and scaled)
+    const scaledArtboardWidth = artboardWidth * scaleFactor;
+    const scaledArtboardHeight = artboardHeight * scaleFactor;
+    const artboardLeft = (viewportWidth - scaledArtboardWidth) / 2;
+    const artboardTop = (viewportHeight - scaledArtboardHeight) / 2;
+
+    // White info box position in viewport coordinates
+    const infoBoxRightInViewport = artboardLeft + infoBoxRight * scaleFactor;
+    const infoBoxBottomInViewport = artboardTop + (artboardHeight - infoBoxBottom) * scaleFactor;
+
+    // Calculate dimensions from info box corner to viewport corner
+    const width = Math.max(0, viewportWidth - infoBoxRightInViewport);
+    const height = Math.max(0, viewportHeight - infoBoxBottomInViewport);
+
+    return { width, height };
+  }, [scaleFactor]);
+
+  // Update decorative corner on resize
+  const [cornerSize, setCornerSize] = React.useState(decorativeCornerDimensions);
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      const artboardWidth = 1728;
+      const artboardHeight = 900;
+      const infoBoxRight = 1572;
+      const infoBoxBottom = 120;
+
+      const scaledArtboardWidth = artboardWidth * scaleFactor;
+      const scaledArtboardHeight = artboardHeight * scaleFactor;
+      const artboardLeft = (viewportWidth - scaledArtboardWidth) / 2;
+      const artboardTop = (viewportHeight - scaledArtboardHeight) / 2;
+
+      const infoBoxRightInViewport = artboardLeft + infoBoxRight * scaleFactor;
+      const infoBoxBottomInViewport = artboardTop + (artboardHeight - infoBoxBottom) * scaleFactor;
+
+      const width = Math.max(0, viewportWidth - infoBoxRightInViewport);
+      const height = Math.max(0, viewportHeight - infoBoxBottomInViewport);
+
+      setCornerSize({ width, height });
+    };
+
+    handleResize(); // Initial calculation
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [scaleFactor]);
+
   React.useLayoutEffect(() => {
     if (!overlayActiveForThisBuilding) {
       return;
@@ -580,39 +646,43 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         zIndex: 0
       }} />
 
-      {/* Decorative corner element - fixed to viewport bottom-right (Oslo.kommune.no style) */}
-      {/* White square with cyan circle inside - creates a "cut-out" effect */}
-      {/* Hidden on mobile (viewport width <= 768px) via CSS class */}
-      {showHeader && !isExpanded && (
-        <div
-          className="decorative-corner-element"
-          style={{
-            position: 'fixed',
-            right: 0,
-            bottom: 0,
-            width: '120px',
-            height: '120px',
-            backgroundColor: 'var(--pkt-color-brand-neutrals-white, #ffffff)',
-            zIndex: 1,
-            opacity: showHeader && !isExpanded ? 1 : 0,
-            transition: 'opacity 0.5s ease-in-out' + (showHeader && !isExpanded ? ' 0.5s' : isExpanded ? '' : ' 0.8s'),
-            pointerEvents: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {/* Cyan circle - same color as background, creates cut-out effect */}
+      {/* Decorative corner element - fixed to viewport bottom-right */}
+      {/* White square with cyan circle inside (diameter = side length) */}
+      {/* Square size based on smaller dimension, positioned so top-left touches white info box */}
+      {showHeader && !isExpanded && cornerSize.width > 0 && cornerSize.height > 0 && (() => {
+        const squareSize = Math.min(cornerSize.width, cornerSize.height);
+        return (
           <div
+            className="decorative-corner-element"
             style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--pkt-color-brand-blue-300, #D1F9FF)',
+              position: 'fixed',
+              right: 0,
+              bottom: 0,
+              width: `${squareSize}px`,
+              height: `${squareSize}px`,
+              backgroundColor: 'var(--pkt-color-brand-neutrals-white, #ffffff)',
+              zIndex: 1,
+              opacity: showHeader && !isExpanded ? 1 : 0,
+              transition: 'opacity 0.5s ease-in-out' + (showHeader && !isExpanded ? ' 0.5s' : isExpanded ? '' : ' 0.8s'),
+              pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
-          />
-        </div>
-      )}
+          >
+            {/* Cyan circle - centered, diameter equals square side */}
+            <div
+              style={{
+                width: `${squareSize}px`,
+                height: `${squareSize}px`,
+                borderRadius: '50%',
+                backgroundColor: 'var(--pkt-color-brand-blue-300, #D1F9FF)',
+              }}
+            />
+          </div>
+        );
+      })()}
+
       <div className="figma-design-container" style={{ 
         ...layoutStyles.container, 
         overflow: 'visible',
@@ -700,6 +770,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         onTotalSavingsChange={setTotalEnergySavings}
         onSelectionChange={handleSelectionChange}
         audience={showYellowBox ? 'gulliste' : 'standard'}
+        showInfoModal={showInfoModal}
+        onShowInfoModalChange={setShowInfoModal}
       />
       
       {/* White circle background for building */}
@@ -765,20 +837,31 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         gulListeLoading={gulListeLoading}
         onUpdateBuildingData={handleUpdateBuildingData}
         totalEnergySavings={totalEnergySavings}
+        onShowInfo={() => setShowInfoModal(true)}
       />
+
 
       {activeTiltak.length > 0 && !isExpanded && (
         <div className="energy-solution-buttons__process-wrapper">
           <PktButton
-            skin="secondary"
+            skin="primary"
             size="medium"
-            variant="icon-right"
+            variant="icon-left"
             iconName="chevron-thin-down"
             onClick={() => setShowProcess(true)}
             className="energy-solution-buttons__process-btn--punkt"
           >
             Hvordan gjennomføre tiltakene
           </PktButton>
+          <button 
+            className="energy-solution-buttons__scroll-indicator"
+            onClick={() => setShowProcess(true)}
+            aria-label="Gå til prosessen videre"
+          >
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
         </div>
       )}
     </div>

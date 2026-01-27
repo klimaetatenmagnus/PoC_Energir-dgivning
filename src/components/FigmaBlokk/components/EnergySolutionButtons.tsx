@@ -125,14 +125,22 @@ interface EnergySolutionButtonsProps {
   onSelectionChange?: (activeTiltak: TiltakCanonicalKey[], finalRating?: string | null) => void;
   /** Audience for tiltak content - determines gul liste status */
   audience?: ContentAudience;
+  /** External control for info modal visibility */
+  showInfoModal?: boolean;
+  /** Callback when info modal visibility changes */
+  onShowInfoModalChange?: (show: boolean) => void;
 }
 
-export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onSelectionChange, audience = 'standard' }) => {
+export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onSelectionChange, audience = 'standard', showInfoModal: externalShowInfoModal, onShowInfoModalChange }) => {
   // Utled gul liste-status fra audience prop (FigmaMainScript er "single source of truth" via PBE-oppslag)
   const erPaaGulListe = audience === 'gulliste';
   // Animasjoner (fadeIn, slideUpFadeIn) er definert i EnergySolutionButtons.css
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
-  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [internalShowInfoModal, setInternalShowInfoModal] = useState(false);
+  
+  // Use external control if provided, otherwise use internal state
+  const showInfoModal = externalShowInfoModal !== undefined ? externalShowInfoModal : internalShowInfoModal;
+  const setShowInfoModal = onShowInfoModalChange || setInternalShowInfoModal;
 
   // Varmepumpe-spesifikk state
   const [selectedVarmepumpeType, setSelectedVarmepumpeType] = useState<VarmepumpeType>('luft-luft');
@@ -475,14 +483,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         >
           Velg tiltak for din bolig
         </h2>
-        <PktButton
-          skin="tertiary"
-          size="small"
-          variant="icon-only"
-          iconName="information"
-          aria-label="Hvordan fungerer siden?"
-          onClick={() => setShowInfoModal(true)}
-        />
       </div>
       {/* Scrollbar-container for tiltakslisten */}
       <div
@@ -646,17 +646,15 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                 {' '}for bygningens årlige energiforbruk per kvadratmeter (kWh/m²/år).
               </p>
 
-              <p className="energy-solution-buttons__modal-paragraph">
-                {enovaRating ? (
-                  isBlokk ? (
+              {enovaRating && (
+                <p className="energy-solution-buttons__modal-paragraph">
+                  {isBlokk ? (
                     <>Blokkens energiforbruk beregnes fra energikarakteren til en av leilighetene. Deretter brukes de samme grenseverdiene fra Enova for å beregne energiforbruket for hele blokken basert på blokkens bruksareal.</>
                   ) : (
                     <>Din nåværende energikarakter og energiforbruk er hentet direkte fra bygningens energiattest registrert hos Enova.</>
-                  )
-                ) : (
-                  <>Siden bygningen ikke har en registrert energiattest, estimeres energiforbruket basert på byggeår og gjeldende teknisk forskrift (TEK) ved byggeåret. Vi bruker deretter de samme grenseverdiene fra Enova for å beregne en estimert energikarakter.</>
-                )}
-              </p>
+                  )}
+                </p>
+              )}
 
               <h3 className="energy-solution-buttons__modal-section-title energy-solution-buttons__modal-section-title--spaced">
                 Beregning av besparelser

@@ -63,7 +63,6 @@
   background-color: var(--esb-list-bg);
   box-shadow: var(--esb-box-shadow);
   padding: var(--esb-container-padding);
-  padding-bottom: 0; /* Listen har sin egen padding */
 }
 
 .energy-solution-buttons--visible {
@@ -290,12 +289,15 @@
 
 .energy-solution-buttons__process-wrapper {
   position: absolute;
-  left: 156px; /* Align with tiltak list (sentrert layout) */
-  bottom: 48px; /* Position below tiltak list with gap */
+  /* Sentrert under byggillustrasjonene (sirkel center på 928px) */
+  /* Knappbredde ca 488px, så left = 928 - 244 = 684px */
+  left: 684px;
+  bottom: calc(-1 * var(--pkt-spacing-12, 0.75rem)); /* Plassert under byggillustrasjonen */
   /* Bredde = item-width + container-padding * 2 for å matche tiltaksboksen */
   width: calc(var(--esb-item-width, 440px) + var(--esb-container-padding, 1.5rem) * 2);
   display: flex;
-  justify-content: flex-start;
+  flex-direction: column;
+  align-items: center;
   z-index: 1000;
 }
 
@@ -323,6 +325,43 @@
   justify-content: space-between;
   padding-left: 17px !important;
   padding-right: 17px !important;
+}
+
+/* Animert scroll-indikator chevron */
+.energy-solution-buttons__scroll-indicator {
+  margin-top: var(--pkt-spacing-8, 0.5rem);
+  width: 48px;
+  height: 48px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pkt-color-brand-dark-blue-dark, #2A2859);
+  animation: bounce-down 2s ease-in-out infinite;
+  transition: color 0.2s ease;
+}
+
+.energy-solution-buttons__scroll-indicator:hover {
+  color: var(--pkt-color-brand-blue, #6FE9FF);
+}
+
+.energy-solution-buttons__scroll-indicator svg {
+  width: 36px;
+  height: 36px;
+}
+
+@keyframes bounce-down {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(8px);
+  }
+  60% {
+    transform: translateY(4px);
+  }
 }
 
 .energy-solution-buttons__process-text {

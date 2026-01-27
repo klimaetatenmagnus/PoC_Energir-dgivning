@@ -1,87 +1,91 @@
 bygningskategori;Teknisk forskrift;Titlak;Påvirker energimerket;Besparelse per tiltak - Romoppvarming;Besparelse per tiltak - Tappevann;Besparelse per tiltak - Elspesifikt;Romoppvarmingsbehov (kWh/m2/år);Tappevannsbehov (kWh/m2/år);Elspesifikt behov (kWh/m2/år);Total energibruk før tiltak;Energibruk til romoppvarming etter tiltak;Energibruk til tappevann etter tiltak;Energibruk til elspesifikt etter tiltak
-Småhus;TEK69;Etterisolering yttervegg;1; 	28 ;0;0;180,4;29,800;30,1;240,3;85 %;100 %;100 %
-Småhus;TEK69;Etterisolering av kjeller og loft;1; 	11 ;0;0;180,4;29,8;30,1;240,3;94 %;100 %;100 %
-Småhus;TEK69;Oppgradering av vinduer gul liste;1; 	34 ;0;0;180,4;29,8;30,1;240,3;81 %;100 %;100 %
-Småhus;TEK69;Oppgradering av vinduer standard;1; 	42 ;0;0;180,4;29,8;30,1;240,3;77 %;100 %;100 %
-Småhus;TEK69;Temperaturstyring;0; 	13 ;0;0;180,4;29,8;30,1;240,3;93 %;100 %;100 %
-Småhus;TEK69;Luft-luft varmepumpe;1; 	59 ; 	-   ; 	-   ;180,4;29,8;30,1;240,3;67 %;100 %;100 %
-Småhus;TEK69;Luft-væske varmepumpe;1; 	87 ; 	9 ; 	-   ;180,4;29,8;30,1;240,3;52 %;70 %;100 %
-Småhus;TEK69;Væske-væske varmepumpe;1; 	122 ; 	11 ; 	-   ;180,4;29,8;30,1;240,3;32 %;64 %;100 %
-Boligblokk;TEK69;Etterisolering yttervegg;1; 	40 ;0;0;162,4;29,8;30,1;222,3;76 %;100 %;100 %
-Boligblokk;TEK69;Etterisolering av kjeller og loft;1; 	8 ;0;0;162,4;29,8;30,1;222,3;95 %;100 %;100 %
-Boligblokk;TEK69;Oppgradering av vinduer gul liste;1; 	31 ;0;0;162,4;29,8;30,1;222,3;81 %;100 %;100 %
-Boligblokk;TEK69;Oppgradering av vinduer standard;1; 	38 ;0;0;162,4;29,8;30,1;222,3;76 %;100 %;100 %
-Boligblokk;TEK69;Temperaturstyring;0; 	12 ;0;0;162,4;29,8;30,1;222,3;93 %;100 %;100 %
-Boligblokk;TEK69;Luft-luft varmepumpe;1; 	53 ; 	-   ; 	-   ;162,4;29,8;30,1;222,3;67 %;100 %;100 %
-Boligblokk;TEK69;Luft-væske varmepumpe;1; 	78 ; 	9 ; 	-   ;162,4;29,8;30,1;222,3;52 %;70 %;100 %
-Boligblokk;TEK69;Væske-væske varmepumpe;1; 	110 ; 	11 ; 	-   ;162,4;29,8;30,1;222,3;32 %;64 %;100 %
-Småhus;TEK87;Etterisolering yttervegg;1; 	15 ;0;0;141,4;29,8;29,9;201,1;89 %;100 %;100 %
-Småhus;TEK87;Etterisolering av kjeller og loft;1; 	5 ;0;0;141,4;29,8;29,9;201,1;97 %;100 %;100 %
-Småhus;TEK87;Oppgradering av vinduer gul liste;1; 	23 ;0;0;141,4;29,8;29,9;201,1;83 %;100 %;100 %
-Småhus;TEK87;Oppgradering av vinduer standard;1; 	31 ;0;0;141,4;29,8;29,9;201,1;78 %;100 %;100 %
-Småhus;TEK87;Temperaturstyring;0; 	11 ;0;0;141,4;29,8;29,9;201,1;93 %;100 %;100 %
-Småhus;TEK87;Luft-luft varmepumpe;1; 	46 ; 	-   ; 	-   ;141,4;29,8;29,9;201,1;67 %;100 %;100 %
-Småhus;TEK87;Luft-væske varmepumpe;1; 	68 ; 	9 ; 	-   ;141,4;29,8;29,9;201,1;52 %;70 %;100 %
-Småhus;TEK87;Væske-væske varmepumpe;1; 	96 ; 	11 ; 	-   ;141,4;29,8;29,9;201,1;32 %;64 %;100 %
-Boligblokk;TEK87;Etterisolering yttervegg;1;10;0;0;111,9;29,8;29,7;171,4;91 %;100 %;100 %
-Boligblokk;TEK87;Etterisolering av kjeller og loft;1;3;0;0;111,9;29,8;29,7;171,4;97 %;100 %;100 %
-Boligblokk;TEK87;Oppgradering av vinduer gul liste;1;21;0;0;111,9;29,8;29,7;171,4;81 %;100 %;100 %
-Boligblokk;TEK87;Oppgradering av vinduer standard;1;28;0;0;111,9;29,8;29,7;171,4;75 %;100 %;100 %
-Boligblokk;TEK87;Temperaturstyring;0;9;0;0;111,9;29,8;29,7;171,4;92 %;100 %;100 %
-Boligblokk;TEK87;Luft-luft varmepumpe;1; 	37 ; 	-   ; 	-   ;111,9;29,8;29,7;171,4;67 %;100 %;100 %
-Boligblokk;TEK87;Luft-væske varmepumpe;1; 	54 ; 	9 ; 	-   ;111,9;29,8;29,7;171,4;52 %;70 %;100 %
-Boligblokk;TEK87;Væske-væske varmepumpe;1; 	76 ; 	11 ; 	-   ;111,9;29,8;29,7;171,4;32 %;64 %;100 %
-Småhus;TEK97;Etterisolering yttervegg;1;4;0;0;102,9;29,8;34,1;166,8;96 %;100 %;100 %
-Småhus;TEK97;Etterisolering av kjeller og loft;1;1;0;0;102,9;29,8;34,1;166,8;99 %;100 %;100 %
-Småhus;TEK97;Oppgradering av vinduer gul liste;1;6;0;0;102,9;29,8;34,1;166,8;94 %;100 %;100 %
-Småhus;TEK97;Oppgradering av vinduer standard;1;14;0;0;102,9;29,8;34,1;166,8;86 %;100 %;100 %
-Småhus;TEK97;Temperaturstyring;0;9;0;0;102,9;29,8;34,1;166,8;91 %;100 %;100 %
-Småhus;TEK97;Luft-luft varmepumpe;1; 	34 ; 	-   ; 	-   ;102,9;29,8;34,1;166,8;67 %;100 %;100 %
-Småhus;TEK97;Luft-væske varmepumpe;1; 	49 ; 	9 ; 	-   ;102,9;29,8;34,1;166,8;52 %;70 %;100 %
-Småhus;TEK97;Væske-væske varmepumpe;1; 	70 ; 	11 ; 	-   ;102,9;29,8;34,1;166,8;32 %;64 %;100 %
-Boligblokk;TEK97;Etterisolering yttervegg;1;7;0;0;89,1;29,8;35,0;153,9;92 %;100 %;100 %
-Boligblokk;TEK97;Etterisolering av kjeller og loft;1;0;0;0;89,1;29,8;35,0;153,9;100 %;100 %;100 %
-Boligblokk;TEK97;Oppgradering av vinduer gul liste;1;5;0;0;89,1;29,8;35,0;153,9;94 %;100 %;100 %
-Boligblokk;TEK97;Oppgradering av vinduer standard;1;12;0;0;89,1;29,8;35,0;153,9;86 %;100 %;100 %
-Boligblokk;TEK97;Temperaturstyring;0;8;0;0;89,1;29,8;35,0;153,9;91 %;100 %;100 %
-Boligblokk;TEK97;Luft-luft varmepumpe;1; 	29 ; 	-   ; 	-   ;89,1;29,8;35,0;153,9;67 %;100 %;100 %
-Boligblokk;TEK97;Luft-væske varmepumpe;1; 	43 ; 	9 ; 	-   ;89,1;29,8;35,0;153,9;52 %;70 %;100 %
-Boligblokk;TEK97;Væske-væske varmepumpe;1; 	60 ; 	11 ; 	-   ;89,1;29,8;35,0;153,9;32 %;64 %;100 %
-Småhus;TEK07;Etterisolering yttervegg;1;0;0;0;53,5;29,8;45,9;129,2;100 %;100 %;100 %
-Småhus;TEK07;Etterisolering av kjeller og loft;1;0;0;0;53,5;29,8;45,9;129,2;100 %;100 %;100 %
-Småhus;TEK07;Oppgradering av vinduer gul liste;1;8,19999999999999;0;0;53,5;29,8;45,9;129,2;85 %;100 %;100 %
-Småhus;TEK07;Oppgradering av vinduer standard;1;8,19999999999999;0;0;53,5;29,8;45,9;129,2;85 %;100 %;100 %
-Småhus;TEK07;Temperaturstyring;0;6,8;0;0;53,5;29,8;45,9;129,2;87 %;100 %;100 %
-Småhus;TEK07;Luft-luft varmepumpe;1; 	18 ; 	-   ; 	-   ;53,5;29,8;45,9;129,2;67 %;100 %;100 %
-Småhus;TEK07;Luft-væske varmepumpe;1; 	26 ; 	9 ; 	-   ;53,5;29,8;45,9;129,2;52 %;70 %;100 %
-Småhus;TEK07;Væske-væske varmepumpe;1; 	36 ; 	11 ; 	-   ;53,5;29,8;45,9;129,2;32 %;64 %;100 %
-Boligblokk;TEK07;Etterisolering yttervegg;1;1;0;0;33,2;29,8;49,5;112,5;96 %;100 %;100 %
-Boligblokk;TEK07;Etterisolering av kjeller og loft;1;0;0;0;33,2;29,8;49,5;112,5;99 %;100 %;100 %
-Boligblokk;TEK07;Oppgradering av vinduer gul liste;1;7;0;0;33,2;29,8;49,5;112,5;78 %;100 %;100 %
-Boligblokk;TEK07;Oppgradering av vinduer standard;1;7;0;0;33,2;29,8;49,5;112,5;78 %;100 %;100 %
-Boligblokk;TEK07;Temperaturstyring;0;6;0;0;33,2;29,8;49,5;112,5;82 %;100 %;100 %
-Boligblokk;TEK07;Luft-luft varmepumpe;1; 	11 ; 	-   ; 	-   ;33,2;29,8;49,5;112,5;67 %;100 %;100 %
-Boligblokk;TEK07;Luft-væske varmepumpe;1; 	16 ; 	9 ; 	-   ;33,2;29,8;49,5;112,5;52 %;70 %;100 %
-Boligblokk;TEK07;Væske-væske varmepumpe;1; 	23 ; 	11 ; 	-   ;33,2;29,8;49,5;112,5;32 %;64 %;100 %
-Småhus;TEK17;Temperaturstyring;0;2;0;0;45,3;29,8;45,9;121,0;95 %;100 %;100 %
-Småhus;TEK17;Luft-luft varmepumpe;1; 	15 ; 	-   ; 	-   ;45,3;29,8;45,9;121,0;67 %;100 %;100 %
-Småhus;TEK17;Luft-væske varmepumpe;1; 	22 ; 	9 ; 	-   ;45,3;29,8;45,9;121,0;52 %;70 %;100 %
-Småhus;TEK17;Væske-væske varmepumpe;1; 	31 ; 	11 ; 	-   ;45,3;29,8;45,9;121,0;32 %;64 %;100 %
-Boligblokk;TEK17;Temperaturstyring;0;1;0;0;24,7;29,8;49,5;104,0;95 %;100 %;100 %
-Boligblokk;TEK17;Luft-luft varmepumpe;1; 	8 ; 	-   ; 	-   ;24,7;29,8;49,5;104,0;67 %;100 %;100 %
-Boligblokk;TEK17;Luft-væske varmepumpe;1; 	12 ; 	9 ; 	-   ;24,7;29,8;49,5;104,0;52 %;70 %;100 %
-Boligblokk;TEK17;Væske-væske varmepumpe;1; 	17 ; 	11 ; 	-   ;24,7;29,8;49,5;104,0;32 %;64 %;100 %
-Småhus;TEK17;Temperaturstyring;0;2;0;0;45,3;29,8;45,9;121,0;95 %;70 %;100 %
-Småhus;TEK17;Luft-luft varmepumpe;1; 	15 ; 	-   ; 	-   ;45,3;29,8;45,9;121,0;67 %;100 %;100 %
-Småhus;TEK17;Luft-væske varmepumpe;1; 	22 ; 	9 ; 	-   ;45,3;29,8;45,9;121,0;52 %;70 %;100 %
-Småhus;TEK17;Væske-væske varmepumpe;1; 	31 ; 	11 ; 	-   ;45,3;29,8;45,9;121,0;32 %;64 %;100 %
-Boligblokk;TEK10;Luft-luft varmepumpe;1; 	8 ; 	-   ; 	-   ;24,7;29,8;49,5;104,0;67 %;100 %;100 %
-Boligblokk;TEK10;Luft-væske varmepumpe;1; 	12 ; 	9 ; 	-   ;24,7;29,8;49,5;104,0;52 %;70 %;100 %
-Boligblokk;TEK10;Væske-væske varmepumpe;1; 	17 ; 	20 ; 	-   ;24,7;29,8;49,5;104,0;32 %;32 %;100 %
-Boligblokk;TEK10;Temperaturstyring;1;1;0;0;24,7;29,8;49,5;104,0;95 %;64 %;100 %
-Småhus;TEK69;Ventilasjonsgjenvinning;1;9;0;0;180,4;29,8;30,1;240,3;89 %;100 %;106 %
-Småhus;TEK87;Ventilasjonsgjenvinning;1;7;0;0;141,4;29,8;29,9;201,1;88 %;100 %;96 %
-Småhus;TEK97;Ventilasjonsgjenvinning;1;5;0;0;102,9;29,8;34,1;166,8;84 %;100 %;95 %
-Boligblokk;TEK69;Ventilasjonsgjenvinning;1;8;0;0;162,4;29,8;30,0;222,2;71 %;100 %;97 %
-Boligblokk;TEK87;Ventilasjonsgjenvinning;1;6;0;0;111,9;29,8;29,7;171,4;67 %;100 %;95 %
-Boligblokk;TEK97;Ventilasjonsgjenvinning;1;4;0;0;89,1;29,8;35,0;153,9;58 %;100 %;95 %
+Småhus;TEK69;Etterisolering yttervegg;1;27,7;0;0;180,4;29,8;30,1;240,3;85 %;100 %;100 %
+Småhus;TEK69;Etterisolering av kjeller og loft;1;11,4;0;0;180,4;29,8;30,1;240,3;94 %;100 %;100 %
+Småhus;TEK69;Oppgradering av vinduer gul liste;1;33,7;0;0;180,4;29,8;30,1;240,3;81 %;100 %;100 %
+Småhus;TEK69;Oppgradering av vinduer standard;1;41,7;0;0;180,4;29,8;30,1;240,3;77 %;100 %;100 %
+Småhus;TEK69;Temperaturstyring;0;10,8;0;0;180,4;29,8;30,1;240,3;94 %;100 %;100 %
+Småhus;TEK69;Luft-luft varmepumpe;1;59;0;0;180,4;29,8;30,1;240,3;67 %;100 %;100 %
+Småhus;TEK69;Luft-væske varmepumpe;1;86,6;8,9;0;180,4;29,8;30,1;240,3;52 %;70 %;100 %
+Småhus;TEK69;Væske-væske varmepumpe;1;122,4;10,7;0;180,4;29,8;30,1;240,3;32 %;64 %;100 %
+Boligblokk;TEK69;Etterisolering yttervegg;1;39,7;0;0;162,4;29,8;30,1;222,3;76 %;100 %;100 %
+Boligblokk;TEK69;Etterisolering av kjeller og loft;1;8,4;0;0;162,4;29,8;30,1;222,3;95 %;100 %;100 %
+Boligblokk;TEK69;Oppgradering av vinduer gul liste;1;31,3;0;0;162,4;29,8;30,1;222,3;81 %;100 %;100 %
+Boligblokk;TEK69;Oppgradering av vinduer standard;1;38,3;0;0;162,4;29,8;30,1;222,3;76 %;100 %;100 %
+Boligblokk;TEK69;Temperaturstyring;0;9,7;0;0;162,4;29,8;30,1;222,3;94 %;100 %;100 %
+Boligblokk;TEK69;Luft-luft varmepumpe;1;53,1;0;0;162,4;29,8;30,1;222,3;67 %;100 %;100 %
+Boligblokk;TEK69;Luft-væske varmepumpe;1;78;8,9;0;162,4;29,8;30,1;222,3;52 %;70 %;100 %
+Boligblokk;TEK69;Væske-væske varmepumpe;1;110,2;10,7;0;162,4;29,8;30,1;222,3;32 %;64 %;100 %
+Småhus;TEK87;Etterisolering yttervegg;1;15;0;0;141,4;29,8;29,9;201,1;89 %;100 %;100 %
+Småhus;TEK87;Etterisolering av kjeller og loft;1;4,7;0;0;141,4;29,8;29,9;201,1;97 %;100 %;100 %
+Småhus;TEK87;Oppgradering av vinduer gul liste;1;23,4;0;0;141,4;29,8;29,9;201,1;83 %;100 %;100 %
+Småhus;TEK87;Oppgradering av vinduer standard;1;31,4;0;0;141,4;29,8;29,9;201,1;78 %;100 %;100 %
+Småhus;TEK87;Temperaturstyring;0;8,5;0;0;141,4;29,8;29,9;201,1;94 %;100 %;100 %
+Småhus;TEK87;Luft-luft varmepumpe;1;46,3;0;0;141,4;29,8;29,9;201,1;67 %;100 %;100 %
+Småhus;TEK87;Luft-væske varmepumpe;1;67,9;8,9;0;141,4;29,8;29,9;201,1;52 %;70 %;100 %
+Småhus;TEK87;Væske-væske varmepumpe;1;96;10,7;0;141,4;29,8;29,9;201,1;32 %;64 %;100 %
+Boligblokk;TEK87;Etterisolering yttervegg;1;9,7;0;0;111,9;29,8;29,7;171,4;91 %;100 %;100 %
+Boligblokk;TEK87;Etterisolering av kjeller og loft;1;2,8;0;0;111,9;29,8;29,7;171,4;97 %;100 %;100 %
+Boligblokk;TEK87;Oppgradering av vinduer gul liste;1;21;0;0;111,9;29,8;29,7;171,4;81 %;100 %;100 %
+Boligblokk;TEK87;Oppgradering av vinduer standard;1;28,1;0;0;111,9;29,8;29,7;171,4;75 %;100 %;100 %
+Boligblokk;TEK87;Temperaturstyring;0;5,6;0;0;111,9;29,8;29,7;171,4;95 %;100 %;100 %
+Boligblokk;TEK87;Luft-luft varmepumpe;1;36,6;0;0;111,9;29,8;29,7;171,4;67 %;100 %;100 %
+Boligblokk;TEK87;Luft-væske varmepumpe;1;53,7;8,9;0;111,9;29,8;29,7;171,4;52 %;70 %;100 %
+Boligblokk;TEK87;Væske-væske varmepumpe;1;75,9;10,7;0;111,9;29,8;29,7;171,4;32 %;64 %;100 %
+Småhus;TEK97;Etterisolering yttervegg;1;3,7;0;0;102,9;29,8;34,1;166,8;96 %;100 %;100 %
+Småhus;TEK97;Etterisolering av kjeller og loft;1;0,4;0;0;102,9;29,8;34,1;166,8;100 %;100 %;100 %
+Småhus;TEK97;Oppgradering av vinduer gul liste;1;14,2;0;0;102,9;29,8;34,1;166,8;86 %;100 %;100 %
+Småhus;TEK97;Oppgradering av vinduer standard;1;14,2;0;0;102,9;29,8;34,1;166,8;86 %;100 %;100 %
+Småhus;TEK97;Temperaturstyring;0;0;0;0;102,9;29,8;34,1;166,8;100 %;100 %;100 %
+Småhus;TEK97;Luft-luft varmepumpe;1;33,7;0;0;102,9;29,8;34,1;166,8;67 %;100 %;100 %
+Småhus;TEK97;Luft-væske varmepumpe;1;49,4;8,9;0;102,9;29,8;34,1;166,8;52 %;70 %;100 %
+Småhus;TEK97;Væske-væske varmepumpe;1;69,8;10,7;0;102,9;29,8;34,1;166,8;32 %;64 %;100 %
+Boligblokk;TEK97;Etterisolering yttervegg;1;7,3;0;0;89,1;29,8;35;153,9;92 %;100 %;100 %
+Boligblokk;TEK97;Etterisolering av kjeller og loft;1;0;0;0;89,1;29,8;35;153,9;100 %;100 %;100 %
+Boligblokk;TEK97;Oppgradering av vinduer gul liste;1;12,1;0;0;89,1;29,8;35;153,9;86 %;100 %;100 %
+Boligblokk;TEK97;Oppgradering av vinduer standard;1;12,1;0;0;89,1;29,8;35;153,9;86 %;100 %;100 %
+Boligblokk;TEK97;Temperaturstyring;0;0;0;0;89,1;29,8;35;153,9;100 %;100 %;100 %
+Boligblokk;TEK97;Luft-luft varmepumpe;1;29,2;0;0;89,1;29,8;35;153,9;67 %;100 %;100 %
+Boligblokk;TEK97;Luft-væske varmepumpe;1;42,8;8,9;0;89,1;29,8;35;153,9;52 %;70 %;100 %
+Boligblokk;TEK97;Væske-væske varmepumpe;1;60,5;10,7;0;89,1;29,8;35;153,9;32 %;64 %;100 %
+Småhus;TEK07;Etterisolering yttervegg;1;0;0;0;53,5;29,8;45,9;129,2;100 %;100 %;100 %
+Småhus;TEK07;Etterisolering av kjeller og loft;1;0;0;0;53,5;29,8;45,9;129,2;100 %;100 %;100 %
+Småhus;TEK07;Oppgradering av vinduer gul liste;1;8,2;0;0;53,5;29,8;45,9;129,2;85 %;100 %;100 %
+Småhus;TEK07;Oppgradering av vinduer standard;1;8,2;0;0;53,5;29,8;45,9;129,2;85 %;100 %;100 %
+Småhus;TEK07;Temperaturstyring;0;0;0;0;53,5;29,8;45,9;129,2;100 %;100 %;100 %
+Småhus;TEK07;Luft-luft varmepumpe;1;17,5;0;0;53,5;29,8;45,9;129,2;67 %;100 %;100 %
+Småhus;TEK07;Luft-væske varmepumpe;1;25,7;8,9;0;53,5;29,8;45,9;129,2;52 %;70 %;100 %
+Småhus;TEK07;Væske-væske varmepumpe;1;36,3;10,7;0;53,5;29,8;45,9;129,2;32 %;64 %;100 %
+Boligblokk;TEK07;Etterisolering yttervegg;1;0;0;0;33,2;29,8;49,5;112,5;100 %;100 %;100 %
+Boligblokk;TEK07;Etterisolering av kjeller og loft;1;0,4;0;0;33,2;29,8;49,5;112,5;99 %;100 %;100 %
+Boligblokk;TEK07;Oppgradering av vinduer gul liste;1;7,2;0;0;33,2;29,8;49,5;112,5;78 %;100 %;100 %
+Boligblokk;TEK07;Oppgradering av vinduer standard;1;7,2;0;0;33,2;29,8;49,5;112,5;78 %;100 %;100 %
+Boligblokk;TEK07;Temperaturstyring;0;0;0;0;33,2;29,8;49,5;112,5;100 %;100 %;100 %
+Boligblokk;TEK07;Luft-luft varmepumpe;1;10,9;0;0;33,2;29,8;49,5;112,5;67 %;100 %;100 %
+Boligblokk;TEK07;Luft-væske varmepumpe;1;15,9;8,9;0;33,2;29,8;49,5;112,5;52 %;70 %;100 %
+Boligblokk;TEK07;Væske-væske varmepumpe;1;22,5;10,7;0;33,2;29,8;49,5;112,5;32 %;64 %;100 %
+Småhus;TEK17;Temperaturstyring;0;0;0;0;45,3;29,8;45,9;121;100 %;100 %;100 %
+Småhus;TEK17;Luft-luft varmepumpe;1;14,8;0;0;45,3;29,8;45,9;121;67 %;100 %;100 %
+Småhus;TEK17;Luft-væske varmepumpe;1;21,7;8,9;0;45,3;29,8;45,9;121;52 %;70 %;100 %
+Småhus;TEK17;Væske-væske varmepumpe;1;30,7;10,7;0;45,3;29,8;45,9;121;32 %;64 %;100 %
+Boligblokk;TEK17;Temperaturstyring;0;0;0;0;24,7;29,8;49,5;104;100 %;100 %;100 %
+Boligblokk;TEK17;Luft-luft varmepumpe;1;8,1;0;0;24,7;29,8;49,5;104;67 %;100 %;100 %
+Boligblokk;TEK17;Luft-væske varmepumpe;1;11,9;8,9;0;24,7;29,8;49,5;104;52 %;70 %;100 %
+Boligblokk;TEK17;Væske-væske varmepumpe;1;16,8;10,7;0;24,7;29,8;49,5;104;32 %;64 %;100 %
+Småhus;TEK10;Temperaturstyring;0;0;0;0;45,3;29,8;45,9;121;100 %;70 %;100 %
+Småhus;TEK17;Luft-luft varmepumpe;1;14,8;0;0;45,3;29,8;45,9;121;67 %;100 %;100 %
+Småhus;TEK17;Luft-væske varmepumpe;1;21,7;8,9;0;45,3;29,8;45,9;121;52 %;70 %;100 %
+Småhus;TEK17;Væske-væske varmepumpe;1;30,7;10,7;0;45,3;29,8;45,9;121;32 %;64 %;100 %
+Boligblokk;TEK10;Luft-luft varmepumpe;1;8,1;0;0;24,7;29,8;49,5;104;67 %;100 %;100 %
+Boligblokk;TEK10;Luft-væske varmepumpe;1;11,9;8,9;0;24,7;29,8;49,5;104;52 %;70 %;100 %
+Boligblokk;TEK10;Væske-væske varmepumpe;1;16,8;20,2;0;24,7;29,8;49,5;104;32 %;32 %;100 %
+Boligblokk;TEK10;Temperaturstyring;1;0;0;0;24,7;29,8;49,5;104;100 %;64 %;100 %
+Småhus;TEK69;Ventilasjonsgjenvinning;1;19,8;0;-1,8;180,4;29,8;30,1;240,3;89 %;100 %;106 %
+Småhus;TEK87;Ventilasjonsgjenvinning;1;17;0;1,2;141,4;29,8;29,9;201,1;88 %;100 %;96 %
+Småhus;TEK97;Ventilasjonsgjenvinning;1;16,5;0;1,4;102,9;29,8;34,1;166,8;84 %;100 %;95 %
+Boligblokk;TEK69;Ventilasjonsgjenvinning;1;47,1;0;0,9;162,4;29,8;30;222,2;71 %;100 %;97 %
+Boligblokk;TEK87;Ventilasjonsgjenvinning;1;36,9;0;1,5;111,9;29,8;29,7;171,4;67 %;100 %;95 %
+Boligblokk;TEK97;Ventilasjonsgjenvinning;1;37,4;0;1,8;89,1;29,8;35;153,9;58 %;100 %;95 %
+Småhus;TEK10;Oppgradering av vinduer gul liste;1;6,1;0;0;53,5;29,8;45,9;129,2;89 %;100 %;100 %
+Boligblokk;TEK10;Oppgradering av vinduer gul liste;1;5;0;0;53,5;29,8;45,9;129,2;91 %;100 %;100 %
+Småhus;TEK17;Oppgradering av vinduer gul liste;1;6,1;0;0;53,5;29,8;45,9;129,2;89 %;100 %;100 %
+Boligblokk;TEK17;Oppgradering av vinduer gul liste;1;5;0;0;53,5;29,8;45,9;129,2;91 %;100 %;100 %
