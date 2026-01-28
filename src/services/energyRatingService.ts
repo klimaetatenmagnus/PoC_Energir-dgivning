@@ -1,3 +1,8 @@
+/**
+ * @deprecated Bruk `calculateEnergyRating` fra `src/utils/tekEnergyCalculations.ts` i stedet.
+ * Denne filen bruker en gammel, flat energiskala som ikke følger NS 3031:2025.
+ * Den sentraliserte funksjonen tar hensyn til bygningstype og bruksareal.
+ */
 import fs from 'fs';
 import path from 'path';
 import { createLogger } from '../utils/logger';

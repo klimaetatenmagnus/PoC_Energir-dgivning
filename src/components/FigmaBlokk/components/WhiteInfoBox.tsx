@@ -19,7 +19,7 @@ import dictionaryData from '../../../../content/dictionaries/index.json';
 import { DesktopTiltakCard } from './Tiltak';
 import { DistrictComparisonModal } from './DistrictComparison/DistrictComparisonModal';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from '../../../utils/tekEnergyCalculations';
-import { estimateTekPeriodFromKwhPerM2 } from '../../../utils/energySavingsData';
+import { calculateComparisonSavings, type TiltakSavingsInfo } from '../../../utils/energySavingsData';
 import {
   getDistrictStatistics,
   getStatsForDistrict,
@@ -28,7 +28,7 @@ import {
   lookupBuildingFromEnovaData,
   type EnovaBuildingData,
 } from '../../../services/districtStatisticsService';
-import type { DistrictStats } from '../../../types/districtStatistics';
+import type { DistrictStats, EnergyGrade } from '../../../types/districtStatistics';
 
 import { convertKwhToNok, formatCurrency, formatNumberWithSpaces } from '../../../utils/energy';
 import { getOsloMapExportUrl } from '../../../utils/coordinateUtils';
@@ -187,6 +187,7 @@ interface WhiteInfoBoxProps {
   showYellowBox?: boolean;
   onUpdateBuildingData?: (byggeaar: string, areal: string, arealLeilighet: string, energiforbruk: string) => void;
   totalEnergySavings?: number;
+  tiltakInfo?: TiltakSavingsInfo[];
   gulListeLoading?: boolean;
   energyPricePerKwh?: number;
   animateSavings?: boolean;
@@ -208,6 +209,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   showYellowBox = true,
   onUpdateBuildingData,
   totalEnergySavings = 0,
+  tiltakInfo,
   gulListeLoading = false,
   energyPricePerKwh = 1.1,
   animateSavings = true,
@@ -395,8 +397,10 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     return calculateAnnualEnergyConsumption(parsedByggeaar, bruksareal, buildingType);
   }, [savedByggeaar, savedAreal, buildingData, buildingTypeName]);
   
+  // VIKTIG: Nøkkelinformasjon skal ALLTID bruke TEK-estimering, ikke Enova-data.
+  // Enova-data brukes KUN i sammenligningsmodulen.
   const [savedEnergiforbruk, setSavedEnergiforbruk] = React.useState(
-    String(buildingData?.energiattest?.registering?.beregnetLevertEnergiTotaltkWh || estimatedConsumption)
+    String(estimatedConsumption)
   );
   const [editedByggeaar, setEditedByggeaar] = React.useState(savedByggeaar);
   const [editedAreal, setEditedAreal] = React.useState(savedAreal);
@@ -451,23 +455,18 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   }, [savedEnergiforbruk, hasEnovaRating, isApartmentBuilding]);
   
   // Update saved energy consumption when estimated value changes (only if user hasn't edited it)
+  // VIKTIG: Nøkkelinformasjon bruker ALLTID TEK-estimering, uavhengig av Enova-data.
   React.useEffect(() => {
-    // For apartments/large buildings with energy rating, always use our estimate
-    if ((buildingTypeName === "Blokk" || buildingTypeName === "Store boligbygg") && 
-        buildingData?.energiattest?.energikarakter && !hasUserEditedEnergy) {
-      setSavedEnergiforbruk(String(estimatedConsumption));
-      setEditedEnergiforbruk(String(estimatedConsumption));
-    } 
-    // For other cases, only update if no Enova data exists
-    else if (!buildingData?.energiattest?.registering?.beregnetLevertEnergiTotaltkWh && !hasUserEditedEnergy) {
+    if (!hasUserEditedEnergy) {
       setSavedEnergiforbruk(String(estimatedConsumption));
       setEditedEnergiforbruk(String(estimatedConsumption));
     }
-  }, [estimatedConsumption, buildingData, buildingTypeName, hasUserEditedEnergy]);
+  }, [estimatedConsumption, hasUserEditedEnergy]);
   
   // Recalculate energy consumption when building year or area changes in edit mode (only if user hasn't edited it)
+  // VIKTIG: Bruker ALLTID TEK-estimering i edit mode, uavhengig av Enova-data.
   React.useEffect(() => {
-    if (isEditMode && !buildingData?.energiattest?.registering?.beregnetLevertEnergiTotaltkWh && !hasUserEditedEnergy) {
+    if (isEditMode && !hasUserEditedEnergy) {
       const buildingType = determineBuildingType(
         buildingData?.bygningstypeKode,
         buildingTypeName
@@ -475,7 +474,7 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
       const newEstimate = calculateAnnualEnergyConsumption(editedByggeaar, editedAreal, buildingType);
       setEditedEnergiforbruk(String(newEstimate));
     }
-  }, [editedByggeaar, editedAreal, isEditMode, buildingData, buildingTypeName, hasUserEditedEnergy]);
+  }, [editedByggeaar, editedAreal, isEditMode, buildingData?.bygningstypeKode, buildingTypeName, hasUserEditedEnergy]);
   
   const energyBlockHeight = isEditMode ? 108 : 96;
   const trimmedApartmentArea = (savedArealLeilighet || '').trim();
@@ -626,47 +625,34 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   }, [savedAreal, buildingData?.bruksarealM2, buildingData?.csvData?.bruksareal_totalt]);
 
   // Beregn skalert besparelse for sammenligningsmodulen
-  // Når Enova-forbruk er lavere enn TEK-forbruk, betyr det at boligen allerede er oppgradert.
-  // Vi estimerer en "effektiv TEK-periode" og skalerer besparelsene tilsvarende.
-  //
-  // NB: WhiteInfoBox har kun tilgang til totalEnergySavings (ferdigberegnet verdi),
-  // ikke tiltak-listen. For en fullstendig løsning må besparelser beregnes med
-  // riktige faktorer for effektiv TEK. MobileEnergySolutions har full tilgang og
-  // bruker calculateComparisonSavings() for presis beregning.
+  // Bruker samme calculateComparisonSavings() som mobil for konsistent beregning
   const comparisonSavings = React.useMemo(() => {
-    // Hvis ingen Enova-data, bruk totalEnergySavings uendret
     if (!enovaBulkData?.kwhPerM2 || enovaBulkData.kwhPerM2 <= 0) {
       return totalEnergySavings;
     }
-
-    // Beregn TEK-basert forbruk (samme som estimatedConsumption)
-    const tekBasedKwhPerM2 = bruksarealForComparison > 0
-      ? estimatedConsumption / bruksarealForComparison
-      : 0;
-
-    // Hvis TEK-beregning ikke er tilgjengelig, bruk uendret
-    if (tekBasedKwhPerM2 <= 0) {
+    if (!tiltakInfo || tiltakInfo.length === 0) {
       return totalEnergySavings;
     }
-
-    // Hvis Enova-forbruk er høyere enn eller lik TEK, bruk uendret
-    // (boligen er ikke oppgradert, så TEK-basert beregning er riktig)
-    if (enovaBulkData.kwhPerM2 >= tekBasedKwhPerM2) {
+    if (!buildingCategory || (buildingCategory !== 'småhus' && buildingCategory !== 'blokk')) {
       return totalEnergySavings;
     }
+    if (!bruksarealForComparison || bruksarealForComparison <= 0) {
+      return totalEnergySavings;
+    }
+    return calculateComparisonSavings(
+      enovaBulkData.kwhPerM2,
+      bruksarealForComparison,
+      buildingCategory as 'småhus' | 'blokk',
+      tiltakInfo
+    );
+  }, [enovaBulkData, totalEnergySavings, tiltakInfo, buildingCategory, bruksarealForComparison]);
 
-    // Estimer effektiv TEK-periode basert på Enova kwhPerM2
-    // Dette gir en mer informert skalering enn ren ratio
-    // NB: effectiveTek brukes for å dokumentere hvilken TEK-periode boligen
-    // effektivt tilsvarer, men selve skaleringen bruker forholdstallet
-    void estimateTekPeriodFromKwhPerM2(enovaBulkData.kwhPerM2, buildingCategory);
-
-    // Skaler besparelser basert på forholdstall mellom Enova-forbruk og TEK-estimat
-    // Dette er en forenkling - ideelt sett skulle vi beregnet besparelser på nytt
-    // med riktige faktorer for den effektive TEK-perioden (som mobil gjør)
-    const scaleFactor = enovaBulkData.kwhPerM2 / tekBasedKwhPerM2;
-    return totalEnergySavings * scaleFactor;
-  }, [enovaBulkData, totalEnergySavings, estimatedConsumption, bruksarealForComparison, buildingCategory]);
+  // Beregn energikarakter for sammenligningsmodulen basert på currentKwhPerM2
+  // (som kan komme fra Enova-bulk eller TEK) og send som prop
+  const comparisonEnergyGrade = React.useMemo(() => {
+    if (currentKwhPerM2 <= 0 || bruksarealForComparison <= 0) return null;
+    return calculateEnergyRating(currentKwhPerM2, bruksarealForComparison, buildingCategory as 'småhus' | 'blokk' | null);
+  }, [currentKwhPerM2, bruksarealForComparison, buildingCategory]);
 
   // Beregn variabler for bydelssammenligning (må være etter currentKwhPerM2)
   const showComparison = districtStats !== null && currentKwhPerM2 > 0;
@@ -1189,7 +1175,8 @@ const tiltakPreview = selectedTiltakSlug ? (
           districtStats={districtStats}
           subdistrictName={subdistrictName ?? undefined}
           subdistrictStats={subdistrictStats ?? undefined}
-          buildingTypeCategory={buildingCategory}
+buildingTypeCategory={buildingCategory}
+          userEnergyGrade={comparisonEnergyGrade as EnergyGrade | null}
           isUsingEnovaBulkData={enovaBulkData !== null}
         />
       )}

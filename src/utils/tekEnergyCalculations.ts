@@ -195,6 +195,18 @@ export function calculateEnergyRatingFromConsumption(
   return calculateEnergyRating(intensity, bruksareal, buildingType);
 }
 
+/**
+ * Wrapper for sammenligningsmodulen: estimer energikarakter direkte fra kWh/m².
+ * Bruker den sentrale calculateEnergyRating med NS 3031:2025-skalaen.
+ */
+export function estimateEnergyGradeFromKwhPerM2(
+  kwhPerM2: number,
+  bruksareal: number,
+  buildingType: BuildingType | null
+): string {
+  return calculateEnergyRating(kwhPerM2, bruksareal, buildingType);
+}
+
 // Bestem bygningstype basert på kode eller navn
 export function determineBuildingType(
   buildingTypeCode?: string,

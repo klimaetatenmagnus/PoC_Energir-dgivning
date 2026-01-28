@@ -121,6 +121,7 @@ interface EnergySolutionButtonsProps {
   buildingData?: AddressLookupResponse;
   yearlyConsumption?: string;
   onTotalSavingsChange?: (savings: number) => void;
+  onTiltakInfoChange?: (tiltakInfo: TiltakSavingsInfo[]) => void;
   /** Callback when tiltak selection changes. Uses canonical keys (not display titles) for stability. */
   onSelectionChange?: (activeTiltak: TiltakCanonicalKey[], finalRating?: string | null) => void;
   /** Audience for tiltak content - determines gul liste status */
@@ -131,7 +132,7 @@ interface EnergySolutionButtonsProps {
   onShowInfoModalChange?: (show: boolean) => void;
 }
 
-export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onSelectionChange, audience = 'standard', showInfoModal: externalShowInfoModal, onShowInfoModalChange }) => {
+export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onTiltakInfoChange, onSelectionChange, audience = 'standard', showInfoModal: externalShowInfoModal, onShowInfoModalChange }) => {
   // Utled gul liste-status fra audience prop (FigmaMainScript er "single source of truth" via PBE-oppslag)
   const erPaaGulListe = audience === 'gulliste';
   // Animasjoner (fadeIn, slideUpFadeIn) er definert i EnergySolutionButtons.css
@@ -291,65 +292,36 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     return calculateAnnualEnergyConsumption(byggeaarCandidate, bruksareal, buildingType);
   }, [buildingData, bruksareal]);
 
-    // Beregn kombinert besparelse med multiplikativ metode
-  const totalSavingsKWh = React.useMemo(() => {
-    if (checkedItems.size === 0 || !boligtype || !tekPeriod) {
-      return 0;
-    }
-
-    // Bruk yearlyConsumption hvis tilgjengelig, ellers estimert forbruk
-    const consumptionNum = yearlyConsumption ? parseFloat(yearlyConsumption) : estimatedAnnualConsumption;
-    if (!Number.isFinite(consumptionNum) || consumptionNum <= 0) {
-      return 0;
-    }
-
-    // Bygg liste med tiltak og deres rates for multiplikativ beregning
-    const tiltakInfo: TiltakSavingsInfo[] = [];
-
+  // Ekstraher tiltakInfo til egen useMemo for gjenbruk (bl.a. i sammenligningsmodulen)
+  const tiltakInfo = React.useMemo<TiltakSavingsInfo[]>(() => {
+    if (checkedItems.size === 0 || !boligtype || !tekPeriod) return [];
+    const info: TiltakSavingsInfo[] = [];
     checkedItems.forEach((tiltakId) => {
       const tiltak = displayTiltak.find((t) => t.id === tiltakId);
       if (!tiltak) return;
-
-      // Solenergi håndteres spesielt - det er produksjon, ikke besparelse
       if (tiltak.id === 'solenergi') {
         const solarEnergy = buildingData?.filteredSolarEnergy || 0;
         if (solarEnergy > 0) {
-          tiltakInfo.push({
-            title: tiltak.id,
-            rates: null,
-            solarProductionKwh: solarEnergy
-          });
+          info.push({ title: tiltak.id, rates: null, solarProductionKwh: solarEnergy });
         }
       } else {
-        // Hent rates for dette tiltaket (romoppvarming, tappevann, elspesifikt)
-        // For varmepumpe: bruk valgt type fra state
         const rates = getRateForTiltakId(tiltak.id, tekPeriod, boligtype, {
           erPaaGulListe,
           varmepumpeTab: tiltak.id === 'varmepumpe' ? selectedVarmepumpeType : undefined,
         });
-        if (rates !== null) {
-          tiltakInfo.push({
-            title: tiltak.id,
-            rates
-          });
-        }
+        if (rates !== null) info.push({ title: tiltak.id, rates });
       }
     });
+    return info;
+  }, [boligtype, buildingData?.filteredSolarEnergy, checkedItems, displayTiltak, erPaaGulListe, selectedVarmepumpeType, tekPeriod]);
 
-    // Bruk den sentrale multiplikative beregningen med forbruksfordeling per energitype
-    return calculateCombinedSavings(consumptionNum, tiltakInfo, tekPeriod, boligtype, bruksareal);
-  }, [
-    boligtype,
-    bruksareal,
-    buildingData?.filteredSolarEnergy,
-    checkedItems,
-    displayTiltak,
-    erPaaGulListe,
-    estimatedAnnualConsumption,
-    selectedVarmepumpeType,
-    tekPeriod,
-    yearlyConsumption,
-  ]);
+    // Beregn kombinert besparelse med multiplikativ metode
+  const totalSavingsKWh = React.useMemo(() => {
+    if (tiltakInfo.length === 0) return 0;
+    const consumptionNum = yearlyConsumption ? parseFloat(yearlyConsumption) : estimatedAnnualConsumption;
+    if (!Number.isFinite(consumptionNum) || consumptionNum <= 0) return 0;
+    return calculateCombinedSavings(consumptionNum, tiltakInfo, tekPeriod!, boligtype!, bruksareal);
+  }, [tiltakInfo, yearlyConsumption, estimatedAnnualConsumption, tekPeriod, boligtype, bruksareal]);
 
   // Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
   const newRating = React.useMemo(() => {
@@ -419,6 +391,11 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       onTotalSavingsChange(totalSavingsKWh);
     }
   }, [onTotalSavingsChange, totalSavingsKWh]);
+
+  // Send tiltakInfo til parent-komponenten når den endres
+  useEffect(() => {
+    onTiltakInfoChange?.(tiltakInfo);
+  }, [onTiltakInfoChange, tiltakInfo]);
 
   // Oppdater scroll-status
   useEffect(() => {

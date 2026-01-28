@@ -16,6 +16,8 @@ import {
   calculateProjectedConsumption,
   getMotivationalMessage,
 } from '../../../../services/districtStatisticsService';
+import { estimateEnergyGradeFromKwhPerM2 } from '../../../../utils/tekEnergyCalculations';
+import type { BuildingType } from '../../../../utils/tekEnergyCalculations';
 import { ComparisonCard, EnergyGradeCard, ImprovementCard } from './cards';
 import './DistrictComparisonCarousel.css';
 
@@ -60,17 +62,11 @@ const CARDS: CardConfig[] = [
   { id: 'improvement', title: 'Din posisjon', iconName: 'location-pin' },
 ];
 
-/**
- * Estimerer energikarakter basert på kWh/m²
- */
-function estimateEnergyGrade(kwhPerM2: number): EnergyGrade {
-  if (kwhPerM2 <= 85) return 'A';
-  if (kwhPerM2 <= 105) return 'B';
-  if (kwhPerM2 <= 130) return 'C';
-  if (kwhPerM2 <= 160) return 'D';
-  if (kwhPerM2 <= 195) return 'E';
-  if (kwhPerM2 <= 240) return 'F';
-  return 'G';
+/** Map BuildingTypeCategory til BuildingType for sentralisert energiberegning */
+function mapCategoryToBuildingType(category: BuildingTypeCategory): BuildingType | null {
+  if (category === 'småhus') return 'småhus';
+  if (category === 'blokk') return 'blokk';
+  return null;
 }
 
 export const DistrictComparisonCarousel: React.FC<DistrictComparisonCarouselProps> = ({
@@ -101,6 +97,9 @@ export const DistrictComparisonCarousel: React.FC<DistrictComparisonCarouselProp
     ? subdistrictName
     : districtName;
 
+  // Map boligtype-kategori til BuildingType for sentralisert energiberegning
+  const mappedBuildingType = useMemo(() => mapCategoryToBuildingType(buildingTypeCategory), [buildingTypeCategory]);
+
   // Beregninger for alle kort (oppdateres når activeStats endres)
   const calculatedData = useMemo(() => {
     if (!Number.isFinite(currentKwhPerM2) || currentKwhPerM2 <= 0) {
@@ -112,8 +111,9 @@ export const DistrictComparisonCarousel: React.FC<DistrictComparisonCarouselProp
       ((activeStats.avgKwhPerM2 - currentKwhPerM2) / activeStats.avgKwhPerM2) * 100;
     const motivationalMessage = getMotivationalMessage(currentPercentile, activeAreaName);
 
-    // Energikarakter - bruk oppgitt eller estimer
-    const currentEnergyGrade = userEnergyGrade ?? estimateEnergyGrade(currentKwhPerM2);
+    // Energikarakter - bruk oppgitt eller estimer med sentralisert NS 3031:2025-skala
+    const currentEnergyGrade = userEnergyGrade
+      ?? (estimateEnergyGradeFromKwhPerM2(currentKwhPerM2, bruksareal, mappedBuildingType) as EnergyGrade);
 
     // Beregn projisert data hvis tiltak er valgt
     let projectedKwhPerM2: number | null = null;
@@ -124,7 +124,7 @@ export const DistrictComparisonCarousel: React.FC<DistrictComparisonCarouselProp
     if (hasActiveMeasures) {
       projectedKwhPerM2 = calculateProjectedConsumption(currentKwhPerM2, totalEnergySavings, bruksareal);
       projectedPercentile = calculatePercentile(projectedKwhPerM2, activeStats);
-      projectedEnergyGrade = estimateEnergyGrade(projectedKwhPerM2);
+      projectedEnergyGrade = estimateEnergyGradeFromKwhPerM2(projectedKwhPerM2, bruksareal, mappedBuildingType) as EnergyGrade;
     }
 
     return {
@@ -137,7 +137,7 @@ export const DistrictComparisonCarousel: React.FC<DistrictComparisonCarouselProp
       projectedEnergyGrade,
       hasActiveMeasures,
     };
-  }, [currentKwhPerM2, totalEnergySavings, bruksareal, activeAreaName, activeStats, userEnergyGrade]);
+  }, [currentKwhPerM2, totalEnergySavings, bruksareal, activeAreaName, activeStats, userEnergyGrade, mappedBuildingType]);
 
   // Ikke vis hvis vi ikke har gyldig data
   if (calculatedData === null) {

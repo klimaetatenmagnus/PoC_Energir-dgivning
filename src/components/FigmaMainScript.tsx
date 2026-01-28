@@ -5,6 +5,7 @@ import { useAddressCoordinates } from './FigmaBlokk/hooks/useAddressCoordinates'
 import { getLayoutStyles } from './FigmaBlokk/styles';
 import { EnergySolutionButtons } from './FigmaBlokk/components/EnergySolutionButtons';
 import type { TiltakCanonicalKey } from './FigmaBlokk/utils/tiltakCanonicalKeys';
+import type { TiltakSavingsInfo } from '../utils/energySavingsData';
 import { WhiteInfoBox } from './FigmaBlokk/components/WhiteInfoBox';
 import { OsloLogo } from './FigmaBlokk/components/OsloLogo';
 import { ProsessenVidere } from './FigmaBlokk/components/ProsessenVidere';
@@ -12,7 +13,7 @@ import { SolarEnergyData } from '../services/solarEnergyService';
 import { sjekkGulListeMedGnrBnr } from '../services/gul-liste-service';
 import { LYSEVEIEN_3_DATA } from '../testData/lyseveien3';
 import { THERESES_11A_DATA } from '../testData/theresegate11a';
-import { calculateAnnualEnergyConsumption, determineBuildingType } from '../utils/tekEnergyCalculations';
+import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, getEnergyIntensityFromTEK, calculateTEK } from '../utils/tekEnergyCalculations';
 import { THERESES_44A_DATA } from '../testData/theresegate44a';
 import { useFigmaViewportMetrics } from './FigmaBlokk/hooks/useFigmaViewportMetrics';
 import { Enebolig2LayerSvg, Blokk2LayerSvg } from './FigmaBlokk/components/BuildingSprites';
@@ -222,7 +223,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   }, [buildingData]);
   
   const [energiforbruk, setEnergiforbruk] = React.useState<string>(
-    String(buildingData?.energiattest?.registering?.beregnetLevertEnergiTotaltkWh || initialEnergyConsumption)
+    String(initialEnergyConsumption)
   );
 
   // State for enebolig animation
@@ -237,6 +238,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   
   // State for total energy savings
   const [totalEnergySavings, setTotalEnergySavings] = React.useState<number>(0);
+  const [tiltakInfo, setTiltakInfo] = React.useState<TiltakSavingsInfo[]>([]);
   const [newEnergyRating, setNewEnergyRating] = React.useState<string | null>(null);
 
   // State for tiltak animations and arrow feedback
@@ -308,10 +310,24 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     return () => clearTimeout(timer);
   }, [arrowState]);
 
-  // Initialize arrow color from building's current energy rating
+  // Initialize arrow color from TEK-estimated energy rating
   React.useEffect(() => {
-    const initialRating = buildingData?.energiattest?.energikarakter;
-    setArrowColor(getEnergyRatingColor(initialRating));
+    const byggeaar = buildingData?.csvData?.byggeaar || buildingData?.byggeaar;
+    const bruksareal = buildingData?.bruksarealM2 || buildingData?.csvData?.bruksareal_totalt;
+    const buildingType = determineBuildingType(
+      buildingData?.bygningstypeKode || buildingData?.csvData?.bygningstypekode,
+      buildingData?.bygningstype || buildingData?.csvData?.bygningstype
+    );
+
+    const yearNum = typeof byggeaar === 'string' ? parseInt(byggeaar) : byggeaar;
+    const areaNum = typeof bruksareal === 'string' ? parseFloat(bruksareal) : bruksareal;
+
+    if (yearNum && areaNum && !isNaN(yearNum) && !isNaN(areaNum) && areaNum > 0) {
+      const tek = calculateTEK(yearNum);
+      const intensity = getEnergyIntensityFromTEK(tek, buildingType, areaNum);
+      const rating = calculateEnergyRating(intensity, areaNum, buildingType);
+      setArrowColor(getEnergyRatingColor(rating));
+    }
   }, [buildingData, getEnergyRatingColor]);
 
   // Handle building data updates from WhiteInfoBox
@@ -768,6 +784,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         buildingData={{...updatedBuildingData, filteredSolarEnergy: solarData?.filteredSolarEnergy}}
         yearlyConsumption={energiforbruk}
         onTotalSavingsChange={setTotalEnergySavings}
+        onTiltakInfoChange={setTiltakInfo}
         onSelectionChange={handleSelectionChange}
         audience={showYellowBox ? 'gulliste' : 'standard'}
         showInfoModal={showInfoModal}
@@ -837,6 +854,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         gulListeLoading={gulListeLoading}
         onUpdateBuildingData={handleUpdateBuildingData}
         totalEnergySavings={totalEnergySavings}
+        tiltakInfo={tiltakInfo}
         onShowInfo={() => setShowInfoModal(true)}
       />
 
