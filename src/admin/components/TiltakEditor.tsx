@@ -467,7 +467,7 @@ export function TiltakEditor({
     setIsDirty(true);
   }, [buildingTypes]);
 
-  // Fjern alle byggtyper (vis for alle)
+  // Fjern alle byggtyper (skjul for alle)
   const clearAllBuildingTypesVisibility = useCallback(() => {
     setEditedTiltak((prev) => ({
       ...prev,
@@ -1130,7 +1130,7 @@ export function TiltakEditor({
           {/* Byggtype-synlighet */}
           <PktInputWrapper
             label="Vis for byggtyper"
-            helptext="Velg hvilke byggtyper dette tiltaket skal vises for. La alle stå umarkert for å vise for alle byggtyper."
+            helptext="Velg hvilke byggtyper dette tiltaket skal vises for. Hvis ingen er valgt, vises ikke tiltaket for noen byggtyper."
             forId="buildingtype-visibility-group"
             hasFieldset
           >
@@ -1147,7 +1147,7 @@ export function TiltakEditor({
                 size="small"
                 onClick={clearAllBuildingTypesVisibility}
               >
-                Fjern alle (vis for alle)
+                Fjern alle (skjul for alle)
               </PktButton>
             </div>
 
@@ -1167,7 +1167,7 @@ export function TiltakEditor({
 
             {visibleForBuildingTypes.length === 0 && (
               <p className="tiltak-editor__hint">
-                <em>Ingen byggtyper valgt – tiltaket vises for alle byggtyper.</em>
+                <em>Ingen byggtyper valgt – tiltaket vises ikke for noen byggtyper.</em>
               </p>
             )}
           </PktInputWrapper>

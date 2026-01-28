@@ -147,12 +147,14 @@ export const MobileTiltakDetail: React.FC<MobileTiltakDetailProps> = ({
     [resolvedContent]
   );
 
-  // Hent støtteordninger basert på grants fra tiltak-innholdet
-  // grantIds er allerede audience-filtrert via applyTiltakVariant
+  // Hent støtteordninger basert på tiltakId
+  // Tilskudd slås opp via appliesToTiltak-feltet (satt i admin-verktøyet)
   // buildingType filtrerer ut tilskudd som ikke gjelder for denne bygningstypen
+  // audience filtrerer ut tilskudd som ikke gjelder for standard/gulliste-bygg
   const { stotteordninger, isLoading: grantsLoading } = useGrantAwareStotteordninger({
-    grantIds: resolvedContent?.grants ?? [],
-    buildingType
+    tiltakId,
+    buildingType,
+    audience
   });
 
   const hasRegisteredGrants = stotteordninger.length > 0;

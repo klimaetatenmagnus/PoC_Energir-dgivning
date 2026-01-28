@@ -1,14 +1,18 @@
 import { useMemo } from 'react';
 import type { TilskuddContent } from '../../../../../content/tilskudd/schema';
 import type { ProviderDictionaryEntry } from '../../../../../content/dictionaries/schema';
+import type { ContentAudience } from '../../../../../content/schema-helpers';
 import type { Stotteordning } from './shared';
-import { useTilskuddBatch, useContentDictionary } from '../../../../hooks/contentHooks';
+import { useTilskuddBatch, useTilskuddCatalog, useContentDictionary } from '../../../../hooks/contentHooks';
 import { normaliseBuildingTypeKey } from '../../../../utils/tiltakContent';
 
 type UseGrantAwareStotteordningerOptions = {
-  grantIds?: string[] | null;
+  /** Tiltak-ID for å finne tilskudd som gjelder dette tiltaket (via appliesToTiltak) */
+  tiltakId?: string | null;
   /** Bygningstype for filtrering av støtteordninger */
   buildingType?: string | null;
+  /** Audience for filtrering av støtteordninger (standard eller gulliste) */
+  audience?: ContentAudience | null;
 };
 
 export type UseGrantAwareStotteordningerResult = {
@@ -97,13 +101,27 @@ function mapTilskuddToStotteordning(
   };
 }
 
+/**
+ * Hook som henter støtteordninger basert på tiltak-ID.
+ *
+ * Slår opp hvilke tilskudd som gjelder for dette tiltaket via tilskuddenes
+ * `appliesToTiltak`-felt (satt i admin-verktøyet), og filtrerer deretter
+ * på buildingType og audience.
+ *
+ * Dette gjør at admin-verktøyet blir eneste kilde til sannhet for
+ * hvilke tilskudd som vises på hvilke tiltak.
+ */
 export function useGrantAwareStotteordninger({
-  grantIds,
-  buildingType
+  tiltakId,
+  buildingType,
+  audience
 }: UseGrantAwareStotteordningerOptions): UseGrantAwareStotteordningerResult {
   // Hent providers fra dictionary for å slå opp tilbydernavn
   const { data: dictionary } = useContentDictionary();
   const providers = dictionary?.providers;
+
+  // Hent tilskuddskatalog for å finne hvilke tilskudd som gjelder dette tiltaket
+  const { data: tilskuddCatalog, isLoading: catalogLoading } = useTilskuddCatalog();
 
   // Normaliser buildingType for matching mot tilskuddets buildingTypes-array
   const normalizedBuildingType = useMemo(
@@ -111,43 +129,49 @@ export function useGrantAwareStotteordninger({
     [buildingType]
   );
 
-  const uniqueGrantIds = useMemo(() => {
-    const sanitisedIds = (grantIds ?? [])
-      .map((id) => id?.trim())
-      .filter((id): id is string => Boolean(id));
-    const result: string[] = [];
-    const seen = new Set<string>();
-    for (const id of sanitisedIds) {
-      if (seen.has(id)) {
-        continue;
-      }
-      seen.add(id);
-      result.push(id);
+  // Finn tilskudd-IDer som gjelder for dette tiltaket (via appliesToTiltak)
+  const matchingTilskuddIds = useMemo(() => {
+    if (!tiltakId || !tilskuddCatalog?.items?.length) {
+      return [];
     }
-    return result;
-  }, [grantIds]);
 
-  const hasGrantIds = uniqueGrantIds.length > 0;
+    // Filtrer katalogen for tilskudd som har dette tiltaket i sin appliesToTiltak-liste
+    return tilskuddCatalog.items
+      .filter((item) => item.appliesToTiltak.includes(tiltakId))
+      .map((item) => item.id);
+  }, [tiltakId, tilskuddCatalog?.items]);
 
+  const hasTilskuddIds = matchingTilskuddIds.length > 0;
+
+  // Hent full tilskudd-data for de matchende IDene
   const {
     data: grantData,
-    isLoading,
+    isLoading: grantsLoading,
     error
-  } = useTilskuddBatch(hasGrantIds ? uniqueGrantIds : null);
+  } = useTilskuddBatch(hasTilskuddIds ? matchingTilskuddIds : null);
+
+  const isLoading = catalogLoading || grantsLoading;
 
   const stotteordninger = useMemo(() => {
     if (!grantData?.length) {
       return [];
     }
-    // Filtrer tilskudd basert på buildingType
-    // Hvis normalizedBuildingType er 'default', vis alle tilskudd (ingen filtrering)
-    const filteredGrants = normalizedBuildingType === 'default'
-      ? grantData
-      : grantData.filter((tilskudd) =>
-          tilskudd.buildingTypes.includes(normalizedBuildingType)
-        );
+    // Filtrer tilskudd basert på buildingType og audience
+    const filteredGrants = grantData.filter((tilskudd) => {
+      // Filtrer på buildingType (hvis ikke 'default')
+      if (normalizedBuildingType !== 'default' && !tilskudd.buildingTypes.includes(normalizedBuildingType)) {
+        return false;
+      }
+      // Filtrer på audience - tilskudd må inkludere gjeldende audience
+      // Hvis audience ikke er satt, bruk 'standard' som default
+      const effectiveAudience = audience ?? 'standard';
+      if (!tilskudd.audiences.includes(effectiveAudience)) {
+        return false;
+      }
+      return true;
+    });
     return filteredGrants.map((tilskudd) => mapTilskuddToStotteordning(tilskudd, providers));
-  }, [grantData, providers, normalizedBuildingType]);
+  }, [grantData, providers, normalizedBuildingType, audience]);
 
   return {
     stotteordninger,

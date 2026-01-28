@@ -92,12 +92,12 @@ Tiltak kan filtreres basert på byggtype og byggeår slik at kun relevante tilta
 
 | Felt | Type | Default | Beskrivelse |
 |------|------|---------|-------------|
-| `visibleForBuildingTypes` | `string[]` | `[]` (tom) | Liste over byggtyper tiltaket skal vises for. Tom array = vis for alle. |
+| `visibleForBuildingTypes` | `string[]` | `[]` (tom) | Liste over byggtyper tiltaket skal vises for. Tom array = vis for ingen. |
 | `minBuildingYear` | `number` (valgfritt) | `undefined` | Tiltaket vises kun for bygg bygget FØR dette året. Ingen verdi = ingen årsfiltrering. |
 
 ### Semantikk
 
-- **`visibleForBuildingTypes: []`** (tom array) betyr "vis for alle byggtyper" – dette er default og bakoverkompatibelt.
+- **`visibleForBuildingTypes: []`** (tom array) betyr "vis for ingen byggtyper" – tiltaket skjules helt hvis ingen byggtyper er valgt.
 - **`visibleForBuildingTypes: ["enebolig", "rekkehus"]`** betyr "vis kun for enebolig og rekkehus".
 - **`minBuildingYear: 1970`** betyr "vis kun for bygg bygget før 1970" (typisk for etterisoleringstiltak).
 - **`minBuildingYear: undefined`** (utelatt) betyr "ingen årsfiltrering" – tiltaket vises uansett byggeår.

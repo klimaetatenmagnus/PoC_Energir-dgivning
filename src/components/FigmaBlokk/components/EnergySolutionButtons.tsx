@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { PktButton, PktCheckbox, PktIcon, PktRadioButton } from '@oslokommune/punkt-react';
-import { ENERGY_SOLUTIONS } from '../constants';
 import { AddressLookupResponse } from '../../../services/buildingApi';
 import { useTiltakCatalog } from '../../../hooks/contentHooks';
 import type { TiltakCatalogItem } from '../../../types/contentCatalog';
@@ -76,7 +75,7 @@ const determineBuildingTypeKey = (
 
 /**
  * Filtrer tiltak basert på byggtype, byggår og energieffekt.
- * - visibleForBuildingTypes: Tom array = vis for alle. Ellers vis kun for angitte byggtyper.
+ * - visibleForBuildingTypes: Tom array = vis for ingen. Ellers vis kun for angitte byggtyper.
  * - minBuildingYear: Vis kun for bygg bygget FØR dette året.
  * - Skjuler tiltak der alle tre rates er 100% (ingen effekt) for den aktuelle TEK-standarden.
  */
@@ -89,10 +88,11 @@ const filterTiltakForBuilding = (
   erPaaGulListe: boolean
 ): TiltakCatalogItem[] => {
   return tiltak.filter((t) => {
-    // Byggtype-filter
+    // Byggtype-filter: tom array = vis for ingen
     const buildingTypeMatch =
-      t.visibleForBuildingTypes.length === 0 || // Tom = vis for alle
-      (buildingTypeKey && t.visibleForBuildingTypes.includes(buildingTypeKey));
+      t.visibleForBuildingTypes.length > 0 && // Må ha minst én byggtype valgt
+      buildingTypeKey &&
+      t.visibleForBuildingTypes.includes(buildingTypeKey);
 
     // Byggår-filter: vis kun for bygg bygget FØR minBuildingYear
     const buildingYearMatch =
@@ -221,23 +221,13 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   }, [buildingTypeCode, buildingTypeNameLower]);
 
   // Boligtype for energibesparelses-beregninger (småhus eller blokk)
+  // Bruker sentralisert determineBuildingType() for konsistens
   const boligtype: Boligtype | null = React.useMemo(() => {
-    if (buildingTypeKey) {
-      if (['enebolig', 'tomannsbolig', 'rekkehus'].includes(buildingTypeKey)) {
-        return 'småhus';
-      }
-      if (buildingTypeKey === 'blokk') {
-        return 'blokk';
-      }
-    }
-    if (['11', '12', '13'].includes(buildingTypeCode)) {
-      return 'småhus';
-    }
-    if (isBlokk) {
-      return 'blokk';
-    }
-    return null;
-  }, [buildingTypeKey, buildingTypeCode, isBlokk]);
+    return determineBuildingType(
+      buildingData?.bygningstypeKode || buildingData?.csvData?.bygningstypekode,
+      buildingData?.bygningstype || buildingData?.csvData?.bygningstype
+    );
+  }, [buildingData]);
 
   // Filtrer tiltak fra katalog basert på byggtype, byggår og energieffekt
   const filteredTiltak = useMemo(() => {
@@ -253,16 +243,12 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     return filterTiltakForBuilding(publishedTiltak, buildingTypeKey, buildingYear, tekPeriod, boligtype, erPaaGulListe);
   }, [catalogData, buildingTypeKey, buildingYear, tekPeriod, boligtype, erPaaGulListe]);
 
-  // Dynamisk tiltak-liste: bruk katalog hvis tilgjengelig, ellers fallback til ENERGY_SOLUTIONS
+  // Dynamisk tiltak-liste fra katalogen (filtrert på byggtype, audience og energieffekt)
   // Each item includes a canonicalKey for stable SVG overlay matching
   const displayTiltak: Array<{ id: string; title: string; canonicalKey: TiltakCanonicalKey | null }> = useMemo(() => {
-    if (isCatalogLoading || filteredTiltak.length === 0) {
-      // Fallback til hardkodede tiltak mens katalog lastes eller er tom
-      return ENERGY_SOLUTIONS.map((title, index) => ({
-        id: `fallback-${index}`,
-        title: title as string,
-        canonicalKey: getCanonicalKey(undefined, title as string)
-      }));
+    // Vis tom liste mens katalog lastes
+    if (isCatalogLoading) {
+      return [];
     }
 
     return filteredTiltak.map((t) => ({

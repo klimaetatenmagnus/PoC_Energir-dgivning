@@ -61,8 +61,9 @@ export const DesktopTiltakCard: React.FC<DesktopTiltakCardProps> = ({
   );
 
   const { stotteordninger, isLoading: grantsLoading } = useGrantAwareStotteordninger({
-    grantIds: resolvedContent?.grants ?? [],
-    buildingType
+    tiltakId,
+    buildingType,
+    audience
   });
 
   // Beregn besparelse

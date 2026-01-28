@@ -144,7 +144,7 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
           <CircleWithHover
             number={5}
             text="Undersøk støtteordninger"
-            hoverText="Det finnes støtteordninger for flere energitiltak - fra Oslo kommune og Enova. Aktuelle støtteordninger er nevnt under informasjonen for hvert tiltak. Sjekk mulighetene tidlig i planleggingen, så du vet hva som kan være aktuelt for din bolig."
+            hoverText="Det finnes støtteordninger for flere energitiltak - fra både Oslo kommune og Enova. Aktuelle støtteordninger er nevnt under informasjonen for hvert tiltak. Sjekk mulighetene tidlig i planleggingen, så du vet hva som kan være aktuelt for din bolig."
             growFullCircle={true}
             onHoverChange={setIsCircle5Hovered}
             expandUpwards={true}

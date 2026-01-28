@@ -135,7 +135,7 @@ minBuildingYear: z.number().int().min(1800).max(2100).optional(),     // Bygg m�
 ```
 
 **Semantikk:**
-- `visibleForBuildingTypes: []` (tom array) betyr "vis for alle byggtyper" (default/bakoverkompatibelt)
+- `visibleForBuildingTypes: []` (tom array) betyr "vis for ingen byggtyper" (tiltaket skjules helt)
 - `visibleForBuildingTypes: ['enebolig', 'rekkehus']` betyr "vis kun for enebolig og rekkehus"
 - `minBuildingYear: 1970` betyr "vis kun for bygg bygget før 1970"
 - `minBuildingYear: undefined` betyr "ingen årsfiltrering" (default/bakoverkompatibelt)

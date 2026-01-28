@@ -24,7 +24,7 @@ export type TiltakCatalogItem = ContentCatalogItemBase<'tiltak'> & {
   buildingTypes: string[];
   variantAudiences: string[];
   // Synlighet-filtrering
-  visibleForBuildingTypes: string[]; // Tom array = vis for alle byggtyper
+  visibleForBuildingTypes: string[]; // Tom array = vis for ingen byggtyper
   minBuildingYear?: number; // Bygg må være eldre enn dette året
 };
 

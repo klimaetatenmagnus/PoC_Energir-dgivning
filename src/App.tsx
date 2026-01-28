@@ -12,7 +12,7 @@ import { useAddressCoordinates } from "./components/FigmaBlokk/hooks/useAddressC
 import { fetchSolarData, SolarEnergyData } from "./services/solarEnergyService";
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from "./utils/tekEnergyCalculations";
 import { sjekkGulListeMedGnrBnr } from "./services/gul-liste-service";
-import { lookupBuildingFromEnovaData, EnovaBuildingData } from "./services/districtStatisticsService";
+// Enova bulk-data håndteres internt i MobileEnergySolutions (kun for sammenligningsmodulen)
 
 export default function App() {
   const {
@@ -52,47 +52,8 @@ export default function App() {
   // State for solarData (for mobil)
   const [solarData, setSolarData] = useState<SolarEnergyData | null>(null);
 
-  // State for Enova bulk-data (for mobil sammenligning)
-  const [enovaBulkData, setEnovaBulkData] = useState<EnovaBuildingData | null>(null);
-
-  // Hent Enova bulk-data når result endres (for mobil)
-  useEffect(() => {
-    if (!result || !isMobileView) {
-      setEnovaBulkData(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    async function fetchEnovaData() {
-      const gnr = String(result.gnr || result.csvData?.gnr || '');
-      const bnr = String(result.bnr || result.csvData?.bnr || '');
-      const snr = String(result.seksjonsnummer || '0');
-      const bygningsnummer = result.bygningsnummer || '';
-
-      if (!bygningsnummer && (!gnr || !bnr)) {
-        return;
-      }
-
-      try {
-        const data = await lookupBuildingFromEnovaData(bygningsnummer, gnr, bnr, snr);
-        if (!cancelled) {
-          setEnovaBulkData(data);
-        }
-      } catch {
-        // Stille feil - Enova-data er ikke kritisk
-        if (!cancelled) {
-          setEnovaBulkData(null);
-        }
-      }
-    }
-
-    fetchEnovaData();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [result, isMobileView]);
+  // Enova bulk-data håndteres nå internt i MobileEnergySolutions
+  // (brukes kun i sammenligningsmodulen, ikke for hovedvisning)
 
   // Hent soldata når result endres (for mobil)
   useEffect(() => {
@@ -121,34 +82,18 @@ export default function App() {
       });
   }, [result, isMobileView]);
 
-  // Beregn årlig energiforbruk (for mobil)
-  // Prioriterer Enova bulk-data for "epler med epler"-sammenligning
-  const { yearlyConsumption, isUsingEnovaData } = useMemo(() => {
-    if (!result) return { yearlyConsumption: '', isUsingEnovaData: false };
+  // Beregn årlig energiforbruk (for mobil hovedvisning)
+  // ALLTID TEK-basert: byggeår, bruksareal, boligtype
+  // Enova-data brukes KUN i sammenligningsmodulen (MobileDistrictComparison)
+  const yearlyConsumption = useMemo(() => {
+    if (!result) return '';
 
-    // Hvis boligen finnes i Enova bulk-data, bruk kWh/m² derfra
-    // Dette sikrer at sammenligningen er basert på samme datakilde som bydelsstatistikken
-    if (enovaBulkData?.kwhPerM2 && enovaBulkData.kwhPerM2 > 0) {
-      const bruksareal = result.bruksarealM2 ||
-        result.csvData?.bruksareal_totalt ||
-        result.csvData?.bruksareal;
-      const consumption = bruksareal ? enovaBulkData.kwhPerM2 * Number(bruksareal) : 0;
-      return { yearlyConsumption: consumption > 0 ? String(Math.round(consumption)) : '', isUsingEnovaData: true };
-    }
-
-    // Fallback: Sjekk om det finnes energiattest med registrert forbruk fra API
-    const registrertForbruk = result.energiattest?.registering?.beregnetLevertEnergiTotaltkWh;
-    if (registrertForbruk) {
-      return { yearlyConsumption: String(registrertForbruk), isUsingEnovaData: true };
-    }
-
-    // Fallback: Beregn basert på byggeår og bruksareal (TEK-estimering)
     const byggeaar = result.byggeaar || result.csvData?.byggeaar;
     const bruksareal = result.bruksarealM2 ||
       result.csvData?.bruksareal_totalt ||
       result.csvData?.bruksareal;
 
-    if (!byggeaar || !bruksareal) return { yearlyConsumption: '', isUsingEnovaData: false };
+    if (!byggeaar || !bruksareal) return '';
 
     const buildingType = determineBuildingType(
       result.bygningstypeKode || result.csvData?.bygningstypekode,
@@ -161,8 +106,12 @@ export default function App() {
       buildingType
     );
 
-    return { yearlyConsumption: consumption ? String(consumption) : '', isUsingEnovaData: false };
-  }, [result, enovaBulkData]);
+    return consumption ? String(consumption) : '';
+  }, [result]);
+
+  // isUsingEnovaData er ikke lenger relevant for hovedvisningen
+  // (Enova-data håndteres kun internt i MobileEnergySolutions for sammenligningsmodulen)
+  const isUsingEnovaData = false;
 
   // Beregn estimert energikarakter (for mobil)
   // Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts

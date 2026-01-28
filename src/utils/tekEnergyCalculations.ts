@@ -210,24 +210,24 @@ export function determineBuildingType(
       return 'blokk';
     }
   }
-  
+
   // Sjekk deretter navn
   if (buildingTypeName) {
     const nameLower = buildingTypeName.toLowerCase();
-    if (nameLower.includes('enebolig') || 
-        nameLower.includes('tomannsbolig') || 
-        nameLower.includes('rekkehus') || 
+    if (nameLower.includes('enebolig') ||
+        nameLower.includes('tomannsbolig') ||
+        nameLower.includes('rekkehus') ||
         nameLower.includes('kjedehus')) {
       return 'småhus';
     }
-    if (nameLower.includes('blokk') || 
-        nameLower.includes('leilighet') || 
+    if (nameLower.includes('blokk') ||
+        nameLower.includes('leilighet') ||
         nameLower.includes('boligbygg') ||
         nameLower === 'store boligbygg') {
       return 'blokk';
     }
   }
-  
+
   // Default til småhus
   return 'småhus';
 }

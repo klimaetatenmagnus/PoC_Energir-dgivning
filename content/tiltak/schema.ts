@@ -187,7 +187,7 @@ export const TiltakContentSchema = z
     supportTags: z.array(z.string().regex(/^[a-z0-9-]+$/)).default([]),
     audiences: z.array(ContentAudienceSchema).min(1).default(['standard']),
     // Synlighet-filtrering: styr hvilke bygg tiltaket vises for
-    visibleForBuildingTypes: z.array(BuildingTypeKeySchema).default([]), // Tom array = vis for alle byggtyper
+    visibleForBuildingTypes: z.array(BuildingTypeKeySchema).default([]), // Tom array = vis for ingen byggtyper
     minBuildingYear: z.number().int().min(1800).max(2100).optional(), // Bygg må være eldre enn dette året
     metadata: MetadataSchema,
     variants: z.array(VariantOverrideSchema).default([])

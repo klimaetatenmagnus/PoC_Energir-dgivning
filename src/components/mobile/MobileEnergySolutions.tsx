@@ -19,7 +19,6 @@ import { getCanonicalKey, type TiltakCanonicalKey } from '../FigmaBlokk/utils/ti
 import { useTiltakCatalog } from '../../hooks/contentHooks';
 import type { TiltakCatalogItem } from '../../types/contentCatalog';
 import { OsloLogo } from '../FigmaBlokk/components/OsloLogo';
-import { ENERGY_SOLUTIONS } from '../FigmaBlokk/constants';
 import { MobileInfoBox } from './MobileInfoBox';
 import { MobileSavingsFooter } from './MobileSavingsFooter';
 import { MobileDistrictComparison } from './MobileDistrictComparison';
@@ -88,20 +87,6 @@ const isRatingBetter = (first: string, second: string): boolean => {
   return index1 < index2;
 };
 
-/**
- * Lokal wrapper for beregning av energikarakter.
- * Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
- */
-const calculateEnergyRatingLocal = (
-  intensity: number,
-  bruksareal: number,
-  isSmåhus: boolean,
-  isBlokk: boolean
-): string => {
-  const buildingType = isSmåhus ? 'småhus' : isBlokk ? 'blokk' : null;
-  return calculateEnergyRating(intensity, bruksareal, buildingType);
-};
-
 interface MobileEnergySolutionsProps {
   searchAddress: string;
   buildingData: AddressLookupResponse;
@@ -152,7 +137,8 @@ const determineBuildingTypeKey = (
 };
 
 /**
- * Filtrer tiltak basert på byggtype, byggår og energieffekt
+ * Filtrer tiltak basert på byggtype, byggår og energieffekt.
+ * Tom visibleForBuildingTypes-array = vis for ingen byggtyper.
  */
 const filterTiltakForBuilding = (
   tiltak: TiltakCatalogItem[],
@@ -163,9 +149,11 @@ const filterTiltakForBuilding = (
   erPaaGulListe: boolean
 ): TiltakCatalogItem[] => {
   return tiltak.filter((t) => {
+    // Byggtype-filter: tom array = vis for ingen
     const buildingTypeMatch =
-      t.visibleForBuildingTypes.length === 0 ||
-      (buildingTypeKey && t.visibleForBuildingTypes.includes(buildingTypeKey));
+      t.visibleForBuildingTypes.length > 0 &&
+      buildingTypeKey &&
+      t.visibleForBuildingTypes.includes(buildingTypeKey);
 
     const buildingYearMatch =
       t.minBuildingYear === undefined ||
@@ -295,23 +283,13 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   }, [buildingTypeCode, buildingTypeNameLower]);
 
   // Boligtype for energibesparelses-beregninger (småhus eller blokk)
+  // Bruker sentralisert determineBuildingType() for konsistens med desktop
   const boligtype: Boligtype | null = useMemo(() => {
-    if (buildingTypeKey) {
-      if (['enebolig', 'tomannsbolig', 'rekkehus'].includes(buildingTypeKey)) {
-        return 'småhus';
-      }
-      if (buildingTypeKey === 'blokk') {
-        return 'blokk';
-      }
-    }
-    if (['11', '12', '13'].includes(buildingTypeCode)) {
-      return 'småhus';
-    }
-    if (isBlokk) {
-      return 'blokk';
-    }
-    return null;
-  }, [buildingTypeKey, buildingTypeCode, isBlokk]);
+    return determineBuildingType(
+      buildingData?.bygningstypeKode || buildingData?.csvData?.bygningstypekode,
+      buildingData?.bygningstype || buildingData?.csvData?.bygningstype
+    );
+  }, [buildingData]);
 
   // TEK-periode for energibesparelses-oppslag
   const tekPeriod: TekPeriodInput | null = useMemo(() => {
@@ -338,21 +316,14 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       return String(enovaConsumption);
     }
 
-    // Beregn basert på byggeår og bruksareal
-    if (buildingYear && bruksareal) {
-      const isSmåhus = ['11', '12', '13'].includes(buildingTypeCode) ||
-        buildingTypeNameLower.includes('enebolig') ||
-        buildingTypeNameLower.includes('tomannsbolig') ||
-        buildingTypeNameLower.includes('rekkehus') ||
-        buildingTypeNameLower.includes('kjedehus');
-
-      const buildingType = isSmåhus ? 'småhus' : 'blokk';
-      const consumption = calculateAnnualEnergyConsumption(buildingYear, bruksareal, buildingType);
+    // Beregn basert på byggeår og bruksareal, bruk sentralisert boligtype
+    if (buildingYear && bruksareal && boligtype) {
+      const consumption = calculateAnnualEnergyConsumption(buildingYear, bruksareal, boligtype);
       return String(consumption);
     }
 
     return '';
-  }, [yearlyConsumption, buildingData, buildingYear, bruksareal, buildingTypeCode, buildingTypeNameLower]);
+  }, [yearlyConsumption, buildingData, buildingYear, bruksareal, boligtype]);
 
   // Beregn besparelse for et tiltak med CSV-baserte prosentsatser
   // Bruker samme metode som desktop (getRateForTiltakId + calculateCombinedSavings)
@@ -449,15 +420,11 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     );
   }, [catalogData, buildingTypeKey, buildingYear, tekPeriod, boligtype, erPaaGulListe]);
 
-  // Dynamisk tiltak-liste: bruk katalog hvis tilgjengelig, ellers fallback til ENERGY_SOLUTIONS
+  // Dynamisk tiltak-liste fra katalogen (filtrert på byggtype, audience og energieffekt)
   const displayTiltak: Array<{ id: string; title: string; canonicalKey: TiltakCanonicalKey | null }> = useMemo(() => {
-    if (isCatalogLoading || filteredTiltak.length === 0) {
-      // Fallback til hardkodede tiltak mens katalog lastes eller er tom
-      return ENERGY_SOLUTIONS.map((title, index) => ({
-        id: `fallback-${index}`,
-        title: title as string,
-        canonicalKey: getCanonicalKey(undefined, title as string)
-      }));
+    // Vis tom liste mens katalog lastes
+    if (isCatalogLoading) {
+      return [];
     }
 
     return filteredTiltak.map((t) => ({
@@ -585,19 +552,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     const newConsumption = Math.max(0, consumptionNum - calculatedSavings);
     const newIntensity = newConsumption / bruksareal;
 
-    // Bestem byggtype for rating-beregning
-    const isSmåhus = ['11', '12', '13'].includes(buildingTypeCode) ||
-      buildingTypeNameLower.includes('enebolig') ||
-      buildingTypeNameLower.includes('tomannsbolig') ||
-      buildingTypeNameLower.includes('rekkehus') ||
-      buildingTypeNameLower.includes('kjedehus');
-
-    const isBlokkType = ['14', '15', '16', '17'].includes(buildingTypeCode) ||
-      buildingTypeNameLower.includes('blokk') ||
-      buildingTypeNameLower.includes('leilighet') ||
-      buildingTypeNameLower.includes('boligbygg');
-
-    const rating = calculateEnergyRatingLocal(newIntensity, bruksareal, isSmåhus, isBlokkType);
+    // Bruk sentralisert boligtype for rating-beregning (konsistent med desktop)
+    const rating = calculateEnergyRating(newIntensity, bruksareal, boligtype);
 
     // Returner kun hvis bedre enn estimert
     if (!isRatingBetter(rating, estimatedRating)) {
@@ -607,8 +563,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     return rating;
   }, [
     bruksareal,
-    buildingTypeCode,
-    buildingTypeNameLower,
+    boligtype,
     calculatedSavings,
     checkedItems.size,
     estimatedRating,
