@@ -25,3 +25,6 @@ jobs:
 
       - name: Run verification suite
         run: npm run verify
+        env:
+          MATRIKKEL_USERNAME: dummy
+          MATRIKKEL_PASSWORD: dummy
