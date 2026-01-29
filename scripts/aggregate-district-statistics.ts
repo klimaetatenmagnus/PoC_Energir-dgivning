@@ -588,6 +588,7 @@ interface EnovaCsvRow {
   bnr?: string;
   snr?: string;
   kwhPerM2: number;
+  utstedelsesdato?: string;
 }
 
 // Bygnings-indeks for oppslag av enkelt-boliger
@@ -719,6 +720,7 @@ function parseEnovaCsv(csvContent: string): EnovaCsvRow[] {
       bnr: row['bnr'] || '',
       snr: row['snr'] || '',
       kwhPerM2,
+      utstedelsesdato: row['utstedelsesdato'] || '',
     });
   }
 
@@ -913,12 +915,19 @@ function generateBuildingIndex(
   postnummerMapping: Record<string, { bydel: string; delbydel: string }>
 ): BuildingIndex {
   const buildings: Record<string, BuildingIndexEntry> = {};
+  // Track utstedelsesdato per key to ensure newest certificate wins
+  const buildingDates: Record<string, string> = {};
+  // Track which bygningsnummer keys belong to which matrikkel key,
+  // so a newer certificate for the same matrikkel (even without bygningsnummer)
+  // can update all related keys
+  const matrikkelToBygningsnummer: Record<string, string[]> = {};
 
   for (const row of rows) {
     // Skip unrealistic values
     if (row.kwhPerM2 < 20 || row.kwhPerM2 > 500) continue;
 
     const mapping = postnummerMapping[row.postnummer];
+    const dato = row.utstedelsesdato || '';
 
     const entry: BuildingIndexEntry = {
       kwhPerM2: Math.round(row.kwhPerM2 * 10) / 10, // Round to 1 decimal
@@ -929,17 +938,43 @@ function generateBuildingIndex(
       delbydel: mapping?.delbydel,
     };
 
+    const matrikkelKey = (row.gnr && row.bnr) ? `${row.gnr}-${row.bnr}-${row.snr || '0'}` : '';
+
+    // Track the relationship between bygningsnummer and matrikkel
+    if (row.bygningsnummer && matrikkelKey) {
+      if (!matrikkelToBygningsnummer[matrikkelKey]) {
+        matrikkelToBygningsnummer[matrikkelKey] = [];
+      }
+      if (!matrikkelToBygningsnummer[matrikkelKey].includes(row.bygningsnummer)) {
+        matrikkelToBygningsnummer[matrikkelKey].push(row.bygningsnummer);
+      }
+    }
+
     // Primary key: bygningsnummer (most reliable)
     if (row.bygningsnummer) {
-      buildings[row.bygningsnummer] = entry;
+      const key = row.bygningsnummer;
+      if (!buildings[key] || dato > (buildingDates[key] || '')) {
+        buildings[key] = entry;
+        buildingDates[key] = dato;
+      }
     }
 
     // Secondary key: matrikkel (gnr-bnr-snr) - useful for lookups without bygningsnummer
-    if (row.gnr && row.bnr) {
-      const matrikkelKey = `${row.gnr}-${row.bnr}-${row.snr || '0'}`;
-      // Don't overwrite if bygningsnummer already set this entry
-      if (!buildings[matrikkelKey]) {
+    if (matrikkelKey) {
+      if (!buildings[matrikkelKey] || dato > (buildingDates[matrikkelKey] || '')) {
         buildings[matrikkelKey] = entry;
+        buildingDates[matrikkelKey] = dato;
+
+        // A newer certificate for this matrikkel should also update any
+        // bygningsnummer keys that belong to the same matrikkel, so lookups
+        // by bygningsnummer also return the newest data
+        const relatedKeys = matrikkelToBygningsnummer[matrikkelKey] || [];
+        for (const bKey of relatedKeys) {
+          if (dato > (buildingDates[bKey] || '')) {
+            buildings[bKey] = entry;
+            buildingDates[bKey] = dato;
+          }
+        }
       }
     }
   }

@@ -49,6 +49,8 @@ export interface ByggInfo {
   bygningsnummer?: string;  // Bygningsnummer for Enova-oppslag
   bygningstypeBeskrivelse?: string;  // F.eks. "Rekkehus"
   bruksenhetIds?: number[];  // Liste over bruksenhet-IDer
+  oppvarmingsKodeIds: number[];   // Kode-IDer for oppvarmingstype fra Matrikkelen
+  energikildeKodeIds: number[];   // Kode-IDer for energikilde fra Matrikkelen
 }
 
 
@@ -272,6 +274,43 @@ function extractBruksenhetIds(tree: unknown): number[] {
   return bruksenhetIds;
 }
 
+/** Hent oppvarmings-kode-IDer fra bygningsdata */
+function extractOppvarmingsKodeIds(tree: unknown): number[] {
+  return extractKodeIdArray(tree, "oppvarmingsKodeIds");
+}
+
+/** Hent energikilde-kode-IDer fra bygningsdata */
+function extractEnergikildeKodeIds(tree: unknown): number[] {
+  return extractKodeIdArray(tree, "energikildeKodeIds");
+}
+
+/** Generisk: hent array av kode-IDer fra et navngitt element */
+function extractKodeIdArray(tree: unknown, elementName: string): number[] {
+  const ids: number[] = [];
+  const element = find(tree, elementName);
+  if (!element) return ids;
+
+  let items: unknown[] = [];
+  if (Array.isArray(element)) {
+    items = element;
+  } else if (typeof element === "object" && element !== null) {
+    const rec = toRecord(element);
+    const itemElement = rec?.item || rec?.["ns10:item"] || rec?.["ns2:item"] || rec?.["ns24:item"];
+    items = itemElement ? (Array.isArray(itemElement) ? itemElement : [itemElement]) : [];
+  }
+
+  for (const item of items) {
+    const itemRecord = toRecord(item);
+    const value = itemRecord?.value || itemRecord?.["dom:value"] || item;
+    const num = typeof value === "number" ? value : Number(value);
+    if (Number.isFinite(num) && num > 0) {
+      ids.push(num);
+    }
+  }
+
+  return ids;
+}
+
 /** Hent totalt bruksareal fra etasjedata */
 function extractBruksareal(tree: unknown): number | undefined {
   // Debug: sjekk om vi har ufullstendigAreal flagg
@@ -417,6 +456,10 @@ export class StoreClient {
     // Hent bruksenhet-IDs
     const bruksenhetIds = extractBruksenhetIds(tree);
 
+    // Hent oppvarmings- og energikilde-kode-IDer
+    const oppvarmingsKodeIds = extractOppvarmingsKodeIds(tree);
+    const energikildeKodeIds = extractEnergikildeKodeIds(tree);
+
     const representasjonspunkt: RepPoint | undefined = repXY
       ? {
           east: repXY.east,
@@ -454,16 +497,18 @@ export class StoreClient {
       }
     }
 
-    return { 
-      id, 
-      byggeaar, 
-      bruksarealM2, 
-      representasjonspunkt, 
+    return {
+      id,
+      byggeaar,
+      bruksarealM2,
+      representasjonspunkt,
       bygningstypeKodeId,
       bygningstypeKode,
       bygningstypeBeskrivelse,
       bygningsnummer,
-      bruksenhetIds
+      bruksenhetIds,
+      oppvarmingsKodeIds,
+      energikildeKodeIds,
     };
   }
 

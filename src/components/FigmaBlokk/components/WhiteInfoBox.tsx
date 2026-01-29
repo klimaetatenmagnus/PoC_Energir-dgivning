@@ -647,12 +647,16 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     );
   }, [enovaBulkData, totalEnergySavings, tiltakInfo, buildingCategory, bruksarealForComparison]);
 
-  // Beregn energikarakter for sammenligningsmodulen basert på currentKwhPerM2
-  // (som kan komme fra Enova-bulk eller TEK) og send som prop
+  // Beregn energikarakter for sammenligningsmodulen.
+  // Bruk Enova-karakteren direkte når bulk data foreligger (riktig sammenligningsgrunnlag mot bydelsstatistikk),
+  // ellers fall tilbake til NS 3031:2025-beregning.
   const comparisonEnergyGrade = React.useMemo(() => {
     if (currentKwhPerM2 <= 0 || bruksarealForComparison <= 0) return null;
+    if (enovaBulkData?.energikarakter) {
+      return enovaBulkData.energikarakter;
+    }
     return calculateEnergyRating(currentKwhPerM2, bruksarealForComparison, buildingCategory as 'småhus' | 'blokk' | null);
-  }, [currentKwhPerM2, bruksarealForComparison, buildingCategory]);
+  }, [currentKwhPerM2, bruksarealForComparison, buildingCategory, enovaBulkData]);
 
   // Beregn variabler for bydelssammenligning (må være etter currentKwhPerM2)
   const showComparison = districtStats !== null && currentKwhPerM2 > 0;

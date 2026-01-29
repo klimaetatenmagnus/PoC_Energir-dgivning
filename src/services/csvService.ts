@@ -288,6 +288,72 @@ export class CSVService {
   }
 
   /**
+   * Find bydel info from nearby addresses when exact lookup fails.
+   * Strategy:
+   *   1. Same house number, different letter suffix (e.g. 13A, 13B, 13C for "13D")
+   *   2. Neighboring house numbers (±1, ±2, ±3)
+   */
+  findBydelByNearbyAddress(
+    address: string
+  ): { bydelsnavn: string; delbydelsnavn: string } | null {
+    if (!this.isLoaded) return null;
+
+    const normalized = this.normalizeAddress(address);
+    if (!normalized) return null;
+
+    const street = this.extractStreetName(normalized);
+    if (!street) return null;
+
+    // Extract house number and optional letter
+    const houseMatch = normalized.match(/(\d+)([a-zæøå])?$/i);
+    if (!houseMatch) return null;
+
+    const houseNumber = parseInt(houseMatch[1], 10);
+
+    // Get all records on the same street
+    const streetRecords = this.data.filter((r) => {
+      const rNorm = this.normalizeAddress(r.gateAdresse);
+      return rNorm && this.extractStreetName(rNorm) === street;
+    });
+
+    if (streetRecords.length === 0) return null;
+
+    // Step 1: Same house number, different letter suffix
+    const sameNumberRecords = streetRecords.filter((r) => {
+      const rNorm = this.normalizeAddress(r.gateAdresse);
+      const rMatch = rNorm.match(/(\d+)([a-zæøå])?$/i);
+      return rMatch && parseInt(rMatch[1], 10) === houseNumber;
+    });
+
+    if (sameNumberRecords.length > 0) {
+      const rec = sameNumberRecords[0];
+      if (rec.bydelsnavn) {
+        return { bydelsnavn: rec.bydelsnavn, delbydelsnavn: rec.delbydelsnavn };
+      }
+    }
+
+    // Step 2: Neighboring house numbers (±1, ±2, ±3)
+    for (let delta = 1; delta <= 3; delta++) {
+      for (const candidate of [houseNumber - delta, houseNumber + delta]) {
+        if (candidate <= 0) continue;
+        const match = streetRecords.find((r) => {
+          const rNorm = this.normalizeAddress(r.gateAdresse);
+          const rMatch = rNorm.match(/(\d+)/);
+          return rMatch && parseInt(rMatch[1], 10) === candidate;
+        });
+        if (match?.bydelsnavn) {
+          return {
+            bydelsnavn: match.bydelsnavn,
+            delbydelsnavn: match.delbydelsnavn,
+          };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Get all records (for debugging)
    */
   getAllRecords(): MatrikkelCSVRecord[] {

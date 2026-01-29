@@ -499,18 +499,25 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                 className={`energy-solution-buttons__item energy-solution-buttons__item--expandable${isSelected ? ' energy-solution-buttons__item--selected' : ''}`}
               >
                 <div className="energy-solution-buttons__varmepumpe-header">
-                  <button
-                    type="button"
-                    className="energy-solution-buttons__varmepumpe-toggle"
-                    onClick={() => setVarmepumpeExpanded(!varmepumpeExpanded)}
-                    aria-expanded={varmepumpeExpanded}
-                  >
-                    <PktIcon
-                      name="chevron-thin-down"
-                      className={`energy-solution-buttons__chevron${varmepumpeExpanded ? ' energy-solution-buttons__chevron--expanded' : ''}`}
+                  <div className="energy-solution-buttons__item-content">
+                    <PktCheckbox
+                      id={`tiltak-${tiltak.id}`}
+                      label={tiltak.title}
+                      checked={isSelected}
+                      onChange={() => {
+                        toggleChecked(tiltak.id);
+                        if (isSelected) {
+                          // Avkrysser: kollaps og nullstill type
+                          setVarmepumpeExpanded(false);
+                          setSelectedVarmepumpeType('luft-luft');
+                        } else {
+                          // Krysser av: ekspander og velg default
+                          setVarmepumpeExpanded(true);
+                          setSelectedVarmepumpeType('luft-luft');
+                        }
+                      }}
                     />
-                    <span className="energy-solution-buttons__varmepumpe-label">{tiltak.title}</span>
-                  </button>
+                  </div>
                   <div className="energy-solution-buttons__actions">
                     <PktButton
                       skin="secondary"
@@ -528,7 +535,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                 </div>
 
                 {/* Utvidbar seksjon for varmepumpe-typer */}
-                {varmepumpeExpanded && (
+                {isSelected && varmepumpeExpanded && (
                   <div className="energy-solution-buttons__varmepumpe-options">
                     {VARMEPUMPE_TYPES.map((type) => {
                       const isTypeSelected = isSelected && selectedVarmepumpeType === type.id;
@@ -607,6 +614,10 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                   Enova
                 </a>
                 {' '}for bygningens årlige energiforbruk per kvadratmeter (kWh/m²/år).
+                Energiforbruket estimeres basert på byggeår og gjeldende teknisk forskrift (TEK) ved byggeåret.
+              </p>
+              <p className="energy-solution-buttons__modal-paragraph">
+                Estimert energikarakter kan avvike fra registrerte energiattester hos Enova for samme bygning.
               </p>
 
               {enovaRating && (

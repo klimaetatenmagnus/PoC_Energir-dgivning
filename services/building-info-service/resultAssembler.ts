@@ -163,6 +163,18 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
     }
   }
 
+  // Bydel fallback: if csvData is missing, try to find bydel from nearby addresses
+  let bydelFallback: { bydelsnavn: string; delbydelsnavn: string } | null =
+    null;
+  if (!csvData && adresse.adressetekst) {
+    bydelFallback = csvService.findBydelByNearbyAddress(adresse.adressetekst);
+    if (bydelFallback && LOG) {
+      debugLog(
+        `📊 Bydel funnet via nærliggende adresse for "${adresse.adressetekst}": ${bydelFallback.bydelsnavn}`
+      );
+    }
+  }
+
   if (LOG && adresse.adressetekst.includes('Herslebs gate 11')) {
     debugLog('\n🔍 DEBUG Herslebs gate 11:');
     debugLog('  Matrikkel bygningsnummer:', bygg.bygningsnummer);
@@ -277,6 +289,19 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
           delbydelsnavn: csvData.delbydelsnavn,
           antallEtasjer: csvData.antallEtasjer,
           bygningsstatusNavn: csvData.bygningsstatusNavn,
+        }
+      : bydelFallback
+      ? {
+          bygningsNr: '',
+          bruksarealTotalt: 0,
+          bygningstype3siffer: '',
+          bygningstypeNavn: '',
+          tattIBrukDato: '',
+          gateAdresse: '',
+          bydelsnavn: bydelFallback.bydelsnavn,
+          delbydelsnavn: bydelFallback.delbydelsnavn,
+          antallEtasjer: null,
+          bygningsstatusNavn: '',
         }
       : null,
   };
