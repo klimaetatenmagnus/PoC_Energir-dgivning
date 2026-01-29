@@ -1,0 +1,236 @@
+/* FigmaMainScript.css - Responsiv layout for Side 2 (Tiltakssiden) */
+/* Erstatter fast 1728x900 artboard med flexbox-basert responsive layout */
+
+/* ==========================================================================
+   Hovedcontainer - dekker hele viewport
+   ========================================================================== */
+
+.tiltak-side {
+  position: fixed;
+  inset: 0;
+  background: var(--pkt-color-brand-blue-300, #D1F9FF);
+  overflow: hidden;
+  z-index: 4;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.tiltak-side--animate {
+  transition: opacity 0.4s ease-in-out;
+}
+
+/* ==========================================================================
+   Header - Logo, tittel og tilbake-knapp
+   ========================================================================== */
+
+.tiltak-side__header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10002;
+  padding: clamp(16px, 3vh, 30px) clamp(24px, 5vw, 156px) 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.tiltak-side__header--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.5s ease-in-out 0.5s;
+}
+
+.tiltak-side__header--hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.tiltak-side__header-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.tiltak-side__logo-row {
+  display: flex;
+  align-items: flex-end;
+}
+
+.tiltak-side__logo-title {
+  margin-left: 24px;
+  margin-bottom: 6px;
+  font-family: 'Oslo Sans', sans-serif;
+  font-weight: 300;
+  font-size: 24px;
+  line-height: 40px;
+  letter-spacing: -0.2px;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+/* ==========================================================================
+   Content - Tre-kolonne flexbox layout
+   ========================================================================== */
+
+.tiltak-side__content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 0 clamp(24px, 5vw, 156px);
+  padding-bottom: clamp(40px, 8vh, 120px);
+  transition: transform 0.4s ease-in-out;
+  transform-origin: top center;
+  z-index: 2;
+}
+
+.tiltak-side__content--with-process {
+  transform: scale(0.925);
+}
+
+/* Content children slide up individually with staggered delays */
+.tiltak-side__content--transitioning .tiltak-side__tiltak-panel {
+  transform: translateY(-100vh);
+  transition: transform 0.8s ease-in-out;
+}
+
+/* Building area children get individual staggers */
+.tiltak-side__content--transitioning .tiltak-side__circle-bg {
+  transform: translateX(-50%) translateY(-100vh);
+  transition: transform 0.8s ease-in-out 0.04s;
+}
+
+.tiltak-side__content--transitioning .tiltak-side__building {
+  transform: scale(var(--building-scale)) translateY(-100vh);
+  transition: transform 0.8s ease-in-out 0.08s;
+}
+
+.tiltak-side__content--transitioning .tiltak-side__info-panel {
+  transform: translateY(-100vh);
+  transition: transform 0.8s ease-in-out 0.12s;
+}
+
+/* ==========================================================================
+   Tiltak-panel (venstre kolonne)
+   ========================================================================== */
+
+.tiltak-side__tiltak-panel {
+  flex: 0 0 auto;
+  width: clamp(360px, 30vw, 488px);
+  z-index: 1000;
+  max-height: calc(100vh - clamp(40px, 8vh, 120px) - 120px);
+  transition: transform 0.8s ease-in-out;
+}
+
+/* ==========================================================================
+   Bygningsområde (midtre kolonne)
+   ========================================================================== */
+
+.tiltak-side__building-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+  min-width: 200px;
+  min-height: 400px;
+  align-self: stretch;
+}
+
+/* Hvit sirkel-bakgrunn bak bygningen */
+.tiltak-side__circle-bg {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(520px, 100%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  pointer-events: none;
+  transition: opacity 0.5s ease-in-out, transform 0.8s ease-in-out;
+}
+
+.tiltak-side__circle-bg--visible {
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out 0.5s, transform 0.8s ease-in-out;
+}
+
+.tiltak-side__circle-bg--hidden {
+  opacity: 0;
+}
+
+/* Bygningscontainer - posisjonert i bunnen av building-area */
+.tiltak-side__building {
+  position: relative;
+  z-index: 3;
+  transform: scale(var(--building-scale, 1));
+  transform-origin: bottom center;
+  transition: transform 0.8s ease-in-out, opacity 0.4s ease-in-out;
+}
+
+/* Prosess-knapp - fixed utenfor tiltak-side for uavhengig stacking context */
+.tiltak-side__process-wrapper {
+  position: fixed;
+  bottom: clamp(8px, 2vh, 24px);
+  transform: translateX(-50%);
+  width: calc(var(--esb-item-width, 440px) + var(--esb-container-padding, 1.5rem) * 2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10001;
+  transition: transform 0.8s ease-in-out;
+}
+
+/* Process button wrapper slides up when process view is shown */
+.tiltak-side__process-wrapper--transitioning {
+  transform: translateX(-50%) translateY(-100vh);
+  transition: transform 0.8s ease-in-out 0.08s;
+}
+
+/* ==========================================================================
+   Info-panel (hyre kolonne)
+   ========================================================================== */
+
+.tiltak-side__info-panel {
+  flex: 0 0 360px;
+  z-index: 1000;
+  position: relative;
+  transition: transform 0.8s ease-in-out;
+}
+
+/* ==========================================================================
+   Dekorativt hrneelement
+   ========================================================================== */
+
+.tiltak-side__decorative-corner {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  z-index: 1;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.tiltak-side__decorative-corner--visible {
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out 0.5s;
+}
+
+.tiltak-side__decorative-corner--hidden {
+  opacity: 0;
+}
+
+.tiltak-side__decorative-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: var(--pkt-color-brand-blue-300, #D1F9FF);
+}

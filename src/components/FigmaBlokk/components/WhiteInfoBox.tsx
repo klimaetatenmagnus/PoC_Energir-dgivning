@@ -3,6 +3,7 @@ import {
   PktTag,
   PktIcon,
   PktButton,
+  PktAlert,
 } from '@oslokommune/punkt-react';
 import { LocationPin } from './LocationPin';
 import {
@@ -221,6 +222,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   const shouldShowYellowBox = showYellowBox && !gulListeLoading;
   const [isGulListeInfoOpen, setIsGulListeInfoOpen] = React.useState(false);
   const [isDropdownExpanded, setIsDropdownExpanded] = React.useState(false);
+  const kulturminnerAccordionRef = React.useRef<HTMLDivElement>(null);
+  const gulListeScrollRef = React.useRef<HTMLDivElement>(null);
   const [hoveredGlossaryTerm, setHoveredGlossaryTerm] = React.useState<string | null>(null);
   const [isEditMode, setIsEditMode] = React.useState(false);
 
@@ -509,8 +512,6 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   const shouldAnimateSavingsCardIntro =
     shouldShowSavingsCard && !hasShownSavings && animateSavings && !prefersReducedMotion;
 
-  // Knapp-høyde for bydelssammenligning (brukes for å plassere knappen på kartet)
-  const COMPARISON_BUTTON_HEIGHT = 40;
 
   // Call the callback with initial values when component mounts or when savedEnergiforbruk changes
   React.useEffect(() => {
@@ -676,10 +677,6 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     return undefined;
   }, [isExpanded]);
   
-  // Calculate expanded height to fill screen with equal margins
-  // Align bottom with tiltak list and building
-  // Increased from 64 to 120 to make room for "Hvordan gjennomføre" button
-  const expandedBottom = 120;
 
 const previewWrapperStyle: React.CSSProperties = {
   width: '100%',
@@ -704,10 +701,10 @@ const tiltakPreview = selectedTiltakSlug ? (
   ) : null;
   
   // Shadow dimensions match visible area of white info box
-  // Layout sentrert med 24px Punkt-spacing: info box left = 1212px
+  // Now positioned relative to parent flex container (.tiltak-side__info-panel)
   const shadowWidth = isExpanded ? 840 : 360;
   const shadowHeight = 790 - 90; // Subtract clip-path top inset
-  const shadowLeft = isExpanded ? 1212 - 480 : 1212; // Adjust for transform
+  const shadowLeft = isExpanded ? -480 : 0; // Relative to parent (was artboard-based)
 
   return (
     <>
@@ -716,7 +713,7 @@ const tiltakPreview = selectedTiltakSlug ? (
         style={{
           position: 'absolute',
           left: `${shadowLeft}px`,
-          bottom: `${expandedBottom}px`,
+          bottom: 0,
           width: shadowWidth,
           height: shadowHeight,
           backgroundColor: 'white',
@@ -730,13 +727,12 @@ const tiltakPreview = selectedTiltakSlug ? (
       <div
         style={{
           position: 'absolute',
-          /* Layout sentrert med 24px Punkt-spacing:
-           * Info box left = 1212px (156 + 488 + 24 + 520 + 24)
+          /* Positioned relative to parent flex container (.tiltak-side__info-panel)
            * Container is 840px wide, but only 360px visible in collapsed state
            * When expanded: translateX(-480px) moves container to left
            */
-          left: '1212px',
-          bottom: `${expandedBottom}px`,
+          left: 0,
+          bottom: 0,
           width: 840,
           height: 790,
           transform: isExpanded ? 'translateX(-480px)' : 'translateX(0)',
@@ -1141,30 +1137,6 @@ const tiltakPreview = selectedTiltakSlug ? (
       </defs>
     </svg>
 
-        {/* Knapp for bydelssammenligning - nederst venstre på kartet med Punkt spacing */}
-        {/* NB: +90 kompenserer for SVG viewBox offset (y starter på -90) */}
-        {showComparison && (
-          <div
-            className="white-info-box__comparison-button-container"
-            style={{
-              position: 'absolute',
-              left: '16px', /* --pkt-spacing-16 */
-              top: `${dynamicMapTopY + 90 + MAP_HEIGHT - COMPARISON_BUTTON_HEIGHT - 16}px`, /* --pkt-spacing-16 fra bunn av kart */
-              zIndex: 100,
-            }}
-          >
-            <PktButton
-              skin="primary"
-              size="small"
-              variant="icon-left"
-              iconName="eye"
-              onClick={() => setIsComparisonModalOpen(true)}
-              className="white-info-box__comparison-button"
-            >
-              <span>Sammenlign deg med naboene dine</span>
-            </PktButton>
-          </div>
-        )}
       </div>
 
       {/* Modal for bydelssammenligning */}
@@ -1190,10 +1162,11 @@ buildingTypeCategory={buildingCategory}
         <div
           style={{
             position: 'absolute',
-            bottom: 0,
+            top: '440px',
+            transform: 'translateY(-50%)',
             left: 0,
             width: `${BOX_WIDTH}px`,
-            height: '700px',
+            maxHeight: '700px',
             backgroundColor: '#FFE7BC',
             zIndex: 200,
             fontFamily: 'Oslo Sans, sans-serif',
@@ -1227,10 +1200,11 @@ buildingTypeCategory={buildingCategory}
 
           {/* Scrollbart innhold */}
           <div
+            ref={gulListeScrollRef}
             style={{
               flex: 1,
               overflowY: 'auto',
-              padding: '50px 30px 30px 30px'
+              padding: '48px 32px 24px 32px'
             }}
           >
             {/* Tittel */}
@@ -1265,31 +1239,52 @@ buildingTypeCategory={buildingCategory}
               })}
             </div>
 
-            {/* Info-boks med mørk bakgrunn */}
-            <div
+            {/* Ekstern lenke */}
+            <a
+              href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/kulturminner-og-vern/gul-liste/"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
-                backgroundColor: '#2A2859',
-                padding: '16px',
+                color: '#000000',
+                textDecoration: 'underline',
+                fontSize: '14px',
+                lineHeight: '22px',
+                fontWeight: 500,
+                display: 'inline-block',
                 marginBottom: '16px'
               }}
             >
-              <span
-                style={{
-                  fontSize: '14px',
-                  lineHeight: '22px',
-                  fontWeight: 400,
-                  letterSpacing: '-0.2px',
-                  color: '#ffffff'
-                }}
-              >
-                Du kan absolutt gjøre tiltak for å energieffektivisere det verneverdige bygget ditt!
-              </span>
+              Les mer om Gul liste
+            </a>
+
+            {/* Info-boks med PktAlert */}
+            <div style={{ marginBottom: '16px' }}>
+              <PktAlert skin="info" compact>
+                <span>Du kan absolutt gjøre tiltak for å energieffektivisere det verneverdige bygget ditt!</span>
+              </PktAlert>
             </div>
 
             {/* Custom accordion for "Hvorfor ta vare på kulturminner" */}
-            <div style={{ marginBottom: '24px' }}>
+            <div ref={kulturminnerAccordionRef}>
               <button
-                onClick={() => setIsDropdownExpanded(!isDropdownExpanded)}
+                onClick={() => {
+                  const willExpand = !isDropdownExpanded;
+                  setIsDropdownExpanded(willExpand);
+                  if (willExpand) {
+                    requestAnimationFrame(() => {
+                      const accordion = kulturminnerAccordionRef.current;
+                      const scrollContainer = gulListeScrollRef.current;
+                      if (accordion && scrollContainer) {
+                        const accordionTop = accordion.offsetTop - scrollContainer.offsetTop;
+                        scrollContainer.scrollTo({ top: accordionTop - 16, behavior: 'smooth' });
+                      }
+                    });
+                  } else {
+                    requestAnimationFrame(() => {
+                      gulListeScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                  }
+                }}
                 style={{
                   width: '100%',
                   backgroundColor: '#2A2859',
@@ -1361,20 +1356,6 @@ buildingTypeCategory={buildingCategory}
               )}
             </div>
 
-            {/* Ekstern lenke */}
-            <a
-              href="https://www.oslo.kommune.no/plan-bygg-og-eiendom/kulturminner-og-vern/gul-liste/"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: '#000000',
-                textDecoration: 'underline',
-                fontSize: '14px',
-                lineHeight: '22px'
-              }}
-            >
-              Les mer om Gul liste
-            </a>
           </div>
         </div>
       )}
@@ -1394,6 +1375,35 @@ buildingTypeCategory={buildingCategory}
         {tiltakPreview}
       </div>
     </div>
+
+    {/* Knapp for bydelssammenligning - plassert utenfor animert container så den ligger fast over kartet */}
+    {showComparison && (
+      <div
+        className="white-info-box__comparison-button-container"
+        style={{
+          position: 'absolute',
+          left: '16px',
+          bottom: '16px',
+          zIndex: 1001,
+          opacity: showHeader && !isExpanded ? 1 : 0,
+          pointerEvents: isExpanded ? 'none' : 'auto',
+          transition: isExpanded
+            ? 'opacity 0.3s ease-in-out'
+            : 'opacity 0.5s ease-in-out 0.8s',
+        }}
+      >
+        <PktButton
+          skin="primary"
+          size="small"
+          variant="icon-left"
+          iconName="eye"
+          onClick={() => setIsComparisonModalOpen(true)}
+          className="white-info-box__comparison-button"
+        >
+          <span>Sammenlign deg med naboene dine</span>
+        </PktButton>
+      </div>
+    )}
     </>
   );
 };

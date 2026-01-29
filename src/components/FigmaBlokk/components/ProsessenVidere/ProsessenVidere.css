@@ -1,0 +1,198 @@
+/* ProsessenVidere – Punkt-based layout */
+
+.prosessen-videre {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: transparent;
+  overflow: hidden;
+  padding: 0;
+  pointer-events: none;
+}
+
+/* Decorative corner – hidden, page 2's corner stays visible behind */
+.prosessen-videre__decorative-corner {
+  display: none;
+}
+
+.prosessen-videre__decorative-circle {
+  display: none;
+}
+
+.prosessen-videre--visible {
+  pointer-events: auto;
+}
+
+/* Grid cells: base transition (no delay, used when entering) */
+.prosessen-videre .pkt-cell {
+  transition: transform 0.8s ease-in-out;
+}
+
+/* Hidden: cells slide down */
+.prosessen-videre--hidden .pkt-cell {
+  transform: translateY(100vh);
+}
+
+/* Staggered exit delays per card (only when going to hidden) */
+.prosessen-videre--hidden .pkt-cell:nth-child(1) { transition: transform 0.8s ease-in-out; }
+.prosessen-videre--hidden .pkt-cell:nth-child(2) { transition: transform 0.8s ease-in-out 0.04s; }
+.prosessen-videre--hidden .pkt-cell:nth-child(3) { transition: transform 0.8s ease-in-out 0.08s; }
+.prosessen-videre--hidden .pkt-cell:nth-child(4) { transition: transform 0.8s ease-in-out 0.12s; }
+.prosessen-videre--hidden .pkt-cell:nth-child(5) { transition: transform 0.8s ease-in-out 0.16s; }
+.prosessen-videre--hidden .pkt-cell:nth-child(6) { transition: transform 0.8s ease-in-out 0.20s; }
+
+/* Header */
+.prosessen-videre__header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--pkt-spacing-16, 16px);
+  padding: var(--pkt-spacing-24, 24px) var(--pkt-spacing-32, 32px);
+}
+
+.prosessen-videre__logo-row {
+  display: flex;
+  align-items: flex-end;
+}
+
+.prosessen-videre__title {
+  margin-left: var(--pkt-spacing-24, 24px);
+  margin-bottom: 6px;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+/* Grid section – top padding clears the fixed header from page 2 */
+.prosessen-videre__grid {
+  padding: clamp(120px, 18vh, 180px) var(--pkt-spacing-32, 32px) var(--pkt-spacing-48, 48px);
+}
+
+/* Step wrapper – establishes the hover zone for the two-layer crossfade */
+.prosessen-videre__step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  margin-bottom: var(--pkt-spacing-24, 24px);
+}
+
+.prosessen-videre__step-icon {
+  pointer-events: none;
+  margin-bottom: var(--pkt-spacing-8, 8px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 80px;
+}
+
+.prosessen-videre__step-icon svg {
+  max-width: 120px;
+  max-height: 100px;
+  height: auto;
+}
+
+/*
+ * Two-layer approach:
+ *   Layer 1 – .prosessen-videre__step-circle  (resting circle with number + title)
+ *   Layer 2 – .prosessen-videre__step-card    (expanded card with title + body)
+ *
+ * On hover both layers crossfade. Neither layer animates its own size,
+ * so text never reflows during the transition.
+ */
+
+/* Layer 1: resting circle */
+.prosessen-videre__step-circle {
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  background-color: var(--pkt-color-brand-light-green-1000, #c7f6c9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--pkt-spacing-24, 24px);
+  position: relative;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+
+/* Layer 2: expanded card – always rendered at final size, hidden until hover */
+.prosessen-videre__step-card {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  min-height: 280px;
+  background-color: var(--pkt-color-brand-light-green-1000, #c7f6c9);
+  /* Punkt uses sharp corners – no border-radius */
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--pkt-spacing-24, 24px) var(--pkt-spacing-32, 32px);
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+/* Crossfade on hover */
+.prosessen-videre__step:hover .prosessen-videre__step-circle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.prosessen-videre__step:hover .prosessen-videre__step-card {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Arrow icon at bottom of circle */
+.prosessen-videre__step-arrow {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Card inner spacing */
+.prosessen-videre__step-card-title {
+  margin-bottom: var(--pkt-spacing-8, 8px);
+}
+
+.prosessen-videre__step-card-body a {
+  color: #0066CC;
+  text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767px) {
+  .prosessen-videre__header {
+    padding: var(--pkt-spacing-16, 16px);
+  }
+
+  .prosessen-videre__grid {
+    padding: var(--pkt-spacing-16, 16px);
+  }
+
+  .prosessen-videre__step-circle {
+    width: 200px;
+    height: 200px;
+    padding: var(--pkt-spacing-16, 16px);
+  }
+
+  .prosessen-videre__step-card {
+    width: 260px;
+    min-height: 240px;
+  }
+
+  .prosessen-videre__step-icon svg {
+    max-width: 90px;
+    max-height: 80px;
+  }
+}
