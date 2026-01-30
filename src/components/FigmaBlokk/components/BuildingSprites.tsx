@@ -55,6 +55,11 @@ export const BlokkSvg: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
+    {/* Invisible rect filling the full viewBox so getBoundingClientRect()
+        returns the viewport dimensions, not the content bounding box.
+        Without this, the animated overlay in TransitionOverlayRenderer
+        is slightly smaller than the skyline original. */}
+    <rect width="136" height="204" fill="transparent" />
     {/* Roof structure - matches Blokk2LayerSvg blokk2-02 */}
     <path d="M120.744,41.319v-12.023h-12.1v-12.023h-12.544c-3.42-3.489-6.839-6.979-10.259-10.468h-35.318c3.65,3.65,7.299,7.299,10.949,10.949h12.269v11.542h12.1v12.023h11.434v12.023h34.902v-12.023h-11.434Z" fill="#2A2859"/>
     {/* Right side wall */}

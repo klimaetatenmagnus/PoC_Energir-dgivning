@@ -67,7 +67,8 @@
   gap: var(--pkt-spacing-16, 1rem);
   padding: var(--pkt-spacing-16, 1rem);
   padding-bottom: 0; /* Tiltakslisten håndterer safe-area */
-  overflow: hidden; /* Forhindrer scrolling på main, kun tiltakslisten scroller */
+  overflow-x: clip; /* Forhindrer horisontal scrolling */
+  overflow-y: visible; /* Tillat tiltak-pil-animasjoner å vises utenfor */
   min-height: 0; /* Viktig for flexbox scrolling */
 }
 
@@ -734,10 +735,10 @@
   animation: mobileContentFadeIn 0.5s ease-out 0.4s forwards;
 }
 
-/* Background color transition from green to white */
+/* Background color transition from blue (MobileLanding) to gray */
 @keyframes mobileBackgroundColorFade {
   0% {
-    background-color: #034B45; /* Same green as MobileLanding */
+    background-color: #D1F9FF; /* Same blue as MobileLanding background */
   }
   100% {
     background-color: var(--pkt-color-brand-neutrals-100, #f9f9f9);
@@ -814,20 +815,23 @@
   animation: mobile-tiltak-poof-remove 0.8s ease-out forwards !important;
 }
 
-/* Animasjon for "add" - pluss-tegn flyter opp */
+/* Animasjon for "add" - pluss-tegn flyter opp
+   NB: scale() multipliserer translate-verdiene, så med scale(4) gir
+   translate(14px, -4px) en faktisk posisjon på ~(60, -12) i SVG-koordinater
+   — tilsvarende desktop-animasjonen med scale(1.7) translate(33px, -10px). */
 @keyframes mobile-tiltak-poof-add {
-  0%   { opacity: 0;   transform: scale(4) translate(35px, 50px); }
+  0%   { opacity: 0;   transform: scale(4) translate(14px, -4px); }
   20%  { opacity: 1; }
   80%  { opacity: 1; }
-  100% { opacity: 0;   transform: scale(4) translate(35px, 30px); }
+  100% { opacity: 0;   transform: scale(4) translate(14px, -13px); }
 }
 
 /* Animasjon for "remove" - minus-tegn flyter ned */
 @keyframes mobile-tiltak-poof-remove {
-  0%   { opacity: 0;   transform: scale(4) translate(35px, 30px); }
+  0%   { opacity: 0;   transform: scale(4) translate(14px, -11px); }
   20%  { opacity: 1; }
   80%  { opacity: 1; }
-  100% { opacity: 0;   transform: scale(4) translate(35px, 50px); }
+  100% { opacity: 0;   transform: scale(4) translate(14px, 0px); }
 }
 
 /* Sikre at tiltak-overlays vises korrekt */

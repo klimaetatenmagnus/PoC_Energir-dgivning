@@ -23,6 +23,7 @@ import { useResponsive } from './useResponsive';
 import { getBuildingKind as getBuildingKindFromUtils, isEneboligBuilding } from '../utils/buildingTypeUtils';
 
 const FADE_DURATION_MS = 2000;
+const BACK_FADE_OUT_MS = 800;
 const DEBOUNCE_DELAY_MS = 300;
 
 type FigmaMode = 'figma' | 'figma-blokk';
@@ -73,6 +74,7 @@ interface UseFigmaAddressSearchResult {
   highlightSuggestion: (index: number) => void;
   clearHighlightedSuggestion: () => void;
   landingSnapshot: LandingSnapshot | null;
+  isReturning: boolean;
 }
 
 const TEST_TRIGGERS: Record<string, TestTrigger> = {
@@ -118,10 +120,11 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   const [landingSnapshot, setLandingSnapshot] = useState<LandingSnapshot | null>(null);
   const [fadeCompleted, setFadeCompleted] = useState(false);
+  const [isReturning, setIsReturning] = useState(false);
   const { beginTransition, forceReset: resetOverlay } = useTransitionOverlay();
   const { isMobileView } = useResponsive();
 
-  const { skylineFadeOpacity, headerFadeOpacity, startFade, resetFade } = useLandingAnimation({
+  const { skylineFadeOpacity, headerFadeOpacity, startFade, resetFade, prepareFadeIn, startFadeIn } = useLandingAnimation({
     durationMs: FADE_DURATION_MS,
     onFadeComplete: () => setFadeCompleted(true),
   });
@@ -455,15 +458,29 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
   );
 
   const handleBack = useCallback(() => {
+    if (isReturning) return;
+
+    // 1. Start page 2 fade-out
+    setIsReturning(true);
     resetOverlay();
-    setMode('figma');
-    setResult(null);
-    setSearchValue('');
-    setError(null);
-    setLandingSnapshot(null);
-    setFadeCompleted(false);
-    resetFade();
-  }, [resetOverlay, resetFade]);
+
+    // 2. After page 2 fades out, switch to page 1
+    setTimeout(() => {
+      // Set landing opacities to 0 BEFORE switching mode so page 1 renders hidden
+      prepareFadeIn();
+
+      setMode('figma');
+      setResult(null);
+      setSearchValue('');
+      setError(null);
+      setLandingSnapshot(null);
+      setFadeCompleted(false);
+      setIsReturning(false);
+
+      // 3. Next frame: animate page 1 opacities 0 → 1
+      startFadeIn();
+    }, BACK_FADE_OUT_MS);
+  }, [isReturning, resetOverlay, prepareFadeIn, startFadeIn]);
 
   const isEnebolig = useMemo(() => {
     if (!result) {
@@ -501,5 +518,6 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
     highlightSuggestion,
     clearHighlightedSuggestion,
     landingSnapshot,
+    isReturning,
   };
 }

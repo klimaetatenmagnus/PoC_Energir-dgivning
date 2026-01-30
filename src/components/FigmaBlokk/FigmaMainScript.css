@@ -8,7 +8,7 @@
 .tiltak-side {
   position: fixed;
   inset: 0;
-  background: var(--pkt-color-brand-blue-300, #D1F9FF);
+  background: transparent;
   overflow: hidden;
   z-index: 4;
   transition: opacity 0.4s ease-in-out;
@@ -28,7 +28,7 @@
   left: 0;
   right: 0;
   z-index: 10002;
-  padding: clamp(16px, 3vh, 30px) clamp(24px, 5vw, 156px) 0;
+  padding: clamp(24px, 3.5vh, 40px) clamp(24px, 5vw, 156px) 0;
   pointer-events: none;
   transition: opacity 0.5s ease-in-out;
 }
@@ -86,23 +86,23 @@
 }
 
 .tiltak-side__content--with-process {
-  transform: scale(0.925);
+  transform: scale(0.895);
+  padding-bottom: clamp(80px, 12vh, 160px);
 }
 
-/* Content children slide up individually with staggered delays */
+/* Content children slide up with stagger (page 2 → 3) */
 .tiltak-side__content--transitioning .tiltak-side__tiltak-panel {
   transform: translateY(-100vh);
   transition: transform 0.8s ease-in-out;
 }
 
-/* Building area children get individual staggers */
 .tiltak-side__content--transitioning .tiltak-side__circle-bg {
-  transform: translateX(-50%) translateY(-100vh);
+  transform: translateY(-100vh) translateX(-50%);
   transition: transform 0.8s ease-in-out 0.04s;
 }
 
 .tiltak-side__content--transitioning .tiltak-side__building {
-  transform: scale(var(--building-scale)) translateY(-100vh);
+  transform: translateY(-100vh) scale(var(--building-scale));
   transition: transform 0.8s ease-in-out 0.08s;
 }
 
@@ -175,7 +175,7 @@
 /* Prosess-knapp - fixed utenfor tiltak-side for uavhengig stacking context */
 .tiltak-side__process-wrapper {
   position: fixed;
-  bottom: clamp(8px, 2vh, 24px);
+  bottom: clamp(16px, 3vh, 40px);
   transform: translateX(-50%);
   width: calc(var(--esb-item-width, 440px) + var(--esb-container-padding, 1.5rem) * 2);
   display: flex;
@@ -203,34 +203,53 @@
 }
 
 /* ==========================================================================
-   Dekorativt hrneelement
+   Responsive breakpoints – Punkt designsystem
    ========================================================================== */
 
-.tiltak-side__decorative-corner {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
-  z-index: 1;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.5s ease-in-out;
+/* Tablet-big (1024–1279px) */
+@media screen and (min-width: 64rem) and (max-width: 79.938rem) {
+  .tiltak-side__content {
+    padding-left: var(--pkt-spacing-24, 24px);
+    padding-right: var(--pkt-spacing-24, 24px);
+    padding-bottom: clamp(24px, 5vh, 64px);
+    gap: var(--pkt-spacing-16, 16px);
+  }
+  .tiltak-side__tiltak-panel {
+    width: clamp(300px, 30vw, 380px);
+  }
+  .tiltak-side__info-panel {
+    flex: 0 0 300px;
+  }
 }
 
-.tiltak-side__decorative-corner--visible {
-  opacity: 1;
-  transition: opacity 0.5s ease-in-out 0.5s;
+/* Laptop (1280–1599px) */
+@media screen and (min-width: 80rem) and (max-width: 99.938rem) {
+  .tiltak-side__content {
+    padding-bottom: clamp(32px, 6vh, 80px);
+  }
+  .tiltak-side__tiltak-panel {
+    width: clamp(340px, 28vw, 460px);
+  }
+  .tiltak-side__info-panel {
+    flex: 0 0 340px;
+  }
 }
 
-.tiltak-side__decorative-corner--hidden {
-  opacity: 0;
-}
-
-.tiltak-side__decorative-circle {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background-color: var(--pkt-color-brand-blue-300, #D1F9FF);
+/* Desktop (1600px+) */
+@media screen and (min-width: 100rem) {
+  .tiltak-side__content {
+    padding-left: clamp(24px, 3.5vw, 80px);
+    padding-right: clamp(24px, 3.5vw, 80px);
+    padding-bottom: clamp(32px, 5vh, 72px);
+    gap: var(--pkt-spacing-32, 32px);
+  }
+  .tiltak-side__tiltak-panel {
+    width: clamp(440px, 28vw, 540px);
+  }
+  .tiltak-side__info-panel {
+    flex: 0 0 clamp(360px, 22vw, 440px);
+  }
+  .tiltak-side__circle-bg {
+    width: min(480px, 100%);
+  }
 }

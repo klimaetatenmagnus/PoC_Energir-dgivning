@@ -170,7 +170,33 @@
   text-decoration: underline;
 }
 
-/* Responsive adjustments */
+/* Responsive adjustments – Punkt breakpoints */
+
+/* Laptop (1280–1599px) */
+@media screen and (min-width: 80rem) and (max-width: 99.938rem) {
+  .prosessen-videre__grid {
+    padding-top: clamp(160px, 20vh, 210px);
+  }
+}
+
+/* Desktop (1600px+) */
+@media screen and (min-width: 100rem) {
+  .prosessen-videre__grid {
+    padding-top: clamp(170px, 18vh, 210px);
+    padding-left: var(--pkt-spacing-48, 48px);
+    padding-right: var(--pkt-spacing-48, 48px);
+  }
+  .prosessen-videre__step-circle {
+    width: 260px;
+    height: 260px;
+  }
+  .prosessen-videre__step-card {
+    width: 340px;
+    min-height: 300px;
+  }
+}
+
+/* Mobile */
 @media (max-width: 767px) {
   .prosessen-videre__header {
     padding: var(--pkt-spacing-16, 16px);

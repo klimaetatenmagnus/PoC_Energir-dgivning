@@ -38,6 +38,7 @@ export default function App() {
     highlightSuggestion,
     clearHighlightedSuggestion,
     landingSnapshot,
+    isReturning,
   } = useFigmaAddressSearch();
 
   const { isMobileView } = useResponsive();
@@ -146,6 +147,16 @@ export default function App() {
 
   const overlay = <TransitionOverlayRenderer />;
 
+  // Shared background layer – always rendered for desktop figma modes
+  // Ensures no flash between page transitions (same background persists)
+  const sharedBackground = !isMobileView ? (
+    <div className="app-background" aria-hidden="true">
+      <div className="app-background__decorative-corner">
+        <div className="app-background__decorative-circle" />
+      </div>
+    </div>
+  ) : null;
+
   // Bestem byggtype for tiltaksdetalj
   const buildingTypeForTiltak = useMemo(() => {
     if (!result) return undefined;
@@ -238,19 +249,15 @@ export default function App() {
     // Desktop (>=768px): Vis FigmaMainScript med skalert Figma-design
     return (
       <>
+        {sharedBackground}
         {overlay}
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'var(--pkt-color-brand-neutrals-100, #f9f9f9)',
-          overflow: 'hidden',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}>
+        <div
+          className="page2-wrapper"
+          style={{
+            opacity: isReturning ? 0 : 1,
+            transition: `opacity ${isReturning ? '0.8s' : '0.4s'} ease-in-out`,
+          }}
+        >
           <FigmaMainScript
             searchAddress={searchValue}
             buildingData={result}
@@ -300,6 +307,7 @@ export default function App() {
     // Desktop landing
     return (
       <>
+        {sharedBackground}
         {overlay}
         <FigmaLanding
           headerFadeOpacity={headerFadeOpacity}

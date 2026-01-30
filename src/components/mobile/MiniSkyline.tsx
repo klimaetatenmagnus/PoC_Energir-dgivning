@@ -70,8 +70,8 @@ export const MiniSkyline: React.FC<MiniSkylineProps> = ({ enableLights = true })
 
       {/* Blokk med trapp-tak - høyre (bruker gjenbrukbar komponent)
           Plassert ETTER tilbygget i DOM så den rendres foran */}
-      <g transform="translate(305, 7) scale(0.75)">
-        <BlokkSvg id="mobile-anim-blokk" width="136" height="204" />
+      <g transform="translate(305, 10.9)">
+        <BlokkSvg id="mobile-anim-blokk" width="102" height="153" />
       </g>
     </svg>
   );

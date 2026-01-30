@@ -127,7 +127,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const eneboligRef = React.useRef<HTMLDivElement>(null);
   const blokkRef = React.useRef<HTMLDivElement>(null);
   const buildingAreaRef = React.useRef<HTMLDivElement>(null);
-  const infoPanelRef = React.useRef<HTMLDivElement>(null);
+
 
   // State for process slide animation
   const [showProcess, setShowProcess] = React.useState(false);
@@ -145,17 +145,30 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   React.useEffect(() => {
     const el = buildingAreaRef.current;
     if (!el) return;
+    const willScale = activeTiltak.length > 0 && !showProcess;
+    const scale = willScale ? 0.895 : 1;
     const update = () => {
       const rect = el.getBoundingClientRect();
-      setBuildingCenterX(rect.left + rect.width / 2);
+      // Get the unscaled center by reversing any current CSS transform
+      const currentTransform = window.getComputedStyle(el.parentElement!).transform;
+      let currentScale = 1;
+      if (currentTransform && currentTransform !== 'none') {
+        const match = currentTransform.match(/matrix\(([^,]+)/);
+        if (match) currentScale = parseFloat(match[1]);
+      }
+      const viewportCenter = window.innerWidth / 2;
+      const renderedCenter = rect.left + rect.width / 2;
+      // Reverse the current scale to get the unscaled center
+      const unscaledCenter = viewportCenter + (renderedCenter - viewportCenter) / currentScale;
+      // Apply the target scale to get the final position
+      const targetCenter = viewportCenter + (unscaledCenter - viewportCenter) * scale;
+      setBuildingCenterX(targetCenter);
     };
     update();
-    // Recalculate after transition completes (content transform changes)
-    const timer = setTimeout(update, 850);
     const ro = new ResizeObserver(update);
     ro.observe(el);
     window.addEventListener('resize', update);
-    return () => { clearTimeout(timer); ro.disconnect(); window.removeEventListener('resize', update); };
+    return () => { ro.disconnect(); window.removeEventListener('resize', update); };
   }, [showProcess, activeTiltak.length]);
 
   // Building animation: place in final position, use overlay for transition
@@ -366,6 +379,12 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   }, [buildingKind, isEnebolig, overlayActiveForThisBuilding, setTargetRect]);
 
   React.useEffect(() => {
+    if (overlayPhase === 'settling') {
+      setBuildingReady(true);
+    }
+  }, [overlayPhase]);
+
+  React.useEffect(() => {
     if (!recentlyCompleted) {
       return;
     }
@@ -378,41 +397,18 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       return;
     }
 
-    const settleTimer = window.setTimeout(() => {
+    // Short delay to ensure the building is painted before the overlay is removed
+    const timer = window.setTimeout(() => {
       finalizeTransition();
-    }, DETAIL_FADE_DURATION_MS);
+    }, 50);
 
-    return () => window.clearTimeout(settleTimer);
+    return () => window.clearTimeout(timer);
   }, [overlayPhase, finalizeTransition]);
 
   // Building detail scale
   const detailScale = isEnebolig ? ENEBOLIG_DETAIL_SCALE : BLOKK_DETAIL_SCALE;
   // Compensate for blokk bottom padding in viewBox
   const blokkBottomCompensation = isEnebolig ? 0 : Math.round(BLOKK_BOTTOM_PADDING * BLOKK_DETAIL_SCALE);
-
-  // Calculate decorative corner dimensions based on info panel position
-  const [cornerSize, setCornerSize] = React.useState({ width: 0, height: 0 });
-
-  React.useEffect(() => {
-    const updateCornerSize = () => {
-      if (!infoPanelRef.current) return;
-      const panelRect = infoPanelRef.current.getBoundingClientRect();
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const width = Math.max(0, vw - panelRect.right);
-      const height = Math.max(0, vh - panelRect.bottom);
-      setCornerSize({ width, height });
-    };
-
-    updateCornerSize();
-    window.addEventListener('resize', updateCornerSize);
-    // Also update when header becomes visible (layout may shift)
-    const timer = setTimeout(updateCornerSize, 1200);
-    return () => {
-      window.removeEventListener('resize', updateCornerSize);
-      clearTimeout(timer);
-    };
-  }, [showHeader]);
 
   // Calculate dynamic font size based on address length
   const addressOnly = searchAddress.split(',')[0];
@@ -423,9 +419,6 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   // Get building type name
   const defaultBuildingType = isEnebolig ? 'Enebolig' : 'Blokk';
   const buildingTypeName = buildingData.csvData?.bygningstypeNavn || buildingData.bygningstypeNavn || defaultBuildingType;
-
-  const containerOpacity =
-    overlayPhase === 'captured' || overlayPhase === 'animating' ? 0 : 1;
 
   // Determine CSS class for show/hide transition
   const tiltakSideClasses = [
@@ -474,27 +467,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
       <div
         className={tiltakSideClasses}
-        style={{ opacity: containerOpacity }}
       >
-        {/* Decorative corner element - inside tiltak-side, behind content */}
-        {showHeader && !isExpanded && cornerSize.width > 0 && cornerSize.height > 0 && (() => {
-          const squareSize = Math.min(cornerSize.width, cornerSize.height);
-          return (
-            <div
-              className={`tiltak-side__decorative-corner ${showHeader && !isExpanded ? 'tiltak-side__decorative-corner--visible' : 'tiltak-side__decorative-corner--hidden'}`}
-              style={{
-                width: `${squareSize}px`,
-                height: `${squareSize}px`,
-              }}
-            >
-              <div className="tiltak-side__decorative-circle" style={{
-                width: `${squareSize}px`,
-                height: `${squareSize}px`,
-              }} />
-            </div>
-          );
-        })()}
-
         {/* Three-column flex layout */}
         <main className={`tiltak-side__content${activeTiltak.length > 0 && !isExpanded && !showProcess ? ' tiltak-side__content--with-process' : ''}${showProcess ? ' tiltak-side__content--transitioning' : ''}`}>
           {/* Left column: Tiltak list */}
@@ -529,7 +502,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
                 className="tiltak-side__building"
                 style={{
                   ['--building-scale' as string]: detailScale,
-                  opacity: buildingReady && !overlayActiveForThisBuilding ? 1 : 0,
+                  opacity: buildingReady || overlayPhase === 'settling' ? 1 : 0,
+                  transition: overlayPhase !== 'idle' ? 'transform 0.8s ease-in-out' : undefined,
                   marginBottom: `${-blokkBottomCompensation}px`,
                 }}
               >
@@ -546,7 +520,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
                 className="tiltak-side__building"
                 style={{
                   ['--building-scale' as string]: detailScale,
-                  opacity: buildingReady && !overlayActiveForThisBuilding ? 1 : 0,
+                  opacity: buildingReady || overlayPhase === 'settling' ? 1 : 0,
+                  transition: overlayPhase !== 'idle' ? 'transform 0.8s ease-in-out' : undefined,
                   marginBottom: `${-blokkBottomCompensation}px`,
                 }}
               >
@@ -561,7 +536,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
           </section>
 
           {/* Right column: Info panel */}
-          <aside className="tiltak-side__info-panel" ref={infoPanelRef}>
+          <aside className="tiltak-side__info-panel">
             <WhiteInfoBox
               showHeader={showHeader}
               isExpanded={isExpanded}

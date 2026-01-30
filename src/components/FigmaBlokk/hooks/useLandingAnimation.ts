@@ -23,6 +23,7 @@ export const useLandingAnimation = ({ durationMs, onFadeComplete }: UseLandingAn
     setHeaderFadeOpacity(1);
   }, [clearFadeTimer]);
 
+  /** Forward fade: opacity 1 → 0, then calls onFadeComplete after durationMs */
   const startFade = useCallback(() => {
     setSkylineFadeOpacity(0);
     setHeaderFadeOpacity(0);
@@ -33,6 +34,21 @@ export const useLandingAnimation = ({ durationMs, onFadeComplete }: UseLandingAn
       onFadeComplete();
     }, durationMs);
   }, [clearFadeTimer, durationMs, onFadeComplete]);
+
+  /** Set opacities to 0 without starting any timer (used before mode switch on back) */
+  const prepareFadeIn = useCallback(() => {
+    clearFadeTimer();
+    setSkylineFadeOpacity(0);
+    setHeaderFadeOpacity(0);
+  }, [clearFadeTimer]);
+
+  /** Animate opacities from 0 → 1 (reverse of startFade). Uses rAF so the 0-state renders first. */
+  const startFadeIn = useCallback(() => {
+    requestAnimationFrame(() => {
+      setSkylineFadeOpacity(1);
+      setHeaderFadeOpacity(1);
+    });
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -45,5 +61,7 @@ export const useLandingAnimation = ({ durationMs, onFadeComplete }: UseLandingAn
     headerFadeOpacity,
     startFade,
     resetFade,
+    prepareFadeIn,
+    startFadeIn,
   };
 };

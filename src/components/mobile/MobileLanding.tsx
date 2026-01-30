@@ -1,6 +1,6 @@
-import React, { RefObject } from 'react';
+import React, { RefObject, useRef, useCallback } from 'react';
 import type { KeyboardEvent } from 'react';
-import { PktButton, PktAlert } from '@oslokommune/punkt-react';
+import { PktSearchInput, PktAlert, PktLoader } from '@oslokommune/punkt-react';
 import { type AddressSuggestion } from '../../services/buildingApi';
 import { OsloLogo } from '../FigmaBlokk/components/OsloLogo';
 import { MiniSkyline } from './MiniSkyline';
@@ -43,17 +43,35 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
   error,
   suggestions,
   showSuggestions,
-  selectedSuggestionIndex,
-  suggestionsLoading,
-  wrapperRef,
   handleSearch,
   handleInputChange,
-  handleKeyDown,
   handleSuggestionSelect,
   openSuggestions,
-  highlightSuggestion,
-  clearHighlightedSuggestion,
 }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Map AddressSuggestion[] to PktSearchInput's SearchSuggestion[]
+  const pktSuggestions = (showSuggestions && suggestions.length > 0)
+    ? suggestions.map((s) => ({
+        text: s.adressetekst || s.adresse || '',
+        onClick: () => {
+          const displayValue = s.adresse ?? s.adressetekst ?? '';
+          if (inputRef.current) {
+            inputRef.current.value = displayValue;
+          }
+          handleSuggestionSelect(s);
+        },
+      }))
+    : undefined;
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange(e.target.value);
+  }, [handleInputChange]);
+
+  const handlePktSearch = useCallback(() => {
+    handleSearch();
+  }, [handleSearch]);
+
   return (
     <div className="mobile-landing">
       <div
@@ -74,85 +92,36 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
         </p>
 
         {/* Søkefelt */}
-        <div className="mobile-landing__search-wrapper" ref={wrapperRef}>
-          <div className="mobile-landing__search-autocomplete">
-            <div className="mobile-landing__search-input-group">
-              <input
-                id="mobile-address-search"
-                type="text"
-                placeholder="Skriv inn adresse..."
-                className="pkt-input mobile-landing__search-input"
-                value={searchValue}
-                onChange={(e) => handleInputChange(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onFocus={openSuggestions}
-                disabled={loading}
-                autoComplete="off"
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                role="combobox"
-                aria-autocomplete="list"
-                aria-expanded={showSuggestions && suggestions.length > 0}
-                aria-controls="mobile-address-suggestions"
-                aria-activedescendant={
-                  selectedSuggestionIndex >= 0
-                    ? `mobile-suggestion-${selectedSuggestionIndex}`
-                    : undefined
-                }
-              />
-
-              <PktButton
-                skin="primary"
-                size="medium"
-                variant="icon-only"
-                iconName="magnifying-glass-big"
-                onClick={handleSearch}
-                disabled={loading}
-                aria-label="Søk"
-                className="mobile-landing__search-button"
-              />
-            </div>
-
-            {/* Suggestions dropdown */}
-            {showSuggestions && suggestions.length > 0 && (
-              <ul
-                id="mobile-address-suggestions"
-                className="mobile-landing__suggestions"
-                onMouseLeave={clearHighlightedSuggestion}
-                role="listbox"
-                aria-label="Adresseforslag"
-              >
-                {suggestionsLoading ? (
-                  <li className="mobile-landing__suggestion mobile-landing__suggestion--loading">
-                    Søker...
-                  </li>
-                ) : (
-                  suggestions.map((suggestion, index) => (
-                    <li
-                      key={suggestion.adresse ?? suggestion.adressetekst ?? `suggestion-${index}`}
-                      id={`mobile-suggestion-${index}`}
-                      className={`mobile-landing__suggestion ${
-                        index === selectedSuggestionIndex ? 'mobile-landing__suggestion--selected' : ''
-                      }`}
-                      onClick={() => handleSuggestionSelect(suggestion)}
-                      onMouseEnter={() => highlightSuggestion(index)}
-                      role="option"
-                      aria-selected={index === selectedSuggestionIndex}
-                    >
-                      {suggestion.adressetekst || suggestion.adresse}
-                    </li>
-                  ))
-                )}
-              </ul>
-            )}
-          </div>
+        <div className="mobile-landing__search-wrapper">
+          <PktSearchInput
+            id="mobile-address-search"
+            appearance="global"
+            fullwidth
+            placeholder="Skriv inn adresse..."
+            value={searchValue}
+            disabled={loading}
+            suggestions={pktSuggestions}
+            onChange={handleChange}
+            onSearch={handlePktSearch}
+            onFocus={openSuggestions}
+            ref={inputRef}
+          />
 
           {/* Feilmelding med PktAlert */}
           {error && (
             <PktAlert skin="error" compact className="mobile-landing__error">
               {error.message}
             </PktAlert>
+          )}
+          {loading && (
+            <div className="mobile-landing__loader">
+              <PktLoader
+                message="Henter boliginformasjon..."
+                size="large"
+                variant="rainbow"
+                isLoading
+              />
+            </div>
           )}
         </div>
       </div>
