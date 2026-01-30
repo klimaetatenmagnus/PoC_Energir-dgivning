@@ -1,0 +1,355 @@
+/**
+ * MobileProsessenVidere - Mobilstiler
+ * Fullskjerm swipe-karusell for "Veien videre" (6 prosess-steg)
+ * Gjenbruker animasjonsmønster fra MobileDistrictComparison
+ * Bruker Punkt designsystem tokens
+ */
+
+/* ======================================
+   OVERLAY - Bakgrunn og posisjonering
+   ====================================== */
+
+.mobile-prosessen-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1200; /* Over MobileSavingsFooter (1100) */
+  animation: mobileProsessenFadeIn 0.2s ease-out;
+}
+
+/* ======================================
+   MODAL - Hovedcontainer
+   ====================================== */
+
+.mobile-prosessen-modal {
+  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: var(--pkt-spacing-16, 1rem);
+  padding-bottom: max(var(--pkt-spacing-24, 1.5rem), env(safe-area-inset-bottom));
+  animation: mobileProsessenSlideUp 0.3s ease-out;
+  border-radius: 16px 16px 0 0;
+}
+
+/* ======================================
+   HEADER - Kun lukk-knapp (høyrejustert)
+   ====================================== */
+
+.mobile-prosessen-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+/* ==========================================================================
+   KARUSELL med chevron-navigasjon og slide-animasjon
+   ========================================================================== */
+
+.mobile-prosessen-carousel {
+  position: relative;
+  overflow: hidden;
+  margin: 0 calc(-1 * var(--pkt-spacing-16, 1rem));
+  padding: 0 var(--pkt-spacing-16, 1rem);
+}
+
+.mobile-prosessen-cards-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  position: relative;
+  touch-action: pan-y;
+  height: 420px; /* Fast høyde - rommet for det høyeste kortet */
+  overflow: hidden;
+}
+
+/* Kort - fast høyde for alle, forhindrer høyde-hopp under animasjon */
+.mobile-prosessen-card {
+  width: 100%;
+  max-width: 340px;
+  height: 420px;
+  will-change: transform;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Utgående kort */
+.mobile-prosessen-card--outgoing {
+  position: relative;
+  z-index: 2;
+  transform: translateX(0);
+}
+
+/* Innkommende kort */
+.mobile-prosessen-card--incoming {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  z-index: 1;
+}
+
+/* Slide-animasjoner (identiske med MobileDistrictComparison) */
+.mobile-prosessen-card--exit-left {
+  animation: mobileProsessenSlideOutLeft 0.3s ease-out forwards;
+}
+
+.mobile-prosessen-card--enter-left {
+  animation: mobileProsessenSlideInFromRight 0.3s ease-out forwards;
+}
+
+.mobile-prosessen-card--exit-right {
+  animation: mobileProsessenSlideOutRight 0.3s ease-out forwards;
+}
+
+.mobile-prosessen-card--enter-right {
+  animation: mobileProsessenSlideInFromLeft 0.3s ease-out forwards;
+}
+
+@keyframes mobileProsessenSlideOutLeft {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+@keyframes mobileProsessenSlideInFromRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes mobileProsessenSlideOutRight {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+
+@keyframes mobileProsessenSlideInFromLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+/* ======================================
+   STEG-INNHOLD
+   ====================================== */
+
+.mobile-prosessen__step-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 var(--pkt-spacing-16, 1rem);
+  height: 100%;
+}
+
+.mobile-prosessen__step-icon {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 90px;
+  margin-bottom: var(--pkt-spacing-8, 0.5rem);
+}
+
+.mobile-prosessen__step-icon svg {
+  max-width: 100px;
+  max-height: 90px;
+  height: auto;
+}
+
+.mobile-prosessen__step-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--pkt-color-brand-light-green-1000, #c7f6c9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-bottom: 2.25rem; /* Fast avstand – gir plass til sveip-hint på kort 1 */
+}
+
+.mobile-prosessen__step-number {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  letter-spacing: 0.02em;
+}
+
+.mobile-prosessen__step-title {
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  margin-bottom: var(--pkt-spacing-12, 0.75rem);
+  line-height: 1.4;
+}
+
+.mobile-prosessen__step-description {
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  line-height: 1.6;
+  max-width: 300px;
+  flex: 1 1 0;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.mobile-prosessen__step-description a {
+  color: #0066CC;
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   CHEVRON-NAVIGASJON
+   ========================================================================== */
+
+.mobile-prosessen-chevron {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: transparent;
+  border: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  opacity: 0.6;
+}
+
+.mobile-prosessen-chevron:hover {
+  opacity: 1;
+}
+
+.mobile-prosessen-chevron:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.mobile-prosessen-chevron--left {
+  left: 0;
+}
+
+.mobile-prosessen-chevron--right {
+  right: 0;
+}
+
+.mobile-prosessen-chevron .pkt-icon {
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  width: 28px;
+  height: 28px;
+}
+
+/* ==========================================================================
+   NAVIGASJON - Dots og swipe-hint
+   ========================================================================== */
+
+.mobile-prosessen-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--pkt-spacing-8, 0.5rem);
+  padding-top: var(--pkt-spacing-16, 1rem);
+  border-top: 1px solid var(--pkt-color-brand-neutrals-200, #f2f2f2);
+}
+
+.mobile-prosessen-dots {
+  display: flex;
+  justify-content: center;
+  gap: var(--pkt-spacing-12, 0.75rem);
+  padding: var(--pkt-spacing-12, 0.75rem) 0;
+}
+
+.mobile-prosessen-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--pkt-color-brand-neutrals-300, #ccc);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+  /* Touch-target minimum 44px */
+  padding: 17px;
+  margin: -17px;
+  background-clip: content-box;
+}
+
+.mobile-prosessen-dot:hover {
+  background-color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+}
+
+.mobile-prosessen-dot--active {
+  background-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  transform: scale(1.2);
+}
+
+/* Swipe-hint - plassert i det faste rommet mellom badge og tittel */
+.mobile-prosessen-swipe-hint {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.8125rem;
+  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
+  background: var(--pkt-color-brand-neutrals-100, #f5f5f5);
+  padding: var(--pkt-spacing-4, 0.25rem) var(--pkt-spacing-12, 0.75rem);
+  border-radius: 0;
+  white-space: nowrap;
+  /* Negativt margin trekker hintet opp i det reserverte rommet under badge,
+     uten å påvirke elementene under */
+  margin-top: -2rem;
+  margin-bottom: calc(2rem - 0.75rem); /* Kompenser slik at tittel havner på samme plass */
+  animation: mobileProsessenFadeInHint 0.3s ease-out;
+}
+
+/* ======================================
+   ANIMASJONER
+   ====================================== */
+
+@keyframes mobileProsessenFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mobileProsessenSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes mobileProsessenFadeInHint {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ======================================
+   TILGJENGELIGHET - Reduced motion
+   ====================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-prosessen-overlay,
+  .mobile-prosessen-modal {
+    animation: none !important;
+  }
+
+  .mobile-prosessen-dot,
+  .mobile-prosessen-chevron {
+    transition: none !important;
+  }
+
+  .mobile-prosessen-swipe-hint {
+    animation: none !important;
+  }
+
+  .mobile-prosessen-card,
+  .mobile-prosessen-card--exit-left,
+  .mobile-prosessen-card--exit-right,
+  .mobile-prosessen-card--enter-left,
+  .mobile-prosessen-card--enter-right {
+    animation: none !important;
+    transition: none !important;
+  }
+}

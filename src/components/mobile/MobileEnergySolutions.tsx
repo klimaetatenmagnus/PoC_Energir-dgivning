@@ -22,6 +22,7 @@ import { OsloLogo } from '../FigmaBlokk/components/OsloLogo';
 import { MobileInfoBox } from './MobileInfoBox';
 import { MobileSavingsFooter } from './MobileSavingsFooter';
 import { MobileDistrictComparison } from './MobileDistrictComparison';
+import { MobileProsessenVidere } from './MobileProsessenVidere';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from '../../utils/tekEnergyCalculations';
 import { calculateTekPeriod, parseNumericValue } from '../FigmaBlokk/components/Tiltak/shared';
 import {
@@ -192,6 +193,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
 
   // Bydelssammenligning state
   const [showDistrictComparison, setShowDistrictComparison] = useState(false);
+  // Prosessen videre state
+  const [showProsessenVidere, setShowProsessenVidere] = useState(false);
   const [districtStats, setDistrictStats] = useState<DistrictStats | null>(null);
   const [subdistrictStats, setSubdistrictStats] = useState<DistrictStats | null>(null);
 
@@ -1121,16 +1124,23 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         />
       )}
 
+      {/* Prosessen videre modal */}
+      <MobileProsessenVidere
+        isOpen={showProsessenVidere}
+        onClose={() => setShowProsessenVidere(false)}
+        isGulliste={erPaaGulListe}
+      />
+
       {/* Besparelsesfooter - alltid synlig når tiltak er valgt */}
       <MobileSavingsFooter
         totalSavingsKwh={calculatedSavings}
-        isVisible={showFooter && !showDistrictComparison}
+        isVisible={showFooter && !showDistrictComparison && !showProsessenVidere}
         uncalculableCount={uncalculableCount}
         estimatedRating={estimatedRating}
         newRating={newRating}
         selectedTiltakCount={checkedItems.size}
         onNavigateForward={() => {
-          // TODO: Navigere til mobil-versjon av "Veien videre"
+          setShowProsessenVidere(true);
         }}
       />
     </div>
