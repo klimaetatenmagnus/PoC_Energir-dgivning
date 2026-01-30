@@ -24,6 +24,10 @@ interface MobileSavingsFooterProps {
   estimatedRating?: string | null;
   /** Ny energikarakter etter tiltak (A-G), kun vist hvis bedre enn estimatedRating */
   newRating?: string | null;
+  /** Antall valgte tiltak – brukes for å tilpasse CTA-tekst (entall/flertall) */
+  selectedTiltakCount?: number;
+  /** Callback for navigering til "Veien videre" */
+  onNavigateForward?: () => void;
 }
 
 /**
@@ -65,6 +69,8 @@ export const MobileSavingsFooter: React.FC<MobileSavingsFooterProps> = ({
   uncalculableCount = 0,
   estimatedRating,
   newRating,
+  selectedTiltakCount = 0,
+  onNavigateForward,
 }) => {
   const prevSavingsRef = useRef(totalSavingsKwh);
   const [isGrowing, setIsGrowing] = useState(false);
@@ -417,7 +423,7 @@ export const MobileSavingsFooter: React.FC<MobileSavingsFooterProps> = ({
             )}
           </div>
 
-          {/* Energikarakter-endring nederst - ekspanderer footeren når den vises */}
+          {/* Energikarakter-endring - ekspanderer footeren når den vises */}
           {estimatedRating && newRating && (
             <div className="mobile-savings-footer__rating-section">
               <span className="mobile-savings-footer__rating-label">Ny energikarakter:</span>
@@ -437,6 +443,22 @@ export const MobileSavingsFooter: React.FC<MobileSavingsFooterProps> = ({
                 </div>
               </div>
             </div>
+          )}
+
+          {/* CTA for å navigere til "Veien videre" */}
+          {onNavigateForward && (
+            <button
+              className="mobile-savings-footer__cta"
+              onClick={onNavigateForward}
+              type="button"
+            >
+              <span className="mobile-savings-footer__cta-text">
+                {selectedTiltakCount <= 1
+                  ? 'Hvordan gjennomføre tiltaket'
+                  : 'Hvordan gjennomføre tiltakene'}
+              </span>
+              <PktIcon name="chevron-thin-right" className="mobile-savings-footer__cta-icon" />
+            </button>
           )}
         </div>
       )}

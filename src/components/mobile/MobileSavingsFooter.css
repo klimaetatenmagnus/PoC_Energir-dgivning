@@ -407,6 +407,50 @@
   margin-top: 0.25rem;
 }
 
+/* CTA-knapp for navigering til "Veien videre" */
+.mobile-savings-footer__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-top: 0.25rem;
+  border: none;
+  border-top: 1px solid var(--pkt-color-brand-neutrals-200, #e5e5e5);
+  background: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-savings-footer__cta:hover {
+  background-color: var(--pkt-color-brand-neutrals-100, #ebebeb);
+}
+
+.mobile-savings-footer__cta:active {
+  background-color: var(--pkt-color-brand-neutrals-200, #e5e5e5);
+}
+
+.mobile-savings-footer__cta:focus-visible {
+  outline: 2px solid var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+.mobile-savings-footer__cta-text {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-savings-footer__cta-icon {
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
 /* Responsiv justering for veldig små skjermer */
 @media (max-width: 350px) {
   .mobile-savings-footer__amount-value {

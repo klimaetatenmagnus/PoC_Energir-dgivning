@@ -1128,6 +1128,11 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         uncalculableCount={uncalculableCount}
         estimatedRating={estimatedRating}
         newRating={newRating}
+        selectedTiltakCount={checkedItems.size}
+        onNavigateForward={() => {
+          // TODO: Navigere til mobil-versjon av "Veien videre"
+          console.log('Navigere til Veien videre');
+        }}
       />
     </div>
   );
