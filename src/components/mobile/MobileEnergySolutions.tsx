@@ -1131,7 +1131,6 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         selectedTiltakCount={checkedItems.size}
         onNavigateForward={() => {
           // TODO: Navigere til mobil-versjon av "Veien videre"
-          console.log('Navigere til Veien videre');
         }}
       />
     </div>
