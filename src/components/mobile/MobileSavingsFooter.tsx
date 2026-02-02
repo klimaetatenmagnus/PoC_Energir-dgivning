@@ -28,6 +28,8 @@ interface MobileSavingsFooterProps {
   selectedTiltakCount?: number;
   /** Callback for navigering til "Veien videre" */
   onNavigateForward?: () => void;
+  /** Tving footer til kollapset tilstand (f.eks. når detaljvisning er aktiv) */
+  forceCollapsed?: boolean;
 }
 
 /**
@@ -71,12 +73,20 @@ export const MobileSavingsFooter: React.FC<MobileSavingsFooterProps> = ({
   newRating,
   selectedTiltakCount = 0,
   onNavigateForward,
+  forceCollapsed = false,
 }) => {
   const prevSavingsRef = useRef(totalSavingsKwh);
   const [isGrowing, setIsGrowing] = useState(false);
 
   // For kollapsbar footer
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(forceCollapsed);
+
+  // Synkroniser kollapset-tilstand med forceCollapsed-prop
+  useEffect(() => {
+    if (forceCollapsed) {
+      setIsCollapsed(true);
+    }
+  }, [forceCollapsed]);
 
   // For exit-animasjon: hold komponenten synlig mens den animerer ut
   const [shouldRender, setShouldRender] = useState(isVisible);

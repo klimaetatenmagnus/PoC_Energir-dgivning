@@ -148,7 +148,6 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  height: 90px;
   margin-bottom: var(--pkt-spacing-8, 0.5rem);
 }
 
@@ -167,7 +166,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-bottom: 2.25rem; /* Fast avstand – gir plass til sveip-hint på kort 1 */
+  margin-bottom: var(--pkt-spacing-12, 0.75rem);
 }
 
 .mobile-prosessen__step-number {
@@ -284,21 +283,6 @@
   transform: scale(1.2);
 }
 
-/* Swipe-hint - plassert i det faste rommet mellom badge og tittel */
-.mobile-prosessen-swipe-hint {
-  font-family: 'Oslo Sans', sans-serif;
-  font-size: 0.8125rem;
-  color: var(--pkt-color-brand-dark-blue-600, #5a5a7a);
-  background: var(--pkt-color-brand-neutrals-100, #f5f5f5);
-  padding: var(--pkt-spacing-4, 0.25rem) var(--pkt-spacing-12, 0.75rem);
-  border-radius: 0;
-  white-space: nowrap;
-  /* Negativt margin trekker hintet opp i det reserverte rommet under badge,
-     uten å påvirke elementene under */
-  margin-top: -2rem;
-  margin-bottom: calc(2rem - 0.75rem); /* Kompenser slik at tittel havner på samme plass */
-  animation: mobileProsessenFadeInHint 0.3s ease-out;
-}
 
 /* ======================================
    ANIMASJONER
@@ -314,16 +298,6 @@
   to { transform: translateY(0); }
 }
 
-@keyframes mobileProsessenFadeInHint {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 /* ======================================
    TILGJENGELIGHET - Reduced motion
@@ -338,10 +312,6 @@
   .mobile-prosessen-dot,
   .mobile-prosessen-chevron {
     transition: none !important;
-  }
-
-  .mobile-prosessen-swipe-hint {
-    animation: none !important;
   }
 
   .mobile-prosessen-card,

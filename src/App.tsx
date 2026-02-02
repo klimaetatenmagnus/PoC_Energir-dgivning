@@ -210,23 +210,6 @@ export default function App() {
   if (mode === "figma-blokk" && result) {
     // Mobil (<768px): Vis MobileEnergySolutions eller MobileTiltakDetail
     if (isMobileView) {
-      // Vis tiltaksdetalj hvis et tiltak er valgt
-      if (selectedMobileTiltak) {
-        return (
-          <>
-            {overlay}
-            <MobileTiltakDetail
-              tiltakId={selectedMobileTiltak}
-              buildingType={buildingTypeForTiltak}
-              audience={audienceForTiltak}
-              onBack={handleBackFromMobileTiltak}
-              annualSavingsKwh={selectedMobileTiltakSavings}
-            />
-          </>
-        );
-      }
-
-      // Vis tiltakslisten
       return (
         <>
           {overlay}
@@ -241,7 +224,17 @@ export default function App() {
             mapCoordinates={mapCoordinates}
             audience={audienceForTiltak}
             isUsingEnovaData={isUsingEnovaData}
+            isDetailViewActive={!!selectedMobileTiltak}
           />
+          {selectedMobileTiltak && (
+            <MobileTiltakDetail
+              tiltakId={selectedMobileTiltak}
+              buildingType={buildingTypeForTiltak}
+              audience={audienceForTiltak}
+              onBack={handleBackFromMobileTiltak}
+              annualSavingsKwh={selectedMobileTiltakSavings}
+            />
+          )}
         </>
       );
     }

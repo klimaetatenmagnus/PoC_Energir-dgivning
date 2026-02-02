@@ -103,6 +103,8 @@ interface MobileEnergySolutionsProps {
   audience?: ContentAudience;
   /** Om brukerens energiforbruk er basert på Enova-data (true) eller TEK-estimering (false) */
   isUsingEnovaData?: boolean;
+  /** Om tiltaksdetalj-visningen er aktiv (skjuler hovedinnhold, beholder footer) */
+  isDetailViewActive?: boolean;
 }
 
 /**
@@ -186,10 +188,12 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   totalEnergySavings: _totalEnergySavings = 0,
   audience = 'standard',
   isUsingEnovaData: _isUsingEnovaData = false,
+  isDetailViewActive = false,
 }) => {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [_showEnergyInfo, _setShowEnergyInfo] = useState(false); // Beholdes for fremtidig bruk i energibesparelses-boksen
   const [showInfoBox, setShowInfoBox] = useState(false);
+  const [isInfoBoxExiting, setIsInfoBoxExiting] = useState(false);
 
   // Bydelssammenligning state
   const [showDistrictComparison, setShowDistrictComparison] = useState(false);
@@ -605,6 +609,15 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     return () => clearTimeout(timer);
   }, [arrowState]);
 
+  // Lukk InfoBox med exit-animasjon
+  const closeInfoBox = useCallback(() => {
+    setIsInfoBoxExiting(true);
+    setTimeout(() => {
+      setShowInfoBox(false);
+      setIsInfoBoxExiting(false);
+    }, 300); // Matcher slideUp-animasjonens varighet
+  }, []);
+
   const toggleChecked = useCallback((tiltakId: string) => {
     setCheckedItems((prev) => {
       const newSet = new Set(prev);
@@ -855,8 +868,10 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   }, [overlayPhase, finalizeTransition]);
 
   return (
+    <>
     <div
       className={`mobile-energy-solutions${showFooter ? ' mobile-energy-solutions--has-footer' : ''} mobile-energy-solutions--fade-in`}
+      style={isDetailViewActive ? { display: 'none' } : undefined}
     >
       {/* Header med tilbake-knapp */}
       <header className="mobile-energy-solutions__header">
@@ -1077,14 +1092,14 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
 
       </main>
 
-      {/* InfoBox modal - animerer nedover fra toppen */}
+      {/* InfoBox modal - animerer nedover fra toppen, opp ved lukking */}
       {showInfoBox && (
         <div
-          className="mobile-energy-solutions__infobox-overlay"
-          onClick={() => setShowInfoBox(false)}
+          className={`mobile-energy-solutions__infobox-overlay${isInfoBoxExiting ? ' mobile-energy-solutions__infobox-overlay--exiting' : ''}`}
+          onClick={closeInfoBox}
         >
           <div
-            className="mobile-energy-solutions__infobox-container"
+            className={`mobile-energy-solutions__infobox-container${isInfoBoxExiting ? ' mobile-energy-solutions__infobox-container--exiting' : ''}`}
             onClick={(e) => e.stopPropagation()}
           >
               <MobileInfoBox
@@ -1095,11 +1110,12 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               mapCoordinates={mapCoordinates}
               showYellowBox={showYellowBox}
               totalEnergySavings={calculatedSavings}
-              onCollapse={() => setShowInfoBox(false)}
+              onCollapse={closeInfoBox}
               showCompareButton={!!districtStats}
               onCompareClick={() => {
-                setShowInfoBox(false);
-                setShowDistrictComparison(true);
+                closeInfoBox();
+                // Åpne bydelssammenligning etter exit-animasjonen
+                setTimeout(() => setShowDistrictComparison(true), 300);
               }}
             />
           </div>
@@ -1131,7 +1147,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         isGulliste={erPaaGulListe}
       />
 
-      {/* Besparelsesfooter - alltid synlig når tiltak er valgt */}
+    </div>
+
+      {/* Besparelsesfooter - alltid synlig når tiltak er valgt, også i detaljvisning */}
       <MobileSavingsFooter
         totalSavingsKwh={calculatedSavings}
         isVisible={showFooter && !showDistrictComparison && !showProsessenVidere}
@@ -1139,10 +1157,11 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         estimatedRating={estimatedRating}
         newRating={newRating}
         selectedTiltakCount={checkedItems.size}
+        forceCollapsed={isDetailViewActive}
         onNavigateForward={() => {
           setShowProsessenVidere(true);
         }}
       />
-    </div>
+    </>
   );
 };

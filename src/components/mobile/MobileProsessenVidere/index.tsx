@@ -42,7 +42,6 @@ export const MobileProsessenVidere: React.FC<MobileProsessenVidereProps> = ({
   const [activeIndex, setActiveIndex] = useState(0);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [hasSwipedOnce, setHasSwipedOnce] = useState(false);
   const [incomingIndex, setIncomingIndex] = useState<number | null>(null);
   const touchStartX = useRef<number | null>(null);
 
@@ -118,10 +117,6 @@ export const MobileProsessenVidere: React.FC<MobileProsessenVidereProps> = ({
     setIncomingIndex(newIndex);
     setIsAnimating(true);
 
-    if (!hasSwipedOnce) {
-      setHasSwipedOnce(true);
-    }
-
     setTimeout(() => {
       setActiveIndex(newIndex);
       setIncomingIndex(null);
@@ -151,7 +146,6 @@ export const MobileProsessenVidere: React.FC<MobileProsessenVidereProps> = ({
 
   const renderStep = (index: number) => {
     const step = STEPS[index];
-    const showHint = index === 0 && !hasSwipedOnce;
     return (
       <div className="mobile-prosessen__step-content">
         <div className="mobile-prosessen__step-icon">
@@ -160,9 +154,6 @@ export const MobileProsessenVidere: React.FC<MobileProsessenVidereProps> = ({
         <div className="mobile-prosessen__step-badge">
           <span className="mobile-prosessen__step-number">{step.number}/{STEPS.length}</span>
         </div>
-        {showHint && (
-          <p className="mobile-prosessen-swipe-hint">Sveip for neste steg</p>
-        )}
         <h3 className="mobile-prosessen__step-title pkt-txt-18-medium">
           {step.title}
         </h3>

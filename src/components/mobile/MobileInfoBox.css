@@ -6,6 +6,7 @@
   flex-direction: column;
   gap: var(--pkt-spacing-16, 1rem);
   padding: var(--pkt-spacing-16, 1rem);
+  padding-bottom: var(--pkt-spacing-24, 1.5rem);
   background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
 }
 

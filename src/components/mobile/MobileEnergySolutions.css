@@ -651,6 +651,33 @@
   padding-bottom: max(var(--pkt-spacing-24, 1.5rem), env(safe-area-inset-bottom));
 }
 
+/* Exit-animasjoner for InfoBox */
+.mobile-energy-solutions__infobox-overlay--exiting {
+  animation: fadeOut 0.3s ease-in forwards;
+}
+
+.mobile-energy-solutions__infobox-container--exiting {
+  animation: slideUpOut 0.3s ease-in forwards;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideUpOut {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-100%);
+  }
+}
+
 /* Når footer er synlig, strekk InfoBox helt ned til footer (ca 130px høy) */
 .mobile-energy-solutions--has-footer .mobile-energy-solutions__infobox-container {
   max-height: calc(100vh - 130px);
