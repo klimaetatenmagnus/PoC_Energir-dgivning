@@ -192,14 +192,29 @@
   transition: transform 0.8s ease-in-out 0.08s;
 }
 
-/* Low-DPR (typisk Windows med skalert CSS-viewport) - grupper kolonnene tettere */
+/* Low-DPR (typisk Windows med skalert CSS-viewport) - match laptop-layouten fra mac */
 .tiltak-side--low-dpr .tiltak-side__content {
+  padding-left: var(--pkt-spacing-32, 32px);
+  padding-right: var(--pkt-spacing-32, 32px);
+  padding-bottom: clamp(32px, 6vh, 80px);
+  gap: var(--pkt-spacing-24, 24px);
   justify-content: center;
-  gap: clamp(16px, 2vw, 24px);
+}
+
+.tiltak-side--low-dpr .tiltak-side__tiltak-panel {
+  width: clamp(340px, 32vw, 520px);
+}
+
+.tiltak-side--low-dpr .tiltak-side__info-panel {
+  flex: 0 0 clamp(320px, 24vw, 440px);
 }
 
 .tiltak-side--low-dpr .tiltak-side__building-area {
   flex: 0 0 clamp(420px, 28vw, 520px);
+}
+
+.tiltak-side--low-dpr .tiltak-side__circle-bg {
+  width: min(520px, 100%);
 }
 
 /* ==========================================================================
