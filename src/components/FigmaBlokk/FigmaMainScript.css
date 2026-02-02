@@ -13,7 +13,6 @@
   z-index: 4;
   transition: opacity 0.4s ease-in-out;
   --building-scale-multiplier: 1;
-  --layout-scale: 1;
 }
 
 .tiltak-side--animate {
@@ -83,13 +82,12 @@
   padding: 0 clamp(24px, 3vw, 80px);
   padding-bottom: clamp(40px, 8vh, 120px);
   transition: transform 0.4s ease-in-out;
-  transform: scale(var(--layout-scale, 1));
-  transform-origin: bottom center;
+  transform-origin: top center;
   z-index: 2;
 }
 
 .tiltak-side__content--with-process {
-  transform: scale(calc(0.895 * var(--layout-scale, 1)));
+  transform: scale(0.895);
   padding-bottom: clamp(80px, 12vh, 160px);
 }
 
@@ -179,8 +177,7 @@
 .tiltak-side__process-wrapper {
   position: fixed;
   bottom: clamp(16px, 3vh, 40px);
-  transform: translateX(-50%) scale(var(--layout-scale, 1));
-  transform-origin: bottom center;
+  transform: translateX(-50%);
   width: calc(var(--esb-item-width, 440px) + var(--esb-container-padding, 1.5rem) * 2);
   display: flex;
   flex-direction: column;
@@ -191,8 +188,18 @@
 
 /* Process button wrapper slides up when process view is shown */
 .tiltak-side__process-wrapper--transitioning {
-  transform: translateX(-50%) translateY(-100vh) scale(var(--layout-scale, 1));
+  transform: translateX(-50%) translateY(-100vh);
   transition: transform 0.8s ease-in-out 0.08s;
+}
+
+/* Low-DPR (typisk Windows med skalert CSS-viewport) - grupper kolonnene tettere */
+.tiltak-side--low-dpr .tiltak-side__content {
+  justify-content: center;
+  gap: clamp(16px, 2vw, 24px);
+}
+
+.tiltak-side--low-dpr .tiltak-side__building-area {
+  flex: 0 0 clamp(420px, 28vw, 520px);
 }
 
 /* ==========================================================================

@@ -102,22 +102,17 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const [solarData, setSolarData] = React.useState<SolarEnergyData | null>(null);
   const [showYellowBox, setShowYellowBox] = React.useState(false);
   const [gulListeLoading, setGulListeLoading] = React.useState(true);
-  const [layoutScale, setLayoutScale] = React.useState(1);
+  const [isLowDpr, setIsLowDpr] = React.useState(false);
 
   React.useEffect(() => {
-    const updateLayoutScale = () => {
+    const updateDprFlag = () => {
       const dpr = window.devicePixelRatio || 1;
-      if (dpr >= 1) {
-        setLayoutScale(1);
-        return;
-      }
-      const scaled = Math.min(1.35, Math.max(1, 1 / dpr));
-      setLayoutScale(scaled);
+      setIsLowDpr(dpr < 1);
     };
 
-    updateLayoutScale();
-    window.addEventListener('resize', updateLayoutScale);
-    return () => window.removeEventListener('resize', updateLayoutScale);
+    updateDprFlag();
+    window.addEventListener('resize', updateDprFlag);
+    return () => window.removeEventListener('resize', updateDprFlag);
   }, []);
 
   // State for updated building data
@@ -440,6 +435,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const tiltakSideClasses = [
     'tiltak-side',
     allowProcessTransition ? 'tiltak-side--animate' : '',
+    isLowDpr ? 'tiltak-side--low-dpr' : '',
   ].filter(Boolean).join(' ');
 
   const headerClasses = [
@@ -483,7 +479,6 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
       <div
         className={tiltakSideClasses}
-        style={{ ['--layout-scale' as string]: layoutScale }}
       >
         {/* Three-column flex layout */}
         <main className={`tiltak-side__content${activeTiltak.length > 0 && !isExpanded && !showProcess ? ' tiltak-side__content--with-process' : ''}${showProcess ? ' tiltak-side__content--transitioning' : ''}`}>
