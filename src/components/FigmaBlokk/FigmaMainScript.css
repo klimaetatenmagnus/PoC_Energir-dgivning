@@ -267,17 +267,22 @@
   }
 }
 
-/* Wide desktop (16:9 og bredere) - gi mer rom til hovedkomponentene */
-@media screen and (min-width: 1440px) and (min-aspect-ratio: 16/9) {
+/* Wide desktop (16:9, 1080p-ish) - fyll mer av bredden uten å endre sirkel-størrelse */
+@media screen and (min-width: 1600px) and (max-height: 1100px) and (min-aspect-ratio: 16/9) {
   .tiltak-side {
-    --building-scale-multiplier: 1.08;
+    --building-scale-multiplier: 1.15;
+  }
+
+  .tiltak-side__content {
+    padding-bottom: clamp(48px, 8vh, 120px);
+    gap: var(--pkt-spacing-24, 24px);
   }
 
   .tiltak-side__tiltak-panel {
-    width: clamp(488px, 32vw, 620px);
+    width: clamp(540px, 34vw, 680px);
   }
 
   .tiltak-side__info-panel {
-    flex: 0 0 clamp(380px, 24vw, 540px);
+    flex: 0 0 clamp(420px, 26vw, 560px);
   }
 }
