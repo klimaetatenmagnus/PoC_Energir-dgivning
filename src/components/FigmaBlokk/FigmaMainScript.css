@@ -78,7 +78,7 @@
   display: flex;
   align-items: flex-end;
   gap: 24px;
-  padding: 0 clamp(24px, 5vw, 156px);
+  padding: 0 clamp(24px, 3vw, 80px);
   padding-bottom: clamp(40px, 8vh, 120px);
   transition: transform 0.4s ease-in-out;
   transform-origin: top center;
@@ -215,23 +215,29 @@
     gap: var(--pkt-spacing-16, 16px);
   }
   .tiltak-side__tiltak-panel {
-    width: clamp(300px, 30vw, 380px);
+    width: clamp(300px, 30vw, 400px);
   }
   .tiltak-side__info-panel {
-    flex: 0 0 300px;
+    flex: 0 0 clamp(280px, 24vw, 340px);
   }
 }
 
 /* Laptop (1280–1599px) */
 @media screen and (min-width: 80rem) and (max-width: 99.938rem) {
   .tiltak-side__content {
+    padding-left: var(--pkt-spacing-32, 32px);
+    padding-right: var(--pkt-spacing-32, 32px);
     padding-bottom: clamp(32px, 6vh, 80px);
+    gap: var(--pkt-spacing-24, 24px);
   }
   .tiltak-side__tiltak-panel {
-    width: clamp(340px, 28vw, 460px);
+    width: clamp(340px, 32vw, 500px);
   }
   .tiltak-side__info-panel {
-    flex: 0 0 340px;
+    flex: 0 0 clamp(320px, 24vw, 420px);
+  }
+  .tiltak-side__circle-bg {
+    width: min(520px, 100%);
   }
 }
 
@@ -244,12 +250,12 @@
     gap: var(--pkt-spacing-32, 32px);
   }
   .tiltak-side__tiltak-panel {
-    width: clamp(440px, 33vw, 620px);
+    width: 488px;
   }
   .tiltak-side__info-panel {
-    flex: 0 0 clamp(360px, 24vw, 480px);
+    flex: 0 0 clamp(360px, 24vw, 440px);
   }
   .tiltak-side__circle-bg {
-    width: min(560px, 100%);
+    width: min(40vw, 640px);
   }
 }
