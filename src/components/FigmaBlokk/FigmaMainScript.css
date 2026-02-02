@@ -208,7 +208,7 @@
    ========================================================================== */
 
 /* Tablet-big (1024–1279px) */
-@media screen and (min-width: 64rem) and (max-width: 79.938rem) {
+@media screen and (min-width: 1024px) and (max-width: 1279px) {
   .tiltak-side__content {
     padding-left: var(--pkt-spacing-24, 24px);
     padding-right: var(--pkt-spacing-24, 24px);
@@ -224,7 +224,7 @@
 }
 
 /* Laptop (1280–1599px) */
-@media screen and (min-width: 80rem) and (max-width: 99.938rem) {
+@media screen and (min-width: 1280px) and (max-width: 1599px) {
   .tiltak-side__content {
     padding-left: var(--pkt-spacing-32, 32px);
     padding-right: var(--pkt-spacing-32, 32px);
@@ -246,7 +246,7 @@
 }
 
 /* Desktop (1600px+) */
-@media screen and (min-width: 100rem) {
+@media screen and (min-width: 1600px) {
   .tiltak-side__content {
     padding-left: var(--pkt-spacing-40, 40px);
     padding-right: var(--pkt-spacing-40, 40px);
@@ -268,7 +268,7 @@
 }
 
 /* Wide desktop (16:9 og bredere) - gi mer rom til hovedkomponentene */
-@media screen and (min-width: 90rem) and (min-aspect-ratio: 16/9) {
+@media screen and (min-width: 1440px) and (min-aspect-ratio: 16/9) {
   .tiltak-side {
     --building-scale-multiplier: 1.08;
   }
