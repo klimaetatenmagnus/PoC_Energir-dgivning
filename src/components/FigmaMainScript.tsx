@@ -102,6 +102,23 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const [solarData, setSolarData] = React.useState<SolarEnergyData | null>(null);
   const [showYellowBox, setShowYellowBox] = React.useState(false);
   const [gulListeLoading, setGulListeLoading] = React.useState(true);
+  const [layoutScale, setLayoutScale] = React.useState(1);
+
+  React.useEffect(() => {
+    const updateLayoutScale = () => {
+      const dpr = window.devicePixelRatio || 1;
+      if (dpr >= 1) {
+        setLayoutScale(1);
+        return;
+      }
+      const scaled = Math.min(1.35, Math.max(1, 1 / dpr));
+      setLayoutScale(scaled);
+    };
+
+    updateLayoutScale();
+    window.addEventListener('resize', updateLayoutScale);
+    return () => window.removeEventListener('resize', updateLayoutScale);
+  }, []);
 
   // State for updated building data
   const [updatedBuildingData, setUpdatedBuildingData] = React.useState<AddressLookupResponse>(buildingData);
@@ -466,6 +483,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
       <div
         className={tiltakSideClasses}
+        style={{ ['--layout-scale' as string]: layoutScale }}
       >
         {/* Three-column flex layout */}
         <main className={`tiltak-side__content${activeTiltak.length > 0 && !isExpanded && !showProcess ? ' tiltak-side__content--with-process' : ''}${showProcess ? ' tiltak-side__content--transitioning' : ''}`}>
