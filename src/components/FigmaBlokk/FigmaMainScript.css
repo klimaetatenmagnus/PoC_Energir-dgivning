@@ -231,10 +231,13 @@
     gap: var(--pkt-spacing-24, 24px);
   }
   .tiltak-side__tiltak-panel {
-    width: clamp(340px, 32vw, 500px);
+    width: clamp(340px, 32vw, 520px);
+  }
+  .tiltak-side__tiltak-panel .energy-solution-buttons {
+    --esb-item-width: 100%;
   }
   .tiltak-side__info-panel {
-    flex: 0 0 clamp(320px, 24vw, 420px);
+    flex: 0 0 clamp(320px, 24vw, 440px);
   }
   .tiltak-side__circle-bg {
     width: min(520px, 100%);
@@ -250,12 +253,15 @@
     gap: var(--pkt-spacing-32, 32px);
   }
   .tiltak-side__tiltak-panel {
-    width: 488px;
+    width: clamp(488px, 30vw, 580px);
+  }
+  .tiltak-side__tiltak-panel .energy-solution-buttons {
+    --esb-item-width: 100%;
   }
   .tiltak-side__info-panel {
-    flex: 0 0 clamp(360px, 24vw, 440px);
+    flex: 0 0 clamp(380px, 25vw, 500px);
   }
   .tiltak-side__circle-bg {
-    width: min(40vw, 640px);
+    width: min(35vw, 640px);
   }
 }

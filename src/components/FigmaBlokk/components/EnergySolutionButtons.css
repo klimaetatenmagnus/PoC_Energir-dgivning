@@ -97,7 +97,7 @@
 
 .energy-solution-buttons__info-icon {
   position: absolute;
-  left: 439px;
+  right: 0;
   cursor: pointer;
   transition: opacity var(--esb-transition-duration) var(--esb-transition-easing);
 }
