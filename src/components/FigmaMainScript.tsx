@@ -96,8 +96,6 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     return () => clearTimeout(timer);
   }, []);
 
-  const headerScale = Math.min(1.25, layoutScale);
-
   // State for expanded mode
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [selectedSolution, setSelectedSolution] = React.useState<string | null>(null);
@@ -105,6 +103,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const [showYellowBox, setShowYellowBox] = React.useState(false);
   const [gulListeLoading, setGulListeLoading] = React.useState(true);
   const [layoutScale, setLayoutScale] = React.useState(1);
+
+  const headerScale = Math.min(1.25, layoutScale);
 
   React.useEffect(() => {
     const BASE_VIEWPORT = { width: 1250, height: 838 };
