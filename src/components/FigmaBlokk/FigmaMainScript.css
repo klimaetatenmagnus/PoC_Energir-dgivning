@@ -15,6 +15,7 @@
   --building-scale-multiplier: 1;
   --layout-scale: 1;
   --content-scale: 1;
+  --scaled-vw: calc(1vw / var(--layout-scale));
 }
 
 .tiltak-side--animate {
@@ -53,6 +54,8 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 16px;
+  transform: scale(var(--header-scale, 1));
+  transform-origin: top left;
 }
 
 .tiltak-side__logo-row {
@@ -91,7 +94,7 @@
   display: flex;
   align-items: flex-end;
   gap: 24px;
-  padding: 0 clamp(24px, 3vw, 80px);
+  padding: 0 clamp(24px, calc(3 * var(--scaled-vw)), 80px);
   padding-bottom: clamp(40px, 8vh, 120px);
   transition: transform 0.4s ease-in-out;
   transform-origin: bottom center;
@@ -130,7 +133,7 @@
 
 .tiltak-side__tiltak-panel {
   flex: 0 0 auto;
-  width: clamp(360px, 30vw, 488px);
+  width: clamp(360px, calc(30 * var(--scaled-vw)), 488px);
   z-index: 1000;
   max-height: calc(100vh - clamp(40px, 8vh, 120px) - 120px);
   transition: transform 0.8s ease-in-out;
@@ -229,10 +232,10 @@
     gap: var(--pkt-spacing-16, 16px);
   }
   .tiltak-side__tiltak-panel {
-    width: clamp(300px, 30vw, 400px);
+    width: clamp(300px, calc(30 * var(--scaled-vw)), 400px);
   }
   .tiltak-side__info-panel {
-    flex: 0 0 clamp(280px, 24vw, 340px);
+    flex: 0 0 clamp(280px, calc(24 * var(--scaled-vw)), 340px);
   }
 }
 
@@ -245,13 +248,13 @@
     gap: var(--pkt-spacing-24, 24px);
   }
   .tiltak-side__tiltak-panel {
-    width: clamp(340px, 32vw, 520px);
+    width: clamp(340px, calc(32 * var(--scaled-vw)), 520px);
   }
   .tiltak-side__tiltak-panel .energy-solution-buttons {
     --esb-item-width: 100%;
   }
   .tiltak-side__info-panel {
-    flex: 0 0 clamp(320px, 24vw, 440px);
+    flex: 0 0 clamp(320px, calc(24 * var(--scaled-vw)), 440px);
   }
   .tiltak-side__circle-bg {
     width: min(520px, 100%);
@@ -267,35 +270,15 @@
     gap: var(--pkt-spacing-32, 32px);
   }
   .tiltak-side__tiltak-panel {
-    width: clamp(488px, 30vw, 580px);
+    width: clamp(488px, calc(30 * var(--scaled-vw)), 580px);
   }
   .tiltak-side__tiltak-panel .energy-solution-buttons {
     --esb-item-width: 100%;
   }
   .tiltak-side__info-panel {
-    flex: 0 0 clamp(380px, 25vw, 500px);
+    flex: 0 0 clamp(380px, calc(25 * var(--scaled-vw)), 500px);
   }
   .tiltak-side__circle-bg {
-    width: min(35vw, 640px);
-  }
-}
-
-/* Wide desktop (16:9, 1080p-ish) - fyll mer av bredden uten å endre sirkel-størrelse */
-@media screen and (min-width: 1600px) and (max-height: 1100px) and (min-aspect-ratio: 16/9) {
-  .tiltak-side {
-    --building-scale-multiplier: 1.15;
-  }
-
-  .tiltak-side__content {
-    padding-bottom: clamp(48px, 8vh, 120px);
-    gap: var(--pkt-spacing-24, 24px);
-  }
-
-  .tiltak-side__tiltak-panel {
-    width: clamp(540px, 34vw, 680px);
-  }
-
-  .tiltak-side__info-panel {
-    flex: 0 0 clamp(420px, 26vw, 560px);
+    width: min(calc(35 * var(--scaled-vw)), 640px);
   }
 }

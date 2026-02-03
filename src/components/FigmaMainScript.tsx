@@ -490,7 +490,10 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
       <div
         className={tiltakSideClasses}
-        style={{ ['--layout-scale' as string]: layoutScale }}
+        style={{
+          ['--layout-scale' as string]: layoutScale,
+          ['--header-scale' as string]: headerScale,
+        }}
       >
         {/* Three-column flex layout */}
         <main className="tiltak-side__content-shell">
@@ -625,3 +628,4 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     </>
   );
 };
+  const headerScale = Math.min(1.25, layoutScale);
