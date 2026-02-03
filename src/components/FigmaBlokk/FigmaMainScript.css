@@ -13,6 +13,8 @@
   z-index: 4;
   transition: opacity 0.4s ease-in-out;
   --building-scale-multiplier: 1;
+  --layout-scale: 1;
+  --content-scale: 1;
 }
 
 .tiltak-side--animate {
@@ -73,21 +75,31 @@
    Content - Tre-kolonne flexbox layout
    ========================================================================== */
 
-.tiltak-side__content {
+.tiltak-side__content-shell {
   position: absolute;
   inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.tiltak-side__content {
+  width: calc(100% / var(--layout-scale));
+  height: calc(100% / var(--layout-scale));
   display: flex;
   align-items: flex-end;
   gap: 24px;
   padding: 0 clamp(24px, 3vw, 80px);
   padding-bottom: clamp(40px, 8vh, 120px);
   transition: transform 0.4s ease-in-out;
-  transform-origin: top center;
-  z-index: 2;
+  transform-origin: bottom center;
+  transform: scale(calc(var(--layout-scale) * var(--content-scale)));
 }
 
 .tiltak-side__content--with-process {
-  transform: scale(0.895);
+  --content-scale: 0.895;
   padding-bottom: clamp(80px, 12vh, 160px);
 }
 
@@ -177,7 +189,8 @@
 .tiltak-side__process-wrapper {
   position: fixed;
   bottom: clamp(16px, 3vh, 40px);
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(var(--layout-scale));
+  transform-origin: bottom center;
   width: calc(var(--esb-item-width, 440px) + var(--esb-container-padding, 1.5rem) * 2);
   display: flex;
   flex-direction: column;
@@ -188,33 +201,8 @@
 
 /* Process button wrapper slides up when process view is shown */
 .tiltak-side__process-wrapper--transitioning {
-  transform: translateX(-50%) translateY(-100vh);
+  transform: translateX(-50%) translateY(-100vh) scale(var(--layout-scale));
   transition: transform 0.8s ease-in-out 0.08s;
-}
-
-/* Low-DPR (typisk Windows med skalert CSS-viewport) - match laptop-layouten fra mac */
-.tiltak-side--low-dpr .tiltak-side__content {
-  padding-left: var(--pkt-spacing-32, 32px);
-  padding-right: var(--pkt-spacing-32, 32px);
-  padding-bottom: clamp(32px, 6vh, 80px);
-  gap: var(--pkt-spacing-24, 24px);
-  justify-content: center;
-}
-
-.tiltak-side--low-dpr .tiltak-side__tiltak-panel {
-  width: clamp(340px, 32vw, 520px);
-}
-
-.tiltak-side--low-dpr .tiltak-side__info-panel {
-  flex: 0 0 clamp(320px, 24vw, 440px);
-}
-
-.tiltak-side--low-dpr .tiltak-side__building-area {
-  flex: 0 0 clamp(420px, 28vw, 520px);
-}
-
-.tiltak-side--low-dpr .tiltak-side__circle-bg {
-  width: min(520px, 100%);
 }
 
 /* ==========================================================================

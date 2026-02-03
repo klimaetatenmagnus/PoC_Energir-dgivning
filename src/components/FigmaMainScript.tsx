@@ -102,17 +102,29 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const [solarData, setSolarData] = React.useState<SolarEnergyData | null>(null);
   const [showYellowBox, setShowYellowBox] = React.useState(false);
   const [gulListeLoading, setGulListeLoading] = React.useState(true);
-  const [isLowDpr, setIsLowDpr] = React.useState(false);
+  const [layoutScale, setLayoutScale] = React.useState(1);
 
   React.useEffect(() => {
-    const updateDprFlag = () => {
+    const BASE_VIEWPORT = { width: 1250, height: 838 };
+
+    const updateLayoutScale = () => {
       const dpr = window.devicePixelRatio || 1;
-      setIsLowDpr(dpr < 1);
+      if (dpr >= 1) {
+        setLayoutScale(1);
+        return;
+      }
+
+      const viewport = window.visualViewport ?? { width: window.innerWidth, height: window.innerHeight };
+      const widthRatio = viewport.width / BASE_VIEWPORT.width;
+      const heightRatio = viewport.height / BASE_VIEWPORT.height;
+      const scale = Math.min(widthRatio, heightRatio);
+      const clamped = Math.min(1.6, Math.max(1, scale));
+      setLayoutScale(Number(clamped.toFixed(3)));
     };
 
-    updateDprFlag();
-    window.addEventListener('resize', updateDprFlag);
-    return () => window.removeEventListener('resize', updateDprFlag);
+    updateLayoutScale();
+    window.addEventListener('resize', updateLayoutScale);
+    return () => window.removeEventListener('resize', updateLayoutScale);
   }, []);
 
   // State for updated building data
@@ -435,7 +447,6 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const tiltakSideClasses = [
     'tiltak-side',
     allowProcessTransition ? 'tiltak-side--animate' : '',
-    isLowDpr ? 'tiltak-side--low-dpr' : '',
   ].filter(Boolean).join(' ');
 
   const headerClasses = [
@@ -479,9 +490,11 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
       <div
         className={tiltakSideClasses}
+        style={{ ['--layout-scale' as string]: layoutScale }}
       >
         {/* Three-column flex layout */}
-        <main className={`tiltak-side__content${activeTiltak.length > 0 && !isExpanded && !showProcess ? ' tiltak-side__content--with-process' : ''}${showProcess ? ' tiltak-side__content--transitioning' : ''}`}>
+        <main className="tiltak-side__content-shell">
+          <div className={`tiltak-side__content${activeTiltak.length > 0 && !isExpanded && !showProcess ? ' tiltak-side__content--with-process' : ''}${showProcess ? ' tiltak-side__content--transitioning' : ''}`}>
           {/* Left column: Tiltak list */}
           <aside className="tiltak-side__tiltak-panel">
             <EnergySolutionButtons
@@ -569,6 +582,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               onShowInfo={() => setShowInfoModal(true)}
             />
           </aside>
+          </div>
         </main>
 
       </div>
