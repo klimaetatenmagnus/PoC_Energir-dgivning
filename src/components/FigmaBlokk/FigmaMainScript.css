@@ -15,7 +15,7 @@
   --building-scale-multiplier: 1;
   --layout-scale: 1;
   --content-scale: 1;
-  --scaled-vw: calc(1vw / (var(--layout-scale) * var(--layout-scale)));
+  --scaled-vw: calc(1vw / var(--layout-scale));
 }
 
 .tiltak-side--animate {
@@ -237,6 +237,26 @@
   .tiltak-side__info-panel {
     flex: 0 0 clamp(280px, calc(24 * var(--scaled-vw)), 340px);
   }
+}
+
+/* Virtual tablet layout (brukes når vi skalerer layout på low-DPR) */
+.tiltak-side--virtual-tablet .tiltak-side__content {
+  padding-left: var(--pkt-spacing-24, 24px);
+  padding-right: var(--pkt-spacing-24, 24px);
+  padding-bottom: clamp(24px, 5vh, 64px);
+  gap: var(--pkt-spacing-16, 16px);
+}
+
+.tiltak-side--virtual-tablet .tiltak-side__tiltak-panel {
+  width: clamp(300px, calc(30 * var(--scaled-vw)), 400px);
+}
+
+.tiltak-side--virtual-tablet .tiltak-side__info-panel {
+  flex: 0 0 clamp(280px, calc(24 * var(--scaled-vw)), 340px);
+}
+
+.tiltak-side--virtual-tablet .tiltak-side__circle-bg {
+  width: min(520px, 100%);
 }
 
 /* Laptop (1280–1599px) */

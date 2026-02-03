@@ -103,6 +103,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const [showYellowBox, setShowYellowBox] = React.useState(false);
   const [gulListeLoading, setGulListeLoading] = React.useState(true);
   const [layoutScale, setLayoutScale] = React.useState(1);
+  const [virtualWidth, setVirtualWidth] = React.useState<number | null>(null);
 
   const headerScale = Math.min(1.25, layoutScale);
 
@@ -113,6 +114,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       const dpr = window.devicePixelRatio || 1;
       if (dpr >= 1) {
         setLayoutScale(1);
+        setVirtualWidth(null);
         return;
       }
 
@@ -121,13 +123,22 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       const heightRatio = viewport.height / BASE_VIEWPORT.height;
       const scale = Math.min(widthRatio, heightRatio);
       const clamped = Math.min(1.6, Math.max(1, scale));
-      setLayoutScale(Number(clamped.toFixed(3)));
+      const resolvedScale = Number(clamped.toFixed(3));
+      setLayoutScale(resolvedScale);
+      setVirtualWidth(viewport.width / resolvedScale);
     };
 
     updateLayoutScale();
     window.addEventListener('resize', updateLayoutScale);
     return () => window.removeEventListener('resize', updateLayoutScale);
   }, []);
+
+  const virtualClass = React.useMemo(() => {
+    if (!virtualWidth) return '';
+    if (virtualWidth < 1280) return 'tiltak-side--virtual-tablet';
+    if (virtualWidth < 1600) return 'tiltak-side--virtual-laptop';
+    return 'tiltak-side--virtual-desktop';
+  }, [virtualWidth]);
 
   // State for updated building data
   const [updatedBuildingData, setUpdatedBuildingData] = React.useState<AddressLookupResponse>(buildingData);
@@ -449,6 +460,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const tiltakSideClasses = [
     'tiltak-side',
     allowProcessTransition ? 'tiltak-side--animate' : '',
+    virtualClass,
   ].filter(Boolean).join(' ');
 
   const headerClasses = [

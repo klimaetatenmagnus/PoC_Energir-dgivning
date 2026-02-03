@@ -1,6 +1,9 @@
 /* ProsessenVidere – Punkt-based layout */
 
 .prosessen-videre {
+  --prosessen-scale: var(--desktop-scale, 1);
+  --prosessen-scaled-vw: calc(1vw / var(--prosessen-scale));
+  --prosessen-scaled-vh: calc(1vh / var(--prosessen-scale));
   position: fixed;
   inset: 0;
   z-index: 10000;
@@ -8,6 +11,13 @@
   overflow: hidden;
   padding: 0;
   pointer-events: none;
+}
+
+.prosessen-videre__scale-shell {
+  width: calc(100% / var(--prosessen-scale));
+  height: calc(100% / var(--prosessen-scale));
+  transform: scale(var(--prosessen-scale));
+  transform-origin: top left;
 }
 
 /* Decorative corner – hidden, page 2's corner stays visible behind */
@@ -30,7 +40,7 @@
 
 /* Hidden: cells slide down */
 .prosessen-videre--hidden .pkt-cell {
-  transform: translateY(100vh);
+  transform: translateY(calc(100 * var(--prosessen-scaled-vh)));
 }
 
 /* Staggered exit delays per card (only when going to hidden) */
@@ -63,7 +73,7 @@
 
 /* Grid section – top padding clears the fixed header from page 2 */
 .prosessen-videre__grid {
-  padding: clamp(120px, 18vh, 180px) var(--pkt-spacing-32, 32px) var(--pkt-spacing-48, 48px);
+  padding: clamp(120px, calc(18 * var(--prosessen-scaled-vh)), 180px) var(--pkt-spacing-32, 32px) var(--pkt-spacing-48, 48px);
 }
 
 /* Step wrapper – establishes the hover zone for the two-layer crossfade */
@@ -175,14 +185,14 @@
 /* Laptop (1280–1599px) */
 @media screen and (min-width: 80rem) and (max-width: 99.938rem) {
   .prosessen-videre__grid {
-    padding-top: clamp(160px, 20vh, 210px);
+    padding-top: clamp(160px, calc(20 * var(--prosessen-scaled-vh)), 210px);
   }
 }
 
 /* Desktop (1600px+) */
 @media screen and (min-width: 100rem) {
   .prosessen-videre__grid {
-    padding-top: clamp(170px, 18vh, 210px);
+    padding-top: clamp(170px, calc(18 * var(--prosessen-scaled-vh)), 210px);
     padding-left: var(--pkt-spacing-48, 48px);
     padding-right: var(--pkt-spacing-48, 48px);
   }

@@ -75,18 +75,20 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
 
   return (
     <div className={`prosessen-videre ${showProcess ? 'prosessen-videre--visible' : 'prosessen-videre--hidden'}`}>
-      <section className="prosessen-videre__grid pkt-grid pkt-grid--gap-size-24">
-        {steps.map((step) => (
-          <div key={step.number} className="pkt-cell pkt-cell--span12 pkt-cell--span4-tablet-up">
-            <StepCard
-              number={step.number}
-              text={step.text}
-              hoverText={step.number === 2 ? step2HoverText : step.hoverText}
-              icon={step.icon}
-            />
-          </div>
-        ))}
-      </section>
+      <div className="prosessen-videre__scale-shell">
+        <section className="prosessen-videre__grid pkt-grid pkt-grid--gap-size-24">
+          {steps.map((step) => (
+            <div key={step.number} className="pkt-cell pkt-cell--span12 pkt-cell--span4-tablet-up">
+              <StepCard
+                number={step.number}
+                text={step.text}
+                hoverText={step.number === 2 ? step2HoverText : step.hoverText}
+                icon={step.icon}
+              />
+            </div>
+          ))}
+        </section>
+      </div>
     </div>
   );
 };

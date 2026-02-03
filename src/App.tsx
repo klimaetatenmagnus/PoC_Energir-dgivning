@@ -43,6 +43,34 @@ export default function App() {
 
   const { isMobileView } = useResponsive();
 
+  useEffect(() => {
+    const BASE_VIEWPORT = { width: 1250, height: 838 };
+
+    const updateDesktopScale = () => {
+      if (isMobileView) {
+        document.documentElement.style.setProperty('--desktop-scale', '1');
+        return;
+      }
+
+      const dpr = window.devicePixelRatio || 1;
+      if (dpr >= 1) {
+        document.documentElement.style.setProperty('--desktop-scale', '1');
+        return;
+      }
+
+      const viewport = window.visualViewport ?? { width: window.innerWidth, height: window.innerHeight };
+      const widthRatio = viewport.width / BASE_VIEWPORT.width;
+      const heightRatio = viewport.height / BASE_VIEWPORT.height;
+      const scale = Math.min(widthRatio, heightRatio);
+      const clamped = Math.min(1.6, Math.max(1, scale));
+      document.documentElement.style.setProperty('--desktop-scale', clamped.toFixed(3));
+    };
+
+    updateDesktopScale();
+    window.addEventListener('resize', updateDesktopScale);
+    return () => window.removeEventListener('resize', updateDesktopScale);
+  }, [isMobileView]);
+
   // Hent kartkoordinater for mobil
   const mapCoordinates = useAddressCoordinates(searchValue, null);
 

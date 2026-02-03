@@ -969,6 +969,9 @@
 
 .landing {
   --landing-ground-height: clamp(24px, 4vh, 60px);
+  --landing-scale: var(--desktop-scale, 1);
+  --landing-scaled-vw: calc(1vw / var(--landing-scale));
+  --landing-scaled-vh: calc(1vh / var(--landing-scale));
   position: fixed;
   inset: 0;
   overflow: hidden;
@@ -988,16 +991,24 @@
 }
 
 /* Innholdsområde – sentrert med flexbox */
-.landing__content {
+.landing__content-shell {
   position: relative;
   z-index: 3;
+  width: calc(100% / var(--landing-scale));
+  height: calc(100% / var(--landing-scale));
+  transform: scale(var(--landing-scale));
+  transform-origin: top left;
+}
+
+.landing__content {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 24px;
-  width: clamp(480px, 55vw, 1000px);
-  padding-left: clamp(24px, 10vw, 200px);
-  padding-top: clamp(80px, 20vh, 220px);
+  width: clamp(480px, calc(55 * var(--landing-scaled-vw)), 1000px);
+  padding-left: clamp(24px, calc(10 * var(--landing-scaled-vw)), 200px);
+  padding-top: clamp(80px, calc(20 * var(--landing-scaled-vh)), 220px);
   transition: opacity 1.5s ease-in-out;
 }
 
@@ -1052,7 +1063,7 @@
 /* Oslo logo */
 .oslo-logo {
   display: block;
-  height: clamp(56px, 3.9vw, 76px);
+  height: clamp(56px, calc(3.9 * var(--landing-scaled-vw)), 76px);
   width: auto;
   flex-shrink: 0;
 }
@@ -1069,7 +1080,7 @@
   margin: 0;
   font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 700;
-  font-size: clamp(32px, 5vw, 86px);
+  font-size: clamp(32px, calc(5 * var(--landing-scaled-vw)), 86px);
   line-height: 1.2;
   letter-spacing: -0.325px;
   color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
@@ -1080,7 +1091,7 @@
   margin: 0;
   font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 400;
-  font-size: clamp(14px, 1.5vw, 26px);
+  font-size: clamp(14px, calc(1.5 * var(--landing-scaled-vw)), 26px);
   line-height: 1.4;
   letter-spacing: -0.2px;
   color: var(--pkt-color-brand-dark-blue-1000, #2A2859);

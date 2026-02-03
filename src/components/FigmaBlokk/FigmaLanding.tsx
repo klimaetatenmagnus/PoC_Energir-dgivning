@@ -74,46 +74,48 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
   return (
     <div className="landing">
       {/* Main content – centered above skyline */}
-      <div
-        className="landing__content"
-        style={{
-          opacity: headerFadeOpacity,
-        }}
-      >
-        <div className="oslo-logo-container">
-          <OsloLogo className="oslo-logo" color={landingForeground} />
-        </div>
+      <div className="landing__content-shell">
+        <div
+          className="landing__content"
+          style={{
+            opacity: headerFadeOpacity,
+          }}
+        >
+          <div className="oslo-logo-container">
+            <OsloLogo className="oslo-logo" color={landingForeground} />
+          </div>
 
-        <div className="energiportalen-header">
-          <h1 className="energiportalen-title">Energinøkkelen</h1>
-          <p className="energiportalen-subtitle">Søk opp adressen din, og se hvor mye du kan spare</p>
-        </div>
+          <div className="energiportalen-header">
+            <h1 className="energiportalen-title">Energinøkkelen</h1>
+            <p className="energiportalen-subtitle">Søk opp adressen din, og se hvor mye du kan spare</p>
+          </div>
 
-        <div className="landing__search">
-          <PktSearchInput
-            id="landing-search"
-            appearance="global"
-            fullwidth
-            placeholder="Skriv inn adresse..."
-            value={searchValue}
-            disabled={loading}
-            suggestions={pktSuggestions}
-            onChange={handleChange}
-            onSearch={handlePktSearch}
-            onFocus={openSuggestions}
-            ref={inputRef}
-          />
-          {error && <div className="landing__error">{error.message}</div>}
-          {loading && (
-            <div className="landing__loader">
-              <PktLoader
-                message="Henter boliginformasjon..."
-                size="large"
-                variant="rainbow"
-                isLoading
-              />
-            </div>
-          )}
+          <div className="landing__search">
+            <PktSearchInput
+              id="landing-search"
+              appearance="global"
+              fullwidth
+              placeholder="Skriv inn adresse..."
+              value={searchValue}
+              disabled={loading}
+              suggestions={pktSuggestions}
+              onChange={handleChange}
+              onSearch={handlePktSearch}
+              onFocus={openSuggestions}
+              ref={inputRef}
+            />
+            {error && <div className="landing__error">{error.message}</div>}
+            {loading && (
+              <div className="landing__loader">
+                <PktLoader
+                  message="Henter boliginformasjon..."
+                  size="large"
+                  variant="rainbow"
+                  isLoading
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
