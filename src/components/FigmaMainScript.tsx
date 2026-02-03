@@ -88,6 +88,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const [showHeader, setShowHeader] = React.useState(false);
 
   // Show header after a delay
+  const headerScale = Math.min(1.25, layoutScale);
+
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setShowHeader(true);
@@ -628,4 +630,3 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     </>
   );
 };
-  const headerScale = Math.min(1.25, layoutScale);
