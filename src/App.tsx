@@ -52,12 +52,6 @@ export default function App() {
         return;
       }
 
-      const dpr = window.devicePixelRatio || 1;
-      if (dpr >= 1) {
-        document.documentElement.style.setProperty('--desktop-scale', '1');
-        return;
-      }
-
       const viewport = window.visualViewport ?? { width: window.innerWidth, height: window.innerHeight };
       const widthRatio = viewport.width / BASE_VIEWPORT.width;
       const heightRatio = viewport.height / BASE_VIEWPORT.height;

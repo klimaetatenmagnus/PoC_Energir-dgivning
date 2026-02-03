@@ -111,13 +111,6 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     const BASE_VIEWPORT = { width: 1250, height: 838 };
 
     const updateLayoutScale = () => {
-      const dpr = window.devicePixelRatio || 1;
-      if (dpr >= 1) {
-        setLayoutScale(1);
-        setVirtualWidth(null);
-        return;
-      }
-
       const viewport = window.visualViewport ?? { width: window.innerWidth, height: window.innerHeight };
       const widthRatio = viewport.width / BASE_VIEWPORT.width;
       const heightRatio = viewport.height / BASE_VIEWPORT.height;
