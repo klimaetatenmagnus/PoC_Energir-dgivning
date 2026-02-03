@@ -15,7 +15,7 @@
   --building-scale-multiplier: 1;
   --layout-scale: 1;
   --content-scale: 1;
-  --scaled-vw: calc(1vw / var(--layout-scale));
+  --scaled-vw: calc(1vw / (var(--layout-scale) * var(--layout-scale)));
 }
 
 .tiltak-side--animate {

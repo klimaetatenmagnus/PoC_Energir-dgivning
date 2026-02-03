@@ -459,7 +459,10 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   return (
     <>
       {/* Header with logo and back button - fixed outside tiltak-side for z-index above ProsessenVidere */}
-      <div className={headerClasses}>
+      <div
+        className={headerClasses}
+        style={{ ['--header-scale' as string]: headerScale }}
+      >
         <div className="tiltak-side__header-inner">
           <div className="tiltak-side__logo-row">
             <OsloLogo color="var(--pkt-color-brand-dark-blue-1000, #2a2859)" />
