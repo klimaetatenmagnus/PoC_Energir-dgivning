@@ -302,3 +302,13 @@
     width: min(calc(35 * var(--scaled-vw)), 640px);
   }
 }
+
+/* Extra scaling adjustments for large low-DPR viewports (Windows) */
+.tiltak-side--scale-up .tiltak-side__tiltak-panel {
+  width: clamp(300px, calc(26 * var(--scaled-vw)), 420px);
+  margin-left: clamp(8px, calc(1.2 * var(--scaled-vw)), 24px);
+}
+
+.tiltak-side--scale-up .tiltak-side__info-panel {
+  flex: 0 0 clamp(320px, calc(24 * var(--scaled-vw)), 440px);
+}
