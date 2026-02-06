@@ -23,8 +23,8 @@ const ENERGY_INTENSITY_BY_TEK: Record<string, Record<BuildingType, number>> = {
   'TEK97': { småhus: 166.7, blokk: 153.8 },
   'TEK87': { småhus: 201.0, blokk: 171.4 },
   'TEK69': { småhus: 240.2, blokk: 222.1 },
-  'TEK49': { småhus: 264.2, blokk: 244.3 }, // TEK69 + 10%
-  'eldre': { småhus: 264.2, blokk: 244.3 }, // TEK69 + 10%
+  'TEK49': { småhus: 240.2, blokk: 222.1 }, // Samme som TEK69 (eldste i Multiconsult-modell)
+  'eldre': { småhus: 240.2, blokk: 222.1 }, // Samme som TEK69 (eldste i Multiconsult-modell)
 };
 
 /**
