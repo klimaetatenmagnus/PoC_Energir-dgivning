@@ -13,6 +13,11 @@
   pointer-events: none;
 }
 
+/* Mac-only scaling to ensure all 6 steps fit within the viewport */
+.platform-mac .prosessen-videre {
+  --prosessen-scale: clamp(0.92, calc(0.92 + (var(--desktop-scale, 1) - 1) * 0.35), 1.05);
+}
+
 .prosessen-videre__scale-shell {
   width: calc(100% / var(--prosessen-scale));
   height: calc(100% / var(--prosessen-scale));
@@ -74,6 +79,10 @@
 /* Grid section – top padding clears the fixed header from page 2 */
 .prosessen-videre__grid {
   padding: clamp(120px, calc(18 * var(--prosessen-scaled-vh)), 180px) var(--pkt-spacing-32, 32px) var(--pkt-spacing-48, 48px);
+}
+
+.platform-mac .prosessen-videre__grid {
+  padding: clamp(100px, calc(15 * var(--prosessen-scaled-vh)), 160px) var(--pkt-spacing-32, 32px) var(--pkt-spacing-48, 48px);
 }
 
 /* Step wrapper – establishes the hover zone for the two-layer crossfade */
@@ -187,6 +196,9 @@
   .prosessen-videre__grid {
     padding-top: clamp(160px, calc(20 * var(--prosessen-scaled-vh)), 210px);
   }
+  .platform-mac .prosessen-videre__grid {
+    padding-top: clamp(140px, calc(17 * var(--prosessen-scaled-vh)), 190px);
+  }
 }
 
 /* Desktop (1600px+) */
@@ -195,6 +207,9 @@
     padding-top: clamp(170px, calc(18 * var(--prosessen-scaled-vh)), 210px);
     padding-left: var(--pkt-spacing-48, 48px);
     padding-right: var(--pkt-spacing-48, 48px);
+  }
+  .platform-mac .prosessen-videre__grid {
+    padding-top: clamp(150px, calc(16 * var(--prosessen-scaled-vh)), 190px);
   }
   .prosessen-videre__step-circle {
     width: 260px;

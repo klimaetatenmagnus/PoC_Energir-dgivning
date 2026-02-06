@@ -109,13 +109,15 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
   React.useEffect(() => {
     const BASE_VIEWPORT = { width: 1250, height: 838 };
+    const SCALE_DOWN_FACTOR = 0.8;
 
     const updateLayoutScale = () => {
       const viewport = window.visualViewport ?? { width: window.innerWidth, height: window.innerHeight };
       const widthRatio = viewport.width / BASE_VIEWPORT.width;
       const heightRatio = viewport.height / BASE_VIEWPORT.height;
       const scale = Math.min(widthRatio, heightRatio);
-      const clamped = Math.min(1.6, Math.max(1, scale));
+      const adjusted = scale >= 1 ? scale * SCALE_DOWN_FACTOR : scale;
+      const clamped = Math.min(1.6, adjusted);
       const resolvedScale = Number(clamped.toFixed(3));
       setLayoutScale(resolvedScale);
       setVirtualWidth(viewport.width / resolvedScale);
@@ -134,6 +136,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   }, [virtualWidth]);
 
   const scaleUpClass = layoutScale > 1.15 ? 'tiltak-side--scale-up' : '';
+  const scaleDownClass = layoutScale < 1 ? 'tiltak-side--scale-down' : '';
 
   // State for updated building data
   const [updatedBuildingData, setUpdatedBuildingData] = React.useState<AddressLookupResponse>(buildingData);
@@ -457,6 +460,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     allowProcessTransition ? 'tiltak-side--animate' : '',
     virtualClass,
     scaleUpClass,
+    scaleDownClass,
   ].filter(Boolean).join(' ');
 
   const headerClasses = [

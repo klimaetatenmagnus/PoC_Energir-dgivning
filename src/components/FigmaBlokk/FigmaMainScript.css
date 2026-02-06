@@ -15,7 +15,8 @@
   --building-scale-multiplier: 1;
   --layout-scale: 1;
   --content-scale: 1;
-  --scaled-vw: calc(1vw / var(--layout-scale));
+  --scaled-vw: calc(1vw / max(1, var(--layout-scale)));
+  --scaled-vh: calc(1vh / max(1, var(--layout-scale)));
 }
 
 .tiltak-side--animate {
@@ -108,22 +109,22 @@
 
 /* Content children slide up with stagger (page 2 → 3) */
 .tiltak-side__content--transitioning .tiltak-side__tiltak-panel {
-  transform: translateY(-100vh);
+  transform: translateY(calc(-100 * var(--scaled-vh)));
   transition: transform 0.8s ease-in-out;
 }
 
 .tiltak-side__content--transitioning .tiltak-side__circle-bg {
-  transform: translateY(-100vh) translateX(-50%);
+  transform: translateY(calc(-100 * var(--scaled-vh))) translateX(-50%);
   transition: transform 0.8s ease-in-out 0.04s;
 }
 
 .tiltak-side__content--transitioning .tiltak-side__building {
-  transform: translateY(-100vh) scale(calc(var(--building-scale) * var(--building-scale-multiplier, 1)));
+  transform: translateY(calc(-100 * var(--scaled-vh))) scale(calc(var(--building-scale) * var(--building-scale-multiplier, 1)));
   transition: transform 0.8s ease-in-out 0.08s;
 }
 
 .tiltak-side__content--transitioning .tiltak-side__info-panel {
-  transform: translateY(-100vh);
+  transform: translateY(calc(-100 * var(--scaled-vh)));
   transition: transform 0.8s ease-in-out 0.12s;
 }
 
@@ -204,7 +205,7 @@
 
 /* Process button wrapper slides up when process view is shown */
 .tiltak-side__process-wrapper--transitioning {
-  transform: translateX(-50%) translateY(-100vh) scale(var(--layout-scale));
+  transform: translateX(-50%) translateY(calc(-100 * var(--scaled-vh))) scale(var(--layout-scale));
   transition: transform 0.8s ease-in-out 0.08s;
 }
 
@@ -311,4 +312,13 @@
 
 .tiltak-side--scale-up .tiltak-side__info-panel {
   flex: 0 0 clamp(320px, calc(24 * var(--scaled-vw)), 440px);
+}
+
+/* Scale-down adjustments to keep spacing balanced on mac */
+.tiltak-side--scale-down .tiltak-side__tiltak-panel {
+  width: clamp(320px, calc(26 * var(--scaled-vw)), 440px);
+}
+
+.tiltak-side--scale-down .tiltak-side__content {
+  padding-bottom: clamp(64px, 10vh, 160px);
 }

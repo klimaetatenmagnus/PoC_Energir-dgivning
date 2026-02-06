@@ -45,6 +45,7 @@ export default function App() {
 
   useEffect(() => {
     const BASE_VIEWPORT = { width: 1250, height: 838 };
+    const SCALE_DOWN_FACTOR = 0.8;
 
     const updateDesktopScale = () => {
       if (isMobileView) {
@@ -56,7 +57,8 @@ export default function App() {
       const widthRatio = viewport.width / BASE_VIEWPORT.width;
       const heightRatio = viewport.height / BASE_VIEWPORT.height;
       const scale = Math.min(widthRatio, heightRatio);
-      const clamped = Math.min(1.6, Math.max(1, scale));
+      const adjusted = scale >= 1 ? scale * SCALE_DOWN_FACTOR : scale;
+      const clamped = Math.min(1.6, adjusted);
       document.documentElement.style.setProperty('--desktop-scale', clamped.toFixed(3));
     };
 
@@ -64,6 +66,14 @@ export default function App() {
     window.addEventListener('resize', updateDesktopScale);
     return () => window.removeEventListener('resize', updateDesktopScale);
   }, [isMobileView]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const platform = navigator.platform || '';
+    const userAgent = navigator.userAgent || '';
+    const isMac = /Mac/.test(platform) || /Macintosh/.test(userAgent);
+    root.classList.toggle('platform-mac', isMac);
+  }, []);
 
   // Hent kartkoordinater for mobil
   const mapCoordinates = useAddressCoordinates(searchValue, null);
