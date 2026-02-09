@@ -56,12 +56,13 @@ export default function App() {
       }
 
       const dpr = window.devicePixelRatio || 1;
-      if (dpr <= 1.05) {
+      if (dpr <= 1.1) {
         return 1;
       }
 
-      // Gentle compensation for OS-level display scaling (e.g. 125%/150% in Windows).
-      return Math.max(0.88, Math.min(1, 1 - (dpr - 1) * 0.12));
+      // Stronger compensation for OS-level display scaling (e.g. 125%/150% in Windows).
+      const normalized = Math.min(0.6, dpr - 1);
+      return Math.max(0.82, Math.min(1, 1 - normalized * 0.28));
     };
 
     const updateDesktopScale = () => {
@@ -84,7 +85,11 @@ export default function App() {
 
     updateDesktopScale();
     window.addEventListener('resize', updateDesktopScale);
-    return () => window.removeEventListener('resize', updateDesktopScale);
+    window.visualViewport?.addEventListener('resize', updateDesktopScale);
+    return () => {
+      window.removeEventListener('resize', updateDesktopScale);
+      window.visualViewport?.removeEventListener('resize', updateDesktopScale);
+    };
   }, [isMobileView]);
 
   useEffect(() => {

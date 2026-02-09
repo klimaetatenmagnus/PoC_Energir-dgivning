@@ -110,20 +110,22 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   React.useEffect(() => {
     const BASE_VIEWPORT = { width: 1250, height: 838 };
     const SCALE_DOWN_FACTOR = 0.8;
-    const root = document.documentElement;
+    const platform = navigator.platform || '';
+    const userAgent = navigator.userAgent || '';
+    const isWindows = /Win/.test(platform) || /Windows/.test(userAgent);
 
     const getDisplayScaleCompensation = () => {
-      const isWindows = root.classList.contains('platform-windows');
       if (!isWindows) {
         return 1;
       }
 
       const dpr = window.devicePixelRatio || 1;
-      if (dpr <= 1.05) {
+      if (dpr <= 1.1) {
         return 1;
       }
 
-      return Math.max(0.88, Math.min(1, 1 - (dpr - 1) * 0.12));
+      const normalized = Math.min(0.6, dpr - 1);
+      return Math.max(0.82, Math.min(1, 1 - normalized * 0.28));
     };
 
     const updateLayoutScale = () => {
@@ -141,7 +143,11 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
     updateLayoutScale();
     window.addEventListener('resize', updateLayoutScale);
-    return () => window.removeEventListener('resize', updateLayoutScale);
+    window.visualViewport?.addEventListener('resize', updateLayoutScale);
+    return () => {
+      window.removeEventListener('resize', updateLayoutScale);
+      window.visualViewport?.removeEventListener('resize', updateLayoutScale);
+    };
   }, []);
 
   const virtualClass = React.useMemo(() => {
