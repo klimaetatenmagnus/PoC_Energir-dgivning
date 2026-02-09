@@ -213,14 +213,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     return calculateTEK(byggeaarCandidate) as TekPeriodInput;
   }, [buildingData]);
 
-  const isBlokk = React.useMemo(() => {
-    return ['14', '15', '16', '17'].includes(buildingTypeCode) ||
-      buildingTypeNameLower.includes('blokk') ||
-      buildingTypeNameLower.includes('leilighet') ||
-      buildingTypeNameLower.includes('boligbygg') ||
-      buildingTypeNameLower === 'store boligbygg';
-  }, [buildingTypeCode, buildingTypeNameLower]);
-
   // Boligtype for energibesparelses-beregninger (småhus eller blokk)
   // Bruker sentralisert determineBuildingType() for konsistens
   const boligtype: Boligtype | null = React.useMemo(() => {
@@ -258,8 +250,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       canonicalKey: getCanonicalKey(t.id, t.title)
     }));
   }, [isCatalogLoading, filteredTiltak]);
-
-  const enovaRating = buildingData?.energiattest?.energikarakter?.toUpperCase();
 
   // Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
   const calculatedRating = React.useMemo(() => {
@@ -587,7 +577,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
             </button>
 
             <h2 className="energy-solution-buttons__modal-title">
-              Hvordan fungerer siden?
+              Hvordan fungerer Energinøkkelen?
             </h2>
 
             <div className="energy-solution-buttons__modal-content">
@@ -597,6 +587,16 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
               <p className="energy-solution-buttons__modal-paragraph">
                 Informasjon om bygningen din hentes automatisk fra Matrikkelen (Norges offisielle eiendomsregister).
                 Dette inkluderer bygningstype, byggeår, bruksareal (BRA) og om bygningen er på Gul liste.
+              </p>
+              <p className="energy-solution-buttons__modal-paragraph">
+                Energinøkkelen henter data for hele bygningen. For bygninger med flere boenheter, presenteres totalt areal og totalt estimert energibruk. Du kan redigere arealet for å få estimert energiforbruket for din leilighet.
+              </p>
+
+              <h3 className="energy-solution-buttons__modal-section-title energy-solution-buttons__modal-section-title--spaced">
+                Har du allerede gjennomført tiltak?
+              </h3>
+              <p className="energy-solution-buttons__modal-paragraph">
+                Energinøkkelen har ikke informasjon om hvilke tiltak som allerede er gjort på bygningen. Kryss gjerne av for allerede utførte tiltak først og noter ned besparelsen som allerede er oppnådd før du legger til nye tiltak.
               </p>
 
               <h3 className="energy-solution-buttons__modal-section-title energy-solution-buttons__modal-section-title--spaced">
@@ -620,16 +620,6 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                 Estimert energikarakter kan avvike fra registrerte energiattester hos Enova for samme bygning.
               </p>
 
-              {enovaRating && (
-                <p className="energy-solution-buttons__modal-paragraph">
-                  {isBlokk ? (
-                    <>Blokkens energiforbruk beregnes fra energikarakteren til en av leilighetene. Deretter brukes de samme grenseverdiene fra Enova for å beregne energiforbruket for hele blokken basert på blokkens bruksareal.</>
-                  ) : (
-                    <>Din nåværende energikarakter og energiforbruk er hentet direkte fra bygningens energiattest registrert hos Enova.</>
-                  )}
-                </p>
-              )}
-
               <h3 className="energy-solution-buttons__modal-section-title energy-solution-buttons__modal-section-title--spaced">
                 Beregning av besparelser
               </h3>
@@ -651,7 +641,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
               </p>
 
               <p className="energy-solution-buttons__modal-note">
-                Merk: Alle beregninger er estimater. Faktiske besparelser varierer ut ifra mange forskjellige faktorer.
+                Merk: Alle beregninger er estimater. Faktiske besparelser varierer ut ifra flere ulike faktorer.
               </p>
             </div>
           </div>

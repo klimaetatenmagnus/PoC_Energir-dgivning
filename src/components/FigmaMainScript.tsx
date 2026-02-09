@@ -161,10 +161,12 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const eneboligRef = React.useRef<HTMLDivElement>(null);
   const blokkRef = React.useRef<HTMLDivElement>(null);
   const buildingAreaRef = React.useRef<HTMLDivElement>(null);
+  const circleRef = React.useRef<HTMLDivElement>(null);
 
 
   // State for process slide animation
   const [showProcess, setShowProcess] = React.useState(false);
+  const [isProcessButtonExiting, setIsProcessButtonExiting] = React.useState(false);
   const [showInfoModal, setShowInfoModal] = React.useState(false);
 
   // State for tiltak animations and arrow feedback
@@ -173,37 +175,58 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const [arrowColor, setArrowColor] = React.useState<string>('#32A548');
   const prevTiltak = React.useRef(new Set<TiltakCanonicalKey>());
 
-  // Track building area center X for process button positioning
-  const [buildingCenterX, setBuildingCenterX] = React.useState<number | null>(null);
+  // Track process button anchor near the rendered building
+  const [processButtonX, setProcessButtonX] = React.useState<number | null>(null);
+  const [processButtonY, setProcessButtonY] = React.useState<number | null>(null);
 
   React.useEffect(() => {
-    const el = buildingAreaRef.current;
-    if (!el) return;
-    const willScale = activeTiltak.length > 0 && !showProcess;
-    const scale = willScale ? 0.895 : 1;
+    const shouldTrackButton = activeTiltak.length > 0 && !isExpanded && !showProcess;
+    if (!shouldTrackButton) {
+      return;
+    }
+
+    let rafId = 0;
     const update = () => {
-      const rect = el.getBoundingClientRect();
-      // Get the unscaled center by reversing any current CSS transform
-      const currentTransform = window.getComputedStyle(el.parentElement!).transform;
-      let currentScale = 1;
-      if (currentTransform && currentTransform !== 'none') {
-        const match = currentTransform.match(/matrix\(([^,]+)/);
-        if (match) currentScale = parseFloat(match[1]);
+      const areaEl = buildingAreaRef.current;
+      const buildingEl = (isEnebolig ? eneboligRef.current : blokkRef.current) ?? areaEl;
+      if (!areaEl || !buildingEl) {
+        rafId = window.requestAnimationFrame(update);
+        return;
       }
-      const viewportCenter = window.innerWidth / 2;
-      const renderedCenter = rect.left + rect.width / 2;
-      // Reverse the current scale to get the unscaled center
-      const unscaledCenter = viewportCenter + (renderedCenter - viewportCenter) / currentScale;
-      // Apply the target scale to get the final position
-      const targetCenter = viewportCenter + (unscaledCenter - viewportCenter) * scale;
-      setBuildingCenterX(targetCenter);
+
+      const buildingRect = buildingEl.getBoundingClientRect();
+      const circleRect = circleRef.current?.getBoundingClientRect();
+
+      const desiredTop = buildingRect.bottom + 38;
+      const clampedTop = Math.min(window.innerHeight - 98, Math.max(96, desiredTop));
+
+      setProcessButtonX(circleRect ? (circleRect.left + circleRect.width / 2) : (buildingRect.left + buildingRect.width / 2));
+      setProcessButtonY(clampedTop);
+      rafId = window.requestAnimationFrame(update);
     };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    window.addEventListener('resize', update);
-    return () => { ro.disconnect(); window.removeEventListener('resize', update); };
-  }, [showProcess, activeTiltak.length]);
+
+    rafId = window.requestAnimationFrame(update);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [isEnebolig, showProcess, activeTiltak.length, isExpanded]);
+
+  React.useEffect(() => {
+    if (!showProcess) {
+      setIsProcessButtonExiting(false);
+      return;
+    }
+
+    setIsProcessButtonExiting(true);
+    const timer = window.setTimeout(() => {
+      setIsProcessButtonExiting(false);
+    }, 1100);
+
+    return () => window.clearTimeout(timer);
+  }, [showProcess]);
+
+  const handleShowProcess = React.useCallback(() => {
+    setIsProcessButtonExiting(true);
+    setShowProcess(true);
+  }, []);
 
   // Building animation: place in final position, use overlay for transition
   const [buildingReady, setBuildingReady] = React.useState(false);
@@ -537,6 +560,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
           <section className="tiltak-side__building-area" ref={buildingAreaRef}>
             {/* White circle background */}
             <div
+              ref={circleRef}
               className={`tiltak-side__circle-bg ${showHeader && !isExpanded ? 'tiltak-side__circle-bg--visible' : 'tiltak-side__circle-bg--hidden'}`}
             />
 
@@ -605,35 +629,38 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
           </div>
         </main>
 
+        {/* Process button */}
+        {activeTiltak.length > 0 && !isExpanded && (!showProcess || isProcessButtonExiting) && processButtonX !== null && processButtonY !== null && (
+          <div
+            className={`tiltak-side__process-wrapper${showProcess && isProcessButtonExiting ? ' tiltak-side__process-wrapper--transitioning' : ''}`}
+            style={{
+              left: processButtonX,
+              top: `${processButtonY}px`,
+              bottom: 'auto',
+            }}
+          >
+            <PktButton
+              skin="primary"
+              size="medium"
+              variant="icon-left"
+              iconName="chevron-thin-down"
+              onClick={handleShowProcess}
+              className="energy-solution-buttons__process-btn--punkt"
+            >
+              Hvordan gjennomføre tiltakene
+            </PktButton>
+            <button
+              className="energy-solution-buttons__scroll-indicator"
+              onClick={handleShowProcess}
+              aria-label="Gå til prosessen videre"
+            >
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
-
-      {/* Process button - fixed outside tiltak-side for independent z-index */}
-      {activeTiltak.length > 0 && !isExpanded && (
-        <div
-          className={`tiltak-side__process-wrapper${showProcess ? ' tiltak-side__process-wrapper--transitioning' : ''}`}
-          style={{ left: buildingCenterX ?? '50%' }}
-        >
-          <PktButton
-            skin="primary"
-            size="medium"
-            variant="icon-left"
-            iconName="chevron-thin-down"
-            onClick={() => setShowProcess(true)}
-            className="energy-solution-buttons__process-btn--punkt"
-          >
-            Hvordan gjennomføre tiltakene
-          </PktButton>
-          <button
-            className="energy-solution-buttons__scroll-indicator"
-            onClick={() => setShowProcess(true)}
-            aria-label="Gå til prosessen videre"
-          >
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-        </div>
-      )}
 
       {/* Prosessen videre component */}
       <ProsessenVidere

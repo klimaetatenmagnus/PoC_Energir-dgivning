@@ -194,6 +194,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   const [_showEnergyInfo, _setShowEnergyInfo] = useState(false); // Beholdes for fremtidig bruk i energibesparelses-boksen
   const [showInfoBox, setShowInfoBox] = useState(false);
   const [isInfoBoxExiting, setIsInfoBoxExiting] = useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [isHowItWorksExiting, setIsHowItWorksExiting] = useState(false);
 
   // Bydelssammenligning state
   const [showDistrictComparison, setShowDistrictComparison] = useState(false);
@@ -618,6 +620,15 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     }, 300); // Matcher slideUp-animasjonens varighet
   }, []);
 
+  // Lukk "Hvordan fungerer" modal med exit-animasjon
+  const closeHowItWorks = useCallback(() => {
+    setIsHowItWorksExiting(true);
+    setTimeout(() => {
+      setShowHowItWorks(false);
+      setIsHowItWorksExiting(false);
+    }, 300);
+  }, []);
+
   const toggleChecked = useCallback((tiltakId: string) => {
     setCheckedItems((prev) => {
       const newSet = new Set(prev);
@@ -944,7 +955,17 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
 
         {/* Tiltaksliste header - overskrift og bygningsillustrasjon på linje */}
         <div className="mobile-energy-solutions__tiltak-header">
-          <h2 className="mobile-energy-solutions__section-title mobile-energy-solutions__tiltak-title">Velg tiltak for din bolig</h2>
+          <div className="mobile-energy-solutions__tiltak-title-row">
+            <h2 className="mobile-energy-solutions__section-title mobile-energy-solutions__tiltak-title">Velg tiltak for din bolig</h2>
+            <PktButton
+              skin="tertiary"
+              size="small"
+              variant="icon-only"
+              iconName="information"
+              aria-label="Hvordan fungerer Energinøkkelen?"
+              onClick={() => setShowHowItWorks(true)}
+            />
+          </div>
           {/* Bygningsillustrasjon */}
           <div
             className="mobile-energy-solutions__building-illustration"
@@ -1118,6 +1139,79 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                 setTimeout(() => setShowDistrictComparison(true), 300);
               }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* "Hvordan fungerer Energinøkkelen?" modal */}
+      {showHowItWorks && (
+        <div
+          className={`mobile-energy-solutions__infobox-overlay${isHowItWorksExiting ? ' mobile-energy-solutions__infobox-overlay--exiting' : ''}`}
+          onClick={closeHowItWorks}
+        >
+          <div
+            className={`mobile-energy-solutions__infobox-container${isHowItWorksExiting ? ' mobile-energy-solutions__infobox-container--exiting' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button className="mobile-energy-solutions__how-it-works-close" onClick={closeHowItWorks} aria-label="Lukk">
+              <PktIcon name="close" />
+            </button>
+            <div className="mobile-energy-solutions__how-it-works-content">
+              <h2>Hvordan fungerer Energinøkkelen?</h2>
+
+              <h3>Innhenting av data</h3>
+              <p>
+                Informasjon om bygningen din hentes automatisk fra Matrikkelen (Norges offisielle eiendomsregister).
+                Dette inkluderer bygningstype, byggeår, bruksareal (BRA) og om bygningen er på Gul liste.
+              </p>
+              <p>
+                Energinøkkelen henter data for hele bygningen. For bygninger med flere boenheter, presenteres totalt areal og totalt estimert energibruk. Du kan redigere arealet for å få estimert energiforbruket for din leilighet.
+              </p>
+
+              <h3>Har du allerede gjennomført tiltak?</h3>
+              <p>
+                Energinøkkelen har ikke informasjon om hvilke tiltak som allerede er gjort på bygningen. Kryss gjerne av for allerede utførte tiltak først og noter ned besparelsen som allerede er oppnådd før du legger til nye tiltak.
+              </p>
+
+              <h3>Energikarakter</h3>
+              <p>
+                Energikarakteren viser hvor energieffektiv bygningen din er på en skala fra A til G, hvor A er best.
+                Karakteren beregnes ut fra grenseverdier fra{' '}
+                <a
+                  href="https://www.enova.no/energimerking/karakterskalaen"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Enova
+                </a>
+                {' '}for bygningens årlige energiforbruk per kvadratmeter (kWh/m²/år).
+                Energiforbruket estimeres basert på byggeår og gjeldende teknisk forskrift (TEK) ved byggeåret.
+              </p>
+              <p>
+                Estimert energikarakter kan avvike fra registrerte energiattester hos Enova for samme bygning.
+              </p>
+
+              <h3>Beregning av besparelser</h3>
+              <p>
+                Besparelsene beregnes fra datasett som gir estimert besparelse basert på bygningstype, bruksareal (BRA) og
+                teknisk forskrift (TEK). Disse variablene hentes automatisk fra Matrikkelen, utenom TEK som estimeres ut fra byggeår. Dette er en forenkling som gjør at det ikke blir tatt hensyn til om bygget har tidligere blitt oppgradert.
+              </p>
+              <p>
+                For solenergi hentes data fra Oslo kommunes{' '}
+                <a
+                  href="https://od2.pbe.oslo.kommune.no/solkart/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Solkart
+                </a>
+                . Alle takflater med solpotensial over 800 kWh/m² summeres og multipliseres. Deretter antas det at 85% av takarealet kan utnyttes til solceller, og at solcellene har en virkningsgrad på 20%.
+              </p>
+
+              <p className="mobile-energy-solutions__how-it-works-note">
+                Merk: Alle beregninger er estimater. Faktiske besparelser varierer ut ifra flere ulike faktorer.
+              </p>
+            </div>
           </div>
         </div>
       )}

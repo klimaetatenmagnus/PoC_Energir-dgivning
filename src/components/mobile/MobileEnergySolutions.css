@@ -740,6 +740,75 @@
   }
 }
 
+/* Tittelrad med info-knapp for tiltak-header */
+.mobile-energy-solutions__tiltak-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+/* "Hvordan fungerer Energinøkkelen?" modal innhold */
+.mobile-energy-solutions__how-it-works-close {
+  position: absolute;
+  top: var(--pkt-spacing-12, 0.75rem);
+  right: var(--pkt-spacing-12, 0.75rem);
+  background: none;
+  border: none;
+  padding: var(--pkt-spacing-8, 0.5rem);
+  cursor: pointer;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  z-index: 1;
+}
+
+.mobile-energy-solutions__how-it-works-content {
+  padding: var(--pkt-spacing-24, 1.5rem);
+  padding-top: calc(var(--pkt-spacing-24, 1.5rem) + 44px);
+}
+
+.mobile-energy-solutions__how-it-works-content h2 {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  margin: 0 0 var(--pkt-spacing-16, 1rem) 0;
+}
+
+.mobile-energy-solutions__how-it-works-content h3 {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  margin: var(--pkt-spacing-16, 1rem) 0 var(--pkt-spacing-8, 0.5rem) 0;
+}
+
+.mobile-energy-solutions__how-it-works-content h3:first-of-type {
+  margin-top: 0;
+}
+
+.mobile-energy-solutions__how-it-works-content p {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--pkt-color-brand-neutrals-1000, #2c2c2c);
+  margin: 0 0 var(--pkt-spacing-8, 0.5rem) 0;
+}
+
+.mobile-energy-solutions__how-it-works-content a {
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  text-decoration: underline;
+}
+
+.mobile-energy-solutions__how-it-works-note {
+  font-style: italic;
+  margin-top: var(--pkt-spacing-16, 1rem) !important;
+  color: var(--pkt-color-brand-neutrals-600, #666) !important;
+}
+
 /* Punkt-komponenter tilpasninger */
 .mobile-energy-solutions .pkt-accordion {
   --pkt-accordion-bg: var(--pkt-color-brand-neutrals-white, #ffffff);

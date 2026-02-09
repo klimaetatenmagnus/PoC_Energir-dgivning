@@ -17,6 +17,7 @@
   --content-scale: 1;
   --scaled-vw: calc(1vw / max(1, var(--layout-scale)));
   --scaled-vh: calc(1vh / max(1, var(--layout-scale)));
+  --transition-vh: calc(1vh / var(--layout-scale));
 }
 
 .tiltak-side--animate {
@@ -96,35 +97,37 @@
   align-items: flex-end;
   gap: 24px;
   padding: 0 clamp(24px, calc(3 * var(--scaled-vw)), 80px);
-  padding-bottom: clamp(40px, 8vh, 120px);
-  transition: transform 0.4s ease-in-out;
+  padding-bottom: clamp(44px, 6.8vh, 104px);
+  --content-shift-y: 0px;
+  transition: transform 0.4s ease-in-out, padding-bottom 0.4s ease-in-out;
   transform-origin: bottom center;
-  transform: scale(calc(var(--layout-scale) * var(--content-scale)));
+  transform: translateY(var(--content-shift-y)) scale(calc(var(--layout-scale) * var(--content-scale)));
 }
 
 .tiltak-side__content--with-process {
-  --content-scale: 0.895;
-  padding-bottom: clamp(80px, 12vh, 160px);
+  --content-scale: 0.96;
+  --content-shift-y: clamp(-62px, -7.2vh, -36px);
+  padding-bottom: clamp(52px, 7.8vh, 108px);
 }
 
 /* Content children slide up with stagger (page 2 → 3) */
 .tiltak-side__content--transitioning .tiltak-side__tiltak-panel {
-  transform: translateY(calc(-100 * var(--scaled-vh)));
+  transform: translateY(calc(-100 * var(--transition-vh)));
   transition: transform 0.8s ease-in-out;
 }
 
 .tiltak-side__content--transitioning .tiltak-side__circle-bg {
-  transform: translateY(calc(-100 * var(--scaled-vh))) translateX(-50%);
+  transform: translateY(calc(-100 * var(--transition-vh))) translateX(-50%);
   transition: transform 0.8s ease-in-out 0.04s;
 }
 
 .tiltak-side__content--transitioning .tiltak-side__building {
-  transform: translateY(calc(-100 * var(--scaled-vh))) scale(calc(var(--building-scale) * var(--building-scale-multiplier, 1)));
+  transform: translateY(calc(-100 * var(--transition-vh))) scale(calc(var(--building-scale) * var(--building-scale-multiplier, 1)));
   transition: transform 0.8s ease-in-out 0.08s;
 }
 
 .tiltak-side__content--transitioning .tiltak-side__info-panel {
-  transform: translateY(calc(-100 * var(--scaled-vh)));
+  transform: translateY(calc(-100 * var(--transition-vh)));
   transition: transform 0.8s ease-in-out 0.12s;
 }
 
@@ -194,7 +197,7 @@
   position: fixed;
   bottom: clamp(16px, 3vh, 40px);
   transform: translateX(-50%) scale(var(--layout-scale));
-  transform-origin: bottom center;
+  transform-origin: top center;
   width: calc(var(--esb-item-width, 440px) + var(--esb-container-padding, 1.5rem) * 2);
   display: flex;
   flex-direction: column;
@@ -205,8 +208,9 @@
 
 /* Process button wrapper slides up when process view is shown */
 .tiltak-side__process-wrapper--transitioning {
-  transform: translateX(-50%) translateY(calc(-100 * var(--scaled-vh))) scale(var(--layout-scale));
-  transition: transform 0.8s ease-in-out 0.08s;
+  transform: translateX(-50%) translateY(calc(-100 * var(--transition-vh))) scale(var(--layout-scale));
+  pointer-events: none;
+  transition: transform 0.8s ease-in-out 0.16s;
 }
 
 /* ==========================================================================
@@ -331,5 +335,5 @@
 }
 
 .tiltak-side--scale-down .tiltak-side__content {
-  padding-bottom: clamp(64px, 10vh, 160px);
+  padding-bottom: clamp(44px, 6.8vh, 104px);
 }

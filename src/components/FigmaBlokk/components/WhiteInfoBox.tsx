@@ -846,7 +846,7 @@ const tiltakPreview = selectedTiltakSlug ? (
                     size="small"
                     variant="icon-only"
                     iconName="information"
-                    aria-label="Hvordan fungerer siden?"
+                    aria-label="Hvordan fungerer Energinøkkelen?"
                     onClick={onShowInfo}
                   />
                 )}

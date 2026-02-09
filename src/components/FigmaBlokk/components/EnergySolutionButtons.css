@@ -319,7 +319,7 @@
 
 /* Animert scroll-indikator chevron */
 .energy-solution-buttons__scroll-indicator {
-  margin-top: var(--pkt-spacing-8, 0.5rem);
+  margin-top: var(--pkt-spacing-12, 0.75rem);
   width: 48px;
   height: 48px;
   background: transparent;
