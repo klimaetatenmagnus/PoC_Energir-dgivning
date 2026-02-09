@@ -46,10 +46,28 @@ export default function App() {
   useEffect(() => {
     const BASE_VIEWPORT = { width: 1250, height: 838 };
     const SCALE_DOWN_FACTOR = 0.8;
+    const platform = navigator.platform || '';
+    const userAgent = navigator.userAgent || '';
+    const isWindows = /Win/.test(platform) || /Windows/.test(userAgent);
+
+    const getDisplayScaleCompensation = () => {
+      if (!isWindows) {
+        return 1;
+      }
+
+      const dpr = window.devicePixelRatio || 1;
+      if (dpr <= 1.05) {
+        return 1;
+      }
+
+      // Gentle compensation for OS-level display scaling (e.g. 125%/150% in Windows).
+      return Math.max(0.88, Math.min(1, 1 - (dpr - 1) * 0.12));
+    };
 
     const updateDesktopScale = () => {
       if (isMobileView) {
         document.documentElement.style.setProperty('--desktop-scale', '1');
+        document.documentElement.style.setProperty('--display-scale-compensation', '1');
         return;
       }
 
@@ -57,9 +75,11 @@ export default function App() {
       const widthRatio = viewport.width / BASE_VIEWPORT.width;
       const heightRatio = viewport.height / BASE_VIEWPORT.height;
       const scale = Math.min(widthRatio, heightRatio);
-      const adjusted = scale >= 1 ? scale * SCALE_DOWN_FACTOR : scale;
+      const compensation = getDisplayScaleCompensation();
+      const adjusted = (scale >= 1 ? scale * SCALE_DOWN_FACTOR : scale) * compensation;
       const clamped = Math.min(1.6, adjusted);
       document.documentElement.style.setProperty('--desktop-scale', clamped.toFixed(3));
+      document.documentElement.style.setProperty('--display-scale-compensation', compensation.toFixed(3));
     };
 
     updateDesktopScale();
@@ -72,7 +92,9 @@ export default function App() {
     const platform = navigator.platform || '';
     const userAgent = navigator.userAgent || '';
     const isMac = /Mac/.test(platform) || /Macintosh/.test(userAgent);
+    const isWindows = /Win/.test(platform) || /Windows/.test(userAgent);
     root.classList.toggle('platform-mac', isMac);
+    root.classList.toggle('platform-windows', isWindows);
   }, []);
 
   // Hent kartkoordinater for mobil

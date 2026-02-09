@@ -948,8 +948,8 @@
   position: absolute;
   right: 0;
   bottom: 0;
-  width: clamp(120px, 12vw, 240px);
-  height: clamp(120px, 12vw, 240px);
+  width: clamp(108px, 10.8vw, 216px);
+  height: clamp(108px, 10.8vw, 216px);
   background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
   display: flex;
   align-items: center;

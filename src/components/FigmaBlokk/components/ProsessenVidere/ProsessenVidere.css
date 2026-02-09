@@ -1,7 +1,8 @@
 /* ProsessenVidere – Punkt-based layout */
 
 .prosessen-videre {
-  --prosessen-scale: clamp(1, calc(1 + (var(--desktop-scale, 1) - 1) * 0.4), 1.1);
+  --prosessen-scale-compensation: var(--display-scale-compensation, 1);
+  --prosessen-scale: clamp(0.9, calc((1 + (var(--desktop-scale, 1) - 1) * 0.4) * var(--prosessen-scale-compensation)), 1.1);
   --prosessen-scaled-vw: calc(1vw / var(--prosessen-scale));
   --prosessen-scaled-vh: calc(1vh / var(--prosessen-scale));
   position: fixed;
