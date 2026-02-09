@@ -305,13 +305,23 @@
 }
 
 /* Extra scaling adjustments for large low-DPR viewports (Windows) */
+.tiltak-side--scale-up .tiltak-side__content {
+  padding-left: clamp(56px, calc(4.8 * var(--scaled-vw)), 120px);
+  padding-right: clamp(56px, calc(4.8 * var(--scaled-vw)), 120px);
+  gap: clamp(16px, calc(1.4 * var(--scaled-vw)), 28px);
+}
+
 .tiltak-side--scale-up .tiltak-side__tiltak-panel {
-  width: clamp(300px, calc(26 * var(--scaled-vw)), 420px);
-  margin-left: clamp(8px, calc(1.2 * var(--scaled-vw)), 24px);
+  width: clamp(360px, calc(28 * var(--scaled-vw)), 500px);
 }
 
 .tiltak-side--scale-up .tiltak-side__info-panel {
-  flex: 0 0 clamp(320px, calc(24 * var(--scaled-vw)), 440px);
+  flex: 0 0 clamp(340px, calc(24 * var(--scaled-vw)), 460px);
+}
+
+.tiltak-side--scale-up .tiltak-side__building-area {
+  flex: 0 1 clamp(460px, calc(34 * var(--scaled-vw)), 620px);
+  min-width: clamp(420px, calc(31 * var(--scaled-vw)), 580px);
 }
 
 /* Scale-down adjustments to keep spacing balanced on mac */
