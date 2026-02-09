@@ -135,7 +135,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     return 'tiltak-side--virtual-desktop';
   }, [virtualWidth]);
 
-  const scaleUpClass = layoutScale > 1.15 ? 'tiltak-side--scale-up' : '';
+  const scaleUpClass = layoutScale > 1 ? 'tiltak-side--scale-up' : '';
   const scaleDownClass = layoutScale < 1 ? 'tiltak-side--scale-down' : '';
 
   // State for updated building data
