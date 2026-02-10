@@ -227,6 +227,36 @@
   }
 }
 
+/* Windows displays with OS scaling: tighten row spacing and card size so row 2 stays inside viewport. */
+.platform-windows.platform-windows-scaled .prosessen-videre__grid {
+  padding-top: clamp(96px, calc(12.5 * var(--prosessen-scaled-vh)), 132px);
+  padding-bottom: clamp(20px, calc(3 * var(--prosessen-scaled-vh)), 40px);
+}
+
+.platform-windows.platform-windows-scaled .prosessen-videre__step {
+  margin-bottom: var(--pkt-spacing-12, 12px);
+}
+
+.platform-windows.platform-windows-scaled .prosessen-videre__step-circle {
+  width: 212px;
+  height: 212px;
+}
+
+.platform-windows.platform-windows-scaled .prosessen-videre__step-card {
+  width: 280px;
+  min-height: 248px;
+}
+
+.platform-windows.platform-windows-scaled .prosessen-videre__step-icon {
+  min-height: 72px;
+  margin-bottom: var(--pkt-spacing-4, 4px);
+}
+
+.platform-windows.platform-windows-scaled .prosessen-videre__step-icon svg {
+  max-width: 104px;
+  max-height: 88px;
+}
+
 /* Mobile */
 @media (max-width: 767px) {
   .prosessen-videre__header {
