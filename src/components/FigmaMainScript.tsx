@@ -40,6 +40,52 @@ const ENERGY_RATING_COLORS: Record<string, string> = {
   G: '#E31829'
 };
 
+const LAYOUT_BASE_VIEWPORT = { width: 1250, height: 838 };
+const LAYOUT_SCALE_DOWN_FACTOR = 0.8;
+
+interface LayoutMetrics {
+  scale: number;
+  virtualWidth: number | null;
+}
+
+const isWindowsPlatform = (): boolean => {
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+
+  const platform = navigator.platform || '';
+  const userAgent = navigator.userAgent || '';
+  return /Win/.test(platform) || /Windows/.test(userAgent);
+};
+
+const getDisplayScaleCompensation = (windows: boolean, dpr: number): number => {
+  if (!windows || dpr <= 1.1) {
+    return 1;
+  }
+
+  const normalized = Math.min(0.6, dpr - 1);
+  return Math.max(0.82, Math.min(1, 1 - normalized * 0.28));
+};
+
+const resolveLayoutMetrics = (): LayoutMetrics => {
+  if (typeof window === 'undefined') {
+    return { scale: 1, virtualWidth: null };
+  }
+
+  const viewport = window.visualViewport ?? { width: window.innerWidth, height: window.innerHeight };
+  const widthRatio = viewport.width / LAYOUT_BASE_VIEWPORT.width;
+  const heightRatio = viewport.height / LAYOUT_BASE_VIEWPORT.height;
+  const scale = Math.min(widthRatio, heightRatio);
+  const compensation = getDisplayScaleCompensation(isWindowsPlatform(), window.devicePixelRatio || 1);
+  const adjusted = (scale >= 1 ? scale * LAYOUT_SCALE_DOWN_FACTOR : scale) * compensation;
+  const resolvedScale = Number(Math.min(1.6, adjusted).toFixed(3));
+
+  return {
+    scale: resolvedScale,
+    virtualWidth: viewport.width / resolvedScale,
+  };
+};
+
 interface FigmaBlokkProps {
   searchAddress: string;
   buildingData: AddressLookupResponse;
@@ -102,43 +148,27 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const [solarData, setSolarData] = React.useState<SolarEnergyData | null>(null);
   const [showYellowBox, setShowYellowBox] = React.useState(false);
   const [gulListeLoading, setGulListeLoading] = React.useState(true);
-  const [layoutScale, setLayoutScale] = React.useState(1);
-  const [virtualWidth, setVirtualWidth] = React.useState<number | null>(null);
+  const [layoutMetrics, setLayoutMetrics] = React.useState<LayoutMetrics>(() => resolveLayoutMetrics());
+  const layoutScale = layoutMetrics.scale;
+  const virtualWidth = layoutMetrics.virtualWidth;
 
   const headerScale = Math.min(1.25, layoutScale);
 
-  React.useEffect(() => {
-    const BASE_VIEWPORT = { width: 1250, height: 838 };
-    const SCALE_DOWN_FACTOR = 0.8;
-    const platform = navigator.platform || '';
-    const userAgent = navigator.userAgent || '';
-    const isWindows = /Win/.test(platform) || /Windows/.test(userAgent);
-
-    const getDisplayScaleCompensation = () => {
-      if (!isWindows) {
-        return 1;
-      }
-
-      const dpr = window.devicePixelRatio || 1;
-      if (dpr <= 1.1) {
-        return 1;
-      }
-
-      const normalized = Math.min(0.6, dpr - 1);
-      return Math.max(0.82, Math.min(1, 1 - normalized * 0.28));
-    };
-
+  React.useLayoutEffect(() => {
     const updateLayoutScale = () => {
-      const viewport = window.visualViewport ?? { width: window.innerWidth, height: window.innerHeight };
-      const widthRatio = viewport.width / BASE_VIEWPORT.width;
-      const heightRatio = viewport.height / BASE_VIEWPORT.height;
-      const scale = Math.min(widthRatio, heightRatio);
-      const compensation = getDisplayScaleCompensation();
-      const adjusted = (scale >= 1 ? scale * SCALE_DOWN_FACTOR : scale) * compensation;
-      const clamped = Math.min(1.6, adjusted);
-      const resolvedScale = Number(clamped.toFixed(3));
-      setLayoutScale(resolvedScale);
-      setVirtualWidth(viewport.width / resolvedScale);
+      // Freeze layout-scale updates while overlay is moving to avoid retarget jumps.
+      if (overlayPhase !== 'idle') {
+        return;
+      }
+
+      setLayoutMetrics((previous) => {
+        const next = resolveLayoutMetrics();
+        const sameScale = Math.abs(previous.scale - next.scale) < 0.001;
+        const prevWidth = previous.virtualWidth ?? 0;
+        const nextWidth = next.virtualWidth ?? 0;
+        const sameVirtualWidth = Math.abs(prevWidth - nextWidth) < 0.5;
+        return sameScale && sameVirtualWidth ? previous : next;
+      });
     };
 
     updateLayoutScale();
@@ -148,7 +178,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       window.removeEventListener('resize', updateLayoutScale);
       window.visualViewport?.removeEventListener('resize', updateLayoutScale);
     };
-  }, []);
+  }, [overlayPhase]);
 
   const virtualClass = React.useMemo(() => {
     if (!virtualWidth) return '';
@@ -450,9 +480,9 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     }
   }, [overlayActiveForThisBuilding, buildingReady]);
 
-  // Set target rect for overlay - uses getBoundingClientRect which gives viewport coordinates
+  // Set target rect for overlay after layout has settled to avoid start/end mismatch hops.
   React.useLayoutEffect(() => {
-    if (!overlayActiveForThisBuilding) {
+    if (!overlayActiveForThisBuilding || overlayPhase !== 'captured') {
       return;
     }
 
@@ -461,9 +491,24 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       return;
     }
 
-    const rect = targetRef.current.getBoundingClientRect();
-    setTargetRect(buildingKind, toViewportRect(rect));
-  }, [buildingKind, isEnebolig, overlayActiveForThisBuilding, setTargetRect]);
+    let frameA = 0;
+    let frameB = 0;
+    frameA = window.requestAnimationFrame(() => {
+      frameB = window.requestAnimationFrame(() => {
+        if (!targetRef.current) {
+          return;
+        }
+
+        const rect = targetRef.current.getBoundingClientRect();
+        setTargetRect(buildingKind, toViewportRect(rect));
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameA);
+      window.cancelAnimationFrame(frameB);
+    };
+  }, [buildingKind, isEnebolig, overlayActiveForThisBuilding, overlayPhase, setTargetRect]);
 
   React.useEffect(() => {
     if (overlayPhase === 'settling') {
