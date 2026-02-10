@@ -5,6 +5,19 @@
   --prosessen-scale: clamp(0.9, calc((1 + (var(--desktop-scale, 1) - 1) * 0.4) * var(--prosessen-scale-compensation)), 1.1);
   --prosessen-scaled-vw: calc(1vw / var(--prosessen-scale));
   --prosessen-scaled-vh: calc(1vh / var(--prosessen-scale));
+  --prosessen-grid-top-min: 120px;
+  --prosessen-grid-top-factor: 18;
+  --prosessen-grid-top-max: 180px;
+  --prosessen-grid-side: var(--pkt-spacing-32, 32px);
+  --prosessen-grid-bottom: var(--pkt-spacing-48, 48px);
+  --prosessen-step-margin-bottom: var(--pkt-spacing-24, 24px);
+  --prosessen-step-circle-size: 230px;
+  --prosessen-step-card-width: 300px;
+  --prosessen-step-card-min-height: 280px;
+  --prosessen-step-icon-min-height: 80px;
+  --prosessen-step-icon-margin-bottom: var(--pkt-spacing-8, 8px);
+  --prosessen-step-icon-max-width: 120px;
+  --prosessen-step-icon-max-height: 100px;
   position: fixed;
   inset: 0;
   z-index: 10000;
@@ -17,11 +30,26 @@
 /* Mac-only scaling to ensure all 6 steps fit within the viewport */
 .platform-mac .prosessen-videre {
   --prosessen-scale: clamp(0.92, calc(0.92 + (var(--desktop-scale, 1) - 1) * 0.35), 1.05);
+  --prosessen-grid-top-min: 100px;
+  --prosessen-grid-top-factor: 15;
+  --prosessen-grid-top-max: 160px;
 }
 
 /* Windows displays with OS scaling (125%/150%) need a lower floor to avoid clipping on row 2. */
 .platform-windows.platform-windows-scaled .prosessen-videre {
   --prosessen-scale: clamp(0.78, calc((1 + (var(--desktop-scale, 1) - 1) * 0.42) * var(--prosessen-scale-compensation)), 1.02);
+  --prosessen-grid-top-min: 96px;
+  --prosessen-grid-top-factor: 12.5;
+  --prosessen-grid-top-max: 132px;
+  --prosessen-grid-bottom: clamp(20px, calc(3 * var(--prosessen-scaled-vh)), 40px);
+  --prosessen-step-margin-bottom: var(--pkt-spacing-12, 12px);
+  --prosessen-step-circle-size: 212px;
+  --prosessen-step-card-width: 280px;
+  --prosessen-step-card-min-height: 248px;
+  --prosessen-step-icon-min-height: 72px;
+  --prosessen-step-icon-margin-bottom: var(--pkt-spacing-4, 4px);
+  --prosessen-step-icon-max-width: 104px;
+  --prosessen-step-icon-max-height: 88px;
 }
 
 .prosessen-videre__scale-shell {
@@ -84,11 +112,10 @@
 
 /* Grid section – top padding clears the fixed header from page 2 */
 .prosessen-videre__grid {
-  padding: clamp(120px, calc(18 * var(--prosessen-scaled-vh)), 180px) var(--pkt-spacing-32, 32px) var(--pkt-spacing-48, 48px);
-}
-
-.platform-mac .prosessen-videre__grid {
-  padding: clamp(100px, calc(15 * var(--prosessen-scaled-vh)), 160px) var(--pkt-spacing-32, 32px) var(--pkt-spacing-48, 48px);
+  padding:
+    clamp(var(--prosessen-grid-top-min), calc(var(--prosessen-grid-top-factor) * var(--prosessen-scaled-vh)), var(--prosessen-grid-top-max))
+    var(--prosessen-grid-side)
+    var(--prosessen-grid-bottom);
 }
 
 /* Step wrapper – establishes the hover zone for the two-layer crossfade */
@@ -98,21 +125,21 @@
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-  margin-bottom: var(--pkt-spacing-24, 24px);
+  margin-bottom: var(--prosessen-step-margin-bottom);
 }
 
 .prosessen-videre__step-icon {
   pointer-events: none;
-  margin-bottom: var(--pkt-spacing-8, 8px);
+  margin-bottom: var(--prosessen-step-icon-margin-bottom);
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  min-height: 80px;
+  min-height: var(--prosessen-step-icon-min-height);
 }
 
 .prosessen-videre__step-icon svg {
-  max-width: 120px;
-  max-height: 100px;
+  max-width: var(--prosessen-step-icon-max-width);
+  max-height: var(--prosessen-step-icon-max-height);
   height: auto;
 }
 
@@ -127,8 +154,8 @@
 
 /* Layer 1: resting circle */
 .prosessen-videre__step-circle {
-  width: 230px;
-  height: 230px;
+  width: var(--prosessen-step-circle-size);
+  height: var(--prosessen-step-circle-size);
   border-radius: 50%;
   background-color: var(--pkt-color-brand-light-green-1000, #c7f6c9);
   display: flex;
@@ -149,8 +176,8 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 300px;
-  min-height: 280px;
+  width: var(--prosessen-step-card-width);
+  min-height: var(--prosessen-step-card-min-height);
   background-color: var(--pkt-color-brand-light-green-1000, #c7f6c9);
   /* Punkt uses sharp corners – no border-radius */
   border-radius: 0;
@@ -199,62 +226,34 @@
 
 /* Laptop (1280–1599px) */
 @media screen and (min-width: 80rem) and (max-width: 99.938rem) {
-  .prosessen-videre__grid {
-    padding-top: clamp(160px, calc(20 * var(--prosessen-scaled-vh)), 210px);
+  .prosessen-videre {
+    --prosessen-grid-top-min: 160px;
+    --prosessen-grid-top-factor: 20;
+    --prosessen-grid-top-max: 210px;
   }
-  .platform-mac .prosessen-videre__grid {
-    padding-top: clamp(140px, calc(17 * var(--prosessen-scaled-vh)), 190px);
+  .platform-mac .prosessen-videre {
+    --prosessen-grid-top-min: 140px;
+    --prosessen-grid-top-factor: 17;
+    --prosessen-grid-top-max: 190px;
   }
 }
 
 /* Desktop (1600px+) */
 @media screen and (min-width: 100rem) {
-  .prosessen-videre__grid {
-    padding-top: clamp(170px, calc(18 * var(--prosessen-scaled-vh)), 210px);
-    padding-left: var(--pkt-spacing-48, 48px);
-    padding-right: var(--pkt-spacing-48, 48px);
+  .prosessen-videre {
+    --prosessen-grid-top-min: 170px;
+    --prosessen-grid-top-factor: 18;
+    --prosessen-grid-top-max: 210px;
+    --prosessen-grid-side: var(--pkt-spacing-48, 48px);
+    --prosessen-step-circle-size: 260px;
+    --prosessen-step-card-width: 340px;
+    --prosessen-step-card-min-height: 300px;
   }
-  .platform-mac .prosessen-videre__grid {
-    padding-top: clamp(150px, calc(16 * var(--prosessen-scaled-vh)), 190px);
+  .platform-mac .prosessen-videre {
+    --prosessen-grid-top-min: 150px;
+    --prosessen-grid-top-factor: 16;
+    --prosessen-grid-top-max: 190px;
   }
-  .prosessen-videre__step-circle {
-    width: 260px;
-    height: 260px;
-  }
-  .prosessen-videre__step-card {
-    width: 340px;
-    min-height: 300px;
-  }
-}
-
-/* Windows displays with OS scaling: tighten row spacing and card size so row 2 stays inside viewport. */
-.platform-windows.platform-windows-scaled .prosessen-videre__grid {
-  padding-top: clamp(96px, calc(12.5 * var(--prosessen-scaled-vh)), 132px);
-  padding-bottom: clamp(20px, calc(3 * var(--prosessen-scaled-vh)), 40px);
-}
-
-.platform-windows.platform-windows-scaled .prosessen-videre__step {
-  margin-bottom: var(--pkt-spacing-12, 12px);
-}
-
-.platform-windows.platform-windows-scaled .prosessen-videre__step-circle {
-  width: 212px;
-  height: 212px;
-}
-
-.platform-windows.platform-windows-scaled .prosessen-videre__step-card {
-  width: 280px;
-  min-height: 248px;
-}
-
-.platform-windows.platform-windows-scaled .prosessen-videre__step-icon {
-  min-height: 72px;
-  margin-bottom: var(--pkt-spacing-4, 4px);
-}
-
-.platform-windows.platform-windows-scaled .prosessen-videre__step-icon svg {
-  max-width: 104px;
-  max-height: 88px;
 }
 
 /* Mobile */
