@@ -50,12 +50,11 @@ export default function App() {
     const userAgent = navigator.userAgent || '';
     const isWindows = /Win/.test(platform) || /Windows/.test(userAgent);
 
-    const getDisplayScaleCompensation = () => {
+    const getDisplayScaleCompensation = (dpr: number) => {
       if (!isWindows) {
         return 1;
       }
 
-      const dpr = window.devicePixelRatio || 1;
       if (dpr <= 1.1) {
         return 1;
       }
@@ -72,11 +71,16 @@ export default function App() {
         return;
       }
 
+      const dpr = window.devicePixelRatio || 1;
+      const root = document.documentElement;
+      root.style.setProperty('--device-pixel-ratio', dpr.toFixed(3));
+      root.classList.toggle('platform-windows-scaled', isWindows && dpr > 1.1);
+
       const viewport = window.visualViewport ?? { width: window.innerWidth, height: window.innerHeight };
       const widthRatio = viewport.width / BASE_VIEWPORT.width;
       const heightRatio = viewport.height / BASE_VIEWPORT.height;
       const scale = Math.min(widthRatio, heightRatio);
-      const compensation = getDisplayScaleCompensation();
+      const compensation = getDisplayScaleCompensation(dpr);
       const adjusted = (scale >= 1 ? scale * SCALE_DOWN_FACTOR : scale) * compensation;
       const clamped = Math.min(1.6, adjusted);
       document.documentElement.style.setProperty('--desktop-scale', clamped.toFixed(3));

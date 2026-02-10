@@ -19,6 +19,11 @@
   --prosessen-scale: clamp(0.92, calc(0.92 + (var(--desktop-scale, 1) - 1) * 0.35), 1.05);
 }
 
+/* Windows displays with OS scaling (125%/150%) need a lower floor to avoid clipping on row 2. */
+.platform-windows.platform-windows-scaled .prosessen-videre {
+  --prosessen-scale: clamp(0.78, calc((1 + (var(--desktop-scale, 1) - 1) * 0.42) * var(--prosessen-scale-compensation)), 1.02);
+}
+
 .prosessen-videre__scale-shell {
   width: calc(100% / var(--prosessen-scale));
   height: calc(100% / var(--prosessen-scale));
