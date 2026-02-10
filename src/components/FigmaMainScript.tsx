@@ -207,6 +207,10 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       return;
     }
 
+    const platform = navigator.platform || '';
+    const userAgent = navigator.userAgent || '';
+    const isWindows = /Win/.test(platform) || /Windows/.test(userAgent);
+
     let rafId = 0;
     const update = () => {
       const areaEl = buildingAreaRef.current;
@@ -218,9 +222,13 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
       const buildingRect = buildingEl.getBoundingClientRect();
       const circleRect = circleRef.current?.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const isWindowsScaled = isWindows && dpr > 1.1;
+      const gapBelowBuilding = isWindowsScaled ? 44 : 38;
+      const bottomClearance = isWindows ? (isWindowsScaled ? 84 : 126) : 98;
 
-      const desiredTop = buildingRect.bottom + 38;
-      const clampedTop = Math.min(window.innerHeight - 98, Math.max(96, desiredTop));
+      const desiredTop = buildingRect.bottom + gapBelowBuilding;
+      const clampedTop = Math.min(window.innerHeight - bottomClearance, Math.max(96, desiredTop));
 
       setProcessButtonX(circleRect ? (circleRect.left + circleRect.width / 2) : (buildingRect.left + buildingRect.width / 2));
       setProcessButtonY(clampedTop);

@@ -15,9 +15,18 @@
   --building-scale-multiplier: 1;
   --layout-scale: 1;
   --content-scale: 1;
+  --content-base-shift-y: 0px;
   --scaled-vw: calc(1vw / max(1, var(--layout-scale)));
   --scaled-vh: calc(1vh / max(1, var(--layout-scale)));
   --transition-vh: calc(1vh / var(--layout-scale));
+}
+
+.platform-windows .tiltak-side {
+  --content-base-shift-y: -10px;
+}
+
+.platform-windows.platform-windows-scaled .tiltak-side {
+  --content-base-shift-y: -14px;
 }
 
 .tiltak-side--animate {
@@ -101,7 +110,7 @@
   --content-shift-y: 0px;
   transition: transform 0.4s ease-in-out, padding-bottom 0.4s ease-in-out;
   transform-origin: bottom center;
-  transform: translateY(var(--content-shift-y)) scale(calc(var(--layout-scale) * var(--content-scale)));
+  transform: translateY(calc(var(--content-base-shift-y) + var(--content-shift-y))) scale(calc(var(--layout-scale) * var(--content-scale)));
 }
 
 .tiltak-side__content--with-process {
