@@ -267,7 +267,7 @@
 
 .white-info-box__energy-value {
   display: flex;
-  align-items: flex-end;
+  align-items: baseline;
   gap: 0.5rem;
 }
 
@@ -407,6 +407,27 @@
   display: inline-block;
   min-width: 0.5ch;
   text-align: center;
+}
+
+/* Rolling digits for energiforbruk (mindre, mørkeblå) */
+.white-info-box__rolling-digits--consumption {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2ch;
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--wib-text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
+}
+
+.white-info-box__rolling-digits--consumption::before {
+  content: '\200b'; /* Usynlig zero-width space som etablerer korrekt tekstbaseline */
+}
+
+.white-info-box__rolling-digits--consumption .white-info-box__rolling-digit {
+  font-size: inherit;
 }
 
 /* ==========================================================================

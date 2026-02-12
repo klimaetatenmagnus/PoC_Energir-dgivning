@@ -36,6 +36,8 @@ interface MobileInfoBoxProps {
   showCompareButton?: boolean;
   /** Callback når sammenlign-knappen klikkes */
   onCompareClick?: () => void;
+  /** Besparelse fra gjennomførte tiltak (kWh) - brukes til å justere vist energiforbruk */
+  completedSavings?: number;
 }
 
 const roundToNearestThousandValue = (value: number): number => {
@@ -59,6 +61,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   onCollapse,
   showCompareButton = false,
   onCompareClick,
+  completedSavings = 0,
 }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isGulListeInfoOpen, setIsGulListeInfoOpen] = useState(false);
@@ -137,12 +140,20 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
     }
   }, [editedByggeaar, editedAreal, isEditMode, buildingData?.bygningstypeKode, buildingTypeName, hasUserEditedEnergy]);
 
-  // Formatert energiforbruk
+  // Justert energiforbruk basert på gjennomførte tiltak
+  // Avrundes til nærmeste 1000 for konsistent visning
+  const adjustedEnergyConsumption = useMemo(() => {
+    const base = Number(savedEnergiforbruk || '0');
+    if (!Number.isFinite(base) || base <= 0 || !completedSavings || completedSavings <= 0) return base;
+    return roundToNearestThousandValue(Math.max(0, base - completedSavings));
+  }, [savedEnergiforbruk, completedSavings]);
+
+  // Formatert energiforbruk (justert for gjennomførte tiltak)
   const formattedEnergyConsumption = useMemo(() => {
-    const numeric = Number(savedEnergiforbruk || '0');
+    const numeric = adjustedEnergyConsumption;
     if (!Number.isFinite(numeric)) return '0';
     return formatNumberWithSpaces(Math.round(numeric));
-  }, [savedEnergiforbruk]);
+  }, [adjustedEnergyConsumption]);
 
   // Besparelser
   const _shouldShowSavings = totalEnergySavings > 0;

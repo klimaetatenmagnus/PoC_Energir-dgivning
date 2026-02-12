@@ -5,6 +5,7 @@ import {
   PktTag,
   PktIcon,
   PktRadioButton,
+  PktTabs,
 } from '@oslokommune/punkt-react';
 import { AddressLookupResponse } from '../../services/buildingApi';
 import {
@@ -195,6 +196,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   isDetailViewActive = false,
 }) => {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
   const [_showEnergyInfo, _setShowEnergyInfo] = useState(false); // Beholdes for fremtidig bruk i energibesparelses-boksen
   const [showInfoBox, setShowInfoBox] = useState(false);
   const [isInfoBoxExiting, setIsInfoBoxExiting] = useState(false);
@@ -215,6 +217,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   // Varmepumpe-spesifikk state
   const [selectedVarmepumpeType, setSelectedVarmepumpeType] = useState<VarmepumpeType>('luft-luft');
   const [varmepumpeExpanded, setVarmepumpeExpanded] = useState(false);
+
+  // Tab-state for tiltakslisten
+  const [activeTab, setActiveTab] = useState<'nye' | 'gjennomforte'>('nye');
 
   // Override-state for redigerte bygningsdata (speiler desktop-mønsteret i FigmaMainScript)
   const [updatedBuildingData, setUpdatedBuildingData] = useState(buildingData);
@@ -487,11 +492,52 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     }));
   }, [isCatalogLoading, filteredTiltak]);
 
+  // "Velg energioppgraderinger" – alle minus de som er avkrysset i gjennomførte
+  const nyeTiltak = useMemo(() =>
+    displayTiltak.filter(t => !completedItems.has(t.id)),
+    [displayTiltak, completedItems]
+  );
+
+  // "Gjennomførte energioppgraderinger" – alle minus de som er avkrysset i nye
+  const gjennomforteTiltak = useMemo(() =>
+    displayTiltak.filter(t => !checkedItems.has(t.id)),
+    [displayTiltak, checkedItems]
+  );
+
+  // Tiltak-info for gjennomførte tiltak (speiler desktop completedTiltakInfo)
+  const completedTiltakInfo = useMemo<TiltakSavingsInfo[]>(() => {
+    if (completedItems.size === 0 || !boligtype || !tekPeriod) return [];
+    const info: TiltakSavingsInfo[] = [];
+    completedItems.forEach((tiltakId) => {
+      const tiltak = displayTiltak.find((t) => t.id === tiltakId);
+      if (!tiltak) return;
+      if (tiltak.id === 'solenergi') {
+        const solarEnergy = scaledSolarEnergy || 0;
+        if (solarEnergy > 0) info.push({ title: tiltak.id, rates: null, solarProductionKwh: solarEnergy });
+      } else {
+        const rates = getRateForTiltakId(tiltak.id, tekPeriod, boligtype, {
+          erPaaGulListe,
+          varmepumpeTab: tiltak.id === 'varmepumpe' ? selectedVarmepumpeType : undefined,
+        });
+        if (rates !== null) info.push({ title: tiltak.id, rates });
+      }
+    });
+    return info;
+  }, [boligtype, scaledSolarEnergy, completedItems, displayTiltak, erPaaGulListe, selectedVarmepumpeType, tekPeriod]);
+
+  // Besparelse fra gjennomførte tiltak (baseline-reduksjon)
+  const completedSavingsKWh = useMemo(() => {
+    if (completedTiltakInfo.length === 0) return 0;
+    const consumptionNum = effectiveYearlyConsumption ? parseFloat(effectiveYearlyConsumption) : estimatedAnnualConsumption;
+    if (!Number.isFinite(consumptionNum) || consumptionNum <= 0 || !tekPeriod || !boligtype) return 0;
+    return calculateCombinedSavings(consumptionNum, completedTiltakInfo, tekPeriod, boligtype, bruksareal);
+  }, [completedTiltakInfo, effectiveYearlyConsumption, estimatedAnnualConsumption, tekPeriod, boligtype, bruksareal]);
+
   // Beregn total besparelse med multiplikativ metode når valgte tiltak endres
   // VIKTIG: Bruker ALLTID TEK/byggtype-basert beregning for energibesparelser
   // (Enova-data brukes KUN i sammenligningsmodulen)
   useEffect(() => {
-    if (checkedItems.size === 0) {
+    if (checkedItems.size === 0 && completedItems.size === 0) {
       setCalculatedSavings(0);
       setUncalculableCount(0);
       return;
@@ -528,7 +574,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     // ALLTID bruk TEK-basert beregning for energibesparelser (ikke Enova-data)
     const consumptionNum = calculateAnnualEnergyConsumption(parsedByggeaar, parsedBruksareal, energyBuildingCategory);
 
-    // Bygg liste med tiltak og deres rates for multiplikativ beregning
+    // Bygg liste med tiltak og deres rates for multiplikativ beregning (kun nye tiltak)
     const tiltakInfo: TiltakSavingsInfo[] = [];
     let uncalculable = 0;
 
@@ -564,16 +610,16 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       }
     });
 
-    // Bruk den sentrale multiplikative beregningen med forbruksfordeling per energitype
-    const total = calculateCombinedSavings(
-      consumptionNum,
-      tiltakInfo,
-      tekPeriodCalc,
-      energyBuildingCategory,
-      parsedBruksareal
-    );
+    // Samlet besparelse for alle tiltak (gjennomførte + nye)
+    const allTiltakInfo = [...completedTiltakInfo, ...tiltakInfo];
+    const totalCombinedSavings = allTiltakInfo.length > 0
+      ? calculateCombinedSavings(consumptionNum, allTiltakInfo, tekPeriodCalc, energyBuildingCategory, parsedBruksareal)
+      : 0;
 
-    setCalculatedSavings(total);
+    // Marginal besparelse = total - gjennomførte (det brukeren ser)
+    const marginalSavings = Math.max(0, totalCombinedSavings - completedSavingsKWh);
+
+    setCalculatedSavings(marginalSavings);
     setUncalculableCount(uncalculable);
   }, [
     bruksareal,
@@ -582,25 +628,33 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     buildingTypeName,
     buildingYear,
     checkedItems,
+    completedItems,
+    completedTiltakInfo,
+    completedSavingsKWh,
     displayTiltak,
     erPaaGulListe,
     selectedVarmepumpeType,
   ]);
 
-  // Lokal effektiv energikarakter — oppdateres ved redigering (estimatedRating fra App.tsx er statisk)
+  // Lokal effektiv energikarakter — oppdateres ved redigering og gjennomførte tiltak
+  // Bruker justert forbruk (etter gjennomførte tiltak) slik at baseline-karakteren oppdateres
   const effectiveEstimatedRating = useMemo(() => {
-    const consumption = parseFloat(effectiveYearlyConsumption);
-    if (!Number.isFinite(consumption) || consumption <= 0 || !bruksareal) {
+    const baseConsumption = parseFloat(effectiveYearlyConsumption);
+    if (!Number.isFinite(baseConsumption) || baseConsumption <= 0 || !bruksareal) {
       return estimatedRating ?? null;
     }
-    const intensity = consumption / bruksareal;
+    // Juster for gjennomførte tiltak
+    const adjustedConsumption = completedSavingsKWh > 0
+      ? Math.max(0, baseConsumption - completedSavingsKWh)
+      : baseConsumption;
+    const intensity = adjustedConsumption / bruksareal;
     return calculateEnergyRating(intensity, bruksareal, boligtype);
-  }, [effectiveYearlyConsumption, bruksareal, boligtype, estimatedRating]);
+  }, [effectiveYearlyConsumption, bruksareal, boligtype, estimatedRating, completedSavingsKWh]);
 
-  // Beregn ny energikarakter basert på valgte tiltak
+  // Beregn ny energikarakter basert på valgte tiltak (inkl. gjennomførte)
   const newRating = useMemo(() => {
     // Trenger effectiveEstimatedRating, effectiveYearlyConsumption, tiltak valgt og bruksareal
-    if (!effectiveEstimatedRating || !effectiveYearlyConsumption || checkedItems.size === 0 || !bruksareal) {
+    if (!effectiveEstimatedRating || !effectiveYearlyConsumption || (checkedItems.size === 0 && completedItems.size === 0) || !bruksareal) {
       return null;
     }
 
@@ -609,8 +663,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       return null;
     }
 
-    // Beregn nytt forbruk etter besparelse
-    const newConsumption = Math.max(0, consumptionNum - calculatedSavings);
+    // Beregn nytt forbruk etter besparelse (marginal + gjennomførte)
+    const totalSavings = calculatedSavings + completedSavingsKWh;
+    const newConsumption = Math.max(0, consumptionNum - totalSavings);
     const newIntensity = newConsumption / bruksareal;
 
     // Bruk sentralisert boligtype for rating-beregning (konsistent med desktop)
@@ -626,7 +681,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     bruksareal,
     boligtype,
     calculatedSavings,
+    completedSavingsKWh,
     checkedItems.size,
+    completedItems.size,
     effectiveEstimatedRating,
     effectiveYearlyConsumption,
   ]);
@@ -688,6 +745,36 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         newSet.delete(tiltakId);
       } else {
         newSet.add(tiltakId);
+        // Gjensidig ekskludering: fjern fra completedItems
+        setCompletedItems(prevCompleted => {
+          if (prevCompleted.has(tiltakId)) {
+            const updated = new Set(prevCompleted);
+            updated.delete(tiltakId);
+            return updated;
+          }
+          return prevCompleted;
+        });
+      }
+      return newSet;
+    });
+  }, []);
+
+  const toggleCompleted = useCallback((tiltakId: string) => {
+    setCompletedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(tiltakId)) {
+        newSet.delete(tiltakId);
+      } else {
+        newSet.add(tiltakId);
+        // Gjensidig ekskludering: fjern fra checkedItems
+        setCheckedItems(prevChecked => {
+          if (prevChecked.has(tiltakId)) {
+            const updated = new Set(prevChecked);
+            updated.delete(tiltakId);
+            return updated;
+          }
+          return prevChecked;
+        });
       }
       return newSet;
     });
@@ -744,15 +831,21 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   // Prioriterer Enova bulk-data for å sikre "epler med epler"-sammenligning,
   // MEN bare hvis brukeren IKKE har redigert nøkkelinformasjon
   const currentKwhPerM2 = useMemo(() => {
+    let baseKwhPerM2: number;
     // Hvis brukerens bolig finnes i Enova bulk-data og bruker ikke har redigert, bruk den verdien
     if (!hasUserEdited && enovaBulkData?.kwhPerM2 && enovaBulkData.kwhPerM2 > 0) {
-      return enovaBulkData.kwhPerM2;
+      baseKwhPerM2 = enovaBulkData.kwhPerM2;
+    } else {
+      // Bruk TEK-estimering hvis Enova-data ikke finnes eller bruker har redigert
+      const consumption = effectiveYearlyConsumption ? parseFloat(effectiveYearlyConsumption) : estimatedAnnualConsumption;
+      baseKwhPerM2 = bruksareal && bruksareal > 0 ? consumption / bruksareal : 0;
     }
-
-    // Bruk TEK-estimering hvis Enova-data ikke finnes eller bruker har redigert
-    const consumption = effectiveYearlyConsumption ? parseFloat(effectiveYearlyConsumption) : estimatedAnnualConsumption;
-    return bruksareal && bruksareal > 0 ? consumption / bruksareal : 0;
-  }, [hasUserEdited, enovaBulkData, effectiveYearlyConsumption, estimatedAnnualConsumption, bruksareal]);
+    // Juster for gjennomførte tiltak
+    if (completedSavingsKWh > 0 && bruksareal && bruksareal > 0) {
+      baseKwhPerM2 = Math.max(0, baseKwhPerM2 - (completedSavingsKWh / bruksareal));
+    }
+    return baseKwhPerM2;
+  }, [hasUserEdited, enovaBulkData, effectiveYearlyConsumption, estimatedAnnualConsumption, bruksareal, completedSavingsKWh]);
 
   // Beregn besparelse for sammenligningsmodulen
   // Hvis Enova-data finnes, bruker vi calculateComparisonSavings som:
@@ -869,6 +962,13 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
   }, []);
+
+  // Scroll reset ved tab-bytte
+  useEffect(() => {
+    if (tiltakSectionRef.current) {
+      tiltakSectionRef.current.scrollTop = 0;
+    }
+  }, [activeTab]);
 
   // Register target rect for building transition animation
   // Uses shared getBuildingKind helper to ensure consistent classification with useFigmaAddressSearch
@@ -1020,7 +1120,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         {/* Tiltaksliste header - overskrift og bygningsillustrasjon på linje */}
         <div className="mobile-energy-solutions__tiltak-header">
           <div className="mobile-energy-solutions__tiltak-title-row">
-            <h2 className="mobile-energy-solutions__section-title mobile-energy-solutions__tiltak-title">Velg tiltak for din bolig</h2>
+            <h2 className="mobile-energy-solutions__section-title mobile-energy-solutions__tiltak-title">Velg energioppgraderinger</h2>
             <PktButton
               skin="tertiary"
               size="small"
@@ -1059,6 +1159,23 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
           </div>
         </div>
 
+        {/* Tabs for tiltakslisten */}
+        <div className="mobile-energy-solutions__tabs">
+          <PktTabs
+            tabs={[
+              {
+                text: 'Nye energioppgraderinger',
+                active: activeTab === 'nye',
+              },
+              {
+                text: 'Gjennomførte energioppgraderinger',
+                active: activeTab === 'gjennomforte',
+              },
+            ]}
+            onTabSelected={(index) => setActiveTab(index === 0 ? 'nye' : 'gjennomforte')}
+          />
+        </div>
+
         <section
           className="mobile-energy-solutions__tiltak-section"
           ref={tiltakSectionRef}
@@ -1070,17 +1187,16 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               <p className="mobile-energy-solutions__loading">Laster tiltak...</p>
             ) : displayTiltak.length === 0 ? (
               <p className="mobile-energy-solutions__empty">Ingen tiltak tilgjengelig for denne bygningstypen.</p>
-            ) : (
+            ) : activeTab === 'nye' ? (
               <ul className="mobile-energy-solutions__tiltak-list">
-                {displayTiltak.map((tiltak, index) => {
+                {nyeTiltak.map((tiltak, index) => {
                   const isVarmepumpe = tiltak.id === 'varmepumpe';
                   const isSelected = checkedItems.has(tiltak.id);
-                  const isLast = index === displayTiltak.length - 1;
+                  const isLast = index === nyeTiltak.length - 1;
 
-                  // Standard tiltak-rad (ikke varmepumpe)
                   if (!isVarmepumpe) {
                     return (
-                      <li key={tiltak.id} className={`mobile-energy-solutions__tiltak-item ${isLast ? 'mobile-energy-solutions__tiltak-item--last' : ''}`}>
+                      <li key={tiltak.id} className={`mobile-energy-solutions__tiltak-item${isLast ? ' mobile-energy-solutions__tiltak-item--last' : ''}${isSelected ? ' mobile-energy-solutions__tiltak-item--selected' : ''}`}>
                         <div className="mobile-energy-solutions__tiltak-content">
                           <PktCheckbox
                             id={`tiltak-${tiltak.id}`}
@@ -1104,7 +1220,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
 
                   // Varmepumpe med utvidbar seksjon
                   return (
-                    <li key={tiltak.id} className={`mobile-energy-solutions__tiltak-item mobile-energy-solutions__tiltak-item--expandable ${isLast ? 'mobile-energy-solutions__tiltak-item--last' : ''}`}>
+                    <li key={tiltak.id} className={`mobile-energy-solutions__tiltak-item mobile-energy-solutions__tiltak-item--expandable${isLast ? ' mobile-energy-solutions__tiltak-item--last' : ''}${isSelected ? ' mobile-energy-solutions__tiltak-item--selected' : ''}`}>
                       <div className="mobile-energy-solutions__varmepumpe-header">
                         <button
                           type="button"
@@ -1130,7 +1246,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                       </div>
 
                       {/* Utvidbar seksjon for varmepumpe-typer */}
-                      {varmepumpeExpanded && (
+                      {isSelected && varmepumpeExpanded && (
                         <div className="mobile-energy-solutions__varmepumpe-options">
                           {VARMEPUMPE_TYPES.map((type) => {
                             const isTypeSelected = isSelected && selectedVarmepumpeType === type.id;
@@ -1148,7 +1264,6 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                                   checkHelptext={type.description}
                                   onChange={() => {
                                     setSelectedVarmepumpeType(type.id);
-                                    // Sørg for at varmepumpe er valgt når en type velges
                                     if (!checkedItems.has('varmepumpe')) {
                                       toggleChecked('varmepumpe');
                                     }
@@ -1159,6 +1274,35 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                           })}
                         </div>
                       )}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <ul className="mobile-energy-solutions__tiltak-list">
+                {gjennomforteTiltak.map((tiltak, index) => {
+                  const isCompleted = completedItems.has(tiltak.id);
+                  const isLast = index === gjennomforteTiltak.length - 1;
+
+                  return (
+                    <li key={tiltak.id} className={`mobile-energy-solutions__tiltak-item${isLast ? ' mobile-energy-solutions__tiltak-item--last' : ''}${isCompleted ? ' mobile-energy-solutions__tiltak-item--selected' : ''}`}>
+                      <div className="mobile-energy-solutions__tiltak-content">
+                        <PktCheckbox
+                          id={`tiltak-completed-${tiltak.id}`}
+                          label={tiltak.title}
+                          checked={isCompleted}
+                          onChange={() => toggleCompleted(tiltak.id)}
+                        />
+                      </div>
+                      <PktButton
+                        skin="secondary"
+                        size="small"
+                        variant="label-only"
+                        onClick={() => onSelectTiltak(tiltak.id, calculateSavingsForTiltak(tiltak.id) ?? undefined)}
+                        className="mobile-energy-solutions__tiltak-button"
+                      >
+                        Les mer
+                      </PktButton>
                     </li>
                   );
                 })}
@@ -1199,6 +1343,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               totalEnergySavings={calculatedSavings}
               onCollapse={closeInfoBox}
               showCompareButton={!!districtStats}
+              completedSavings={completedSavingsKWh}
               onCompareClick={() => {
                 closeInfoBox();
                 // Åpne bydelssammenligning etter exit-animasjonen
@@ -1296,7 +1441,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
           subdistrictStats={subdistrictStats ?? undefined}
           userEnergyGrade={effectiveEstimatedRating as EnergyGrade | null}
           buildingTypeCategory={boligtype || 'småhus'}
-          isUsingEnovaBulkData={!hasUserEdited && enovaBulkData !== null}
+          isUsingEnovaBulkData={!hasUserEdited && enovaBulkData !== null && completedSavingsKWh <= 0}
         />
       )}
 

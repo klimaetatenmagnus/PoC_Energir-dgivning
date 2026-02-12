@@ -15,7 +15,7 @@
   --esb-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
   --esb-font-family: 'Oslo Sans', sans-serif;
   --esb-item-height: 56px; /* 8×7 - Punkt grid */
-  --esb-item-width: 440px; /* Smalere for å gi plass til sirkel bak huset */
+  --esb-item-width: 500px; /* Bred nok til at begge tabs vises uten fade */
   --esb-bottom-offset: 120px; /* Increased from 64px to make room for "Hvordan gjennomføre" button */
   --esb-transition-duration: 0.3s;
   --esb-transition-easing: ease-in-out;
@@ -205,6 +205,26 @@
 
 .energy-solution-buttons__info-trigger:hover {
   background: var(--pkt-color-brand-neutrals-100, #f9f9f9);
+}
+
+/* ==========================================================================
+   Tabs
+   ========================================================================== */
+
+.energy-solution-buttons__tabs {
+  margin-bottom: var(--pkt-spacing-8, 0.5rem);
+}
+
+/* Fjern innebygd fade-gradient fra Punkt tabs */
+.energy-solution-buttons__tabs .pkt-tabs::after {
+  display: none;
+}
+
+/* Tillat flerlinjet tab-tekst */
+.energy-solution-buttons__tabs .pkt-tabs__button {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.3;
 }
 
 /* ==========================================================================

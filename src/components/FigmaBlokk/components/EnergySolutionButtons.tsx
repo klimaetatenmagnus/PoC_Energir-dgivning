@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { PktButton, PktCheckbox, PktIcon, PktRadioButton } from '@oslokommune/punkt-react';
+import { PktButton, PktCheckbox, PktIcon, PktRadioButton, PktTabs } from '@oslokommune/punkt-react';
 import { AddressLookupResponse } from '../../../services/buildingApi';
 import { useTiltakCatalog } from '../../../hooks/contentHooks';
 import type { TiltakCatalogItem } from '../../../types/contentCatalog';
@@ -134,13 +134,16 @@ interface EnergySolutionButtonsProps {
   showInfoModal?: boolean;
   /** Callback when info modal visibility changes */
   onShowInfoModalChange?: (show: boolean) => void;
+  /** Callback when completed savings (baseline reduction) changes */
+  onCompletedSavingsChange?: (completedSavings: number) => void;
 }
 
-export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onTiltakInfoChange, onSelectionChange, audience = 'standard', showInfoModal: externalShowInfoModal, onShowInfoModalChange }) => {
+export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onTiltakInfoChange, onSelectionChange, audience = 'standard', showInfoModal: externalShowInfoModal, onShowInfoModalChange, onCompletedSavingsChange }) => {
   // Utled gul liste-status fra audience prop (FigmaMainScript er "single source of truth" via PBE-oppslag)
   const erPaaGulListe = audience === 'gulliste';
   // Animasjoner (fadeIn, slideUpFadeIn) er definert i EnergySolutionButtons.css
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
   const [internalShowInfoModal, setInternalShowInfoModal] = useState(false);
   
   // Use external control if provided, otherwise use internal state
@@ -150,6 +153,9 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   // Varmepumpe-spesifikk state
   const [selectedVarmepumpeType, setSelectedVarmepumpeType] = useState<VarmepumpeType>('luft-luft');
   const [varmepumpeExpanded, setVarmepumpeExpanded] = useState(false);
+
+  // Tab-state for tiltakslisten
+  const [activeTab, setActiveTab] = useState<'nye' | 'gjennomforte'>('nye');
 
   // Scrollbar-refs og state
   const scrollContainerRef = useRef<HTMLUListElement>(null);
@@ -255,6 +261,18 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     }));
   }, [isCatalogLoading, filteredTiltak]);
 
+  // "Velg energioppgraderinger" – alle minus de som er avkrysset i gjennomførte
+  const nyeTiltak = useMemo(() =>
+    displayTiltak.filter(t => !completedItems.has(t.id)),
+    [displayTiltak, completedItems]
+  );
+
+  // "Gjennomførte energioppgraderinger" – alle minus de som er avkrysset i nye
+  const gjennomforteTiltak = useMemo(() =>
+    displayTiltak.filter(t => !checkedItems.has(t.id)),
+    [displayTiltak, checkedItems]
+  );
+
   // Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
   const calculatedRating = React.useMemo(() => {
     const consumptionNum = parseFloat(yearlyConsumption);
@@ -309,17 +327,57 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     return info;
   }, [boligtype, buildingData?.filteredSolarEnergy, checkedItems, displayTiltak, erPaaGulListe, selectedVarmepumpeType, tekPeriod]);
 
-    // Beregn kombinert besparelse med multiplikativ metode
-  const totalSavingsKWh = React.useMemo(() => {
-    if (tiltakInfo.length === 0) return 0;
+  // Tiltak-info for gjennomførte tiltak (speiler tiltakInfo for checkedItems)
+  const completedTiltakInfo = React.useMemo<TiltakSavingsInfo[]>(() => {
+    if (completedItems.size === 0 || !boligtype || !tekPeriod) return [];
+    const info: TiltakSavingsInfo[] = [];
+    completedItems.forEach((tiltakId) => {
+      const tiltak = displayTiltak.find((t) => t.id === tiltakId);
+      if (!tiltak) return;
+      if (tiltak.id === 'solenergi') {
+        const solarEnergy = buildingData?.filteredSolarEnergy || 0;
+        if (solarEnergy > 0) info.push({ title: tiltak.id, rates: null, solarProductionKwh: solarEnergy });
+      } else {
+        const rates = getRateForTiltakId(tiltak.id, tekPeriod, boligtype, {
+          erPaaGulListe,
+          varmepumpeTab: tiltak.id === 'varmepumpe' ? selectedVarmepumpeType : undefined,
+        });
+        if (rates !== null) info.push({ title: tiltak.id, rates });
+      }
+    });
+    return info;
+  }, [boligtype, buildingData?.filteredSolarEnergy, completedItems, displayTiltak, erPaaGulListe, selectedVarmepumpeType, tekPeriod]);
+
+  // Besparelse fra gjennomførte tiltak (baseline-reduksjon)
+  const completedSavingsKWh = React.useMemo(() => {
+    if (completedTiltakInfo.length === 0) return 0;
     const consumptionNum = yearlyConsumption ? parseFloat(yearlyConsumption) : estimatedAnnualConsumption;
     if (!Number.isFinite(consumptionNum) || consumptionNum <= 0) return 0;
-    return calculateCombinedSavings(consumptionNum, tiltakInfo, tekPeriod!, boligtype!, bruksareal);
-  }, [tiltakInfo, yearlyConsumption, estimatedAnnualConsumption, tekPeriod, boligtype, bruksareal]);
+    return calculateCombinedSavings(consumptionNum, completedTiltakInfo, tekPeriod!, boligtype!, bruksareal);
+  }, [completedTiltakInfo, yearlyConsumption, estimatedAnnualConsumption, tekPeriod, boligtype, bruksareal]);
+
+  // Samlet besparelse for ALLE tiltak (gjennomførte + nye)
+  const allTiltakInfo = React.useMemo(
+    () => [...completedTiltakInfo, ...tiltakInfo],
+    [completedTiltakInfo, tiltakInfo]
+  );
+
+  const totalCombinedSavingsKWh = React.useMemo(() => {
+    if (allTiltakInfo.length === 0) return 0;
+    const consumptionNum = yearlyConsumption ? parseFloat(yearlyConsumption) : estimatedAnnualConsumption;
+    if (!Number.isFinite(consumptionNum) || consumptionNum <= 0) return 0;
+    return calculateCombinedSavings(consumptionNum, allTiltakInfo, tekPeriod!, boligtype!, bruksareal);
+  }, [allTiltakInfo, yearlyConsumption, estimatedAnnualConsumption, tekPeriod, boligtype, bruksareal]);
+
+  // Marginal besparelse fra nye tiltak (det brukeren ser i besparelseskortet)
+  const newSavingsKWh = React.useMemo(
+    () => Math.max(0, totalCombinedSavingsKWh - completedSavingsKWh),
+    [totalCombinedSavingsKWh, completedSavingsKWh]
+  );
 
   // Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
   const newRating = React.useMemo(() => {
-    if (!estimatedRating || !yearlyConsumption || checkedItems.size === 0 || !bruksareal) {
+    if (!estimatedRating || !yearlyConsumption || (checkedItems.size === 0 && completedItems.size === 0) || !bruksareal) {
       return null;
     }
 
@@ -328,7 +386,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       return null;
     }
 
-    const newConsumption = Math.max(0, consumptionNum - totalSavingsKWh);
+    const newConsumption = Math.max(0, consumptionNum - totalCombinedSavingsKWh);
     const newIntensity = newConsumption / bruksareal;
 
     // boligtype er allerede beregnet og mapper til 'småhus' | 'blokk' | null
@@ -343,8 +401,9 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     bruksareal,
     boligtype,
     checkedItems.size,
+    completedItems.size,
     estimatedRating,
-    totalSavingsKWh,
+    totalCombinedSavingsKWh,
     yearlyConsumption,
   ]);
 
@@ -355,6 +414,36 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         newSet.delete(tiltakId);
       } else {
         newSet.add(tiltakId);
+        // Gjensidig ekskludering: fjern fra completedItems
+        setCompletedItems(prevCompleted => {
+          if (prevCompleted.has(tiltakId)) {
+            const updated = new Set(prevCompleted);
+            updated.delete(tiltakId);
+            return updated;
+          }
+          return prevCompleted;
+        });
+      }
+      return newSet;
+    });
+  }, []);
+
+  const toggleCompleted = useCallback((tiltakId: string) => {
+    setCompletedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(tiltakId)) {
+        newSet.delete(tiltakId);
+      } else {
+        newSet.add(tiltakId);
+        // Gjensidig ekskludering: fjern fra checkedItems
+        setCheckedItems(prevChecked => {
+          if (prevChecked.has(tiltakId)) {
+            const updated = new Set(prevChecked);
+            updated.delete(tiltakId);
+            return updated;
+          }
+          return prevChecked;
+        });
       }
       return newSet;
     });
@@ -379,17 +468,24 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     }
   }, [checkedItems, newRating, onSelectionChange, displayTiltak]);
   
-  // Send total savings til parent-komponenten når den endres
+  // Send marginal besparelse (nye tiltak) til parent-komponenten
   useEffect(() => {
     if (onTotalSavingsChange) {
-      onTotalSavingsChange(totalSavingsKWh);
+      onTotalSavingsChange(newSavingsKWh);
     }
-  }, [onTotalSavingsChange, totalSavingsKWh]);
+  }, [onTotalSavingsChange, newSavingsKWh]);
 
   // Send tiltakInfo til parent-komponenten når den endres
   useEffect(() => {
     onTiltakInfoChange?.(tiltakInfo);
   }, [onTiltakInfoChange, tiltakInfo]);
+
+  // Send completedSavings til parent-komponenten
+  useEffect(() => {
+    if (onCompletedSavingsChange) {
+      onCompletedSavingsChange(completedSavingsKWh);
+    }
+  }, [onCompletedSavingsChange, completedSavingsKWh]);
 
   // Oppdater scroll-status
   useEffect(() => {
@@ -413,6 +509,13 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       window.removeEventListener('resize', checkScroll);
     };
   }, [displayTiltak]);
+
+  // Scroll reset ved tab-bytte
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [activeTab]);
 
   return (
     <div
@@ -438,8 +541,24 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
             margin: 0
           }}
         >
-          Velg tiltak for din bolig
+          Velg energioppgraderinger
         </h2>
+      </div>
+      {/* Tabs for tiltakslisten */}
+      <div className="energy-solution-buttons__tabs">
+        <PktTabs
+          tabs={[
+            {
+              text: 'Nye energioppgraderinger',
+              active: activeTab === 'nye',
+            },
+            {
+              text: 'Gjennomførte energioppgraderinger',
+              active: activeTab === 'gjennomforte',
+            },
+          ]}
+          onTabSelected={(index) => setActiveTab(index === 0 ? 'nye' : 'gjennomforte')}
+        />
       </div>
       {/* Scrollbar-container for tiltakslisten */}
       <div
@@ -449,23 +568,130 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
           ref={scrollContainerRef}
           className="tiltak-list-container energy-solution-buttons__list"
         >
-          {displayTiltak.map((tiltak) => {
-            const isSelected = checkedItems.has(tiltak.id);
-            const isVarmepumpe = tiltak.id === 'varmepumpe';
+          {activeTab === 'nye' ? (
+            nyeTiltak.map((tiltak) => {
+              const isSelected = checkedItems.has(tiltak.id);
+              const isVarmepumpe = tiltak.id === 'varmepumpe';
 
-            // Standard tiltak-rad (ikke varmepumpe)
-            if (!isVarmepumpe) {
+              if (!isVarmepumpe) {
+                return (
+                  <li
+                    key={tiltak.id}
+                    className={`energy-solution-buttons__item${isSelected ? ' energy-solution-buttons__item--selected' : ''}`}
+                  >
+                    <div className="energy-solution-buttons__item-content">
+                      <PktCheckbox
+                        id={`tiltak-${tiltak.id}`}
+                        label={tiltak.title}
+                        checked={isSelected}
+                        onChange={() => toggleChecked(tiltak.id)}
+                      />
+                    </div>
+                    <div className="energy-solution-buttons__actions">
+                      <PktButton
+                        skin="secondary"
+                        size="small"
+                        variant="label-only"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectSolution(tiltak.id);
+                          onExpand(true);
+                        }}
+                      >
+                        Les mer
+                      </PktButton>
+                    </div>
+                  </li>
+                );
+              }
+
+              // Varmepumpe med utvidbar seksjon
               return (
                 <li
                   key={tiltak.id}
-                  className={`energy-solution-buttons__item${isSelected ? ' energy-solution-buttons__item--selected' : ''}`}
+                  className={`energy-solution-buttons__item energy-solution-buttons__item--expandable${isSelected ? ' energy-solution-buttons__item--selected' : ''}`}
+                >
+                  <div className="energy-solution-buttons__varmepumpe-header">
+                    <div className="energy-solution-buttons__item-content">
+                      <PktCheckbox
+                        id={`tiltak-${tiltak.id}`}
+                        label={tiltak.title}
+                        checked={isSelected}
+                        onChange={() => {
+                          toggleChecked(tiltak.id);
+                          if (isSelected) {
+                            setVarmepumpeExpanded(false);
+                            setSelectedVarmepumpeType('luft-luft');
+                          } else {
+                            setVarmepumpeExpanded(true);
+                            setSelectedVarmepumpeType('luft-luft');
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="energy-solution-buttons__actions">
+                      <PktButton
+                        skin="secondary"
+                        size="small"
+                        variant="label-only"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectSolution(tiltak.id);
+                          onExpand(true);
+                        }}
+                      >
+                        Les mer
+                      </PktButton>
+                    </div>
+                  </div>
+
+                  {/* Utvidbar seksjon for varmepumpe-typer */}
+                  {isSelected && varmepumpeExpanded && (
+                    <div className="energy-solution-buttons__varmepumpe-options">
+                      {VARMEPUMPE_TYPES.map((type) => {
+                        const isTypeSelected = isSelected && selectedVarmepumpeType === type.id;
+                        return (
+                          <div
+                            key={type.id}
+                            className={`energy-solution-buttons__varmepumpe-option${isTypeSelected ? ' energy-solution-buttons__varmepumpe-option--selected' : ''}`}
+                          >
+                            <PktRadioButton
+                              id={`varmepumpe-type-${type.id}`}
+                              name="varmepumpe-type"
+                              label={type.label}
+                              value={type.id}
+                              checked={isTypeSelected}
+                              checkHelptext={type.description}
+                              onChange={() => {
+                                setSelectedVarmepumpeType(type.id);
+                                if (!checkedItems.has('varmepumpe')) {
+                                  toggleChecked('varmepumpe');
+                                }
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </li>
+              );
+            })
+          ) : (
+            gjennomforteTiltak.map((tiltak) => {
+              const isCompleted = completedItems.has(tiltak.id);
+
+              return (
+                <li
+                  key={tiltak.id}
+                  className={`energy-solution-buttons__item${isCompleted ? ' energy-solution-buttons__item--selected' : ''}`}
                 >
                   <div className="energy-solution-buttons__item-content">
                     <PktCheckbox
-                      id={`tiltak-${tiltak.id}`}
+                      id={`tiltak-completed-${tiltak.id}`}
                       label={tiltak.title}
-                      checked={isSelected}
-                      onChange={() => toggleChecked(tiltak.id)}
+                      checked={isCompleted}
+                      onChange={() => toggleCompleted(tiltak.id)}
                     />
                   </div>
                   <div className="energy-solution-buttons__actions">
@@ -484,83 +710,8 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                   </div>
                 </li>
               );
-            }
-
-            // Varmepumpe med utvidbar seksjon
-            return (
-              <li
-                key={tiltak.id}
-                className={`energy-solution-buttons__item energy-solution-buttons__item--expandable${isSelected ? ' energy-solution-buttons__item--selected' : ''}`}
-              >
-                <div className="energy-solution-buttons__varmepumpe-header">
-                  <div className="energy-solution-buttons__item-content">
-                    <PktCheckbox
-                      id={`tiltak-${tiltak.id}`}
-                      label={tiltak.title}
-                      checked={isSelected}
-                      onChange={() => {
-                        toggleChecked(tiltak.id);
-                        if (isSelected) {
-                          // Avkrysser: kollaps og nullstill type
-                          setVarmepumpeExpanded(false);
-                          setSelectedVarmepumpeType('luft-luft');
-                        } else {
-                          // Krysser av: ekspander og velg default
-                          setVarmepumpeExpanded(true);
-                          setSelectedVarmepumpeType('luft-luft');
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="energy-solution-buttons__actions">
-                    <PktButton
-                      skin="secondary"
-                      size="small"
-                      variant="label-only"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectSolution(tiltak.id);
-                        onExpand(true);
-                      }}
-                    >
-                      Les mer
-                    </PktButton>
-                  </div>
-                </div>
-
-                {/* Utvidbar seksjon for varmepumpe-typer */}
-                {isSelected && varmepumpeExpanded && (
-                  <div className="energy-solution-buttons__varmepumpe-options">
-                    {VARMEPUMPE_TYPES.map((type) => {
-                      const isTypeSelected = isSelected && selectedVarmepumpeType === type.id;
-                      return (
-                        <div
-                          key={type.id}
-                          className={`energy-solution-buttons__varmepumpe-option${isTypeSelected ? ' energy-solution-buttons__varmepumpe-option--selected' : ''}`}
-                        >
-                          <PktRadioButton
-                            id={`varmepumpe-type-${type.id}`}
-                            name="varmepumpe-type"
-                            label={type.label}
-                            value={type.id}
-                            checked={isTypeSelected}
-                            checkHelptext={type.description}
-                            onChange={() => {
-                              setSelectedVarmepumpeType(type.id);
-                              // Sørg for at varmepumpe er valgt når en type velges
-                              if (!checkedItems.has('varmepumpe')) {
-                                toggleChecked('varmepumpe');
-                              }
-                            }}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </li>
-            );
-          })}
+            })
+          )}
         </ul>
       </div>
 

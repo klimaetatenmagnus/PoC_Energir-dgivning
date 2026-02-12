@@ -193,6 +193,7 @@ interface WhiteInfoBoxProps {
   energyPricePerKwh?: number;
   animateSavings?: boolean;
   onShowInfo?: () => void;
+  completedSavings?: number;
 }
 
 export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
@@ -214,7 +215,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   gulListeLoading = false,
   energyPricePerKwh = 1.1,
   animateSavings = true,
-  onShowInfo
+  onShowInfo,
+  completedSavings = 0,
 }) => {
   // State for delayed height expansion
   const [expandHeight, setExpandHeight] = React.useState(false);
@@ -342,7 +344,7 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
       }
     };
   }, []);
-  
+
   // State for address text scaling
   const [addressScale, setAddressScale] = React.useState(1);
   const textRef = React.useRef<SVGTextElement>(null);
@@ -421,10 +423,20 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   const [editedArealLeilighet, setEditedArealLeilighet] = React.useState(savedArealLeilighet);
   const [editedEnergiforbruk, setEditedEnergiforbruk] = React.useState(savedEnergiforbruk);
 
+  // Justert energiforbruk basert på gjennomførte tiltak
+  // Flyttes opp for å brukes i computedEnergyRating nedenfor
+  // Avrundes til nærmeste 1000 for konsistent visning
+  const adjustedEnergyConsumption = React.useMemo(() => {
+    const base = Number(savedEnergiforbruk || '0');
+    if (!Number.isFinite(base) || base <= 0 || !completedSavings || completedSavings <= 0) return base;
+    return roundToNearestThousandValue(Math.max(0, base - completedSavings));
+  }, [savedEnergiforbruk, completedSavings]);
+
   // Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
+  // Bruker adjustedEnergyConsumption slik at gjennomførte tiltak oppdaterer baseline-karakteren
   const energyRatingLabel = 'Estimert energikarakter';
   const computedEnergyRating = React.useMemo(() => {
-    const consumptionNum = Number(savedEnergiforbruk);
+    const consumptionNum = adjustedEnergyConsumption;
     const areaCandidate = savedAreal || (typeof buildingData?.bruksarealM2 === 'number'
       ? String(buildingData.bruksarealM2)
       : buildingData?.csvData?.bruksareal_totalt);
@@ -439,12 +451,12 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
 
     return calculateEnergyRating(intensity, areaNum, buildingType);
   }, [
+    adjustedEnergyConsumption,
     buildingData?.bruksarealM2,
     buildingData?.csvData?.bruksareal_totalt,
     buildingTypeCode,
     buildingTypeName,
     savedAreal,
-    savedEnergiforbruk,
   ]);
 
   const normalizedCurrentRating = computedEnergyRating?.toUpperCase() ?? null;
@@ -467,7 +479,41 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     }
     return formatNumberWithSpaces(Math.round(numeric));
   }, [savedEnergiforbruk, hasEnovaRating, isApartmentBuilding]);
-  
+
+  // Rolling digits for energiforbruk (animeres ved gjennomførte tiltak)
+  const [displayedConsumption, setDisplayedConsumption] = React.useState(() => Math.round(Number(savedEnergiforbruk || '0')));
+  const consumptionAnimationFrame = React.useRef<number | null>(null);
+  const previousConsumptionRef = React.useRef(Math.round(Number(savedEnergiforbruk || '0')));
+
+  React.useEffect(() => {
+    const target = adjustedEnergyConsumption;
+    if (prefersReducedMotion || (completedSavings ?? 0) <= 0) {
+      previousConsumptionRef.current = target;
+      setDisplayedConsumption(target);
+      return;
+    }
+    const startValue = previousConsumptionRef.current;
+    if (startValue === target) return;
+    const duration = 900;
+    const startTime = performance.now();
+    const tick = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      setDisplayedConsumption(Math.round(startValue + (target - startValue) * easedProgress));
+      if (progress < 1) {
+        consumptionAnimationFrame.current = requestAnimationFrame(tick);
+      } else {
+        previousConsumptionRef.current = target;
+        consumptionAnimationFrame.current = null;
+      }
+    };
+    consumptionAnimationFrame.current = requestAnimationFrame(tick);
+    return () => {
+      if (consumptionAnimationFrame.current !== null) cancelAnimationFrame(consumptionAnimationFrame.current);
+    };
+  }, [adjustedEnergyConsumption, prefersReducedMotion, completedSavings]);
+
   // Update saved energy consumption when estimated value changes (only if user hasn't edited it)
   // VIKTIG: Nøkkelinformasjon bruker ALLTID TEK-estimering, uavhengig av Enova-data.
   React.useEffect(() => {
@@ -611,19 +657,28 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   // Prioriterer Enova bulk-data for å sikre "epler med epler"-sammenligning,
   // MEN bare hvis brukeren IKKE har redigert nøkkelinformasjon
   const currentKwhPerM2 = React.useMemo(() => {
+    let baseKwhPerM2: number;
     // Hvis brukerens bolig finnes i Enova bulk-data og bruker ikke har redigert, bruk den verdien
     if (!hasUserEdited && enovaBulkData?.kwhPerM2 && enovaBulkData.kwhPerM2 > 0) {
-      return enovaBulkData.kwhPerM2;
+      baseKwhPerM2 = enovaBulkData.kwhPerM2;
+    } else {
+      // Bruk TEK-estimering hvis Enova-data ikke finnes eller bruker har redigert
+      const consumption = Number(savedEnergiforbruk);
+      const area = Number(savedAreal);
+      if (!Number.isFinite(consumption) || consumption <= 0 || !Number.isFinite(area) || area <= 0) {
+        return 0;
+      }
+      baseKwhPerM2 = consumption / area;
     }
-
-    // Bruk TEK-estimering hvis Enova-data ikke finnes eller bruker har redigert
-    const consumption = Number(savedEnergiforbruk);
-    const area = Number(savedAreal);
-    if (!Number.isFinite(consumption) || consumption <= 0 || !Number.isFinite(area) || area <= 0) {
-      return 0;
+    // Juster for gjennomførte tiltak
+    if (completedSavings && completedSavings > 0) {
+      const area = Number(savedAreal);
+      if (Number.isFinite(area) && area > 0) {
+        baseKwhPerM2 = Math.max(0, baseKwhPerM2 - (completedSavings / area));
+      }
     }
-    return consumption / area;
-  }, [hasUserEdited, enovaBulkData, savedEnergiforbruk, savedAreal]);
+    return baseKwhPerM2;
+  }, [hasUserEdited, enovaBulkData, savedEnergiforbruk, savedAreal, completedSavings]);
 
   // Beregn boligtype-kategori for bydelssammenligning
   const buildingCategory = React.useMemo(
@@ -970,7 +1025,15 @@ const tiltakPreview = selectedTiltakSlug ? (
                     </div>
                     <span className="white-info-box__energy-label">Estimert energiforbruk:</span>
                     <div className="white-info-box__energy-value">
-                      <span className="white-info-box__energy-amount">{savedEnergyDisplayValue}</span>
+                      {(completedSavings ?? 0) > 0 ? (
+                        <RollingDigitsDisplay
+                          value={displayedConsumption}
+                          prefersReducedMotion={prefersReducedMotion}
+                          className="white-info-box__rolling-digits--consumption"
+                        />
+                      ) : (
+                        <span className="white-info-box__energy-amount">{savedEnergyDisplayValue}</span>
+                      )}
                       <span className="white-info-box__energy-unit">kWh/år</span>
                     </div>
                   </div>
@@ -1204,7 +1267,7 @@ const tiltakPreview = selectedTiltakSlug ? (
           subdistrictStats={subdistrictStats ?? undefined}
 buildingTypeCategory={buildingCategory}
           userEnergyGrade={comparisonEnergyGrade as EnergyGrade | null}
-          isUsingEnovaBulkData={!hasUserEdited && enovaBulkData !== null}
+          isUsingEnovaBulkData={!hasUserEdited && enovaBulkData !== null && (completedSavings ?? 0) <= 0}
         />
       )}
 
@@ -1502,11 +1565,13 @@ const RollingDigit: React.FC<RollingDigitProps> = ({ digit, prefersReducedMotion
 interface RollingDigitsDisplayProps {
   value: number;
   prefersReducedMotion: boolean;
+  className?: string;
 }
 
 const RollingDigitsDisplay: React.FC<RollingDigitsDisplayProps> = ({
   value,
-  prefersReducedMotion
+  prefersReducedMotion,
+  className,
 }) => {
   const formattedValue = React.useMemo(
     () => value.toLocaleString('nb-NO').replace(/\u00A0/g, ' '),
@@ -1514,7 +1579,7 @@ const RollingDigitsDisplay: React.FC<RollingDigitsDisplayProps> = ({
   );
 
   return (
-    <span className="white-info-box__rolling-digits">
+    <span className={className || "white-info-box__rolling-digits"}>
       {formattedValue.split('').map((character, index) => {
         if (/^\d$/.test(character)) {
           return (
