@@ -212,14 +212,29 @@
   flex-direction: column;
   align-items: center;
   z-index: 10001;
-  transition: transform 0.8s ease-in-out;
+  opacity: 1;
+  transition: transform 0.8s ease-in-out, opacity 0.35s ease-in-out;
+}
+
+/* Default entry when first tiltak is selected on side 2 */
+.tiltak-side__process-wrapper--entering-bottom {
+  opacity: 0;
+  transform: translateX(-50%) translateY(calc(14 * var(--transition-vh))) scale(var(--layout-scale));
+  pointer-events: none;
+}
+
+/* Entry when returning from side 3 -> 2: mirror side-2 columns (offscreen-up -> settled). */
+.tiltak-side__process-wrapper--entering-top {
+  opacity: 1;
+  transform: translateX(-50%) translateY(calc(-100 * var(--transition-vh))) scale(var(--layout-scale));
+  pointer-events: none;
 }
 
 /* Process button wrapper slides up when process view is shown */
 .tiltak-side__process-wrapper--transitioning {
   transform: translateX(-50%) translateY(calc(-100 * var(--transition-vh))) scale(var(--layout-scale));
   pointer-events: none;
-  transition: transform 0.8s ease-in-out 0.16s;
+  transition: transform 0.8s ease-in-out 0.16s, opacity 0.35s ease-in-out;
 }
 
 /* ==========================================================================

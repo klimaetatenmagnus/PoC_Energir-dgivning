@@ -30,6 +30,7 @@ import {
   calculateComparisonSavings,
   getRateForTiltakId,
   hasEnergyEffect,
+  TILTAK_ID_TO_TYPE,
   type TiltakSavingsInfo,
   type Boligtype,
   type TekPeriodInput,
@@ -166,7 +167,10 @@ const filterTiltakForBuilding = (
     let energyEffectMatch = true;
     if (tekPeriod && boligtype && t.id !== 'solenergi') {
       const rates = getRateForTiltakId(t.id, tekPeriod, boligtype, { erPaaGulListe });
-      if (rates !== null && !hasEnergyEffect(rates)) {
+      const isRateBasedTiltak = t.id in TILTAK_ID_TO_TYPE && TILTAK_ID_TO_TYPE[t.id] !== null;
+      if (rates === null && isRateBasedTiltak) {
+        energyEffectMatch = false; // Skjul rate-basert tiltak uten data for denne TEK-perioden
+      } else if (rates !== null && !hasEnergyEffect(rates)) {
         energyEffectMatch = false;
       }
     }
@@ -211,6 +215,23 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   // Varmepumpe-spesifikk state
   const [selectedVarmepumpeType, setSelectedVarmepumpeType] = useState<VarmepumpeType>('luft-luft');
   const [varmepumpeExpanded, setVarmepumpeExpanded] = useState(false);
+
+  // Override-state for redigerte bygningsdata (speiler desktop-mønsteret i FigmaMainScript)
+  const [updatedBuildingData, setUpdatedBuildingData] = useState(buildingData);
+  const [effectiveYearlyConsumption, setEffectiveYearlyConsumption] = useState(yearlyConsumption);
+
+  // Sjekk om brukeren har redigert nøkkelinformasjon
+  // Brukes til å bestemme om Enova bulk-data skal hoppes over i sammenligningsmodulen
+  // Ved tilbakestilling matcher verdiene originalene → hasUserEdited = false → Enova brukes igjen
+  // Sjekker bygningsdata OG energiforbruk (brukeren kan redigere energi direkte)
+  const hasUserEdited = useMemo(() => {
+    if (updatedBuildingData === buildingData && effectiveYearlyConsumption === yearlyConsumption) return false;
+    return updatedBuildingData.byggeaar !== buildingData.byggeaar ||
+      updatedBuildingData.bruksarealM2 !== buildingData.bruksarealM2 ||
+      updatedBuildingData.arealLeilighet !== buildingData.arealLeilighet ||
+      effectiveYearlyConsumption !== yearlyConsumption;
+  }, [updatedBuildingData, buildingData, effectiveYearlyConsumption, yearlyConsumption]);
+
   const [hasScrolled, setHasScrolled] = useState(false);
   const tiltakSectionRef = useRef<HTMLDivElement>(null);
   const buildingIllustrationRef = useRef<HTMLDivElement>(null);
@@ -237,15 +258,15 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   // Bygningstypedata
   const buildingTypeCode = useMemo(() => {
     return (
-      buildingData?.bygningstypeKode?.substring(0, 2) ||
-      buildingData?.csvData?.bygningstypekode?.substring(0, 2) ||
+      updatedBuildingData?.bygningstypeKode?.substring(0, 2) ||
+      updatedBuildingData?.csvData?.bygningstypekode?.substring(0, 2) ||
       ''
     );
-  }, [buildingData]);
+  }, [updatedBuildingData]);
 
   const buildingTypeName = useMemo(() => {
-    return buildingData?.bygningstype || buildingData?.csvData?.bygningstype || '';
-  }, [buildingData]);
+    return updatedBuildingData?.bygningstype || updatedBuildingData?.csvData?.bygningstype || '';
+  }, [updatedBuildingData]);
 
   const buildingTypeNameLower = useMemo(() => buildingTypeName.toLowerCase(), [buildingTypeName]);
 
@@ -255,30 +276,55 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
 
   const buildingYear = useMemo(() => {
     const candidate =
-      typeof buildingData?.byggeaar === 'number'
-        ? buildingData.byggeaar
-        : buildingData?.csvData?.byggeaar
-          ? Number(buildingData.csvData.byggeaar)
+      typeof updatedBuildingData?.byggeaar === 'number'
+        ? updatedBuildingData.byggeaar
+        : updatedBuildingData?.csvData?.byggeaar
+          ? Number(updatedBuildingData.csvData.byggeaar)
           : undefined;
 
     if (candidate && !Number.isNaN(candidate) && candidate > 0) {
       return candidate;
     }
     return undefined;
-  }, [buildingData]);
+  }, [updatedBuildingData]);
 
   // Bruksareal - sjekk flere mulige feltnavn
   const bruksareal = useMemo(() => {
     const bra =
-      buildingData?.bruksarealM2 ||
-      buildingData?.bruksareal ||
-      buildingData?.csvData?.bruksareal_totalt ||
-      buildingData?.csvData?.bruksareal;
+      updatedBuildingData?.bruksarealM2 ||
+      updatedBuildingData?.bruksareal ||
+      updatedBuildingData?.csvData?.bruksareal_totalt ||
+      updatedBuildingData?.csvData?.bruksareal;
     if (bra && !Number.isNaN(Number(bra))) {
       return Number(bra);
     }
     return undefined;
+  }, [updatedBuildingData]);
+
+  // Opprinnelig bruksareal (før redigering) for solenergi-skalering
+  const originalBruksareal = useMemo(() => {
+    const raw =
+      buildingData?.bruksarealM2 ||
+      buildingData?.bruksareal ||
+      buildingData?.csvData?.bruksareal_totalt ||
+      buildingData?.csvData?.bruksareal;
+    if (raw && !Number.isNaN(Number(raw))) {
+      return Number(raw);
+    }
+    return undefined;
   }, [buildingData]);
+
+  // Skalert solenergi: nedjusteres proporsjonalt hvis brukeren har redusert bruksareal
+  const scaledSolarEnergy = useMemo(() => {
+    const rawSolar = solarData?.filteredSolarEnergy || buildingData?.filteredSolarEnergy;
+    if (!rawSolar || rawSolar <= 0 || !originalBruksareal || !bruksareal) return rawSolar;
+
+    // Kun nedjustering — hvis arealet er økt eller uendret, returner uendret solenergi
+    if (bruksareal >= originalBruksareal) return rawSolar;
+
+    const scaleFactor = bruksareal / originalBruksareal;
+    return Math.round(rawSolar * scaleFactor);
+  }, [solarData?.filteredSolarEnergy, buildingData?.filteredSolarEnergy, originalBruksareal, bruksareal]);
 
   // Er dette en blokk?
   const isBlokk = useMemo(() => {
@@ -295,10 +341,10 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   // Bruker sentralisert determineBuildingType() for konsistens med desktop
   const boligtype: Boligtype | null = useMemo(() => {
     return determineBuildingType(
-      buildingData?.bygningstypeKode || buildingData?.csvData?.bygningstypekode,
-      buildingData?.bygningstype || buildingData?.csvData?.bygningstype
+      updatedBuildingData?.bygningstypeKode || updatedBuildingData?.csvData?.bygningstypekode,
+      updatedBuildingData?.bygningstype || updatedBuildingData?.csvData?.bygningstype
     );
-  }, [buildingData]);
+  }, [updatedBuildingData]);
 
   // TEK-periode for energibesparelses-oppslag
   const tekPeriod: TekPeriodInput | null = useMemo(() => {
@@ -339,10 +385,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   // Returnerer null hvis besparelse ikke kan beregnes (manglende data)
   const calculateSavingsForTiltak = useCallback(
     (tiltakId: string): number | null => {
-      // Solenergi har egen beregning - bruk solarData prop eller buildingData som fallback
+      // Solenergi har egen beregning - bruk skalert verdi (tar høyde for nedjustert bruksareal)
       if (tiltakId === 'solenergi') {
-        const solarValue = solarData?.filteredSolarEnergy || buildingData?.filteredSolarEnergy;
-        return solarValue && solarValue > 0 ? solarValue : null;
+        return scaledSolarEnergy && scaledSolarEnergy > 0 ? scaledSolarEnergy : null;
       }
 
       // Andre tiltak krever byggeår og bruksareal
@@ -396,14 +441,13 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       return totalSavings > 0 ? totalSavings : null;
     },
     [
-      buildingData?.filteredSolarEnergy,
+      scaledSolarEnergy,
       buildingTypeCode,
       buildingTypeName,
       buildingYear,
       bruksareal,
       erPaaGulListe,
       selectedVarmepumpeType,
-      solarData,
     ]
   );
 
@@ -492,14 +536,13 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       const tiltak = displayTiltak.find((t) => t.id === tiltakId);
       if (!tiltak) return;
 
-      // Solenergi håndteres spesielt - det er produksjon, ikke besparelse
+      // Solenergi håndteres spesielt - bruk skalert verdi (tar høyde for nedjustert bruksareal)
       if (tiltak.id === 'solenergi') {
-        const solarValue = solarData?.filteredSolarEnergy || buildingData?.filteredSolarEnergy;
-        if (solarValue && solarValue > 0) {
+        if (scaledSolarEnergy && scaledSolarEnergy > 0) {
           tiltakInfo.push({
             title: tiltak.id,
             rates: null,
-            solarProductionKwh: solarValue
+            solarProductionKwh: scaledSolarEnergy
           });
         } else {
           uncalculable += 1;
@@ -534,7 +577,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     setUncalculableCount(uncalculable);
   }, [
     bruksareal,
-    buildingData?.filteredSolarEnergy,
+    scaledSolarEnergy,
     buildingTypeCode,
     buildingTypeName,
     buildingYear,
@@ -542,17 +585,26 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     displayTiltak,
     erPaaGulListe,
     selectedVarmepumpeType,
-    solarData?.filteredSolarEnergy,
   ]);
+
+  // Lokal effektiv energikarakter — oppdateres ved redigering (estimatedRating fra App.tsx er statisk)
+  const effectiveEstimatedRating = useMemo(() => {
+    const consumption = parseFloat(effectiveYearlyConsumption);
+    if (!Number.isFinite(consumption) || consumption <= 0 || !bruksareal) {
+      return estimatedRating ?? null;
+    }
+    const intensity = consumption / bruksareal;
+    return calculateEnergyRating(intensity, bruksareal, boligtype);
+  }, [effectiveYearlyConsumption, bruksareal, boligtype, estimatedRating]);
 
   // Beregn ny energikarakter basert på valgte tiltak
   const newRating = useMemo(() => {
-    // Trenger estimatedRating, yearlyConsumption, tiltak valgt og bruksareal
-    if (!estimatedRating || !yearlyConsumption || checkedItems.size === 0 || !bruksareal) {
+    // Trenger effectiveEstimatedRating, effectiveYearlyConsumption, tiltak valgt og bruksareal
+    if (!effectiveEstimatedRating || !effectiveYearlyConsumption || checkedItems.size === 0 || !bruksareal) {
       return null;
     }
 
-    const consumptionNum = parseFloat(yearlyConsumption);
+    const consumptionNum = parseFloat(effectiveYearlyConsumption);
     if (!Number.isFinite(consumptionNum) || consumptionNum <= 0) {
       return null;
     }
@@ -565,7 +617,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     const rating = calculateEnergyRating(newIntensity, bruksareal, boligtype);
 
     // Returner kun hvis bedre enn estimert
-    if (!isRatingBetter(rating, estimatedRating)) {
+    if (!isRatingBetter(rating, effectiveEstimatedRating)) {
       return null;
     }
 
@@ -575,8 +627,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     boligtype,
     calculatedSavings,
     checkedItems.size,
-    estimatedRating,
-    yearlyConsumption,
+    effectiveEstimatedRating,
+    effectiveYearlyConsumption,
   ]);
 
   // Sync checkedItems to activeTiltak and trigger arrow animations
@@ -598,11 +650,11 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       }
     }
 
-    setArrowColor(getEnergyRatingColor(newRating ?? estimatedRating));
+    setArrowColor(getEnergyRatingColor(newRating ?? effectiveEstimatedRating));
     setActiveTiltak(nextCanonicalKeys);
     if (mode) setArrowState(mode);
     prevTiltakRef.current = nextSet;
-  }, [checkedItems, displayTiltak, newRating, estimatedRating]);
+  }, [checkedItems, displayTiltak, newRating, effectiveEstimatedRating]);
 
   // Auto-clear arrow state after animation completes
   useEffect(() => {
@@ -641,6 +693,20 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     });
   }, []);
 
+  // Callback for redigering av bygningsdata fra MobileInfoBox (speiler FigmaMainScript)
+  const handleUpdateBuildingData = useCallback((
+    byggeaar: string, areal: string, arealLeilighet: string, energiforbruk: string
+  ) => {
+    setUpdatedBuildingData(prev => ({
+      ...prev,
+      byggeaar: byggeaar ? Number(byggeaar) : undefined,
+      bruksarealM2: areal ? Number(areal) : undefined,
+      arealLeilighet: arealLeilighet ? Number(arealLeilighet) : undefined,
+      csvData: { ...prev.csvData, byggeaar, bruksareal_totalt: areal, areal_leilighet: arealLeilighet },
+    }));
+    setEffectiveYearlyConsumption(energiforbruk);
+  }, []);
+
   // Adresse og bydel
   const addressOnly = searchAddress.split(',')[0];
   const districtName = buildingData.csvData?.bydelsnavn || '';
@@ -675,19 +741,18 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   }, [buildingData]);
 
   // Beregn kWh/m2 for bydelssammenligning
-  // Prioriterer Enova bulk-data for å sikre "epler med epler"-sammenligning
-  // Hvis boligen ikke finnes i Enova bulk-data, brukes TEK-estimering
+  // Prioriterer Enova bulk-data for å sikre "epler med epler"-sammenligning,
+  // MEN bare hvis brukeren IKKE har redigert nøkkelinformasjon
   const currentKwhPerM2 = useMemo(() => {
-    // Hvis brukerens bolig finnes i Enova bulk-data, bruk den verdien
-    // Dette sikrer at sammenligningen er basert på samme datakilde som bydelsstatistikken
-    if (enovaBulkData?.kwhPerM2 && enovaBulkData.kwhPerM2 > 0) {
+    // Hvis brukerens bolig finnes i Enova bulk-data og bruker ikke har redigert, bruk den verdien
+    if (!hasUserEdited && enovaBulkData?.kwhPerM2 && enovaBulkData.kwhPerM2 > 0) {
       return enovaBulkData.kwhPerM2;
     }
 
-    // Fallback til TEK-estimering hvis Enova-data ikke finnes
-    const consumption = yearlyConsumption ? parseFloat(yearlyConsumption) : estimatedAnnualConsumption;
+    // Bruk TEK-estimering hvis Enova-data ikke finnes eller bruker har redigert
+    const consumption = effectiveYearlyConsumption ? parseFloat(effectiveYearlyConsumption) : estimatedAnnualConsumption;
     return bruksareal && bruksareal > 0 ? consumption / bruksareal : 0;
-  }, [enovaBulkData, yearlyConsumption, estimatedAnnualConsumption, bruksareal]);
+  }, [hasUserEdited, enovaBulkData, effectiveYearlyConsumption, estimatedAnnualConsumption, bruksareal]);
 
   // Beregn besparelse for sammenligningsmodulen
   // Hvis Enova-data finnes, bruker vi calculateComparisonSavings som:
@@ -696,8 +761,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   // 3. Beregner besparelser basert på Enova-forbruk og disse faktorene
   // Dette gir realistiske besparelser for allerede oppgraderte boliger
   const comparisonSavings = useMemo(() => {
-    // Hvis ingen Enova-data eller ingen valgte tiltak, bruk calculatedSavings uendret
-    if (!enovaBulkData?.kwhPerM2 || enovaBulkData.kwhPerM2 <= 0 || !boligtype || !bruksareal || bruksareal <= 0) {
+    // Hopp over Enova-basert beregning hvis bruker har redigert, eller Enova-data mangler
+    if (hasUserEdited || !enovaBulkData?.kwhPerM2 || enovaBulkData.kwhPerM2 <= 0 || !boligtype || !bruksareal || bruksareal <= 0) {
       return calculatedSavings;
     }
 
@@ -717,14 +782,13 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       const tiltak = displayTiltak.find((t) => t.id === tiltakId);
       if (!tiltak) return;
 
-      // Solenergi håndteres spesielt - det er produksjon, ikke besparelse
+      // Solenergi håndteres spesielt - bruk skalert verdi (tar høyde for nedjustert bruksareal)
       if (tiltak.id === 'solenergi') {
-        const solarValue = solarData?.filteredSolarEnergy || buildingData?.filteredSolarEnergy;
-        if (solarValue && solarValue > 0) {
+        if (scaledSolarEnergy && scaledSolarEnergy > 0) {
           tiltakInfo.push({
             title: tiltak.id,
             rates: null,
-            solarProductionKwh: solarValue
+            solarProductionKwh: scaledSolarEnergy
           });
         }
       } else {
@@ -757,6 +821,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       tiltakInfo
     );
   }, [
+    hasUserEdited,
     enovaBulkData,
     calculatedSavings,
     estimatedAnnualConsumption,
@@ -767,8 +832,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     tekPeriod,
     erPaaGulListe,
     selectedVarmepumpeType,
-    solarData?.filteredSolarEnergy,
-    buildingData?.filteredSolarEnergy,
+    scaledSolarEnergy,
   ]);
 
   // Sjekk om footer skal vises
@@ -1127,7 +1191,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               addressOnly={addressOnly}
               districtName={districtName}
               buildingTypeName={buildingTypeName}
-              buildingData={buildingData}
+              buildingData={updatedBuildingData}
+              originalBuildingData={buildingData}
+              onUpdateBuildingData={handleUpdateBuildingData}
               mapCoordinates={mapCoordinates}
               showYellowBox={showYellowBox}
               totalEnergySavings={calculatedSavings}
@@ -1228,9 +1294,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
           districtStats={districtStats}
           subdistrictName={buildingData.csvData?.delbydelsnavn}
           subdistrictStats={subdistrictStats ?? undefined}
-          userEnergyGrade={estimatedRating as EnergyGrade | null}
+          userEnergyGrade={effectiveEstimatedRating as EnergyGrade | null}
           buildingTypeCategory={boligtype || 'småhus'}
-          isUsingEnovaBulkData={enovaBulkData !== null}
+          isUsingEnovaBulkData={!hasUserEdited && enovaBulkData !== null}
         />
       )}
 
@@ -1248,7 +1314,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         totalSavingsKwh={calculatedSavings}
         isVisible={showFooter && !showDistrictComparison && !showProsessenVidere}
         uncalculableCount={uncalculableCount}
-        estimatedRating={estimatedRating}
+        estimatedRating={effectiveEstimatedRating}
         newRating={newRating}
         selectedTiltakCount={checkedItems.size}
         forceCollapsed={isDetailViewActive}

@@ -7,6 +7,7 @@ import {
   calculateCombinedSavings,
   getRateForTiltakId,
   hasEnergyEffect,
+  TILTAK_ID_TO_TYPE,
   type TiltakSavingsInfo,
   type TekPeriodInput,
   type Boligtype,
@@ -104,7 +105,10 @@ const filterTiltakForBuilding = (
     let energyEffectMatch = true;
     if (tekPeriod && boligtype && t.id !== 'solenergi') {
       const rates = getRateForTiltakId(t.id, tekPeriod, boligtype, { erPaaGulListe });
-      if (rates !== null && !hasEnergyEffect(rates)) {
+      const isRateBasedTiltak = t.id in TILTAK_ID_TO_TYPE && TILTAK_ID_TO_TYPE[t.id] !== null;
+      if (rates === null && isRateBasedTiltak) {
+        energyEffectMatch = false; // Skjul rate-basert tiltak uten data for denne TEK-perioden
+      } else if (rates !== null && !hasEnergyEffect(rates)) {
         energyEffectMatch = false; // Skjul tiltak uten effekt
       }
     }

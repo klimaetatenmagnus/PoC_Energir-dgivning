@@ -24,6 +24,8 @@ interface MobileInfoBoxProps {
   districtName: string;
   buildingTypeName: string;
   buildingData: AddressLookupResponse;
+  /** Uendrede originaldata for tilbakestilling (nødvendig fordi MobileInfoBox remonteres) */
+  originalBuildingData?: AddressLookupResponse;
   mapCoordinates: { lat: number; lng: number } | null;
   showYellowBox?: boolean;
   totalEnergySavings?: number;
@@ -48,6 +50,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   districtName,
   buildingTypeName,
   buildingData,
+  originalBuildingData,
   mapCoordinates,
   showYellowBox = false,
   totalEnergySavings = 0,
@@ -64,6 +67,14 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   const displayBuildingTypeName = getDisplayBuildingTypeName(buildingTypeName);
   const buildingBadgeConfig = getBuildingTypeBadgeConfig(buildingTypeName);
   const isBlockBuilding = buildingTypeName.toLowerCase() === 'blokk' || buildingTypeName === 'Store boligbygg';
+
+  // Store the original fetched values so "Tilbakestill" can always reset to them
+  // Bruker originalBuildingData (uendrede verdier fra API) fordi MobileInfoBox remonteres
+  // ved åpning/lukking, og buildingData kan allerede inneholde redigerte verdier
+  const origData = originalBuildingData ?? buildingData;
+  const originalByggeaarRef = React.useRef(String(origData?.byggeaar || ''));
+  const originalArealRef = React.useRef(String(origData?.bruksarealM2 || ''));
+  const originalArealLeilighetRef = React.useRef(String(origData?.arealLeilighet || ''));
 
   // Bygningsdata
   const [savedByggeaar, setSavedByggeaar] = useState(String(buildingData?.byggeaar || ''));
@@ -99,7 +110,32 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   const [editedAreal, setEditedAreal] = useState(savedAreal);
   const [editedArealLeilighet, setEditedArealLeilighet] = useState(savedArealLeilighet);
   const [editedEnergiforbruk, setEditedEnergiforbruk] = useState(savedEnergiforbruk);
-  const [_hasUserEditedEnergy, setHasUserEditedEnergy] = useState(false);
+  const [hasUserEditedEnergy, setHasUserEditedEnergy] = useState(false);
+
+  // Synk lagret energiforbruk med estimert når det endres (hvis bruker ikke har redigert manuelt)
+  // Speiler desktop WhiteInfoBox-logikk
+  React.useEffect(() => {
+    if (!hasUserEditedEnergy) {
+      setSavedEnergiforbruk(String(estimatedConsumption));
+      setEditedEnergiforbruk(String(estimatedConsumption));
+    }
+  }, [estimatedConsumption, hasUserEditedEnergy]);
+
+  // Auto-rekalkuler energiforbruk i redigermodus når byggeår/areal endres (speiler desktop)
+  React.useEffect(() => {
+    if (isEditMode && !hasUserEditedEnergy) {
+      const buildingType = determineBuildingType(
+        buildingData?.bygningstypeKode,
+        buildingTypeName
+      );
+      const newEstimate = calculateAnnualEnergyConsumption(
+        editedByggeaar ? Number(editedByggeaar) : undefined,
+        editedAreal ? Number(editedAreal) : undefined,
+        buildingType
+      );
+      setEditedEnergiforbruk(String(newEstimate));
+    }
+  }, [editedByggeaar, editedAreal, isEditMode, buildingData?.bygningstypeKode, buildingTypeName, hasUserEditedEnergy]);
 
   // Formatert energiforbruk
   const formattedEnergyConsumption = useMemo(() => {
@@ -299,6 +335,36 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
                   />
                 </div>
                 <div className="mobile-info-box__edit-actions">
+                  <PktButton
+                    skin="tertiary"
+                    size="small"
+                    variant="icon-left"
+                    iconName="arrow-circle"
+                    onClick={() => {
+                      const origByggeaar = originalByggeaarRef.current;
+                      const origAreal = originalArealRef.current;
+                      const origArealLeilighet = originalArealLeilighetRef.current;
+                      const buildingType = determineBuildingType(buildingData?.bygningstypeKode, buildingTypeName);
+                      const origEnergy = String(calculateAnnualEnergyConsumption(
+                        origByggeaar ? Number(origByggeaar) : undefined,
+                        origAreal ? Number(origAreal) : undefined,
+                        buildingType
+                      ));
+                      setSavedByggeaar(origByggeaar);
+                      setSavedAreal(origAreal);
+                      setSavedArealLeilighet(origArealLeilighet);
+                      setSavedEnergiforbruk(origEnergy);
+                      setEditedByggeaar(origByggeaar);
+                      setEditedAreal(origAreal);
+                      setEditedArealLeilighet(origArealLeilighet);
+                      setEditedEnergiforbruk(origEnergy);
+                      setHasUserEditedEnergy(false);
+                      setIsEditMode(false);
+                      onUpdateBuildingData?.(origByggeaar, origAreal, origArealLeilighet, origEnergy);
+                    }}
+                  >
+                    Tilbakestill
+                  </PktButton>
                   <PktButton
                     skin="secondary"
                     size="small"

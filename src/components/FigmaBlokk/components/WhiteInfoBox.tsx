@@ -368,6 +368,13 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     onBackToSolutions?.();
   }, [onBackToSolutions, onExpand]);
 
+  // Store the original fetched values so "Tilbakestill" can always reset to them
+  const originalByggeaar = React.useRef(String(buildingData?.byggeaar || '')).current;
+  const originalAreal = React.useRef(String(buildingData?.bruksarealM2 || '')).current;
+  const originalArealLeilighet = React.useRef(String(buildingData?.arealLeilighet || '')).current;
+  // Original energiforbruk beregnes fra original byggeår/areal (for hasUserEdited-sjekk)
+  const originalEnergiforbrukRef = React.useRef<string | null>(null);
+
   const [savedByggeaar, setSavedByggeaar] = React.useState(
     String(buildingData?.byggeaar || '')
   );
@@ -405,6 +412,10 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   const [savedEnergiforbruk, setSavedEnergiforbruk] = React.useState(
     String(estimatedConsumption)
   );
+  // Lagre original energiverdi ved første render (for hasUserEdited-sjekk)
+  if (originalEnergiforbrukRef.current === null) {
+    originalEnergiforbrukRef.current = String(estimatedConsumption);
+  }
   const [editedByggeaar, setEditedByggeaar] = React.useState(savedByggeaar);
   const [editedAreal, setEditedAreal] = React.useState(savedAreal);
   const [editedArealLeilighet, setEditedArealLeilighet] = React.useState(savedArealLeilighet);
@@ -585,24 +596,34 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     return () => { cancelled = true; };
   }, [districtName, subdistrictName, buildingTypeName, buildingData]);
 
+  // Sjekk om brukeren har redigert nøkkelinformasjon (byggeår, areal eller energiforbruk)
+  // Hvis redigert → Enova bulk-data skal ikke brukes i sammenligningsmodulen
+  // Ved tilbakestilling matcher verdiene originalene igjen → hasUserEdited = false
+  // Sjekker også energiforbruk (brukeren kan redigere energi direkte)
+  const hasUserEdited = React.useMemo(() => {
+    return savedByggeaar !== originalByggeaar ||
+      savedAreal !== originalAreal ||
+      savedArealLeilighet !== originalArealLeilighet ||
+      savedEnergiforbruk !== originalEnergiforbrukRef.current;
+  }, [savedByggeaar, savedAreal, savedArealLeilighet, savedEnergiforbruk, originalByggeaar, originalAreal, originalArealLeilighet]);
+
   // Beregn kWh/m² for bydelssammenligning
-  // Prioriterer Enova bulk-data for å sikre "epler med epler"-sammenligning
-  // Hvis boligen ikke finnes i Enova bulk-data, brukes TEK-estimering
+  // Prioriterer Enova bulk-data for å sikre "epler med epler"-sammenligning,
+  // MEN bare hvis brukeren IKKE har redigert nøkkelinformasjon
   const currentKwhPerM2 = React.useMemo(() => {
-    // Hvis brukerens bolig finnes i Enova bulk-data, bruk den verdien
-    // Dette sikrer at sammenligningen er basert på samme datakilde som bydelsstatistikken
-    if (enovaBulkData?.kwhPerM2 && enovaBulkData.kwhPerM2 > 0) {
+    // Hvis brukerens bolig finnes i Enova bulk-data og bruker ikke har redigert, bruk den verdien
+    if (!hasUserEdited && enovaBulkData?.kwhPerM2 && enovaBulkData.kwhPerM2 > 0) {
       return enovaBulkData.kwhPerM2;
     }
 
-    // Fallback til TEK-estimering hvis Enova-data ikke finnes
+    // Bruk TEK-estimering hvis Enova-data ikke finnes eller bruker har redigert
     const consumption = Number(savedEnergiforbruk);
     const area = Number(savedAreal);
     if (!Number.isFinite(consumption) || consumption <= 0 || !Number.isFinite(area) || area <= 0) {
       return 0;
     }
     return consumption / area;
-  }, [enovaBulkData, savedEnergiforbruk, savedAreal]);
+  }, [hasUserEdited, enovaBulkData, savedEnergiforbruk, savedAreal]);
 
   // Beregn boligtype-kategori for bydelssammenligning
   const buildingCategory = React.useMemo(
@@ -627,8 +648,9 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
 
   // Beregn skalert besparelse for sammenligningsmodulen
   // Bruker samme calculateComparisonSavings() som mobil for konsistent beregning
+  // Hopper over Enova-basert beregning hvis brukeren har redigert nøkkelinformasjon
   const comparisonSavings = React.useMemo(() => {
-    if (!enovaBulkData?.kwhPerM2 || enovaBulkData.kwhPerM2 <= 0) {
+    if (hasUserEdited || !enovaBulkData?.kwhPerM2 || enovaBulkData.kwhPerM2 <= 0) {
       return totalEnergySavings;
     }
     if (!tiltakInfo || tiltakInfo.length === 0) {
@@ -646,18 +668,18 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
       buildingCategory as 'småhus' | 'blokk',
       tiltakInfo
     );
-  }, [enovaBulkData, totalEnergySavings, tiltakInfo, buildingCategory, bruksarealForComparison]);
+  }, [hasUserEdited, enovaBulkData, totalEnergySavings, tiltakInfo, buildingCategory, bruksarealForComparison]);
 
   // Beregn energikarakter for sammenligningsmodulen.
-  // Bruk Enova-karakteren direkte når bulk data foreligger (riktig sammenligningsgrunnlag mot bydelsstatistikk),
+  // Bruk Enova-karakteren direkte når bulk data foreligger og bruker ikke har redigert,
   // ellers fall tilbake til NS 3031:2025-beregning.
   const comparisonEnergyGrade = React.useMemo(() => {
     if (currentKwhPerM2 <= 0 || bruksarealForComparison <= 0) return null;
-    if (enovaBulkData?.energikarakter) {
+    if (!hasUserEdited && enovaBulkData?.energikarakter) {
       return enovaBulkData.energikarakter;
     }
     return calculateEnergyRating(currentKwhPerM2, bruksarealForComparison, buildingCategory as 'småhus' | 'blokk' | null);
-  }, [currentKwhPerM2, bruksarealForComparison, buildingCategory, enovaBulkData]);
+  }, [hasUserEdited, currentKwhPerM2, bruksarealForComparison, buildingCategory, enovaBulkData]);
 
   // Beregn variabler for bydelssammenligning (må være etter currentKwhPerM2)
   const showComparison = districtStats !== null && currentKwhPerM2 > 0;
@@ -1041,6 +1063,35 @@ const tiltakPreview = selectedTiltakSlug ? (
                     >
                       Avbryt
                     </PktButton>
+                    <PktButton
+                      skin="tertiary"
+                      size="small"
+                      variant="icon-left"
+                      iconName="arrow-circle"
+                      onClick={() => {
+                        const buildingType = determineBuildingType(buildingData?.bygningstypeKode, buildingTypeName);
+                        const origEnergy = String(calculateAnnualEnergyConsumption(
+                          originalByggeaar ? Number(originalByggeaar) : undefined,
+                          originalAreal ? Number(originalAreal) : undefined,
+                          buildingType
+                        ));
+                        setSavedByggeaar(originalByggeaar);
+                        setSavedAreal(originalAreal);
+                        setSavedArealLeilighet(originalArealLeilighet);
+                        setSavedEnergiforbruk(origEnergy);
+                        setEditedByggeaar(originalByggeaar);
+                        setEditedAreal(originalAreal);
+                        setEditedArealLeilighet(originalArealLeilighet);
+                        setEditedEnergiforbruk(origEnergy);
+                        setHasUserEditedEnergy(false);
+                        setIsEditMode(false);
+                        if (onUpdateBuildingData) {
+                          onUpdateBuildingData(originalByggeaar, originalAreal, originalArealLeilighet, origEnergy);
+                        }
+                      }}
+                    >
+                      Tilbakestill
+                    </PktButton>
                   </div>
                 </>
               )}
@@ -1153,7 +1204,7 @@ const tiltakPreview = selectedTiltakSlug ? (
           subdistrictStats={subdistrictStats ?? undefined}
 buildingTypeCategory={buildingCategory}
           userEnergyGrade={comparisonEnergyGrade as EnergyGrade | null}
-          isUsingEnovaBulkData={enovaBulkData !== null}
+          isUsingEnovaBulkData={!hasUserEdited && enovaBulkData !== null}
         />
       )}
 

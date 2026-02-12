@@ -42,6 +42,7 @@ const ENERGY_RATING_COLORS: Record<string, string> = {
 
 const LAYOUT_BASE_VIEWPORT = { width: 1250, height: 838 };
 const LAYOUT_SCALE_DOWN_FACTOR = 0.8;
+const PROCESS_BUTTON_EXIT_TIMEOUT_MS = 1100;
 
 interface LayoutMetrics {
   scale: number;
@@ -209,6 +210,13 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     String(initialEnergyConsumption)
   );
 
+  // Opprinnelig bruksareal fra buildingData (før redigering)
+  const originalBruksareal = React.useMemo(() => {
+    const raw = buildingData?.bruksarealM2 || buildingData?.csvData?.bruksareal_totalt;
+    const num = typeof raw === 'string' ? parseFloat(raw) : raw;
+    return num && !isNaN(num) && num > 0 ? num : undefined;
+  }, [buildingData]);
+
   // Refs for building elements
   const eneboligRef = React.useRef<HTMLDivElement>(null);
   const blokkRef = React.useRef<HTMLDivElement>(null);
@@ -219,6 +227,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   // State for process slide animation
   const [showProcess, setShowProcess] = React.useState(false);
   const [isProcessButtonExiting, setIsProcessButtonExiting] = React.useState(false);
+  const [isProcessButtonEntering, setIsProcessButtonEntering] = React.useState(false);
+  const [processEntryMode, setProcessEntryMode] = React.useState<'top' | 'bottom'>('bottom');
   const [showInfoModal, setShowInfoModal] = React.useState(false);
 
   // State for tiltak animations and arrow feedback
@@ -278,10 +288,43 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     setIsProcessButtonExiting(true);
     const timer = window.setTimeout(() => {
       setIsProcessButtonExiting(false);
-    }, 1100);
+    }, PROCESS_BUTTON_EXIT_TIMEOUT_MS);
 
     return () => window.clearTimeout(timer);
   }, [showProcess]);
+
+  const prevShowProcessRef = React.useRef(showProcess);
+  React.useEffect(() => {
+    if (prevShowProcessRef.current && !showProcess) {
+      // Returning from side 3: enter using same offscreen-up motion as side-2 columns.
+      setProcessEntryMode('top');
+    }
+    prevShowProcessRef.current = showProcess;
+  }, [showProcess]);
+
+  const shouldShowProcessButton = activeTiltak.length > 0 && !isExpanded && !showProcess && processButtonX !== null && processButtonY !== null;
+
+  React.useEffect(() => {
+    if (!shouldShowProcessButton) {
+      setIsProcessButtonEntering(false);
+      return;
+    }
+
+    setIsProcessButtonEntering(true);
+    let frameA = 0;
+    let frameB = 0;
+    frameA = window.requestAnimationFrame(() => {
+      frameB = window.requestAnimationFrame(() => {
+        setIsProcessButtonEntering(false);
+        setProcessEntryMode('bottom');
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameA);
+      window.cancelAnimationFrame(frameB);
+    };
+  }, [shouldShowProcessButton]);
 
   const handleShowProcess = React.useCallback(() => {
     setIsProcessButtonExiting(true);
@@ -469,6 +512,22 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     checkGulListe();
   }, [buildingData, hasCheckedGulListe]);
 
+  // Skalert solenergi-verdi: nedjusteres proporsjonalt hvis brukeren har redusert bruksareal
+  const scaledSolarEnergy = React.useMemo(() => {
+    const rawSolar = solarData?.filteredSolarEnergy;
+    if (!rawSolar || rawSolar <= 0 || !originalBruksareal) return rawSolar;
+
+    const editedRaw = updatedBuildingData?.bruksarealM2 || updatedBuildingData?.csvData?.bruksareal_totalt;
+    const editedArea = typeof editedRaw === 'string' ? parseFloat(editedRaw) : editedRaw;
+    if (!editedArea || isNaN(editedArea) || editedArea <= 0) return rawSolar;
+
+    // Kun nedjustering — hvis arealet er økt eller uendret, returner uendret solenergi
+    if (editedArea >= originalBruksareal) return rawSolar;
+
+    const scaleFactor = editedArea / originalBruksareal;
+    return Math.round(rawSolar * scaleFactor);
+  }, [solarData?.filteredSolarEnergy, originalBruksareal, updatedBuildingData]);
+
   // Building ready state: show building once overlay completes or if no overlay
   React.useEffect(() => {
     if (!overlayActiveForThisBuilding && !buildingReady) {
@@ -620,7 +679,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               isExpanded={isExpanded}
               onExpand={setIsExpanded}
               onSelectSolution={setSelectedSolution}
-              buildingData={{...updatedBuildingData, filteredSolarEnergy: solarData?.filteredSolarEnergy}}
+              buildingData={{...updatedBuildingData, filteredSolarEnergy: scaledSolarEnergy}}
               yearlyConsumption={energiforbruk}
               onTotalSavingsChange={setTotalEnergySavings}
               onTiltakInfoChange={setTiltakInfo}
@@ -689,7 +748,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               districtName={districtName}
               buildingTypeName={buildingTypeName}
               mapCoordinates={mapCoordinates}
-              buildingData={{...updatedBuildingData, filteredSolarEnergy: solarData?.filteredSolarEnergy}}
+              buildingData={{...updatedBuildingData, filteredSolarEnergy: scaledSolarEnergy}}
               newEnergyRating={newEnergyRating}
               onExpand={setIsExpanded}
               onBackToSolutions={handleTiltakBack}
@@ -707,7 +766,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
         {/* Process button */}
         {activeTiltak.length > 0 && !isExpanded && (!showProcess || isProcessButtonExiting) && processButtonX !== null && processButtonY !== null && (
           <div
-            className={`tiltak-side__process-wrapper${showProcess && isProcessButtonExiting ? ' tiltak-side__process-wrapper--transitioning' : ''}`}
+            className={`tiltak-side__process-wrapper${isProcessButtonEntering ? (processEntryMode === 'top' ? ' tiltak-side__process-wrapper--entering-top' : ' tiltak-side__process-wrapper--entering-bottom') : ''}${showProcess && isProcessButtonExiting ? ' tiltak-side__process-wrapper--transitioning' : ''}`}
             style={{
               left: processButtonX,
               top: `${processButtonY}px`,
