@@ -468,9 +468,14 @@
   flex-shrink: 0;
 }
 
-/* Fjern innebygd fade-gradient fra Punkt tabs */
+/* Fjern innebygd fade-gradient og horisontal scrollbar fra Punkt tabs */
 .mobile-energy-solutions__tabs .pkt-tabs::after {
   display: none;
+}
+
+.mobile-energy-solutions__tabs .pkt-tabs__list {
+  overflow-x: hidden;
+  padding-right: 0.25rem;
 }
 
 .mobile-energy-solutions__tabs .pkt-tabs__button {

@@ -215,9 +215,14 @@
   margin-bottom: var(--pkt-spacing-8, 0.5rem);
 }
 
-/* Fjern innebygd fade-gradient fra Punkt tabs */
+/* Fjern innebygd fade-gradient og horisontal scrollbar fra Punkt tabs */
 .energy-solution-buttons__tabs .pkt-tabs::after {
   display: none;
+}
+
+.energy-solution-buttons__tabs .pkt-tabs__list {
+  overflow-x: hidden;
+  padding-right: 0.25rem;
 }
 
 /* Tillat flerlinjet tab-tekst */
