@@ -83,23 +83,13 @@ export const EnergyGradeCard: React.FC<EnergyGradeCardProps> = ({
                   <span className="energy-grade-row__marker">Nå*</span>
                 )}
                 {isProjectedGrade && (
-                  <span className="energy-grade-row__marker energy-grade-row__marker--projected">Mål</span>
+                  <span className="energy-grade-row__marker energy-grade-row__marker--projected">Med<br />tiltak</span>
                 )}
               </div>
             </div>
           );
         })}
       </div>
-
-      {/* Oppsummering av forbedring */}
-      {showProjected && userEnergyGrade && projectedEnergyGrade && (
-        <div className={`carousel-card__summary ${gradeChanged ? 'carousel-card__summary--positive' : 'carousel-card__summary--info'}`}>
-          {gradeChanged
-            ? `${userEnergyGrade} → ${projectedEnergyGrade} med valgte tiltak`
-            : `Beholder karakter ${userEnergyGrade} med valgte tiltak`
-          }
-        </div>
-      )}
 
       <div className="carousel-card__meta">
         Fordeling basert på {districtStats.count.toLocaleString('nb-NO')} boliger

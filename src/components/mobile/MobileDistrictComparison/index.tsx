@@ -87,7 +87,6 @@ export const MobileDistrictComparison: React.FC<MobileDistrictComparisonProps> =
   const [comparisonLevel, setComparisonLevel] = useState<ComparisonLevel>('district');
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [hasSwipedOnce, setHasSwipedOnce] = useState(false);
   const [incomingIndex, setIncomingIndex] = useState<number | null>(null);
   const touchStartX = useRef<number | null>(null);
 
@@ -113,11 +112,6 @@ export const MobileDistrictComparison: React.FC<MobileDistrictComparisonProps> =
     setSlideDirection(newIndex > activeIndex ? 'left' : 'right');
     setIncomingIndex(newIndex);
     setIsAnimating(true);
-
-    // Marker at bruker har sveipet minst én gang (for å skjule hjelpetekst)
-    if (!hasSwipedOnce) {
-      setHasSwipedOnce(true);
-    }
 
     // Start animasjon, deretter oppdater index
     setTimeout(() => {
@@ -330,10 +324,6 @@ export const MobileDistrictComparison: React.FC<MobileDistrictComparisonProps> =
             </button>
           )}
 
-          {/* Hjelpetekst - vises kun på første kort og før første sveip */}
-          {activeIndex === 0 && !hasSwipedOnce && (
-            <p className="mobile-district-swipe-hint">Sveip for neste kort</p>
-          )}
         </div>
 
         {/* Dot-indikatorer */}

@@ -1104,13 +1104,12 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               </PktTag>
             )}
           </div>
-          {/* Vis mer om boligen */}
+          {/* Vis mer om boligen - kun chevron */}
           <button
             className="mobile-energy-solutions__show-more-trigger"
             onClick={() => setShowInfoBox(true)}
             aria-label="Vis mer om boligen"
           >
-            <span className="mobile-energy-solutions__show-more-text">Vis mer om boligen</span>
             <span className="mobile-energy-solutions__show-more-icon">
               <PktIcon name="chevron-thin-down" className="pkt-icon--medium" />
             </span>
@@ -1164,11 +1163,11 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
           <PktTabs
             tabs={[
               {
-                text: 'Nye energioppgraderinger',
+                text: 'Nye oppgraderinger',
                 active: activeTab === 'nye',
               },
               {
-                text: 'Gjennomførte energioppgraderinger',
+                text: 'Gjennomførte oppgraderinger',
                 active: activeTab === 'gjennomforte',
               },
             ]}
@@ -1462,7 +1461,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         estimatedRating={effectiveEstimatedRating}
         newRating={newRating}
         selectedTiltakCount={checkedItems.size}
-        forceCollapsed={isDetailViewActive}
+        forceCollapsed={isDetailViewActive || showInfoBox}
         onNavigateForward={() => {
           setShowProsessenVidere(true);
         }}
