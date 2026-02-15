@@ -41,6 +41,8 @@ spec:
               value: http://127.0.0.1:4003
             - name: CONTENT_BUCKET
               value: "__CONTENT_BUCKET__"
+            - name: DATA_BUCKET
+              value: "energinokkelen-data"
             - name: MATRIKKEL_USERNAME
               valueFrom:
                 secretKeyRef:
