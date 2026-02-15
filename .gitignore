@@ -1,38 +1,52 @@
-.env
-node_modules
-soap-dumps/
-dist/
-workspace-archive/
-public/punkt-assets/
-.gcloud/
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.egg-info/
-.eggs/
-.build/
-dist/
-.buildozer/
-.pytest_cache/
-.mypy_cache/
-.coverage
-htmlcov/
-.ipynb_checkpoints/
-
-# Virtuelle miljøer / secrets
-.venv/
-venv/
+# Secrets og credentials
 .env
 .env.*
+.gcloud/
+.gcloud-config/
 
-# Node (hvis aktuelt)
+# Sensitive datafiler – skal IKKE committes
+*.xlsx
+data/generated/
+
+# data/raw/ – kun spesifikke filer som trengs for bygg/runtime
+# Sensitive bulk-filer (enova-energimerker-oslo.csv etc.) SKAL IKKE committes.
+# Se PLAN-fjern-sensitiv-data.md for plan om å flytte alt til GCS.
+data/raw/*
+!data/raw/Matrikkel 2023.csv
+!data/raw/Input til modellen-Tabell 1.csv
+!data/raw/energimerke-grenser.json
+
+# Node
 node_modules/
 .npm/
 .pnpm-store/
 .yarn/
 .next/
 coverage/
+dist/
+
+# Build-artefakter
+.build/
+.buildozer/
+soap-dumps/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# Arkiv og genererte assets
+workspace-archive/
+public/punkt-assets/
 
 # Lokale draft-filer (admin-UI lagrer til GCS i staging/prod)
 *.draft.json
@@ -47,6 +61,7 @@ content/tilskudd/*.json
 .vscode/*
 !.vscode/settings.json
 
+# Storybook
 *storybook.log
 storybook-static
 
