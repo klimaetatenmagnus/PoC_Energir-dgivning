@@ -549,11 +549,11 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         <PktTabs
           tabs={[
             {
-              text: 'Nye energioppgraderinger',
+              text: 'Nye oppgraderinger',
               active: activeTab === 'nye',
             },
             {
-              text: 'Gjennomførte energioppgraderinger',
+              text: 'Gjennomførte oppgraderinger',
               active: activeTab === 'gjennomforte',
             },
           ]}
