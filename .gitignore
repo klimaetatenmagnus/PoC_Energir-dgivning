@@ -8,11 +8,8 @@
 *.xlsx
 data/generated/
 
-# data/raw/ – kun Matrikkel 2023.csv trengs for runtime (steg 3 i migreringsplan).
-# Sensitive bulk-filer (enova-energimerker-oslo.csv etc.) SKAL IKKE committes.
-# Se PLAN-fjern-sensitiv-data.md for plan om å flytte Matrikkel-CSV til GCS.
-data/raw/*
-!data/raw/Matrikkel 2023.csv
+# Sensitive datafiler – lastes nå fra GCS (se PLAN-fjern-sensitiv-data.md)
+data/raw/
 
 # Node
 node_modules/

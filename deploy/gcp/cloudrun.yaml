@@ -127,6 +127,8 @@ spec:
               value: __API_ENV__
             - name: BUILDING_INFO_PORT
               value: "4000"
+            - name: DATA_BUCKET
+              value: "energinokkelen-data"
             - name: MATRIKKEL_USERNAME
               valueFrom:
                 secretKeyRef:

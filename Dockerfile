@@ -35,7 +35,8 @@ ENV PYTHONPATH=/opt/python \
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/data ./data
+# Matrikkel CSV lastes nå fra GCS (DATA_BUCKET) i produksjon.
+# data/-mappen trengs ikke lenger i container-imaget.
 COPY --from=build /app/scripts/python ./scripts/python
 COPY --from=build /app/content ./content
 COPY --from=build /app/services ./services

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { Storage } from '@google-cloud/storage';
 import { parse } from 'csv-parse/sync';
 import { createLogger } from '../utils/logger.ts';
 
@@ -67,16 +68,39 @@ export interface MatrikkelCSVRecord {
 export class CSVService {
   private data: MatrikkelCSVRecord[] = [];
   private isLoaded = false;
+  private _readyPromise: Promise<void>;
 
   constructor() {
-    this.loadCSV();
+    this._readyPromise = this.loadCSV();
   }
 
-  private loadCSV() {
+  /**
+   * Wait for CSV data to be loaded. Call this before using the service
+   * in contexts where data must be available (e.g. server startup).
+   */
+  async waitForReady(): Promise<void> {
+    return this._readyPromise;
+  }
+
+  private async loadCSV(): Promise<void> {
     try {
-      const csvPath = path.join(process.cwd(), 'data', 'raw', 'Matrikkel 2023.csv');
-      const fileContent = fs.readFileSync(csvPath, 'utf-8');
-      
+      const bucketName = process.env.DATA_BUCKET;
+      const matrikkelFile = process.env.DATA_MATRIKKEL_FILE ?? 'matrikkel/Matrikkel 2023.csv';
+      let fileContent: string;
+
+      if (bucketName) {
+        // Produksjon/staging: last fra GCS
+        const storage = new Storage();
+        const [content] = await storage.bucket(bucketName).file(matrikkelFile).download();
+        fileContent = content.toString('utf-8');
+        logger.info(`Loading Matrikkel CSV from gs://${bucketName}/${matrikkelFile}`);
+      } else {
+        // Utvikling: last fra lokal fil
+        const csvPath = path.join(process.cwd(), 'data', 'raw', 'Matrikkel 2023.csv');
+        fileContent = fs.readFileSync(csvPath, 'utf-8');
+        logger.info(`Loading Matrikkel CSV from local file: ${csvPath}`);
+      }
+
       // Parse CSV with semicolon delimiter
       const records = parse<RawCSVRecord>(fileContent, {
         columns: true,
@@ -128,7 +152,7 @@ export class CSVService {
    */
   findByBygningsNr(bygningsNr: string): MatrikkelCSVRecord | null {
     if (!this.isLoaded) return null;
-    
+
     const record = this.data.find(r => r.bygningsNr === bygningsNr);
     return record || null;
   }
@@ -138,7 +162,7 @@ export class CSVService {
    */
   findByAddress(address: string): MatrikkelCSVRecord[] {
     if (!this.isLoaded) return [];
-    
+
     // Normalize address for comparison
     const normalizedSearch = this.normalizeAddress(address);
     if (!normalizedSearch) {
@@ -147,7 +171,7 @@ export class CSVService {
     const searchStreet = this.extractStreetName(normalizedSearch);
     const searchHouse = this.extractHouseIdentifier(normalizedSearch);
     const candidates: Array<{ record: MatrikkelCSVRecord; score: number }> = [];
-    
+
     this.data.forEach((record) => {
       const normalizedRecord = this.normalizeAddress(record.gateAdresse);
       if (!normalizedRecord) {

@@ -11,6 +11,7 @@ import {
   startLookupTimer,
 } from './metrics.ts';
 import { infoLog, errorLog } from './logging.ts';
+import { csvService } from '../../src/services/csvService.ts';
 
 export { resolveBuildingData } from './matrikkel.ts';
 export type { BuildingDataOptions } from './matrikkel.ts';
@@ -81,8 +82,10 @@ const isStandaloneExecution =
   entryScript.includes('building-info-service');
 
 if (isStandaloneExecution) {
-  app.listen(PORT, () => {
-    infoLog(`✓ building-info-service på http://localhost:${PORT}`);
+  csvService.waitForReady().then(() => {
+    app.listen(PORT, () => {
+      infoLog(`✓ building-info-service på http://localhost:${PORT}`);
+    });
   });
 }
 
