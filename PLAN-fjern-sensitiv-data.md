@@ -157,35 +157,44 @@ Matrikkel-CSV-en inneholder eiendomsdata for Oslo og oppdateres typisk årlig
 
 ---
 
-## Steg 5: Roter eksponerte credentials
+## Steg 5: Credential-rotasjon
 
-**Risiko:** Lav (men viktig)
+**Status:** IKKE NØDVENDIG
 
-Disse credentials har vært synlige i git-historikken:
-
-| Credential | Tiltak |
-|------------|--------|
-| Google Cloud OAuth refresh_token | Roter i Google Cloud Console |
-| Google Cloud client_secret | Roter i Google Cloud Console |
-| Enova API-nøkkel (i `.env`, aldri committet) | Vurder rotasjon for sikkerhets skyld |
-| Matrikkel-passord (i `.env`, aldri committet) | OK - har aldri vært i git |
+`.env`-filen (med Matrikkel-passord, Enova API-nøkkel m.m.) har **aldri** vært
+committet til git. Det eneste som var eksponert var Magnus sin personlige
+Google Cloud OAuth-autentisering (gcloud ADC), som ble fjernet i commit `ff6b1dc`.
+Ingen applikasjonspassord eller admin-brukerdata har vært eksponert.
 
 ---
 
-## Anbefalt rekkefølge
+## Gjenstående steg (for ny agent)
 
 ```
-Steg 1 (lav risiko)  ──→  Steg 2 (lav risiko)  ──→  Steg 3 (middels risiko)
-     │                          │                          │
-     └── Verifiser bygg ────────└── Verifiser bygg ────────└── Verifiser prod
-                                                                    │
-                                                              Steg 4 (høy risiko)
-                                                                    │
-                                                              Steg 5 (rotasjon)
+Steg 3 (middels risiko)  ──→  Steg 4 (høy risiko)
+     │                              │
+     └── Verifiser staging+prod     └── Force-push, alle kloner på nytt
 ```
 
-**Estimat:**
-- Steg 1-2: Kan gjøres umiddelbart, rent kodearbeid
-- Steg 3: Krever GCS-bucket oppsett og testing mot Cloud Run
-- Steg 4: Bør gjøres etter at steg 1-3 er verifisert i prod
-- Steg 5: Kan gjøres parallelt med steg 4
+### Sjekkliste for ny agent
+
+- [ ] **Steg 3:** Implementer GCS-lasting i `csvService.ts` (se kodeeksempel over)
+- [ ] **Steg 3:** Last opp CSV til `gs://energinokkelen-data/matrikkel/`
+- [ ] **Steg 3:** Legg til `DATA_BUCKET` env-var i Cloud Run
+- [ ] **Steg 3:** Oppdater Dockerfile (fjern `COPY --from=build /app/data ./data`)
+- [ ] **Steg 3:** Fjern `Matrikkel 2023.csv` fra git-tracking
+- [ ] **Steg 3:** Oppdater `.gitignore` til å ignorere hele `data/raw/`
+- [ ] **Steg 3:** Verifiser staging og prod
+- [ ] **Steg 3:** Oppdater `Dokumentasjon/gcp-driftshandbok.md` § 5.7 med oppdateringsrutinen (se over)
+- [ ] **Steg 4:** Rens git-historikk med `git filter-repo` (etter steg 3 er verifisert i prod)
+
+### Viktige filer å lese for kontekst
+
+| Fil | Innhold |
+|-----|---------|
+| `src/services/csvService.ts` | Nåværende CSV-lasting (lokal fil) |
+| `Dockerfile` | Linje 38: `COPY --from=build /app/data ./data` |
+| `deploy/gcp/cloudbuild.yaml` | CI/CD pipeline som bygger fra repo |
+| `deploy/gcp/cloudrun.yaml` | Cloud Run service config (env-vars) |
+| `Dokumentasjon/gcp-driftshandbok.md` | Driftshåndbok som må oppdateres (§ 4.5 og § 5.7) |
+| `.gitignore` | Nåværende unntak for `!data/raw/Matrikkel 2023.csv` |
