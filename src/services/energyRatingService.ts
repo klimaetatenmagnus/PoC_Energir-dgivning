@@ -3,11 +3,6 @@
  * Denne filen bruker en gammel, flat energiskala som ikke følger NS 3031:2025.
  * Den sentraliserte funksjonen tar hensyn til bygningstype og bruksareal.
  */
-import fs from 'fs';
-import path from 'path';
-import { createLogger } from '../utils/logger';
-
-const logger = createLogger({ prefix: 'energy-rating-service' });
 
 // Energy rating thresholds (kWh/m²/year)
 export interface EnergyRatingThreshold {
@@ -16,26 +11,16 @@ export interface EnergyRatingThreshold {
   description?: string;
 }
 
-// Load thresholds from JSON file
-function loadThresholds(): EnergyRatingThreshold[] {
-  try {
-    const filePath = path.join(process.cwd(), 'data', 'raw', 'energimerke-grenser.json');
-    const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-    return data.thresholds;
-  } catch (error) {
-    logger.warn('Could not load thresholds from file, using defaults:', error);
-    // Default thresholds as fallback
-    return [
-      { rating: 'A', maxValue: 50 },
-      { rating: 'B', maxValue: 75 },
-      { rating: 'C', maxValue: 100 },
-      { rating: 'D', maxValue: 135 },
-      { rating: 'E', maxValue: 180 },
-      { rating: 'F', maxValue: 250 },
-      { rating: 'G', maxValue: Infinity }
-    ];
-  }
-}
+// Flat energiskala (forenkling – se tekEnergyCalculations.ts for BRA-basert skala)
+const DEFAULT_THRESHOLDS: EnergyRatingThreshold[] = [
+  { rating: 'A', maxValue: 50 },
+  { rating: 'B', maxValue: 75 },
+  { rating: 'C', maxValue: 100 },
+  { rating: 'D', maxValue: 135 },
+  { rating: 'E', maxValue: 180 },
+  { rating: 'F', maxValue: 250 },
+  { rating: 'G', maxValue: Infinity }
+];
 
 export interface EnergyConsumptionInput {
   yearlyConsumption: number; // kWh per year
@@ -49,7 +34,7 @@ export interface EnergyRatingResult {
 }
 
 export class EnergyRatingService {
-  private thresholds: EnergyRatingThreshold[] = loadThresholds();
+  private thresholds: EnergyRatingThreshold[] = [...DEFAULT_THRESHOLDS];
 
   /**
    * Calculate energy rating based on consumption and area
