@@ -1380,7 +1380,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
 
               <h3>Har du allerede gjennomført tiltak?</h3>
               <p>
-                Energinøkkelen har ikke informasjon om hvilke tiltak som allerede er gjort på bygningen. Kryss gjerne av for allerede utførte tiltak først og noter ned besparelsen som allerede er oppnådd før du legger til nye tiltak.
+                Energinøkkelen har ikke informasjon om hvilke tiltak som allerede er gjort på bygningen. Kryss gjerne av for gjennomførte oppgraderinger, slik at Energinøkkelen kan ta høyde for tiltak som allerede er gjennomført.
               </p>
 
               <h3>Energikarakter</h3>

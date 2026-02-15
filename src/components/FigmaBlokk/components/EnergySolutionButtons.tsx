@@ -751,7 +751,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                 Har du allerede gjennomført tiltak?
               </h3>
               <p className="energy-solution-buttons__modal-paragraph">
-                Energinøkkelen har ikke informasjon om hvilke tiltak som allerede er gjort på bygningen. Kryss gjerne av for allerede utførte tiltak først og noter ned besparelsen som allerede er oppnådd før du legger til nye tiltak.
+                Energinøkkelen har ikke informasjon om hvilke tiltak som allerede er gjort på bygningen. Kryss gjerne av for gjennomførte oppgraderinger, slik at Energinøkkelen kan ta høyde for tiltak som allerede er gjennomført.
               </p>
 
               <h3 className="energy-solution-buttons__modal-section-title energy-solution-buttons__modal-section-title--spaced">
