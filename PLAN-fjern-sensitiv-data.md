@@ -33,33 +33,20 @@ credentials i git-historikken.
 
 ## Steg 1: Flytt `Input til modellen-Tabell 1.csv` til hardkodet TypeScript
 
-**Risiko:** Lav
-**Effekt:** Fjerner 1 av 3 filer fra git
+**Status:** FERDIG
 
-Denne filen er kun 9 KB og importeres med `?raw` ved build-time i `energySavingsData.ts`.
-Dataene er statiske energibesparelsesprosenter fra Multiconsult/ENOVA.
-
-**Tiltak:**
-1. Konverter CSV-dataene til en TypeScript-konstant i `src/utils/energySavingsData.ts`
-2. Fjern `?raw` CSV-importen
-3. Fjern filen fra `data/raw/` og git-tracking
-4. Verifiser at `npm run build:prod` og enhetstester passerer
+CSV-dataene er innebygd som string-konstant `csvRawData` direkte i
+`src/utils/energySavingsData.ts`. Vite `?raw`-importen er fjernet.
+Filen er fjernet fra git-tracking. Typecheck og build verifisert.
 
 ---
 
 ## Steg 2: Flytt `energimerke-grenser.json` til TypeScript
 
-**Risiko:** Lav
-**Effekt:** Fjerner 1 av 3 filer fra git
+**Status:** FERDIG
 
-Filen er kun 2.4 KB med statiske energimerkegrenser. Den leses av
-`energyRatingService.ts` ved runtime.
-
-**Tiltak:**
-1. Konverter JSON til en TypeScript-konstant i `src/services/energyRatingService.ts`
-2. Fjern runtime `fs.readFile`-kallet
-3. Fjern filen fra `data/raw/` og git-tracking
-4. Verifiser at energimerkeberegning fungerer korrekt
+Grenseverdiene er hardkodet som `DEFAULT_THRESHOLDS` i `energyRatingService.ts`.
+`fs`/`path`-imports og `loadThresholds()` er fjernet. Filen er fjernet fra git.
 
 ---
 
@@ -71,27 +58,37 @@ Filen er kun 2.4 KB med statiske energimerkegrenser. Den leses av
 Denne filen brukes ved runtime av `csvService.ts` for oppslag av bygningsdata.
 Den er for stor til å hardkode og inneholder sensitiv eiendomsinformasjon.
 
-**Tiltak:**
-1. Last opp `Matrikkel 2023.csv` til en GCS-bucket (f.eks. `gs://energinokkelen-data/`)
-2. Oppdater `csvService.ts` til å laste CSV fra GCS ved oppstart (én gang, cache i minne)
+### Eksisterende infrastruktur
+
+GCS-bucketen `energinokkelen-data` finnes allerede (dokumentert i driftshåndboken § 4.5)
+med formål "Rådata/CSV/Excel". Cloud Run SA (`run-energinokkelen`) har allerede
+`roles/storage.objectViewer` på denne bucketen.
+
+### Implementasjon
+
+1. Last opp `Matrikkel 2023.csv` til `gs://energinokkelen-data/matrikkel/Matrikkel 2023.csv`
+2. Legg til ny miljøvariabel `DATA_BUCKET=energinokkelen-data` i Cloud Run
+3. Legg til `DATA_BUCKET` i Secret Manager eller som env-var i `deploy/gcp/cloudrun.yaml`
+4. Oppdater `csvService.ts` til å laste CSV fra GCS ved oppstart (én gang, cache i minne)
    - Bruk `@google-cloud/storage` (allerede en dependency)
    - Fallback til lokal fil for utvikling (`data/raw/Matrikkel 2023.csv`)
-3. Oppdater Dockerfile:
+5. Oppdater Dockerfile:
    - Fjern `COPY --from=build /app/data ./data` (eller gjør den betinget)
-   - Service account i Cloud Run har allerede GCS-tilgang
-4. Fjern filen fra git-tracking
-5. Oppdater `.gitignore` til å ignorere hele `data/raw/`
-6. Verifiser at Cloud Run-containeren fungerer med GCS-basert lasting
+6. Fjern filen fra git-tracking
+7. Oppdater `.gitignore` til å ignorere hele `data/raw/`
+8. Verifiser at Cloud Run-containeren fungerer med GCS-basert lasting
+9. **Oppdater `Dokumentasjon/gcp-driftshandbok.md`** med ny rutine (se under)
 
 **Kodeendring i `csvService.ts`:**
 ```typescript
 async function loadCSV(): Promise<RawCSVRecord[]> {
-  const bucketName = process.env.DATA_BUCKET; // f.eks. 'energinokkelen-data'
+  const bucketName = process.env.DATA_BUCKET; // 'energinokkelen-data'
+  const matrikkelFile = process.env.DATA_MATRIKKEL_FILE ?? 'matrikkel/Matrikkel 2023.csv';
 
   if (bucketName) {
     // Produksjon: last fra GCS
     const storage = new Storage();
-    const [content] = await storage.bucket(bucketName).file('Matrikkel 2023.csv').download();
+    const [content] = await storage.bucket(bucketName).file(matrikkelFile).download();
     return parse(content.toString(), { columns: true, skip_empty_lines: true });
   }
 
@@ -101,6 +98,37 @@ async function loadCSV(): Promise<RawCSVRecord[]> {
   return parse(content, { columns: true, skip_empty_lines: true });
 }
 ```
+
+### Rutine for oppdatering av Matrikkel-data (legges inn i driftshåndboken)
+
+Matrikkel-CSV-en inneholder eiendomsdata for Oslo og oppdateres typisk årlig
+(eller ved behov). Etter migrering til GCS er prosessen:
+
+1. **Hent ny eksport** fra Matrikkelens dataeksport (SSB/Kartverket)
+2. **Valider filformat** – sjekk at kolonnenavnene matcher `RawCSVRecord` i `csvService.ts`
+   ```bash
+   head -1 "Ny-Matrikkel.csv"  # Sjekk header mot eksisterende
+   ```
+3. **Last opp til staging-bucket** for testing:
+   ```bash
+   gsutil cp "Ny-Matrikkel.csv" gs://energinokkelen-data/matrikkel/Matrikkel-ny.csv
+   ```
+4. **Test mot staging** ved å sette `DATA_MATRIKKEL_FILE=matrikkel/Matrikkel-ny.csv`
+   i staging Cloud Run og verifisere noen kjente adresser
+5. **Erstatt produksjonsfilen** når verifisert:
+   ```bash
+   # Behold gammel versjon (GCS har versjonering)
+   gsutil cp "Ny-Matrikkel.csv" gs://energinokkelen-data/matrikkel/Matrikkel 2023.csv
+   ```
+6. **Restart Cloud Run** for å laste ny fil (CSV caches i minne ved oppstart):
+   ```bash
+   gcloud run services update energinokkelen-prod \
+     --region europe-north1 \
+     --update-env-vars MATRIKKEL_CSV_GENERATION=$(date +%s)
+   ```
+   (Legger til en dummy-variabel for å trigge ny revisjon og restart)
+7. **Verifiser** at oppslag fungerer korrekt i produksjon
+8. **Logg endringen** i driftshåndbokens endringslogg
 
 ---
 
