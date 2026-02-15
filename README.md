@@ -253,9 +253,3 @@ GitOps-manifester i `deploy/marvin/` (External Secrets, Argo CD). Manifester kj�
 - **Cache**: NodeCache med 24 t TTL; tøm via `cache.flushAll()` eller restart.
 - **Health**: `GET /health` på building-info-service og API-server.
 - **Diagnoseflagg**: `LIVE`, `LOG_SOAP`, `DEBUG_BUILDING_INFO`, `API_DEBUG` – kun ved behov.
-
-## Dokumentasjon
-
-- `Dokumentasjon/Utvikling/refaktor-oversikt.md` – plan, status og testlogg
-- `Dokumentasjon/Utvikling/prometheus-metrikker.md` – observability-detaljer
-- `Overlevering/` – støttedokumenter for UI, bygningstype-logikk, nettverk, GitOps
