@@ -25,8 +25,46 @@ import { getBuildingKind as getBuildingKindFromUtils, isEneboligBuilding } from 
 const FADE_DURATION_MS = 2000;
 const BACK_FADE_OUT_MS = 800;
 const DEBOUNCE_DELAY_MS = 300;
+const SESSION_KEY = 'energiradgivning_session';
 
 type FigmaMode = 'figma' | 'figma-blokk';
+
+interface SessionState {
+  mode: FigmaMode;
+  searchValue: string;
+  result: AddressLookupResponse | null;
+}
+
+function saveSession(state: SessionState): void {
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
+  } catch {
+    // sessionStorage kan være utilgjengelig (privat modus etc.)
+  }
+}
+
+function loadSession(): SessionState | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SessionState;
+    // Valider at vi har nødvendige felter
+    if (parsed.mode === 'figma-blokk' && parsed.result && parsed.searchValue) {
+      return parsed;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function clearSession(): void {
+  try {
+    sessionStorage.removeItem(SESSION_KEY);
+  } catch {
+    // Ignorer feil
+  }
+}
 
 interface TestTrigger {
   address: string;
@@ -107,11 +145,14 @@ const getBuildingKind = (building: AddressLookupResponse): BuildingKind =>
   getBuildingKindFromUtils(building);
 
 export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
-  const [mode, setMode] = useState<FigmaMode>('figma');
-  const [searchValue, setSearchValue] = useState('');
+  const restoredSession = useRef(loadSession());
+  const restored = restoredSession.current;
+
+  const [mode, setMode] = useState<FigmaMode>(restored?.mode ?? 'figma');
+  const [searchValue, setSearchValue] = useState(restored?.searchValue ?? '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [result, setResult] = useState<AddressLookupResponse | null>(null);
+  const [result, setResult] = useState<AddressLookupResponse | null>(restored?.result ?? null);
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
@@ -128,6 +169,15 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
     durationMs: FADE_DURATION_MS,
     onFadeComplete: () => setFadeCompleted(true),
   });
+
+  // Lagre nøkkel-state til sessionStorage slik at vi kan gjenopprette ved tab-reload
+  useEffect(() => {
+    if (mode === 'figma-blokk' && result) {
+      saveSession({ mode, searchValue, result });
+    } else if (mode === 'figma') {
+      clearSession();
+    }
+  }, [mode, searchValue, result]);
 
   const captureLandingSnapshot = useCallback((buildingKind: BuildingKind) => {
     if (typeof window === 'undefined') {
