@@ -3,6 +3,7 @@
 .env.*
 .gcloud/
 .gcloud-config/
+.config/gcloud/
 
 # Sensitive datafiler – skal IKKE committes
 *.xlsx
