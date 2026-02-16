@@ -410,9 +410,9 @@
   bottom: 0;
   background-color: transparent;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1100;
   pointer-events: auto;
 }
 
@@ -420,13 +420,11 @@
   background-color: white;
   border-radius: 0;
   padding: 2rem; /* pkt size-32 */
-  width: var(--esb-item-width);
-  height: 700px;
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  overflow: auto;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  position: relative;
+  overflow-y: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   pointer-events: auto;
 }
@@ -439,25 +437,28 @@
   border: none;
   cursor: pointer;
   padding: 8px;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
 }
 
 .energy-solution-buttons__modal-title {
+  font-family: 'Oslo Sans', sans-serif;
   font-size: 24px;
   font-weight: bold;
   margin-bottom: 24px;
-  color: #333;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
 }
 
 .energy-solution-buttons__modal-content {
-  color: #555;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
   line-height: 1.6;
 }
 
 .energy-solution-buttons__modal-section-title {
+  font-family: 'Oslo Sans', sans-serif;
   font-size: 18px;
   font-weight: bold;
   margin-bottom: 12px;
-  color: #333;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
 }
 
 .energy-solution-buttons__modal-section-title--spaced {
@@ -469,14 +470,14 @@
 }
 
 .energy-solution-buttons__modal-link {
-  color: #0066CC;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
   text-decoration: underline;
 }
 
 .energy-solution-buttons__modal-note {
   margin-top: 16px;
   font-size: 16px;
-  color: #555;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
   font-weight: bold;
   line-height: 1.6;
 }
@@ -570,6 +571,29 @@
   min-height: var(--esb-item-height);
   padding: 0.75rem 1rem;
   box-sizing: border-box;
+}
+
+.energy-solution-buttons__item-content--with-chevron {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.energy-solution-buttons__chevron-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  transition: background-color 0.15s ease;
+}
+
+.energy-solution-buttons__chevron-toggle:hover {
+  background-color: var(--esb-bg-hover);
 }
 
 .energy-solution-buttons__varmepumpe-toggle {

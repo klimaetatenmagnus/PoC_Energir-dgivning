@@ -88,7 +88,7 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
         {/* Tittel */}
         <h1 className="mobile-landing__title">Energinøkkelen</h1>
         <p className="mobile-landing__subtitle">
-          Søk på en adresse og se hvor mye du kan spare
+          Søk på en adresse og se hvor mye du kan spare på energioppgraderinger
         </p>
 
         {/* Søkefelt */}

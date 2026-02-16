@@ -24,7 +24,7 @@ import { MobileInfoBox } from './MobileInfoBox';
 import { MobileSavingsFooter } from './MobileSavingsFooter';
 import { MobileDistrictComparison } from './MobileDistrictComparison';
 import { MobileProsessenVidere } from './MobileProsessenVidere';
-import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from '../../utils/tekEnergyCalculations';
+import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, calculateEnergyRatingWithFjernvarme } from '../../utils/tekEnergyCalculations';
 import { calculateTekPeriod, parseNumericValue } from '../FigmaBlokk/components/Tiltak/shared';
 import {
   calculateCombinedSavings,
@@ -213,6 +213,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   // Enova bulk-data for brukerens bolig (for "Sammenlign deg med naboen")
   // Brukes kun til sammenligning, ikke til tiltaksberegninger
   const [enovaBulkData, setEnovaBulkData] = useState<EnovaBuildingData | null>(null);
+
+  // Fjernvarme-toggle (påvirker energimerke-beregning)
+  const [fjernvarme, setFjernvarme] = useState(false);
 
   // Varmepumpe-spesifikk state
   const [selectedVarmepumpeType, setSelectedVarmepumpeType] = useState<VarmepumpeType>('luft-luft');
@@ -647,9 +650,14 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     const adjustedConsumption = completedSavingsKWh > 0
       ? Math.max(0, baseConsumption - completedSavingsKWh)
       : baseConsumption;
+
+    if (fjernvarme && tekPeriod && boligtype) {
+      return calculateEnergyRatingWithFjernvarme(adjustedConsumption, bruksareal, boligtype, tekPeriod, boligtype);
+    }
+
     const intensity = adjustedConsumption / bruksareal;
     return calculateEnergyRating(intensity, bruksareal, boligtype);
-  }, [effectiveYearlyConsumption, bruksareal, boligtype, estimatedRating, completedSavingsKWh]);
+  }, [effectiveYearlyConsumption, bruksareal, boligtype, estimatedRating, completedSavingsKWh, fjernvarme, tekPeriod]);
 
   // Beregn ny energikarakter basert på valgte tiltak (inkl. gjennomførte)
   const newRating = useMemo(() => {
@@ -666,10 +674,14 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     // Beregn nytt forbruk etter besparelse (marginal + gjennomførte)
     const totalSavings = calculatedSavings + completedSavingsKWh;
     const newConsumption = Math.max(0, consumptionNum - totalSavings);
-    const newIntensity = newConsumption / bruksareal;
 
-    // Bruk sentralisert boligtype for rating-beregning (konsistent med desktop)
-    const rating = calculateEnergyRating(newIntensity, bruksareal, boligtype);
+    let rating: string;
+    if (fjernvarme && tekPeriod && boligtype) {
+      rating = calculateEnergyRatingWithFjernvarme(newConsumption, bruksareal, boligtype, tekPeriod, boligtype);
+    } else {
+      const newIntensity = newConsumption / bruksareal;
+      rating = calculateEnergyRating(newIntensity, bruksareal, boligtype);
+    }
 
     // Returner kun hvis bedre enn estimert
     if (!isRatingBetter(rating, effectiveEstimatedRating)) {
@@ -686,6 +698,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     completedItems.size,
     effectiveEstimatedRating,
     effectiveYearlyConsumption,
+    fjernvarme,
+    tekPeriod,
   ]);
 
   // Sync checkedItems to activeTiltak and trigger arrow animations
@@ -1046,7 +1060,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     <>
     <div
       className={`mobile-energy-solutions${showFooter ? ' mobile-energy-solutions--has-footer' : ''} mobile-energy-solutions--fade-in`}
-      style={isDetailViewActive ? { display: 'none' } : undefined}
+      style={isDetailViewActive ? { visibility: 'hidden', pointerEvents: 'none' } : undefined}
     >
       {/* Header med tilbake-knapp */}
       <header className="mobile-energy-solutions__header">
@@ -1221,18 +1235,42 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                   return (
                     <li key={tiltak.id} className={`mobile-energy-solutions__tiltak-item mobile-energy-solutions__tiltak-item--expandable${isLast ? ' mobile-energy-solutions__tiltak-item--last' : ''}${isSelected ? ' mobile-energy-solutions__tiltak-item--selected' : ''}`}>
                       <div className="mobile-energy-solutions__varmepumpe-header">
-                        <button
-                          type="button"
-                          className="mobile-energy-solutions__varmepumpe-toggle"
-                          onClick={() => setVarmepumpeExpanded(!varmepumpeExpanded)}
-                          aria-expanded={varmepumpeExpanded}
-                        >
-                          <PktIcon
-                            name="chevron-thin-down"
-                            className={`mobile-energy-solutions__chevron${varmepumpeExpanded ? ' mobile-energy-solutions__chevron--expanded' : ''}`}
+                        <div className="mobile-energy-solutions__tiltak-content mobile-energy-solutions__tiltak-content--with-chevron">
+                          <PktCheckbox
+                            id={`tiltak-${tiltak.id}`}
+                            label={tiltak.title}
+                            checked={isSelected}
+                            onChange={() => {
+                              toggleChecked(tiltak.id);
+                              if (isSelected) {
+                                setVarmepumpeExpanded(false);
+                                setSelectedVarmepumpeType('luft-luft');
+                              } else {
+                                setVarmepumpeExpanded(true);
+                                setSelectedVarmepumpeType('luft-luft');
+                              }
+                            }}
                           />
-                          <span className="mobile-energy-solutions__varmepumpe-label">{tiltak.title}</span>
-                        </button>
+                          <button
+                            type="button"
+                            className="mobile-energy-solutions__chevron-toggle"
+                            onClick={() => {
+                              const willExpand = !varmepumpeExpanded;
+                              setVarmepumpeExpanded(willExpand);
+                              // Auto-check varmepumpe when expanding via chevron
+                              if (willExpand && !checkedItems.has('varmepumpe')) {
+                                toggleChecked('varmepumpe');
+                              }
+                            }}
+                            aria-expanded={varmepumpeExpanded}
+                            aria-label={varmepumpeExpanded ? 'Skjul varmepumpe-typer' : 'Vis varmepumpe-typer'}
+                          >
+                            <PktIcon
+                              name="chevron-thin-down"
+                              className={`mobile-energy-solutions__chevron${varmepumpeExpanded ? ' mobile-energy-solutions__chevron--expanded' : ''}`}
+                            />
+                          </button>
+                        </div>
                         <PktButton
                           skin="secondary"
                           size="small"
@@ -1343,6 +1381,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               onCollapse={closeInfoBox}
               showCompareButton={!!districtStats}
               completedSavings={completedSavingsKWh}
+              fjernvarme={fjernvarme}
+              onFjernvarmeChange={setFjernvarme}
               onCompareClick={() => {
                 closeInfoBox();
                 // Åpne bydelssammenligning etter exit-animasjonen

@@ -143,6 +143,9 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     return () => clearTimeout(timer);
   }, []);
 
+  // State for fjernvarme-toggle (påvirker energimerke-beregning)
+  const [fjernvarme, setFjernvarme] = React.useState(false);
+
   // State for expanded mode
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [selectedSolution, setSelectedSolution] = React.useState<string | null>(null);
@@ -689,6 +692,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               showInfoModal={showInfoModal}
               onShowInfoModalChange={setShowInfoModal}
               onCompletedSavingsChange={setCompletedSavings}
+              fjernvarme={fjernvarme}
             />
           </aside>
 
@@ -761,6 +765,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               tiltakInfo={tiltakInfo}
               onShowInfo={() => setShowInfoModal(true)}
               completedSavings={completedSavings}
+              fjernvarme={fjernvarme}
+              onFjernvarmeChange={setFjernvarme}
             />
           </aside>
           </div>

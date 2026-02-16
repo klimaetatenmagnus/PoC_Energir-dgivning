@@ -512,7 +512,7 @@ export const ENERGY_CONSUMPTION_DISTRIBUTIONS: EnergyConsumptionDistributions = 
  * @param tekPeriod - TEK-periode i format fra shared.ts TekPeriod eller tekEnergyCalculations.ts calculateTEK
  * @returns TEK-periode i CSV-format ('Eldre', 'TEK49', etc.), or null for unrecognized values
  */
-function normalizeTekPeriod(tekPeriod: TekPeriodInput): TEKPeriod | null {
+export function normalizeTekPeriod(tekPeriod: TekPeriodInput): TEKPeriod | null {
   const normalized = tekPeriod.toLowerCase().trim();
 
   switch (normalized) {
@@ -561,7 +561,7 @@ const PRE_TEK69_PERIODS: TEKPeriod[] = ['Eldre', 'TEK49'];
  * @param tekPeriod - Normalisert TEK-periode
  * @returns TEK-periode for dataoppslag (TEK69 for pre-TEK69 bygg)
  */
-function getTekPeriodForLookup(tekPeriod: TEKPeriod): TEKPeriod {
+export function getTekPeriodForLookup(tekPeriod: TEKPeriod): TEKPeriod {
   if (PRE_TEK69_PERIODS.includes(tekPeriod)) {
     return 'TEK69';
   }

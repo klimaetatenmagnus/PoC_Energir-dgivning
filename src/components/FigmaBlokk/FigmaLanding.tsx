@@ -87,7 +87,7 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
 
           <div className="energiportalen-header">
             <h1 className="energiportalen-title">Energinøkkelen</h1>
-            <p className="energiportalen-subtitle">Søk opp adressen din, og se hvor mye du kan spare</p>
+            <p className="energiportalen-subtitle">Søk opp adressen din, og se hvor mye du kan spare på energioppgraderinger</p>
           </div>
 
           <div className="landing__search">

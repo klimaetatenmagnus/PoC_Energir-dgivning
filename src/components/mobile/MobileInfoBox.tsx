@@ -6,6 +6,7 @@ import {
   PktTag,
   PktAlert,
   PktIcon,
+  PktRadioButton,
 } from '@oslokommune/punkt-react';
 import {
   DISTRICT_BADGE,
@@ -38,6 +39,10 @@ interface MobileInfoBoxProps {
   onCompareClick?: () => void;
   /** Besparelse fra gjennomførte tiltak (kWh) - brukes til å justere vist energiforbruk */
   completedSavings?: number;
+  /** Om brukeren har fjernvarme */
+  fjernvarme?: boolean;
+  /** Callback for fjernvarme-endring */
+  onFjernvarmeChange?: (v: boolean) => void;
 }
 
 const roundToNearestThousandValue = (value: number): number => {
@@ -62,6 +67,8 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   showCompareButton = false,
   onCompareClick,
   completedSavings = 0,
+  fjernvarme,
+  onFjernvarmeChange,
 }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isGulListeInfoOpen, setIsGulListeInfoOpen] = useState(false);
@@ -344,6 +351,25 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
                       setHasUserEditedEnergy(true);
                     }}
                   />
+                </div>
+                <div className="mobile-info-box__edit-row mobile-info-box__edit-row--fjernvarme">
+                  <span className="mobile-info-box__edit-label">Har du fjernvarme?</span>
+                  <div className="mobile-info-box__radio-group">
+                    <PktRadioButton
+                      id="fjernvarme-nei-mobil"
+                      name="fjernvarme-mobil"
+                      label="Nei"
+                      checked={!fjernvarme}
+                      onChange={() => onFjernvarmeChange?.(false)}
+                    />
+                    <PktRadioButton
+                      id="fjernvarme-ja-mobil"
+                      name="fjernvarme-mobil"
+                      label="Ja"
+                      checked={fjernvarme === true}
+                      onChange={() => onFjernvarmeChange?.(true)}
+                    />
+                  </div>
                 </div>
                 <div className="mobile-info-box__edit-actions">
                   <PktButton

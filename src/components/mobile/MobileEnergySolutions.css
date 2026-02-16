@@ -508,6 +508,32 @@
   box-sizing: border-box;
 }
 
+.mobile-energy-solutions__tiltak-content--with-chevron {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.mobile-energy-solutions__chevron-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  min-width: 32px;
+  min-height: 32px;
+  transition: background-color 0.15s ease;
+}
+
+.mobile-energy-solutions__chevron-toggle:hover,
+.mobile-energy-solutions__chevron-toggle:active {
+  background-color: var(--pkt-color-brand-neutrals-200, #f2f2f2);
+}
+
 .mobile-energy-solutions__varmepumpe-toggle {
   display: flex;
   align-items: center;
@@ -671,9 +697,12 @@
 .mobile-energy-solutions__infobox-container {
   background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
   width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   position: relative;
   animation: slideDown 0.3s ease-out;
   padding-bottom: max(var(--pkt-spacing-24, 1.5rem), env(safe-area-inset-bottom));
@@ -706,10 +735,12 @@
   }
 }
 
-/* Når footer er synlig, strekk InfoBox ned til toppen av footer (kollapset footer ca 70px) */
+/* Når footer er synlig, InfoBox dekker hele skjermen (footer med z-index 1100 legger seg oppå) */
 .mobile-energy-solutions--has-footer .mobile-energy-solutions__infobox-container {
-  min-height: calc(100vh - 70px);
-  min-height: calc(100dvh - 70px);
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
 }
 
 /* Midtstilt chevron-opp knapp for å kollapse InfoBox */

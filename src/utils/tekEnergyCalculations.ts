@@ -8,6 +8,14 @@
  * Datakilde: "Logikk og input til model.xlsx", fane "Energibehov før tiltak", rad 13
  */
 
+import {
+  normalizeTekPeriod,
+  getTekPeriodForLookup,
+  ENERGY_CONSUMPTION_DISTRIBUTIONS,
+  type TekPeriodInput,
+  type Boligtype,
+} from './energySavingsData';
+
 export type BuildingType = 'småhus' | 'blokk';
 
 /**
@@ -219,6 +227,65 @@ export function determineBuildingType(
 
   // Default til småhus
   return 'småhus';
+}
+
+/**
+ * Beregn energikarakter med fjernvarme-justering.
+ *
+ * Fjernvarme-faktoren (0,45) reduserer romoppvarming- og tappevann-andelene
+ * i energimerke-beregningen, mens elspesifikt forbruk forblir uendret.
+ *
+ * @param totalConsumptionKwh - Totalt årlig energiforbruk i kWh
+ * @param bruksareal - Bruksareal i m²
+ * @param buildingType - Bygningstype ('småhus' eller 'blokk')
+ * @param tekPeriod - TEK-periode (fra calculateTEK eller brukerinput)
+ * @param boligtype - Boligtype for oppslag i forbruksfordeling ('småhus' eller 'blokk')
+ * @returns Energikarakter (A-G) med fjernvarme-justering
+ */
+export function calculateEnergyRatingWithFjernvarme(
+  totalConsumptionKwh: number,
+  bruksareal: number,
+  buildingType: BuildingType | null,
+  tekPeriod: TekPeriodInput,
+  boligtype: Boligtype
+): string {
+  if (!Number.isFinite(totalConsumptionKwh) || totalConsumptionKwh <= 0 || !bruksareal || bruksareal <= 0) {
+    return 'G';
+  }
+
+  const normalizedTek = normalizeTekPeriod(tekPeriod);
+  if (!normalizedTek) {
+    // Fallback: beregn uten fjernvarme-justering
+    const intensity = totalConsumptionKwh / bruksareal;
+    return calculateEnergyRating(intensity, bruksareal, buildingType);
+  }
+
+  const lookupTek = getTekPeriodForLookup(normalizedTek);
+  const distribution = ENERGY_CONSUMPTION_DISTRIBUTIONS[lookupTek]?.[boligtype];
+
+  if (!distribution) {
+    // Fallback: beregn uten fjernvarme-justering
+    const intensity = totalConsumptionKwh / bruksareal;
+    return calculateEnergyRating(intensity, bruksareal, buildingType);
+  }
+
+  const FJERNVARME_FACTOR = 0.45;
+
+  // Beregn andeler av totalforbruk per energitype
+  const totalDistribution = distribution.romoppvarming + distribution.tappevann + distribution.elspesifikt;
+  const romAndel = distribution.romoppvarming / totalDistribution;
+  const tapAndel = distribution.tappevann / totalDistribution;
+  const elAndel = distribution.elspesifikt / totalDistribution;
+
+  // Beregn justert forbruk: romoppvarming og tappevann multipliseres med 0,45
+  const justert = totalConsumptionKwh * (
+    romAndel * FJERNVARME_FACTOR +
+    tapAndel * FJERNVARME_FACTOR +
+    elAndel
+  );
+
+  const justeredIntensitet = justert / bruksareal;
+  return calculateEnergyRating(justeredIntensitet, bruksareal, buildingType);
 }
 
 /**

@@ -4,6 +4,7 @@ import {
   PktIcon,
   PktButton,
   PktAlert,
+  PktRadioButton,
 } from '@oslokommune/punkt-react';
 import { LocationPin } from './LocationPin';
 import {
@@ -19,8 +20,8 @@ import {
 import dictionaryData from '../../../../content/dictionaries/index.json';
 import { DesktopTiltakCard } from './Tiltak';
 import { DistrictComparisonModal } from './DistrictComparison/DistrictComparisonModal';
-import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from '../../../utils/tekEnergyCalculations';
-import { calculateComparisonSavings, type TiltakSavingsInfo } from '../../../utils/energySavingsData';
+import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, calculateEnergyRatingWithFjernvarme, calculateTEK } from '../../../utils/tekEnergyCalculations';
+import { calculateComparisonSavings, type TiltakSavingsInfo, type TekPeriodInput } from '../../../utils/energySavingsData';
 import {
   getDistrictStatistics,
   getStatsForDistrict,
@@ -194,6 +195,8 @@ interface WhiteInfoBoxProps {
   animateSavings?: boolean;
   onShowInfo?: () => void;
   completedSavings?: number;
+  fjernvarme?: boolean;
+  onFjernvarmeChange?: (v: boolean) => void;
 }
 
 export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
@@ -217,6 +220,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   animateSavings = true,
   onShowInfo,
   completedSavings = 0,
+  fjernvarme,
+  onFjernvarmeChange,
 }) => {
   // State for delayed height expansion
   const [expandHeight, setExpandHeight] = React.useState(false);
@@ -446,17 +451,30 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
       return null;
     }
 
-    const intensity = consumptionNum / areaNum;
     const buildingType = determineBuildingType(buildingTypeCode, buildingTypeName);
 
+    if (fjernvarme) {
+      const rawByggeaarForTek = savedByggeaar || buildingData?.byggeaar?.toString() || buildingData?.csvData?.byggeaar;
+      const byggeaarNum = rawByggeaarForTek ? Number(rawByggeaarForTek) : undefined;
+      if (byggeaarNum && !isNaN(byggeaarNum) && buildingType) {
+        const tekPeriod = calculateTEK(byggeaarNum);
+        return calculateEnergyRatingWithFjernvarme(consumptionNum, areaNum, buildingType, tekPeriod as TekPeriodInput, buildingType);
+      }
+    }
+
+    const intensity = consumptionNum / areaNum;
     return calculateEnergyRating(intensity, areaNum, buildingType);
   }, [
     adjustedEnergyConsumption,
     buildingData?.bruksarealM2,
+    buildingData?.byggeaar,
     buildingData?.csvData?.bruksareal_totalt,
+    buildingData?.csvData?.byggeaar,
     buildingTypeCode,
     buildingTypeName,
+    fjernvarme,
     savedAreal,
+    savedByggeaar,
   ]);
 
   const normalizedCurrentRating = computedEnergyRating?.toUpperCase() ?? null;
@@ -536,7 +554,7 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     }
   }, [editedByggeaar, editedAreal, isEditMode, buildingData?.bygningstypeKode, buildingTypeName, hasUserEditedEnergy]);
   
-  const energyBlockHeight = isEditMode ? 108 : 96;
+  const energyBlockHeight = isEditMode ? 168 : 96;
   const trimmedApartmentArea = (savedArealLeilighet || '').trim();
   const hasApartmentAreaValue = trimmedApartmentArea.length > 0;
   const shouldShowApartmentAreaRow = isBlockBuilding && (isEditMode || hasApartmentAreaValue);
@@ -1111,6 +1129,25 @@ const tiltakPreview = selectedTiltakSlug ? (
                         setHasUserEditedEnergy(true);
                       }}
                     />
+                  </div>
+                  <div className="white-info-box__edit-row white-info-box__edit-row--fjernvarme">
+                    <span className="white-info-box__edit-label">Har du fjernvarme?</span>
+                    <div className="white-info-box__radio-group">
+                      <PktRadioButton
+                        id="fjernvarme-nei"
+                        name="fjernvarme-desktop"
+                        label="Nei"
+                        checked={!fjernvarme}
+                        onChange={() => onFjernvarmeChange?.(false)}
+                      />
+                      <PktRadioButton
+                        id="fjernvarme-ja"
+                        name="fjernvarme-desktop"
+                        label="Ja"
+                        checked={fjernvarme === true}
+                        onChange={() => onFjernvarmeChange?.(true)}
+                      />
+                    </div>
                   </div>
                   <div className="white-info-box__edit-actions">
                     <PktButton

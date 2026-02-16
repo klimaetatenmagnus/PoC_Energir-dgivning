@@ -12,7 +12,7 @@ import {
   type TekPeriodInput,
   type Boligtype,
 } from '../../../utils/energySavingsData';
-import { calculateAnnualEnergyConsumption, determineBuildingType, calculateTEK, calculateEnergyRating } from '../../../utils/tekEnergyCalculations';
+import { calculateAnnualEnergyConsumption, determineBuildingType, calculateTEK, calculateEnergyRating, calculateEnergyRatingWithFjernvarme } from '../../../utils/tekEnergyCalculations';
 import { getCanonicalKey, type TiltakCanonicalKey } from '../utils/tiltakCanonicalKeys';
 import type { ContentAudience } from '../../../../content/schema-helpers';
 import './EnergySolutionButtons.css';
@@ -136,9 +136,11 @@ interface EnergySolutionButtonsProps {
   onShowInfoModalChange?: (show: boolean) => void;
   /** Callback when completed savings (baseline reduction) changes */
   onCompletedSavingsChange?: (completedSavings: number) => void;
+  /** Om brukeren har fjernvarme (påvirker energimerke-beregning med faktor 0,45) */
+  fjernvarme?: boolean;
 }
 
-export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onTiltakInfoChange, onSelectionChange, audience = 'standard', showInfoModal: externalShowInfoModal, onShowInfoModalChange, onCompletedSavingsChange }) => {
+export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onTiltakInfoChange, onSelectionChange, audience = 'standard', showInfoModal: externalShowInfoModal, onShowInfoModalChange, onCompletedSavingsChange, fjernvarme }) => {
   // Utled gul liste-status fra audience prop (FigmaMainScript er "single source of truth" via PBE-oppslag)
   const erPaaGulListe = audience === 'gulliste';
   // Animasjoner (fadeIn, slideUpFadeIn) er definert i EnergySolutionButtons.css
@@ -280,10 +282,14 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       return null;
     }
 
+    if (fjernvarme && tekPeriod && boligtype) {
+      return calculateEnergyRatingWithFjernvarme(consumptionNum, bruksareal, boligtype, tekPeriod, boligtype);
+    }
+
     const intensity = consumptionNum / bruksareal;
     // boligtype er allerede beregnet og mapper til 'småhus' | 'blokk' | null
     return calculateEnergyRating(intensity, bruksareal, boligtype);
-  }, [yearlyConsumption, bruksareal, boligtype]);
+  }, [yearlyConsumption, bruksareal, boligtype, fjernvarme, tekPeriod]);
 
   // Bruker ALLTID estimert karakter, ikke Enova-attest
   const estimatedRating = calculatedRating;
@@ -387,10 +393,14 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     }
 
     const newConsumption = Math.max(0, consumptionNum - totalCombinedSavingsKWh);
-    const newIntensity = newConsumption / bruksareal;
 
-    // boligtype er allerede beregnet og mapper til 'småhus' | 'blokk' | null
-    const rating = calculateEnergyRating(newIntensity, bruksareal, boligtype);
+    let rating: string;
+    if (fjernvarme && tekPeriod && boligtype) {
+      rating = calculateEnergyRatingWithFjernvarme(newConsumption, bruksareal, boligtype, tekPeriod, boligtype);
+    } else {
+      const newIntensity = newConsumption / bruksareal;
+      rating = calculateEnergyRating(newIntensity, bruksareal, boligtype);
+    }
 
     if (estimatedRating && !isRatingBetter(rating, estimatedRating)) {
       return estimatedRating;
@@ -403,6 +413,8 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     checkedItems.size,
     completedItems.size,
     estimatedRating,
+    fjernvarme,
+    tekPeriod,
     totalCombinedSavingsKWh,
     yearlyConsumption,
   ]);
@@ -612,7 +624,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                   className={`energy-solution-buttons__item energy-solution-buttons__item--expandable${isSelected ? ' energy-solution-buttons__item--selected' : ''}`}
                 >
                   <div className="energy-solution-buttons__varmepumpe-header">
-                    <div className="energy-solution-buttons__item-content">
+                    <div className="energy-solution-buttons__item-content energy-solution-buttons__item-content--with-chevron">
                       <PktCheckbox
                         id={`tiltak-${tiltak.id}`}
                         label={tiltak.title}
@@ -628,6 +640,26 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                           }
                         }}
                       />
+                      <button
+                        type="button"
+                        className="energy-solution-buttons__chevron-toggle"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const willExpand = !varmepumpeExpanded;
+                          setVarmepumpeExpanded(willExpand);
+                          // Auto-check varmepumpe when expanding via chevron
+                          if (willExpand && !checkedItems.has('varmepumpe')) {
+                            toggleChecked('varmepumpe');
+                          }
+                        }}
+                        aria-expanded={varmepumpeExpanded}
+                        aria-label={varmepumpeExpanded ? 'Skjul varmepumpe-typer' : 'Vis varmepumpe-typer'}
+                      >
+                        <PktIcon
+                          name="chevron-thin-down"
+                          className={`energy-solution-buttons__chevron${varmepumpeExpanded ? ' energy-solution-buttons__chevron--expanded' : ''}`}
+                        />
+                      </button>
                     </div>
                     <div className="energy-solution-buttons__actions">
                       <PktButton

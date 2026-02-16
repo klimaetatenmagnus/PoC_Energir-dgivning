@@ -191,6 +191,22 @@
   border-bottom-color: var(--pkt-color-brand-blue-600, #2e85c8);
 }
 
+.white-info-box__edit-row--fjernvarme {
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.white-info-box__edit-row--fjernvarme .white-info-box__edit-label {
+  width: 100%;
+}
+
+.white-info-box__radio-group {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  white-space: nowrap;
+}
+
 /* ==========================================================================
    Energiforbruk-blokk
    ========================================================================== */
@@ -622,7 +638,7 @@
 .white-info-box__edit-actions {
   display: flex;
   gap: var(--wib-spacing-sm);
-  margin-top: var(--wib-spacing-sm);
+  margin-top: var(--wib-spacing-md, 1rem);
 }
 
 /* ==========================================================================
