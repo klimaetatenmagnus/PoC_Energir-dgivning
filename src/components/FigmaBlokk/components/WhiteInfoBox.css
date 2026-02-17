@@ -651,6 +651,7 @@
 .platform-windows.platform-windows-scaled .white-info-box__savings-card--compact {
   --wib-savings-card-scale: 0.94;
   --wib-savings-card-offset-y: 8px;
+  box-shadow: none;
 }
 
 .platform-windows.platform-windows-scaled .white-info-box__savings-card--compact .white-info-box__savings-label {

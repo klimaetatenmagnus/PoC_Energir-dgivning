@@ -1137,13 +1137,24 @@ app.get('/api/address-suggestions', async (req, res) => {
     // Format addresses for frontend - ensure we have complete address with postal code and city
     const suggestions = data.adresser?.map((addr: GeonorgeAddress) => {
       // Build complete address string
-      const streetName = addr.adressenavn ?? '';
+      // Geonorge kan returnere adressenavn med liten forbokstav (f.eks. "fallanveien"),
+      // så vi sikrer stor forbokstav.
+      const rawStreetName = addr.adressenavn ?? '';
+      const streetName = rawStreetName.length > 0
+        ? rawStreetName[0].toUpperCase() + rawStreetName.slice(1)
+        : '';
       const houseNumber = addr.nummer ?? '';
       const streetAndNumber = `${streetName} ${houseNumber}${addr.bokstav ?? ''}`.trim();
       const postalAndCity = `${addr.postnummer || ''} ${addr.poststed || 'Oslo'}`.trim();
-      
+
+      // Sikre stor forbokstav også i adressetekst fra Geonorge
+      const rawAdressetekst = addr.adressetekst || `${streetAndNumber}, ${postalAndCity}`;
+      const adressetekst = rawAdressetekst.length > 0
+        ? rawAdressetekst[0].toUpperCase() + rawAdressetekst.slice(1)
+        : rawAdressetekst;
+
       return {
-        adressetekst: addr.adressetekst || `${streetAndNumber}, ${postalAndCity}`,
+        adressetekst,
         adresse: `${streetAndNumber}, ${postalAndCity}`,
         kommunenummer: addr.kommunenummer,
         gardsnummer: addr.gardsnummer,
