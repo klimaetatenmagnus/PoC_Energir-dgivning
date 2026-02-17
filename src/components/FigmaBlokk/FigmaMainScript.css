@@ -146,10 +146,37 @@
 
 .tiltak-side__tiltak-panel {
   flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
   width: clamp(360px, calc(30 * var(--scaled-vw)), 488px);
   z-index: 1000;
   max-height: calc(100vh - clamp(40px, 8vh, 120px) - 120px);
+  min-height: 0;
+  overflow: hidden;
   transition: transform 0.8s ease-in-out;
+}
+
+/* Windows @ 125/150% display scaling needs extra vertical room after layout downscaling. */
+.platform-windows.platform-windows-scaled .tiltak-side__tiltak-panel {
+  max-height: calc((100vh / var(--layout-scale, 1)) - clamp(40px, 8vh, 120px) - 120px);
+}
+
+.tiltak-side__tiltak-panel .energy-solution-buttons {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.tiltak-side__tiltak-panel .tiltak-list-wrapper {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.tiltak-side__tiltak-panel .tiltak-list-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
 }
 
 /* ==========================================================================

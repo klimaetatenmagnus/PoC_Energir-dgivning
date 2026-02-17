@@ -95,6 +95,47 @@ async function finnTeigidFraGnrBnr(gnr: number, bnr: number): Promise<string | n
 }
 
 /**
+ * MAPPING-verdier fra PBE som indikerer at bygningen faktisk er på gul liste
+ * (dvs. listeført eller regulert til bevaring). Arkeologiske funn og andre
+ * kulturminneregistreringer som tilfeldigvis overlapper eiendommen filtreres bort.
+ */
+const GUL_LISTE_MAPPING_VERDIER = [
+  'Listefort kulturminne',
+  'Regulert til bevaring',
+];
+
+interface FeatureMemberData {
+  navn?: string;
+  kategori?: string;
+  vern?: string;
+  type?: string;
+  mapping?: string;
+}
+
+/**
+ * Parser alle featureMembers fra WFS XML-respons
+ */
+function parseFeatureMembers(xml: string): FeatureMemberData[] {
+  const members: FeatureMemberData[] = [];
+  const memberBlocks = xml.split('<gml:featureMember>').slice(1);
+
+  for (const block of memberBlocks) {
+    const endIdx = block.indexOf('</gml:featureMember>');
+    const memberXml = endIdx >= 0 ? block.substring(0, endIdx) : block;
+
+    members.push({
+      navn: memberXml.match(/<ms:NAVN>(.*?)<\/ms:NAVN>/)?.[1],
+      kategori: memberXml.match(/<ms:KATEGORI>(.*?)<\/ms:KATEGORI>/)?.[1],
+      vern: memberXml.match(/<ms:VERN>(.*?)<\/ms:VERN>/)?.[1],
+      type: memberXml.match(/<ms:TYPE>(.*?)<\/ms:TYPE>/)?.[1],
+      mapping: memberXml.match(/<ms:MAPPING>(.*?)<\/ms:MAPPING>/)?.[1],
+    });
+  }
+
+  return members;
+}
+
+/**
  * Sjekker om et teigid er på Gul liste
  */
 async function sjekkGulListeForTeigid(teigid: string): Promise<GulListeResult> {
@@ -111,23 +152,42 @@ async function sjekkGulListeForTeigid(teigid: string): Promise<GulListeResult> {
     };
 
     const response = await axios.get(url, { params });
-    const xml = response.data;
+    const xml = response.data as string;
 
-    // Sjekk om eiendommen er på Gul liste
-    if (xml.includes('<gml:featureMember>')) {
-      // Parse detaljer fra XML
-      const navnMatch = xml.match(/<ms:NAVN>(.*?)<\/ms:NAVN>/);
-      const kategoriMatch = xml.match(/<ms:KATEGORI>(.*?)<\/ms:KATEGORI>/);
-      const vernMatch = xml.match(/<ms:VERN>(.*?)<\/ms:VERN>/);
-      const typeMatch = xml.match(/<ms:TYPE>(.*?)<\/ms:TYPE>/);
+    // Parser alle featureMembers og filtrerer til kun gul liste-relevante oppføringer.
+    // PBE sin tabell kart.gulliste_spatial returnerer ALLE kulturminneregistreringer
+    // som overlapper eiendommen, inkl. arkeologiske funn. Vi bruker MAPPING-feltet
+    // for å skille faktiske gul liste-oppføringer fra irrelevante treff.
+    const allMembers = parseFeatureMembers(xml);
+    const gulListeMembers = allMembers.filter(
+      (m) => m.mapping && GUL_LISTE_MAPPING_VERDIER.includes(m.mapping)
+    );
+
+    if (gulListeMembers.length > 0) {
+      // Foretrekk Enkeltminne-oppføringer fremfor Lokalitet-duplikater
+      const best =
+        gulListeMembers.find((m) => m.type === 'Enkeltminne') ??
+        gulListeMembers[0];
+
+      if (allMembers.length > gulListeMembers.length) {
+        logger.info(
+          `Filtrerte bort ${allMembers.length - gulListeMembers.length} ikke-gul-liste-oppføringer for teigid ${teigid}`
+        );
+      }
 
       return {
         erPaaGulListe: true,
         teigid: teigid,
-        navn: navnMatch ? navnMatch[1] : undefined,
-        kategori: kategoriMatch ? kategoriMatch[1] : typeMatch ? typeMatch[1] : undefined,
-        vernestatus: vernMatch ? vernMatch[1] : undefined
+        navn: best.navn,
+        kategori: best.kategori ?? best.type,
+        vernestatus: best.vern
       };
+    }
+
+    if (allMembers.length > 0) {
+      logger.info(
+        `Teigid ${teigid} har ${allMembers.length} kulturminneregistrering(er), men ingen er gul liste (MAPPING: ${allMembers.map((m) => m.mapping ?? 'mangler').join(', ')})`
+      );
     }
 
     return {

@@ -106,8 +106,15 @@ export default function App() {
     root.classList.toggle('platform-windows', isWindows);
   }, []);
 
-  // Hent kartkoordinater for mobil
-  const mapCoordinates = useAddressCoordinates(searchValue, null);
+  // Hent kartkoordinater for mobil - bruk koordinater fra API-respons direkte (unngår ekstra Geonorge-kall)
+  const initialCoords = useMemo(() => {
+    const wgs84 = result?.coordinatesWgs84;
+    if (wgs84 && Number.isFinite(wgs84.lat) && Number.isFinite(wgs84.lon)) {
+      return { lat: wgs84.lat, lng: wgs84.lon };
+    }
+    return null;
+  }, [result?.coordinatesWgs84]);
+  const mapCoordinates = useAddressCoordinates(searchValue, initialCoords);
 
   // State for mobil tiltaksdetalj
   const [selectedMobileTiltak, setSelectedMobileTiltak] = useState<string | null>(null);

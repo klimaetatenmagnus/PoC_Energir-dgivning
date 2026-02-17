@@ -118,8 +118,15 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     return false;
   }, [buildingData]);
 
-  // Use custom hooks for coordinates
-  const mapCoordinates = useAddressCoordinates(searchAddress, null);
+  // Use coordinates from building API response directly (skips redundant Geonorge lookup)
+  const initialCoords = React.useMemo(() => {
+    const wgs84 = buildingData?.coordinatesWgs84;
+    if (wgs84 && Number.isFinite(wgs84.lat) && Number.isFinite(wgs84.lon)) {
+      return { lat: wgs84.lat, lng: wgs84.lon };
+    }
+    return null;
+  }, [buildingData?.coordinatesWgs84]);
+  const mapCoordinates = useAddressCoordinates(searchAddress, initialCoords);
   const {
     phase: overlayPhase,
     buildingType: overlayBuildingType,

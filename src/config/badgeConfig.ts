@@ -108,5 +108,12 @@ export function isBlockBuilding(buildingTypeName: string): boolean {
 export function getDisplayBuildingTypeName(buildingTypeName: string): string {
   if (buildingTypeName === 'Store boligbygg') return 'Blokk';
   if (buildingTypeName === 'Rekkehus, kjedehus, andre småhus') return 'Rekkehus';
+
+  const lower = buildingTypeName.toLowerCase();
+  if (lower.startsWith('tomannsbolig')) return 'Tomannsbolig';
+  if (lower.startsWith('enebolig')) return 'Enebolig';
+  if (lower.includes('blokk') || lower.includes('boligbygg')) return 'Blokk';
+  if (lower.includes('rekkehus') || lower.includes('kjedehus')) return 'Rekkehus';
+
   return buildingTypeName;
 }

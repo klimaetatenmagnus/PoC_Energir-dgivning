@@ -83,7 +83,8 @@ export interface AddressSuggestion {
 }
 
 export interface ApiError {
-  message: string;
+  message?: string;
+  error?: string;
   code?: string;
   details?: unknown;
 }
@@ -221,9 +222,9 @@ export class BuildingApiService {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await response.json().catch(() => ({})) as ApiError;
       throw new Error(
-        (errorData as ApiError).message || `${response.status}: ${response.statusText}`
+        errorData.message || errorData.error || `${response.status}: ${response.statusText}`
       );
     }
 
@@ -248,8 +249,9 @@ export class BuildingApiService {
     const response = await fetch(url);
 
     if (!response.ok) {
-      const errorMessage = `${response.status}: ${response.statusText}`;
-      throw new Error(`Feil ved henting av adresseforslag (${errorMessage})`);
+      const errorData = await response.json().catch(() => ({})) as ApiError;
+      const detail = errorData.message || errorData.error || `${response.status}: ${response.statusText}`;
+      throw new Error(`Feil ved henting av adresseforslag (${detail})`);
     }
 
     const payload = (await response.json()) as {

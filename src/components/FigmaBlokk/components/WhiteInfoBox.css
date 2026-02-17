@@ -307,6 +307,8 @@
    ========================================================================== */
 
 .white-info-box__savings-card {
+  --wib-savings-card-scale: 1;
+  --wib-savings-card-offset-y: 0px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -370,12 +372,12 @@
 /* Animasjon for besparelseskort */
 .white-info-box__savings-card--animating {
   opacity: 0;
-  transform: scale(0.96);
+  transform: translateY(var(--wib-savings-card-offset-y)) scale(calc(0.96 * var(--wib-savings-card-scale)));
 }
 
 .white-info-box__savings-card--visible {
   opacity: 1;
-  transform: scale(1);
+  transform: translateY(var(--wib-savings-card-offset-y)) scale(var(--wib-savings-card-scale));
   transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
               opacity 320ms ease-out;
 }
@@ -627,6 +629,41 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+/* Windows desktop (125/150% scaling): keep edit buttons clear of savings card when tiltak is selected. */
+.platform-windows.platform-windows-scaled .white-info-box__key-info--edit-with-savings {
+  gap: 4px;
+}
+
+.platform-windows.platform-windows-scaled .white-info-box__key-info--edit-with-savings .white-info-box__edit-row {
+  line-height: 1.6rem;
+}
+
+.platform-windows.platform-windows-scaled .white-info-box__key-info--edit-with-savings .white-info-box__edit-row--fjernvarme {
+  margin-top: 4px;
+}
+
+.platform-windows.platform-windows-scaled .white-info-box__key-info--edit-with-savings .white-info-box__edit-actions {
+  margin-top: 8px;
+}
+
+.platform-windows.platform-windows-scaled .white-info-box__savings-card--compact {
+  --wib-savings-card-scale: 0.94;
+  --wib-savings-card-offset-y: 8px;
+}
+
+.platform-windows.platform-windows-scaled .white-info-box__savings-card--compact .white-info-box__savings-label {
+  font-size: 1.125rem;
+}
+
+.platform-windows.platform-windows-scaled .white-info-box__savings-card--compact .white-info-box__savings-amount {
+  font-size: 2.125rem;
+}
+
+.platform-windows.platform-windows-scaled .white-info-box__savings-card--compact .white-info-box__savings-kwh {
+  font-size: 1rem;
+  line-height: 1.5rem;
 }
 
 .white-info-box__edit-label {

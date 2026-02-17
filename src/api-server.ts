@@ -849,6 +849,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Hindre CDN fra å cache API-responser (inkl. negativ caching av feilresponser)
+app.use('/api', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
+
 app.get('/config/app.json', async (_req, res) => {
   try {
     const cfg = await loadAppConfig();

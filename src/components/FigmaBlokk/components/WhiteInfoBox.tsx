@@ -586,6 +586,7 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   }
   const shouldAnimateSavingsCardIntro =
     shouldShowSavingsCard && !hasShownSavings && animateSavings && !prefersReducedMotion;
+  const isEditWithSavingsMode = isEditMode && shouldShowSavingsCard;
 
 
   // Call the callback with initial values when component mounts or when savedEnergiforbruk changes
@@ -889,7 +890,7 @@ const tiltakPreview = selectedTiltakSlug ? (
           {addressOnly}
         </text>
         {/* Badges med PktTag - bruker sentral badge-konfigurasjon */}
-        <foreignObject x="30" y={BADGE_ROW_Y} width={BOX_WIDTH - 60} height="36">
+        <foreignObject x="30" y={BADGE_ROW_Y} width={BOX_WIDTH - 60} height="68">
           <div
             xmlns="http://www.w3.org/1999/xhtml"
             className="white-info-box__badges"
@@ -974,7 +975,13 @@ const tiltakPreview = selectedTiltakSlug ? (
                 {isEditMode ? 'Lagre' : 'Rediger'}
               </PktButton>
             </div>
-            <div className="white-info-box__key-info">
+            <div
+              className={`white-info-box__key-info${
+                isEditMode ? ' white-info-box__key-info--edit' : ''
+              }${
+                isEditWithSavingsMode ? ' white-info-box__key-info--edit-with-savings' : ''
+              }`}
+            >
               {!isEditMode ? (
                 <>
                   <div className="white-info-box__info-row">
@@ -1212,7 +1219,7 @@ const tiltakPreview = selectedTiltakSlug ? (
                 shouldAnimateSavingsCardIntro
                   ? 'white-info-box__savings-card--animating'
                   : 'white-info-box__savings-card--visible'
-              }`}
+              }${isEditWithSavingsMode ? ' white-info-box__savings-card--compact' : ''}`}
             >
               <span className="white-info-box__savings-label">
                 Estimert besparelse
