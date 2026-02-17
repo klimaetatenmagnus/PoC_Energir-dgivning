@@ -1320,26 +1320,111 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                 {gjennomforteTiltak.map((tiltak, index) => {
                   const isCompleted = completedItems.has(tiltak.id);
                   const isLast = index === gjennomforteTiltak.length - 1;
+                  const isVarmepumpe = tiltak.id === 'varmepumpe';
 
+                  if (!isVarmepumpe) {
+                    return (
+                      <li key={tiltak.id} className={`mobile-energy-solutions__tiltak-item${isLast ? ' mobile-energy-solutions__tiltak-item--last' : ''}${isCompleted ? ' mobile-energy-solutions__tiltak-item--selected' : ''}`}>
+                        <div className="mobile-energy-solutions__tiltak-content">
+                          <PktCheckbox
+                            id={`tiltak-completed-${tiltak.id}`}
+                            label={tiltak.title}
+                            checked={isCompleted}
+                            onChange={() => toggleCompleted(tiltak.id)}
+                          />
+                        </div>
+                        <PktButton
+                          skin="secondary"
+                          size="small"
+                          variant="label-only"
+                          onClick={() => onSelectTiltak(tiltak.id, calculateSavingsForTiltak(tiltak.id) ?? undefined)}
+                          className="mobile-energy-solutions__tiltak-button"
+                        >
+                          Les mer
+                        </PktButton>
+                      </li>
+                    );
+                  }
+
+                  // Varmepumpe med utvidbar seksjon (gjennomførte)
                   return (
-                    <li key={tiltak.id} className={`mobile-energy-solutions__tiltak-item${isLast ? ' mobile-energy-solutions__tiltak-item--last' : ''}${isCompleted ? ' mobile-energy-solutions__tiltak-item--selected' : ''}`}>
-                      <div className="mobile-energy-solutions__tiltak-content">
-                        <PktCheckbox
-                          id={`tiltak-completed-${tiltak.id}`}
-                          label={tiltak.title}
-                          checked={isCompleted}
-                          onChange={() => toggleCompleted(tiltak.id)}
-                        />
+                    <li key={tiltak.id} className={`mobile-energy-solutions__tiltak-item mobile-energy-solutions__tiltak-item--expandable${isLast ? ' mobile-energy-solutions__tiltak-item--last' : ''}${isCompleted ? ' mobile-energy-solutions__tiltak-item--selected' : ''}`}>
+                      <div className="mobile-energy-solutions__varmepumpe-header">
+                        <div className="mobile-energy-solutions__tiltak-content mobile-energy-solutions__tiltak-content--with-chevron">
+                          <PktCheckbox
+                            id={`tiltak-completed-${tiltak.id}`}
+                            label={tiltak.title}
+                            checked={isCompleted}
+                            onChange={() => {
+                              toggleCompleted(tiltak.id);
+                              if (isCompleted) {
+                                setVarmepumpeExpanded(false);
+                                setSelectedVarmepumpeType('luft-luft');
+                              } else {
+                                setVarmepumpeExpanded(true);
+                                setSelectedVarmepumpeType('luft-luft');
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="mobile-energy-solutions__chevron-toggle"
+                            onClick={() => {
+                              const willExpand = !varmepumpeExpanded;
+                              setVarmepumpeExpanded(willExpand);
+                              if (willExpand && !completedItems.has('varmepumpe')) {
+                                toggleCompleted('varmepumpe');
+                              }
+                            }}
+                            aria-expanded={varmepumpeExpanded}
+                            aria-label={varmepumpeExpanded ? 'Skjul varmepumpe-typer' : 'Vis varmepumpe-typer'}
+                          >
+                            <PktIcon
+                              name="chevron-thin-down"
+                              className={`mobile-energy-solutions__chevron${varmepumpeExpanded ? ' mobile-energy-solutions__chevron--expanded' : ''}`}
+                            />
+                          </button>
+                        </div>
+                        <PktButton
+                          skin="secondary"
+                          size="small"
+                          variant="label-only"
+                          onClick={() => onSelectTiltak(tiltak.id, calculateSavingsForTiltak(tiltak.id) ?? undefined)}
+                          className="mobile-energy-solutions__tiltak-button"
+                        >
+                          Les mer
+                        </PktButton>
                       </div>
-                      <PktButton
-                        skin="secondary"
-                        size="small"
-                        variant="label-only"
-                        onClick={() => onSelectTiltak(tiltak.id, calculateSavingsForTiltak(tiltak.id) ?? undefined)}
-                        className="mobile-energy-solutions__tiltak-button"
-                      >
-                        Les mer
-                      </PktButton>
+
+                      {/* Utvidbar seksjon for varmepumpe-typer */}
+                      {isCompleted && varmepumpeExpanded && (
+                        <div className="mobile-energy-solutions__varmepumpe-options">
+                          {VARMEPUMPE_TYPES.map((type) => {
+                            const isTypeSelected = isCompleted && selectedVarmepumpeType === type.id;
+                            return (
+                              <div
+                                key={type.id}
+                                className={`mobile-energy-solutions__varmepumpe-option${isTypeSelected ? ' mobile-energy-solutions__varmepumpe-option--selected' : ''}`}
+                              >
+                                <PktRadioButton
+                                  id={`varmepumpe-completed-type-${type.id}`}
+                                  name="varmepumpe-completed-type"
+                                  label={type.label}
+                                  value={type.id}
+                                  checked={isTypeSelected}
+                                  checkHelptext={type.description}
+                                  onChange={() => {
+                                    setSelectedVarmepumpeType(type.id);
+                                    if (!completedItems.has('varmepumpe')) {
+                                      toggleCompleted('varmepumpe');
+                                    }
+                                  }}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </li>
                   );
                 })}

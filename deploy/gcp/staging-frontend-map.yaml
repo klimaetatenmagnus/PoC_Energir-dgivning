@@ -7,9 +7,11 @@ hostRules:
     pathMatcher: staging-matcher
   - hosts:
       - energinokkelen.no
+      - www.energinokkelen.no
     pathMatcher: prod-matcher
   - hosts:
       - xn--energinkkelen-hnb.no
+      - www.xn--energinkkelen-hnb.no
     pathMatcher: prod-matcher
   - hosts:
       - prod-preview.xn--energinkkelen-hnb.no
