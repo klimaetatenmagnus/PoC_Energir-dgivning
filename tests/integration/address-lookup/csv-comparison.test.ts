@@ -84,7 +84,7 @@ function parseCSV(content: string): CsvRecord[] {
 
 describe.skipIf(!LIVE)("CSV vs API Comparison", () => {
   let csvRecords: CsvRecord[] = [];
-  const csvPath = path.join(process.cwd(), "data", "raw", "Matrikkel 2023.csv");
+  const csvPath = path.join(process.cwd(), "data", "raw", "matrikkel_bygg_2025.csv");
 
   beforeAll(async () => {
     // Sjekk API-helsesjekk

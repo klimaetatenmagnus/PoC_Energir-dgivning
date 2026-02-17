@@ -107,7 +107,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.cwd(),
     "data",
     "raw",
-    "Matrikkel 2023.csv"
+    "matrikkel_bygg_2025.csv"
   );
 
   if (!fs.existsSync(csvPath)) {

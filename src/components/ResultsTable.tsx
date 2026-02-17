@@ -240,7 +240,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({ data, searchAddress 
 
       {data.csvData && (
         <div style={{ marginTop: '20px' }}>
-          <h3 style={{ marginBottom: '10px' }}>Data fra Matrikkel 2023 CSV</h3>
+          <h3 style={{ marginBottom: '10px' }}>Data fra Matrikkel 2025 CSV</h3>
           <table className="results-table__table">
             <tbody>
               <tr className="results-table__row">

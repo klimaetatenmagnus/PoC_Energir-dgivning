@@ -70,7 +70,7 @@ Miljøet består i dag av ett GCP-prosjekt (`energiverktoy-poc-1234`) med både 
 - `API_ENV` (`test`/`prod`), `API_PORT=8080`
 - `BUILDING_INFO_BASE_URL=http://127.0.0.1:4000`, `SOLAR_SERVICE_BASE_URL=http://127.0.0.1:4003`
 - `DATA_BUCKET=energinokkelen-data` – building-info-service laster Matrikkel-CSV fra denne GCS-bucketen ved oppstart
-- `DATA_MATRIKKEL_FILE` (default: `matrikkel/Matrikkel 2023.csv`) – sti til CSV-filen i `DATA_BUCKET`
+- `DATA_MATRIKKEL_FILE` (default: `matrikkel/matrikkel_bygg_2025.csv`) – sti til CSV-filen i `DATA_BUCKET`
 - `CONTENT_BUCKET`: staging `energinokkelen-content`, prod `energinokkelen-content-prod` (**Viktig:** Prod-tjenesten må bruke `energinokkelen-content-prod` for korrekt staging/prod-separasjon)
 - `CONTENT_BUCKET_PREFIX`: default `content` – API-serveren legger til dette prefixet når den leser filer fra GCS (f.eks. `gs://energinokkelen-content/content/tiltak/foo.json`)
 - Secrets: `MATRIKKEL_*`, `ENOVA_API_KEY`, `LIVE`, `PBE_*`, `VITE_*`
@@ -110,7 +110,7 @@ Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.
 | `energinokkelen-content`       | Staging | Runtime content (`content/`) | Cloud Build SA (admin), Cloud Run SA (viewer)                                                            |
 | `energinokkelen-frontend-prod` | Prod    | SPA build prod                 | Idem, men for prod                                                                                       |
 | `energinokkelen-content-prod`  | Prod    | Runtime content prod           | Cloud Run SA (viewer)                                                                                    |
-| `energinokkelen-data`          | Felles  | Rådata – Matrikkel CSV (`matrikkel/Matrikkel 2023.csv`) | Cloud Run SA (viewer)                                                                                    |
+| `energinokkelen-data`          | Felles  | Rådata – Matrikkel CSV (`matrikkel/matrikkel_bygg_2025.csv`) | Cloud Run SA (viewer)                                                                                    |
 | `energinokkelen-build-logs`    | Felles  | Cloud Build loggbucket         | Opprettes automatisk via Cloud Build config                                                              |
 
 `api-server` leser `/config/app.json` direkte fra bøtten (via `CONTENT_BUCKET` + `CONTENT_BUCKET_PREFIX`) og faller tilbake til lokale filer hvis objektet ikke finnes. JSON-en caches per GCS-generation, så oppdatering av filen i bøtten blir synlig uten redeploy.
@@ -266,7 +266,7 @@ API-serveren bruker `CONTENT_BUCKET_PREFIX=content` for å legge til riktig sti 
 
 #### Oppdatering av Matrikkel-data
 
-Matrikkel-CSV-en (`gs://energinokkelen-data/matrikkel/Matrikkel 2023.csv`) inneholder eiendomsdata for Oslo og oppdateres typisk årlig. `building-info-service` laster filen fra GCS ved oppstart via `DATA_BUCKET=energinokkelen-data` og cacher den i minne.
+Matrikkel-CSV-en (`gs://energinokkelen-data/matrikkel/matrikkel_bygg_2025.csv`) inneholder eiendomsdata for Oslo og oppdateres typisk årlig. `building-info-service` laster filen fra GCS ved oppstart via `DATA_BUCKET=energinokkelen-data` og cacher den i minne.
 
 1. **Hent ny eksport** fra Matrikkelens dataeksport (SSB/Kartverket).
 2. **Valider filformat** – sjekk at kolonnenavnene matcher `RawCSVRecord` i `src/services/csvService.ts`:
@@ -280,7 +280,7 @@ Matrikkel-CSV-en (`gs://energinokkelen-data/matrikkel/Matrikkel 2023.csv`) inneh
 4. **Test mot staging** ved å sette `DATA_MATRIKKEL_FILE=matrikkel/Matrikkel-ny.csv` i staging Cloud Run og verifisere noen kjente adresser.
 5. **Erstatt produksjonsfilen** når verifisert:
    ```bash
-   gsutil cp "Ny-Matrikkel.csv" "gs://energinokkelen-data/matrikkel/Matrikkel 2023.csv"
+   gsutil cp "Ny-Matrikkel.csv" "gs://energinokkelen-data/matrikkel/matrikkel_bygg_2025.csv"
    ```
 6. **Restart Cloud Run** for å laste ny fil (CSV caches i minne ved oppstart):
    ```bash

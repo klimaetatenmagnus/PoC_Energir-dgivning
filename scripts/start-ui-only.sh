@@ -3,6 +3,12 @@
 
 set -euo pipefail
 
+# Ensure Homebrew and nvm paths are available
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+if [ -s "$HOME/.nvm/nvm.sh" ]; then
+  source "$HOME/.nvm/nvm.sh"
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 

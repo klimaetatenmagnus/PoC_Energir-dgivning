@@ -36,7 +36,7 @@ const DELAY_MS = 200;
 
 const MATRIKKEL_CSV = path.resolve(
   import.meta.dirname ?? ".",
-  "../data/raw/Matrikkel 2023.csv"
+  "../data/raw/matrikkel_bygg_2025.csv"
 );
 
 const ENOVA_CSV = path.resolve(

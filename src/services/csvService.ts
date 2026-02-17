@@ -85,7 +85,7 @@ export class CSVService {
   private async loadCSV(): Promise<void> {
     try {
       const bucketName = process.env.DATA_BUCKET;
-      const matrikkelFile = process.env.DATA_MATRIKKEL_FILE ?? 'matrikkel/Matrikkel 2023.csv';
+      const matrikkelFile = process.env.DATA_MATRIKKEL_FILE ?? 'matrikkel/matrikkel_bygg_2025.csv';
       let fileContent: string;
 
       if (bucketName) {
@@ -96,7 +96,7 @@ export class CSVService {
         logger.info(`Loading Matrikkel CSV from gs://${bucketName}/${matrikkelFile}`);
       } else {
         // Utvikling: last fra lokal fil
-        const csvPath = path.join(process.cwd(), 'data', 'raw', 'Matrikkel 2023.csv');
+        const csvPath = path.join(process.cwd(), 'data', 'raw', 'matrikkel_bygg_2025.csv');
         fileContent = fs.readFileSync(csvPath, 'utf-8');
         logger.info(`Loading Matrikkel CSV from local file: ${csvPath}`);
       }
