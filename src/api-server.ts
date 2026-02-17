@@ -1047,11 +1047,19 @@ app.get('/health', (req, res) => {
 
 // Address lookup endpoint
 app.post('/api/address-lookup', async (req, res) => {
-  const { address, useImprovedSelection = false, debug = false } = req.body;
-  
+  const body = req.body ?? {};
+  const { address, useImprovedSelection = false, debug = false } = body;
+
   if (!address || typeof address !== 'string') {
-    return res.status(400).json({ 
-      error: 'Address is required and must be a string' 
+    logger.warn('address-lookup: ugyldig request', {
+      hasBody: req.body !== undefined,
+      bodyType: typeof req.body,
+      bodyKeys: req.body ? Object.keys(req.body) : [],
+      contentType: req.headers['content-type'],
+      origin: req.headers['origin'] ?? req.headers['referer'] ?? 'unknown',
+    });
+    return res.status(400).json({
+      error: 'Address is required and must be a string'
     });
   }
 
@@ -1329,6 +1337,17 @@ app.post('/api/gul-liste/sjekk-gnr-bnr', async (req, res) => {
       erPaaGulListe: false
     });
   }
+});
+
+// Catch-all: logg requests som ikke matcher noen rute (diagnostikk for 404-feil)
+app.use('/api', (req, res) => {
+  logger.warn('Unmatched API route (404)', {
+    method: req.method,
+    url: req.originalUrl,
+    origin: req.headers['origin'] ?? req.headers['referer'] ?? 'unknown',
+    userAgent: req.headers['user-agent']?.slice(0, 100),
+  });
+  res.status(404).json({ error: `Route not found: ${req.method} ${req.path}` });
 });
 
 // Start server
