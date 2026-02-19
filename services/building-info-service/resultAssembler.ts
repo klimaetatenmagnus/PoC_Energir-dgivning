@@ -135,9 +135,9 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
   }
 
   if (!csvData) {
-    const searchAddress = `${adresse.adressetekst || ''}${
-      adresse.husnummer || ''
-    }${adresse.bokstav || ''}`.trim();
+    // NB: adressetekst fra Geonorge inneholder allerede husnummer+bokstav,
+    // så vi bruker den direkte (tidligere bug: dobbelt husnummer "Veien 1616")
+    const searchAddress = (adresse.adressetekst || '').trim();
     if (searchAddress) {
       const matches = csvService.findByAddress(searchAddress);
       if (matches.length > 0) {

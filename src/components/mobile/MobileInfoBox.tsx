@@ -15,7 +15,8 @@ import {
 } from '../../config/badgeConfig';
 import { AddressLookupResponse } from '../../services/buildingApi';
 import '../../config/badges.css';
-import { calculateAnnualEnergyConsumption, determineBuildingType } from '../../utils/tekEnergyCalculations';
+import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, calculateEnergyRatingWithFjernvarme, calculateTEK } from '../../utils/tekEnergyCalculations';
+import { type TekPeriodInput } from '../../utils/energySavingsData';
 import { convertKwhToNok, formatCurrency, formatNumberWithSpaces } from '../../utils/energy';
 import { getOsloMapExportUrl } from '../../utils/coordinateUtils';
 import './MobileInfoBox.css';
@@ -50,6 +51,16 @@ const roundToNearestThousandValue = (value: number): number => {
     return 0;
   }
   return Math.round(value / 1000) * 1000;
+};
+
+const ENERGY_RATING_COLORS: Record<string, string> = {
+  A: '#097E3E',
+  B: '#32A548',
+  C: '#96C133',
+  D: '#F5D000',
+  E: '#F0A500',
+  F: '#E06000',
+  G: '#C8001E',
 };
 
 export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
@@ -161,6 +172,46 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
     if (!Number.isFinite(numeric)) return '0';
     return formatNumberWithSpaces(Math.round(numeric));
   }, [adjustedEnergyConsumption]);
+
+  // Beregn energikarakter (identisk logikk som WhiteInfoBox)
+  const computedEnergyRating = useMemo(() => {
+    const consumptionNum = adjustedEnergyConsumption;
+    const areaCandidate = savedAreal || (typeof buildingData?.bruksarealM2 === 'number'
+      ? String(buildingData.bruksarealM2)
+      : buildingData?.csvData?.bruksareal_totalt);
+    const areaNum = Number(areaCandidate);
+
+    if (!Number.isFinite(consumptionNum) || consumptionNum <= 0 || !Number.isFinite(areaNum) || areaNum <= 0) {
+      return null;
+    }
+
+    const buildingType = determineBuildingType(buildingData?.bygningstypeKode, buildingTypeName);
+
+    if (fjernvarme) {
+      const rawByggeaarForTek = savedByggeaar || buildingData?.byggeaar?.toString() || buildingData?.csvData?.byggeaar;
+      const byggeaarNum = rawByggeaarForTek ? Number(rawByggeaarForTek) : undefined;
+      if (byggeaarNum && !isNaN(byggeaarNum) && buildingType) {
+        const tekPeriod = calculateTEK(byggeaarNum);
+        return calculateEnergyRatingWithFjernvarme(consumptionNum, areaNum, buildingType, tekPeriod as TekPeriodInput, buildingType);
+      }
+    }
+
+    const intensity = consumptionNum / areaNum;
+    return calculateEnergyRating(intensity, areaNum, buildingType);
+  }, [
+    adjustedEnergyConsumption,
+    buildingData?.bruksarealM2,
+    buildingData?.byggeaar,
+    buildingData?.bygningstypeKode,
+    buildingData?.csvData?.bruksareal_totalt,
+    buildingData?.csvData?.byggeaar,
+    buildingTypeName,
+    fjernvarme,
+    savedAreal,
+    savedByggeaar,
+  ]);
+
+  const normalizedCurrentRating = computedEnergyRating?.toUpperCase() ?? null;
 
   // Besparelser
   const _shouldShowSavings = totalEnergySavings > 0;
@@ -299,6 +350,21 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
                 <div className="mobile-info-box__info-row">
                   <span className="mobile-info-box__info-label">Estimert energiforbruk:</span>
                   <span className="mobile-info-box__info-value">{formattedEnergyConsumption} kWh/år</span>
+                </div>
+                <div className="mobile-info-box__info-row mobile-info-box__info-row--rating">
+                  <span className="mobile-info-box__info-label">Estimert energikarakter:</span>
+                  <div className="mobile-info-box__energy-rating-value">
+                    {normalizedCurrentRating ? (
+                      <span
+                        className="mobile-info-box__rating-box"
+                        style={{ backgroundColor: ENERGY_RATING_COLORS[normalizedCurrentRating] }}
+                      >
+                        {normalizedCurrentRating}
+                      </span>
+                    ) : (
+                      <span className="mobile-info-box__energy-rating-empty">Ukjent</span>
+                    )}
+                  </div>
                 </div>
               </>
             ) : (

@@ -10,6 +10,7 @@ import { createHash } from 'node:crypto';
 import { Storage } from '@google-cloud/storage';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
 import { metricsRegistry } from '../services/building-info-service/metrics.js';
+import { csvService } from './services/csvService.js';
 import { energyRatingService } from './services/energyRatingService.js';
 import { sjekkGulListe, sjekkGulListeMedGnrBnr } from './services/gul-liste-service.js';
 import { z } from 'zod';
@@ -1350,13 +1351,16 @@ app.use('/api', (req, res) => {
   res.status(404).json({ error: `Route not found: ${req.method} ${req.path}` });
 });
 
-// Start server
-app.listen(PORT, () => {
-  infoLog(`Running on http://localhost:${PORT}`);
-  infoLog(`Environment: ${process.env.LIVE ? 'LIVE (real APIs)' : 'MOCK'}`);
-  debugLog(`Try: POST http://localhost:${PORT}/api/address-lookup`);
-  debugLog(`Try: GET http://localhost:${PORT}/api/address-suggestions?query=karl`);
-  debugLog(`Try: POST http://localhost:${PORT}/api/energy-rating`);
-  debugLog(`Try: POST http://localhost:${PORT}/api/gul-liste/sjekk-adresse`);
-  debugLog(`Try: POST http://localhost:${PORT}/api/gul-liste/sjekk-gnr-bnr`);
+// Start server – vent på at CSV-data er lastet før vi aksepterer requests,
+// ellers kan oppslag mangle CSV-data og returnere feil bygningsinfo.
+csvService.waitForReady().then(() => {
+  app.listen(PORT, () => {
+    infoLog(`Running on http://localhost:${PORT}`);
+    infoLog(`Environment: ${process.env.LIVE ? 'LIVE (real APIs)' : 'MOCK'}`);
+    debugLog(`Try: POST http://localhost:${PORT}/api/address-lookup`);
+    debugLog(`Try: GET http://localhost:${PORT}/api/address-suggestions?query=karl`);
+    debugLog(`Try: POST http://localhost:${PORT}/api/energy-rating`);
+    debugLog(`Try: POST http://localhost:${PORT}/api/gul-liste/sjekk-adresse`);
+    debugLog(`Try: POST http://localhost:${PORT}/api/gul-liste/sjekk-gnr-bnr`);
+  });
 });

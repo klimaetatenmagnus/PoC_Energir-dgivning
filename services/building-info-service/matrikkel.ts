@@ -544,24 +544,29 @@ export async function resolveBuildingData(
   if (adr.adressetekst) {
     const csvData = csvService.findByExactAddress(adr.adressetekst);
     if (csvData) {
-      csvPreferredBuildingNr = csvData.bygningsNr;
       csvPreferredBuildingType = csvData.bygningstypeNavn;
 
       if (LOG) {
         debugLog(`📊 CSV tidlig validering for "${adr.adressetekst}":`);
-        debugLog(`   Bygningsnr: ${csvPreferredBuildingNr}`);
+        debugLog(`   Bygningsnr: ${csvData.bygningsNr}`);
         debugLog(`   Type: ${csvPreferredBuildingType}`);
         debugLog(`   Areal: ${csvData.bruksarealTotalt} m²`);
       }
 
-      // Sjekk om CSV returnerte garasje selv etter forbedringen
-      // (dette betyr at det KUN finnes garasje på adressen)
+      // Ikke bruk garasje/uthus (type >= 180) til å styre bygningsvalget.
+      // findByExactAddress returnerer garasje når KUN garasje finnes på adressen
+      // (ett treff → returneres alltid). Uten denne sjekken ville
+      // csvPreferredBuildingNr peke på garasjen og aktivt velge den fra
+      // Matrikkel-dataene, selv om den ble filtrert ut som ikke-bolig.
       const code = parseInt(csvData.bygningstype3siffer, 10);
-      if (code === 181) {
+      if (code >= 180) {
         if (LOG) {
-          debugLog(`⚠️  CSV indikerer at adressen kun har garasje/uthus`);
+          debugLog(
+            `⚠️  CSV returnerte garasje/uthus (type ${code}) – csvPreferredBuildingNr settes ikke`
+          );
         }
-        // Vi fortsetter, men logger advarselen
+      } else {
+        csvPreferredBuildingNr = csvData.bygningsNr;
       }
     }
   }
@@ -1394,8 +1399,10 @@ export async function resolveBuildingData(
   }
 
   // Fallback: Søk på adresse hvis eksakt match ikke fant noe
+  // NB: adressetekst fra Geonorge inneholder allerede husnummer+bokstav,
+  // så vi bruker den direkte (tidligere bug: dobbelt husnummer "Veien 1616")
   if (!csvBygningsNr && adr.adressetekst) {
-    const searchAddress = `${adr.adressetekst}${adr.husnummer || ''}${adr.bokstav || ''}`.trim();
+    const searchAddress = adr.adressetekst.trim();
     const matches = csvService.findByAddress(searchAddress);
     if (matches.length > 0 && matches[0].bygningsNr) {
       csvBygningsNr = matches[0].bygningsNr;
