@@ -6,11 +6,11 @@ export const TiltakTabs: React.FC<TiltakTabsProps> = ({
   activeTab,
   onTabChange
 }) => {
-  // Legg til "Generelt" som første tab
-  const allTabs = [
-    { id: 'generelt', title: 'Generelt' },
-    ...tabs.map(t => ({ id: t.id, title: t.title }))
-  ];
+  // Legg til "Generelt" som første tab, med mindre den allerede finnes i dataen
+  const hasGenerelt = tabs.some(t => t.id === 'generelt');
+  const allTabs = hasGenerelt
+    ? tabs.map(t => ({ id: t.id, title: t.title }))
+    : [{ id: 'generelt', title: 'Generelt' }, ...tabs.map(t => ({ id: t.id, title: t.title }))];
 
   return (
     <nav className="desktop-tiltak-card__tabs" role="tablist" aria-label="Tiltaksvarianter">
