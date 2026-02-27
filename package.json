@@ -9,7 +9,7 @@
     "dev:buildings": "cross-env LOG_SOAP=1 nodemon --watch services/building-info-service --exec \"node --loader ts-node/esm services/building-info-service/index.ts\"",
     "dev:solar": "cross-env PORT=4003 nodemon --watch services/solar-service --exec \"node --loader ts-node/esm services/solar-service/index.ts\"",
     "dev:admin-api": "node --loader ts-node/esm services/admin-api/index.ts",
-    "dev": "cross-env DOTENV_CONFIG_PATH=./.env concurrently -k -n client,server,buildings,solar -c blue,green,yellow,magenta \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:buildings\" \"npm run dev:solar\"",
+    "dev": "cross-env DOTENV_CONFIG_PATH=./.env concurrently -k -n client,server,buildings,solar,admin-api -c blue,green,yellow,magenta,cyan \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:buildings\" \"npm run dev:solar\" \"npm run dev:admin-api\"",
     "dev:local": "cross-env API_ENV=test concurrently -k -n client,server,buildings -c blue,green,yellow \"npm run dev:client\" \"npm run dev:server\" \"npm run dev:buildings\"",
     "start:prod": "cross-env API_ENV=prod ts-node server/index.ts",
     "sync:punkt-assets": "node scripts/sync-punkt-assets.mjs",

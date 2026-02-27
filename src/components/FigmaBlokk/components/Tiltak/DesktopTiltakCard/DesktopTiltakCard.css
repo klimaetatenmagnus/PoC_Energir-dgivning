@@ -183,6 +183,7 @@
   padding: 16px;
   color: var(--pkt-color-brand-neutrals-white, #FFFFFF);
   position: relative;
+  z-index: 1;
 }
 
 .desktop-tiltak-card__savings-header {

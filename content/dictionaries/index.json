@@ -13,10 +13,10 @@
     },
     {
       "id": "enebolig",
-      "label": "Enebolig og smaahus",
-      "description": "Frittstaende eneboliger, rekkehus som oppleves som smaahus og lignende.",
+      "label": "Enebolig og småhus",
+      "description": "Frittstående eneboliger, rekkehus som oppleves som småhus og lignende.",
       "aliases": [
-        "smaahus",
+        "småhus",
         "villa"
       ],
       "internalOnly": false
@@ -33,7 +33,7 @@
     {
       "id": "rekkehus",
       "label": "Rekkehus og kjedet",
-      "description": "Kjedete smaahus og rekkehus med felles vegger.",
+      "description": "Kjedede småhus og rekkehus med felles vegger.",
       "aliases": [
         "rekke",
         "kjedet"
@@ -65,7 +65,7 @@
     {
       "id": "ivaretar-boligen",
       "title": "Ivaretar boligen",
-      "description": "Bedre isolasjon beskytter konstruksjoner mot fukt og raate.",
+      "description": "Bedre isolasjon beskytter konstruksjoner mot fukt og råte.",
       "icon": "home",
       "tags": [
         "vern",
@@ -74,8 +74,8 @@
     },
     {
       "id": "hoyere-boligverdi",
-      "title": "Hoyere boligverdi",
-      "description": "Oppgraderte fasader, betre energimerke og eigen stromproduksjon gjer boligen meir attraktiv.",
+      "title": "Høyere boligverdi",
+      "description": "Oppgraderte fasader, bedre energimerke og egen strømproduksjon gjør boligen mer attraktiv.",
       "icon": "graph",
       "tags": [
         "verdi",
@@ -85,7 +85,7 @@
     {
       "id": "bedre-stromstyring",
       "title": "Bedre strømstyring",
-      "description": "Gjor det lett aa styre forbruket smartere basert paa produksjon og pris.",
+      "description": "Gjør det lett å styre forbruket smartere basert på produksjon og pris.",
       "icon": "bulb",
       "tags": [
         "styring",
@@ -94,8 +94,8 @@
     },
     {
       "id": "lavere-stromregning",
-      "title": "Lavere stromregning",
-      "description": "Egenprodusert eller spart energi erstatter dyrere kjop fra nettet.",
+      "title": "Lavere strømregning",
+      "description": "Egenprodusert eller spart energi erstatter dyrere kjøp fra nettet.",
       "icon": "coin-stacks",
       "tags": [
         "kostnad",
@@ -104,7 +104,7 @@
     },
     {
       "id": "egenprodusert-strom",
-      "title": "Egenprodusert strom",
+      "title": "Egenprodusert strøm",
       "description": "Overskudd kan selges, brukes til elbil eller lagres i batteri.",
       "icon": "charging-point",
       "tags": [
@@ -133,8 +133,8 @@
     },
     {
       "id": "redusert-stoy",
-      "title": "Redusert stoy",
-      "description": "Riktig plassering og oppgradering gjor tiltak stille i drift.",
+      "title": "Redusert støy",
+      "description": "Riktig plassering og oppgradering gjør tiltak stille i drift.",
       "icon": "megaphone",
       "tags": [
         "komfort"
@@ -173,7 +173,7 @@
     {
       "id": "etterisolering",
       "label": "Etterisolering",
-      "description": "Tiltak som oeker isolasjon i vegger, loft eller kjeller.",
+      "description": "Tiltak som øker isolasjon i vegger, loft eller kjeller.",
       "synonyms": [
         "isolasjon"
       ],
@@ -182,7 +182,7 @@
     {
       "id": "fasade",
       "label": "Fasade",
-      "description": "Endringer som paavirker yttervegger og uttrykk.",
+      "description": "Endringer som påvirker yttervegger og uttrykk.",
       "synonyms": [
         "yttervegg"
       ],
@@ -254,7 +254,7 @@
     {
       "id": "plusskunde",
       "label": "Plusskunde",
-      "description": "Tiltak som gjor det mulig aa levere eller selge egenprodusert energi.",
+      "description": "Tiltak som gjør det mulig å levere eller selge egenprodusert energi.",
       "synonyms": [
         "pluskunde"
       ],
@@ -317,7 +317,7 @@
     {
       "id": "varmepumpe",
       "label": "Varmepumpe",
-      "description": "Spesifikk tagg for varmepumpelosninger.",
+      "description": "Spesifikk tagg for varmepumpeløsninger.",
       "synonyms": [
         "hp",
         "vp"

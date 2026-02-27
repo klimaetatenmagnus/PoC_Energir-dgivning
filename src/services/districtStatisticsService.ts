@@ -247,6 +247,91 @@ export function createSubdistrictKey(
 }
 
 /**
+ * Mapping fra matrikkelens offisielle SSB-delbydelnavn til
+ * Enova-statistikkens postnummerbaserte nøkler.
+ * Matrikkel og Enova bruker ulike inndelinger/navnekonvensjoner,
+ * så denne tabellen oversetter for å sikre treff ved oppslag.
+ */
+const SUBDISTRICT_KEY_MAPPING: Record<string, string> = {
+  // Alna
+  'Alna/Hellerudtoppen': 'Alna/Hellerud',
+  'Alna/Tveita': 'Alna/Haugerud',
+
+  // Bjerke (Ulven tilhører Bjerke i matrikkel, men Alna i Enova)
+  'Bjerke/Ulven': 'Alna/Ulven',
+
+  // Frogner
+  'Frogner/Bygdøy': 'Frogner/Bygdøy-Frogner',
+  'Frogner/Frognerparken': 'Frogner/Frogner',
+  'Frogner/Majorstuen Nord': 'Frogner/Uranienborg-Majorstuen',
+  'Frogner/Majorstuen Syd': 'Frogner/Uranienborg-Majorstuen',
+  'Frogner/Skillebekk': 'Frogner/Briskeby',
+  'Frogner/Uranienborg': 'Frogner/Uranienborg-Majorstuen',
+
+  // Gamle Oslo
+  'Gamle Oslo/Bispevika': 'Gamle Oslo/Sentrum',
+  'Gamle Oslo/Enerhaugen': 'Gamle Oslo/Grønland',
+  'Gamle Oslo/Etterstad': 'Gamle Oslo/Ensjø',
+  'Gamle Oslo/Kampen': 'Gamle Oslo/Ensjø',
+  'Gamle Oslo/Kværnerbyen': 'Gamle Oslo/Ensjø',
+  'Gamle Oslo/Nedre Tøyen': 'Gamle Oslo/Grønland',
+  'Gamle Oslo/Vålerenga': 'Gamle Oslo/Ensjø',
+
+  // Grünerløkka
+  'Grünerløkka/Dælenenga': 'Grünerløkka/Grünerløkka',
+  'Grünerløkka/Grünerløkka Vest': 'Grünerløkka/Grünerløkka',
+  'Grünerløkka/Grünerløkka Øst': 'Grünerløkka/Grünerløkka',
+  'Grünerløkka/Hasle': 'Grünerløkka/Hasle-Løren',
+  'Grünerløkka/Løren': 'Grünerløkka/Hasle-Løren',
+  'Grünerløkka/Rodeløkka': 'Grünerløkka/Grünerløkka',
+
+  // Sagene
+  'Sagene/Sandaker': 'Sagene/Nydalen',
+
+  // Sentrum (tilhører egen bydel i matrikkel, Gamle Oslo i Enova)
+  'Sentrum/Sentrum': 'Gamle Oslo/Sentrum',
+
+  // St. Hanshaugen
+  'St. Hanshaugen/Fagerborg': 'St. Hanshaugen/Bolteløkka',
+  'St. Hanshaugen/Ila': 'St. Hanshaugen/St. Hanshaugen',
+  'St. Hanshaugen/Lindern': 'St. Hanshaugen/St. Hanshaugen',
+
+  // Stovner
+  'Stovner/Fossum': 'Stovner/Stovner',
+  'Stovner/Høybråten': 'Stovner/Stovner',
+  'Stovner/Rommen': 'Stovner/Haugenstua',
+
+  // Søndre Nordstrand
+  'Søndre Nordstrand/Bjørndal': 'Søndre Nordstrand/Gjersrud-Stensrud',
+  'Søndre Nordstrand/Bjørnerud': 'Søndre Nordstrand/Lofsrud',
+  'Søndre Nordstrand/Holmlia Nord': 'Søndre Nordstrand/Hauketo',
+  'Søndre Nordstrand/Holmlia Syd': 'Søndre Nordstrand/Lofsrud',
+  'Søndre Nordstrand/Mortensrud': 'Søndre Nordstrand/Gjersrud-Stensrud',
+  'Søndre Nordstrand/Prinsdal': 'Søndre Nordstrand/Hauketo',
+
+  // Ullern
+  'Ullern/Montebello-Hoff': 'Ullern/Montebello',
+  'Ullern/Ullernåsen': 'Ullern/Ullern',
+
+  // Vestre Aker
+  'Vestre Aker/Holmen': 'Vestre Aker/Hovseter',
+
+  // Østensjø
+  'Østensjø/Abildsø': 'Østensjø/Skullerud',
+  'Østensjø/Godlia': 'Østensjø/Bøler',
+  'Østensjø/Manglerud': 'Østensjø/Bøler',
+  'Østensjø/Oppsal': 'Østensjø/Bøler',
+};
+
+/**
+ * Oversetter en matrikkel-delbydelnøkkel til tilsvarende Enova-nøkkel.
+ * Returnerer original nøkkel hvis det ikke finnes en mapping (dvs. navnene matcher).
+ */
+function resolveSubdistrictKey(key: string): string {
+  return SUBDISTRICT_KEY_MAPPING[key] ?? key;
+}
+
+/**
  * Henter statistikk for en spesifikk delbydel og boligtype
  */
 export function getStatsForSubdistrict(
@@ -256,7 +341,8 @@ export function getStatsForSubdistrict(
   buildingType: BuildingTypeCategory
 ): DistrictStats | null {
   const key = createSubdistrictKey(districtName, subdistrictName);
-  return data.subdistricts?.[key]?.[buildingType] ?? null;
+  const resolvedKey = resolveSubdistrictKey(key);
+  return data.subdistricts?.[resolvedKey]?.[buildingType] ?? null;
 }
 
 /**
