@@ -312,6 +312,38 @@ export class CSVService {
   }
 
   /**
+   * Find a residential sibling building at a neighboring letter-suffix address.
+   * E.g. if address is "BRANNFJELLVEIEN 20A" (garage), find "BRANNFJELLVEIEN 20B" (residential).
+   */
+  findResidentialSibling(address: string): MatrikkelCSVRecord | null {
+    if (!this.isLoaded) return null;
+    const normalized = this.normalizeAddress(address);
+    if (!normalized) return null;
+
+    const street = this.extractStreetName(normalized);
+    const houseMatch = normalized.match(/(\d+)([a-zæøå])$/i);
+    if (!street || !houseMatch) return null;
+
+    const houseNumber = parseInt(houseMatch[1], 10);
+    const currentLetter = houseMatch[2].toLowerCase();
+
+    const siblings = this.data.filter(r => {
+      const rNorm = this.normalizeAddress(r.gateAdresse);
+      if (!rNorm || this.extractStreetName(rNorm) !== street) return false;
+      const rMatch = rNorm.match(/(\d+)([a-zæøå])$/i);
+      if (!rMatch || parseInt(rMatch[1], 10) !== houseNumber) return false;
+      if (rMatch[2].toLowerCase() === currentLetter) return false;
+      const code = parseInt(r.bygningstype3siffer, 10);
+      return code >= 110 && code < 180;
+    });
+
+    if (siblings.length === 0) return null;
+    return siblings.reduce((best, cur) =>
+      cur.bruksarealTotalt > best.bruksarealTotalt ? cur : best
+    );
+  }
+
+  /**
    * Find bydel info from nearby addresses when exact lookup fails.
    * Strategy:
    *   1. Same house number, different letter suffix (e.g. 13A, 13B, 13C for "13D")

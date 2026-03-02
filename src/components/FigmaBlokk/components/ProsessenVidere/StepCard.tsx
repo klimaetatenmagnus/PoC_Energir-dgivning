@@ -1,5 +1,4 @@
 import React from 'react';
-import { Pil } from './Ikoner';
 
 interface StepCardProps {
   number: number;
@@ -21,9 +20,6 @@ export const StepCard: React.FC<StepCardProps> = ({ number, text, hoverText, ico
       <div className="prosessen-videre__step-circle">
         <span className="pkt-txt-18-medium">{number}.</span>
         <span className="pkt-txt-18-medium">{text}</span>
-        <div className="prosessen-videre__step-arrow">
-          <Pil />
-        </div>
       </div>
 
       {/* Layer 2: expanded card – always at final size, crossfades in on hover */}

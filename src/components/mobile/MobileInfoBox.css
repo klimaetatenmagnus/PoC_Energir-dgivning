@@ -210,16 +210,6 @@
   border-color: var(--pkt-color-brand-blue-600, #2e85c8);
 }
 
-.mobile-info-box__edit-row--fjernvarme {
-  margin-top: 8px;
-}
-
-.mobile-info-box__radio-group {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  white-space: nowrap;
-}
 
 .mobile-info-box__edit-actions {
   display: flex;

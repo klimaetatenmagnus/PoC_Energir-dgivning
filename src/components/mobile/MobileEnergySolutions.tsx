@@ -1428,6 +1428,16 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                     </li>
                   );
                 })}
+                <li className="mobile-energy-solutions__tiltak-item mobile-energy-solutions__tiltak-item--fjernvarme">
+                  <div className="mobile-energy-solutions__tiltak-content">
+                    <PktCheckbox
+                      id="tiltak-fjernvarme-mobil"
+                      label="Fjernvarme"
+                      checked={fjernvarme}
+                      onChange={() => setFjernvarme(!fjernvarme)}
+                    />
+                  </div>
+                </li>
               </ul>
             )}
           </div>
@@ -1467,7 +1477,6 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               showCompareButton={!!districtStats}
               completedSavings={completedSavingsKWh}
               fjernvarme={fjernvarme}
-              onFjernvarmeChange={setFjernvarme}
               onCompareClick={() => {
                 closeInfoBox();
                 // Åpne bydelssammenligning etter exit-animasjonen

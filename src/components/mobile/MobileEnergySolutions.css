@@ -399,6 +399,12 @@
   border-bottom: none;
 }
 
+.mobile-energy-solutions__tiltak-item--fjernvarme {
+  border-top: 2px solid var(--pkt-color-brand-neutrals-200, #e5e5e5);
+  margin-top: 4px;
+  padding-top: 0.875rem;
+}
+
 .mobile-energy-solutions__tiltak-item:hover {
   background-color: var(--pkt-color-brand-neutrals-100, #f9f9f9);
 }

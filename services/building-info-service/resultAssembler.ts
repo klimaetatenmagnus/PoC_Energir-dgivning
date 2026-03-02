@@ -132,6 +132,22 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
     if (csvData && LOG) {
       debugLog(`📊 CSV-data funnet via adresse "${adresse.adressetekst}"`);
     }
+
+    // Hvis CSV-treffet er garasje/uthus, bruk søsken-bolig i stedet
+    if (csvData) {
+      const code = parseInt(csvData.bygningstype3siffer, 10);
+      if (code >= 180) {
+        const sibling = csvService.findResidentialSibling(adresse.adressetekst);
+        if (sibling) {
+          if (LOG) {
+            debugLog(`🏠 CSV-treff var garasje (type ${code}) – bruker søsken-bolig: ${sibling.gateAdresse} (${sibling.bygningsNr})`);
+          }
+          csvData = sibling;
+        } else if (LOG) {
+          debugLog(`⚠️  CSV-treff var garasje (type ${code}) – ingen søsken-bolig funnet`);
+        }
+      }
+    }
   }
 
   if (!csvData) {

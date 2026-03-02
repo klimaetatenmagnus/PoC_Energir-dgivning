@@ -565,6 +565,16 @@ export async function resolveBuildingData(
             `⚠️  CSV returnerte garasje/uthus (type ${code}) – csvPreferredBuildingNr settes ikke`
           );
         }
+        // Sjekk om søskenadresse (f.eks. 20B) har en bolig
+        const sibling = csvService.findResidentialSibling(adr.adressetekst);
+        if (sibling) {
+          csvPreferredBuildingNr = sibling.bygningsNr;
+          if (LOG) {
+            debugLog(
+              `🏠 Fant søsken-bolig: ${sibling.gateAdresse} (${sibling.bygningsNr}, ${sibling.bruksarealTotalt} m²)`
+            );
+          }
+        }
       } else {
         csvPreferredBuildingNr = csvData.bygningsNr;
       }
@@ -1145,7 +1155,7 @@ export async function resolveBuildingData(
   const improvedCandidates =
     eligibleBuildings.length > 0 ? eligibleBuildings : allBygningsInfo;
 
-  if (USE_IMPROVED_SELECTION) {
+  if (USE_IMPROVED_SELECTION && !selectedBygg) {
     try {
       const improved = selectBuildingImproved(adresse, improvedCandidates, {
         preferExpectedBuilding: true,
@@ -1335,17 +1345,29 @@ export async function resolveBuildingData(
           );
         }
 
-        if (matchendeBruksenhet.bruksarealM2) {
-          bygg.bruksarealM2 = matchendeBruksenhet.bruksarealM2;
+        // Ikke overstyr bygningsdata med garasje/uthus-bruksenhet
+        const erGarasjeBruksenhet = matchendeBruksenhet.bruksenhetstypeNavn &&
+          /garasje|uthus|anneks/i.test(matchendeBruksenhet.bruksenhetstypeNavn);
+
+        if (erGarasjeBruksenhet) {
           if (LOG) {
             debugLog(
-              `  📏 Setter bygg-areal til bruksenhet-areal: ${bygg.bruksarealM2} m²`
+              `  ⚠️  Bruksenhet er garasje/uthus ("${matchendeBruksenhet.bruksenhetstypeNavn}") – overskriver ikke bygningsdata`
             );
           }
-        }
+        } else {
+          if (matchendeBruksenhet.bruksarealM2) {
+            bygg.bruksarealM2 = matchendeBruksenhet.bruksarealM2;
+            if (LOG) {
+              debugLog(
+                `  📏 Setter bygg-areal til bruksenhet-areal: ${bygg.bruksarealM2} m²`
+              );
+            }
+          }
 
-        if (matchendeBruksenhet.bruksenhetstypeNavn) {
-          bygg.bygningstypeBeskrivelse = matchendeBruksenhet.bruksenhetstypeNavn;
+          if (matchendeBruksenhet.bruksenhetstypeNavn) {
+            bygg.bygningstypeBeskrivelse = matchendeBruksenhet.bruksenhetstypeNavn;
+          }
         }
       }
     }

@@ -700,6 +700,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               onShowInfoModalChange={setShowInfoModal}
               onCompletedSavingsChange={setCompletedSavings}
               fjernvarme={fjernvarme}
+              onFjernvarmeChange={setFjernvarme}
             />
           </aside>
 
@@ -773,7 +774,6 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               onShowInfo={() => setShowInfoModal(true)}
               completedSavings={completedSavings}
               fjernvarme={fjernvarme}
-              onFjernvarmeChange={setFjernvarme}
             />
           </aside>
           </div>

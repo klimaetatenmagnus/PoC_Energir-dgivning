@@ -650,6 +650,13 @@
   background-color: var(--pkt-color-brand-neutrals-50, #fafafa);
 }
 
+/* Fjernvarme-element med visuell separator */
+.energy-solution-buttons__item--fjernvarme {
+  border-top: 2px solid var(--esb-border-color);
+  margin-top: 4px;
+  padding-top: 0.875rem;
+}
+
 /* Punkt RadioButton styling tilpasninger */
 .energy-solution-buttons__varmepumpe-option .pkt-radiobutton {
   --pkt-radiobutton-label-font-weight: 400;

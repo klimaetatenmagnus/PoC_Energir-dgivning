@@ -204,14 +204,6 @@
   pointer-events: auto;
 }
 
-/* Arrow icon at bottom of circle */
-.prosessen-videre__step-arrow {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
 /* Card inner spacing */
 .prosessen-videre__step-card-title {
   margin-bottom: var(--pkt-spacing-8, 8px);

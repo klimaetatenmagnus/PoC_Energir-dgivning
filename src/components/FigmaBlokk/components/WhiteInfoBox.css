@@ -191,21 +191,6 @@
   border-bottom-color: var(--pkt-color-brand-blue-600, #2e85c8);
 }
 
-.white-info-box__edit-row--fjernvarme {
-  margin-top: 8px;
-  flex-wrap: wrap;
-}
-
-.white-info-box__edit-row--fjernvarme .white-info-box__edit-label {
-  width: 100%;
-}
-
-.white-info-box__radio-group {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  white-space: nowrap;
-}
 
 /* ==========================================================================
    Energiforbruk-blokk
@@ -292,6 +277,17 @@
   font-weight: 500;
   letter-spacing: -0.2px;
   color: var(--wib-text-primary);
+}
+
+.white-info-box__energy-amount--new {
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  font-weight: 600;
+}
+
+.white-info-box__consumption-arrow {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
 }
 
 .white-info-box__energy-unit {
@@ -638,10 +634,6 @@
 
 .platform-windows.platform-windows-scaled .white-info-box__key-info--edit-with-savings .white-info-box__edit-row {
   line-height: 1.6rem;
-}
-
-.platform-windows.platform-windows-scaled .white-info-box__key-info--edit-with-savings .white-info-box__edit-row--fjernvarme {
-  margin-top: 4px;
 }
 
 .platform-windows.platform-windows-scaled .white-info-box__key-info--edit-with-savings .white-info-box__edit-actions {

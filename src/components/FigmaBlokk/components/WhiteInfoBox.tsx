@@ -4,7 +4,6 @@ import {
   PktIcon,
   PktButton,
   PktAlert,
-  PktRadioButton,
 } from '@oslokommune/punkt-react';
 import { LocationPin } from './LocationPin';
 import {
@@ -196,7 +195,6 @@ interface WhiteInfoBoxProps {
   onShowInfo?: () => void;
   completedSavings?: number;
   fjernvarme?: boolean;
-  onFjernvarmeChange?: (v: boolean) => void;
 }
 
 export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
@@ -221,7 +219,6 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   onShowInfo,
   completedSavings = 0,
   fjernvarme,
-  onFjernvarmeChange,
 }) => {
   // State for delayed height expansion
   const [expandHeight, setExpandHeight] = React.useState(false);
@@ -487,50 +484,28 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   
   // Track if user has manually edited energy consumption
   const [hasUserEditedEnergy, setHasUserEditedEnergy] = React.useState(false);
-  const savedEnergyDisplayValue = React.useMemo(() => {
-    const numeric = Number(savedEnergiforbruk || '0');
-    if (!Number.isFinite(numeric)) {
-      return '0';
-    }
+  // Formatert utgangspunkt-verdi (inkluderer gjennomførte oppgraderinger)
+  const baselineEnergyDisplayValue = React.useMemo(() => {
+    const numeric = adjustedEnergyConsumption;
+    if (!Number.isFinite(numeric)) return '0';
     if (hasEnovaRating && !isApartmentBuilding) {
       return roundToNearestThousand(numeric);
     }
     return formatNumberWithSpaces(Math.round(numeric));
-  }, [savedEnergiforbruk, hasEnovaRating, isApartmentBuilding]);
+  }, [adjustedEnergyConsumption, hasEnovaRating, isApartmentBuilding]);
 
-  // Rolling digits for energiforbruk (animeres ved gjennomførte tiltak)
-  const [displayedConsumption, setDisplayedConsumption] = React.useState(() => Math.round(Number(savedEnergiforbruk || '0')));
-  const consumptionAnimationFrame = React.useRef<number | null>(null);
-  const previousConsumptionRef = React.useRef(Math.round(Number(savedEnergiforbruk || '0')));
-
-  React.useEffect(() => {
-    const target = adjustedEnergyConsumption;
-    if (prefersReducedMotion || (completedSavings ?? 0) <= 0) {
-      previousConsumptionRef.current = target;
-      setDisplayedConsumption(target);
-      return;
+  // Ny verdi etter "Nye oppgraderinger" (vises med pil)
+  const newConsumptionAfterTiltak = React.useMemo(() => {
+    if (!totalEnergySavings || totalEnergySavings <= 0) return null;
+    const newValue = Math.max(0, adjustedEnergyConsumption - totalEnergySavings);
+    if (!Number.isFinite(newValue)) return null;
+    if (hasEnovaRating && !isApartmentBuilding) {
+      return roundToNearestThousand(roundToNearestThousandValue(newValue));
     }
-    const startValue = previousConsumptionRef.current;
-    if (startValue === target) return;
-    const duration = 900;
-    const startTime = performance.now();
-    const tick = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(1, elapsed / duration);
-      const easedProgress = 1 - Math.pow(1 - progress, 3);
-      setDisplayedConsumption(Math.round(startValue + (target - startValue) * easedProgress));
-      if (progress < 1) {
-        consumptionAnimationFrame.current = requestAnimationFrame(tick);
-      } else {
-        previousConsumptionRef.current = target;
-        consumptionAnimationFrame.current = null;
-      }
-    };
-    consumptionAnimationFrame.current = requestAnimationFrame(tick);
-    return () => {
-      if (consumptionAnimationFrame.current !== null) cancelAnimationFrame(consumptionAnimationFrame.current);
-    };
-  }, [adjustedEnergyConsumption, prefersReducedMotion, completedSavings]);
+    return formatNumberWithSpaces(Math.round(newValue));
+  }, [adjustedEnergyConsumption, totalEnergySavings, hasEnovaRating, isApartmentBuilding]);
+
+  const shouldShowNewConsumption = newConsumptionAfterTiltak !== null && newConsumptionAfterTiltak !== baselineEnergyDisplayValue;
 
   // Update saved energy consumption when estimated value changes (only if user hasn't edited it)
   // VIKTIG: Nøkkelinformasjon bruker ALLTID TEK-estimering, uavhengig av Enova-data.
@@ -1050,14 +1025,14 @@ const tiltakPreview = selectedTiltakSlug ? (
                     </div>
                     <span className="white-info-box__energy-label">Estimert energiforbruk:</span>
                     <div className="white-info-box__energy-value">
-                      {(completedSavings ?? 0) > 0 ? (
-                        <RollingDigitsDisplay
-                          value={displayedConsumption}
-                          prefersReducedMotion={prefersReducedMotion}
-                          className="white-info-box__rolling-digits--consumption"
-                        />
-                      ) : (
-                        <span className="white-info-box__energy-amount">{savedEnergyDisplayValue}</span>
+                      <span className="white-info-box__energy-amount">{baselineEnergyDisplayValue}</span>
+                      {shouldShowNewConsumption && (
+                        <>
+                          <span className="white-info-box__consumption-arrow">{'\u2192'}</span>
+                          <span className="white-info-box__energy-amount white-info-box__energy-amount--new">
+                            {newConsumptionAfterTiltak}
+                          </span>
+                        </>
                       )}
                       <span className="white-info-box__energy-unit">kWh/år</span>
                     </div>
@@ -1136,25 +1111,6 @@ const tiltakPreview = selectedTiltakSlug ? (
                         setHasUserEditedEnergy(true);
                       }}
                     />
-                  </div>
-                  <div className="white-info-box__edit-row white-info-box__edit-row--fjernvarme">
-                    <span className="white-info-box__edit-label">Har du fjernvarme?</span>
-                    <div className="white-info-box__radio-group">
-                      <PktRadioButton
-                        id="fjernvarme-nei"
-                        name="fjernvarme-desktop"
-                        label="Nei"
-                        checked={!fjernvarme}
-                        onChange={() => onFjernvarmeChange?.(false)}
-                      />
-                      <PktRadioButton
-                        id="fjernvarme-ja"
-                        name="fjernvarme-desktop"
-                        label="Ja"
-                        checked={fjernvarme === true}
-                        onChange={() => onFjernvarmeChange?.(true)}
-                      />
-                    </div>
                   </div>
                   <div className="white-info-box__edit-actions">
                     <PktButton
