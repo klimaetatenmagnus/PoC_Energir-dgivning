@@ -8,8 +8,8 @@
  * - ImprovementCard: Din posisjon/percentil
  */
 
-import React, { useState, useMemo, useRef } from 'react';
-import { PktButton, PktIcon, PktSelect } from '@oslokommune/punkt-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { PktAlert, PktButton, PktIcon, PktSelect } from '@oslokommune/punkt-react';
 import type { DistrictStats, EnergyGrade, BuildingTypeCategory } from '../../../types/districtStatistics';
 import {
   calculatePercentile,
@@ -89,6 +89,15 @@ export const MobileDistrictComparison: React.FC<MobileDistrictComparisonProps> =
   const [isAnimating, setIsAnimating] = useState(false);
   const [incomingIndex, setIncomingIndex] = useState<number | null>(null);
   const touchStartX = useRef<number | null>(null);
+
+  // Vis energiattest-varsel når modalen åpnes med Enova-data
+  const [showEnovaNotice, setShowEnovaNotice] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && isUsingEnovaBulkData) {
+      setShowEnovaNotice(true);
+    }
+  }, [isOpen, isUsingEnovaBulkData]);
 
   // Bestem riktig boligtekst basert pa kategori
   const buildingTypeText = buildingTypeCategory === 'blokk' ? 'leiligheter' : 'eneboliger';
@@ -278,6 +287,29 @@ export const MobileDistrictComparison: React.FC<MobileDistrictComparisonProps> =
 
         {/* Karusell-innhold med chevron-navigasjon */}
         <div className="mobile-district-carousel">
+          {showEnovaNotice && isUsingEnovaBulkData && (
+            <div className="mobile-district-enova-notice-overlay">
+              <PktAlert
+                title="Energiattest funnet!"
+                skin="info"
+                closeAlert
+                onClose={() => setShowEnovaNotice(false)}
+              >
+                <p>
+                  Vi ser at boligen din er registrert med energiattest fra Enova.
+                  For å gi en mest mulig rettferdig sammenligning mellom deg og
+                  naboene dine, brukes forbruksdata fra denne attesten i
+                  sammenligningen.
+                </p>
+                <p>
+                  Verdiene du ser her for energikarakter og energiforbruk vil
+                  sannsynligvis avvike noe fra estimatene som brukes ellers i
+                  løsningen.
+                </p>
+              </PktAlert>
+            </div>
+          )}
+
           {/* Venstre chevron - vises kun når det er kort til venstre */}
           {activeIndex > 0 && (
             <button

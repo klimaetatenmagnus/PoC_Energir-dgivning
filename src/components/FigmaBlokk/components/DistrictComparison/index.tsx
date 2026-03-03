@@ -8,8 +8,8 @@
  * Merk: Ekspandering håndteres av PktAccordion i WhiteInfoBox
  */
 
-import React, { useState, useMemo } from 'react';
-import { PktButton, PktIcon, PktSelect } from '@oslokommune/punkt-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { PktAlert, PktIcon, PktSelect } from '@oslokommune/punkt-react';
 import type { DistrictStats, EnergyGrade, BuildingTypeCategory } from '../../../../types/districtStatistics';
 import {
   calculatePercentile,
@@ -85,6 +85,19 @@ export const DistrictComparisonCarousel: React.FC<DistrictComparisonCarouselProp
   const buildingTypeText = buildingTypeCategory === 'blokk' ? 'leiligheter' : 'eneboliger';
   const [activeIndex, setActiveIndex] = useState(0);
 
+  // Vis energiattest-varsel når Enova-data brukes
+  const [showEnovaNotice, setShowEnovaNotice] = useState(isUsingEnovaBulkData);
+
+  // Reset varselet når datakilden endres (nytt adresseoppslag)
+  useEffect(() => {
+    setShowEnovaNotice(isUsingEnovaBulkData);
+  }, [isUsingEnovaBulkData]);
+
+  // Animasjonstilstand for slide-overgang mellom kort
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [incomingIndex, setIncomingIndex] = useState<number | null>(null);
+
   // Toggle mellom bydel og delbydel-visning (bydel er default)
   const hasSubdistrict = Boolean(subdistrictName && subdistrictStats);
   const [comparisonLevel, setComparisonLevel] = useState<ComparisonLevel>('district');
@@ -144,15 +157,30 @@ export const DistrictComparisonCarousel: React.FC<DistrictComparisonCarouselProp
     return null;
   }
 
+  // Navigasjon til nytt kort med slide-animasjon
+  const goToCard = (newIndex: number, direction: 'left' | 'right') => {
+    if (isAnimating || newIndex === activeIndex) return;
+    setSlideDirection(direction);
+    setIncomingIndex(newIndex);
+    setIsAnimating(true);
+
+    setTimeout(() => {
+      setActiveIndex(newIndex);
+      setIncomingIndex(null);
+      setIsAnimating(false);
+      setSlideDirection(null);
+    }, 300);
+  };
+
   const goToPrevious = () => {
-    setActiveIndex((prev) => (prev === 0 ? CARDS.length - 1 : prev - 1));
+    goToCard(activeIndex === 0 ? CARDS.length - 1 : activeIndex - 1, 'right');
   };
 
   const goToNext = () => {
-    setActiveIndex((prev) => (prev === CARDS.length - 1 ? 0 : prev + 1));
+    goToCard(activeIndex === CARDS.length - 1 ? 0 : activeIndex + 1, 'left');
   };
 
-  const renderActiveCard = () => {
+  const renderCard = (index: number) => {
     const {
       currentPercentile,
       percentageDifferenceFromAvg,
@@ -164,7 +192,7 @@ export const DistrictComparisonCarousel: React.FC<DistrictComparisonCarouselProp
       hasActiveMeasures,
     } = calculatedData;
 
-    switch (CARDS[activeIndex].id) {
+    switch (CARDS[index].id) {
       case 'comparison':
         return (
           <ComparisonCard
@@ -209,46 +237,18 @@ export const DistrictComparisonCarousel: React.FC<DistrictComparisonCarouselProp
     setComparisonLevel(event.target.value as ComparisonLevel);
   };
 
-  return (
-    <div className="district-carousel">
-      {/* Karusell-navigasjon */}
-      <div className="district-carousel__nav">
-        <PktButton
-          skin="tertiary"
-          size="small"
-          variant="icon-only"
-          iconName="chevron-left"
-          onClick={goToPrevious}
-          aria-label="Forrige kort"
-          className="district-carousel__nav-btn"
-        />
-
-        <div className="district-carousel__nav-info">
-          <span className="district-carousel__nav-title">
-            <PktIcon name={CARDS[activeIndex].iconName} className="district-carousel__nav-icon" />
-            {CARDS[activeIndex].title}
-          </span>
-          <span className="district-carousel__nav-indicator">
-            {activeIndex + 1} / {CARDS.length}
-          </span>
-        </div>
-
-        <PktButton
-          skin="tertiary"
-          size="small"
-          variant="icon-only"
-          iconName="chevron-right"
-          onClick={goToNext}
-          aria-label="Neste kort"
-          className="district-carousel__nav-btn"
-        />
+  // Rendrer én komplett slide: tittel, dropdown og kort-innhold
+  const renderCardSlide = (index: number) => (
+    <>
+      <div className="district-carousel__card-header">
+        <PktIcon name={CARDS[index].iconName} className="district-carousel__card-header-icon" />
+        <span className="district-carousel__card-header-title">{CARDS[index].title}</span>
+        <span className="district-carousel__card-header-indicator">{index + 1} / {CARDS.length}</span>
       </div>
-
-      {/* Dropdown for bydel/delbydel-valg */}
       {hasSubdistrict && (
         <div className="district-carousel__level-select">
           <PktSelect
-            id="district-level-select"
+            id={`district-level-select-${index}`}
             name="district-level"
             label=" "
             value={comparisonLevel}
@@ -260,10 +260,71 @@ export const DistrictComparisonCarousel: React.FC<DistrictComparisonCarouselProp
           </PktSelect>
         </div>
       )}
+      <div className="district-carousel__card-body">
+        {renderCard(index)}
+      </div>
+    </>
+  );
 
-      {/* Karusell-innhold */}
-      <div className="district-carousel__content">
-        {renderActiveCard()}
+  return (
+    <div className="district-carousel">
+      {/* Karusell med animerte slides */}
+      <div className="district-carousel__stage">
+        {/* Chevron-navigasjon (absolutt posisjonert) */}
+        <button
+          className="district-carousel__chevron district-carousel__chevron--left"
+          onClick={goToPrevious}
+          aria-label="Forrige kort"
+        >
+          <PktIcon name="chevron-thin-left" />
+        </button>
+        <button
+          className="district-carousel__chevron district-carousel__chevron--right"
+          onClick={goToNext}
+          aria-label="Neste kort"
+        >
+          <PktIcon name="chevron-thin-right" />
+        </button>
+
+        {/* Energiattest-varsel overlay */}
+        {showEnovaNotice && isUsingEnovaBulkData && (
+          <div className="district-carousel__enova-notice-overlay">
+            <PktAlert
+              title="Energiattest funnet!"
+              skin="info"
+              closeAlert
+              onClose={() => setShowEnovaNotice(false)}
+            >
+              <p>
+                Vi ser at boligen din er registrert med energiattest fra Enova.
+                For å gi en mest mulig rettferdig sammenligning mellom deg og
+                naboene dine, brukes forbruksdata fra denne attesten i
+                sammenligningen.
+              </p>
+              <p>
+                Verdiene du ser her for energikarakter og energiforbruk vil
+                sannsynligvis avvike noe fra estimatene som brukes ellers i
+                løsningen.
+              </p>
+            </PktAlert>
+          </div>
+        )}
+
+        {/* Animerte kort */}
+        <div className="district-carousel__cards-container">
+          <div className={`district-carousel__card district-carousel__card--outgoing${
+            slideDirection === 'left' ? ' district-carousel__card--exit-left' : ''
+          }${slideDirection === 'right' ? ' district-carousel__card--exit-right' : ''}`}>
+            {renderCardSlide(activeIndex)}
+          </div>
+          {isAnimating && incomingIndex !== null && (
+            <div className={`district-carousel__card district-carousel__card--incoming${
+              slideDirection === 'left' ? ' district-carousel__card--enter-left' : ''
+            }${slideDirection === 'right' ? ' district-carousel__card--enter-right' : ''}`}>
+              {renderCardSlide(incomingIndex)}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Dot-indikatorer */}
@@ -274,7 +335,11 @@ export const DistrictComparisonCarousel: React.FC<DistrictComparisonCarouselProp
             className={`district-carousel__dot ${
               index === activeIndex ? 'district-carousel__dot--active' : ''
             }`}
-            onClick={() => setActiveIndex(index)}
+            onClick={() => {
+              if (index !== activeIndex) {
+                goToCard(index, index > activeIndex ? 'left' : 'right');
+              }
+            }}
             aria-label={`Gå til ${card.title}`}
           />
         ))}
