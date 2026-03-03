@@ -24,15 +24,14 @@ import {
 // ============================================
 
 const EXCEL_ENERGY_INTENSITY: Record<string, Record<BuildingType, number>> = {
-  'TEK69': { småhus: 240.2, blokk: 222.1 },
-  'TEK87': { småhus: 201.0, blokk: 171.4 },
-  'TEK97': { småhus: 166.7, blokk: 153.8 },
-  'TEK07': { småhus: 129.2, blokk: 112.5 },
-  'TEK10': { småhus: 121.0, blokk: 104.0 },
-  'TEK17': { småhus: 121.0, blokk: 104.0 },
-  // For eldre bygg, bruk TEK69 + 10%
-  'TEK49': { småhus: 264.2, blokk: 244.3 },
-  'eldre': { småhus: 264.2, blokk: 244.3 },
+  'TEK69': { småhus: 222.26, blokk: 206.06 },
+  'TEK87': { småhus: 186.96, blokk: 160.21 },
+  'TEK97': { småhus: 156.51, blokk: 144.99 },
+  'TEK07': { småhus: 122.93, blokk: 108.06 },
+  'TEK10': { småhus: 115.55, blokk: 100.41 },
+  'TEK17': { småhus: 115.55, blokk: 100.41 },
+  'TEK49': { småhus: 234.87, blokk: 225.4 },
+  'eldre': { småhus: 335.86, blokk: 272.5 },
 };
 
 // Nye energikarakter-grenser UTEN BRA-justeringsfaktor

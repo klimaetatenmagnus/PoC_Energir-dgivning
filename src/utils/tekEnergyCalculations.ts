@@ -24,15 +24,15 @@ export type BuildingType = 'småhus' | 'blokk';
  * for ulike TEK-perioder og bygningstyper.
  */
 const ENERGY_INTENSITY_BY_TEK: Record<string, Record<BuildingType, number>> = {
-  'TEK17': { småhus: 121.0, blokk: 104.0 },
-  'TEK10': { småhus: 121.0, blokk: 104.0 },
-  'TEK07': { småhus: 129.2, blokk: 112.5 },
-  'TEK7':  { småhus: 129.2, blokk: 112.5 }, // Alias for TEK07
-  'TEK97': { småhus: 166.7, blokk: 153.8 },
-  'TEK87': { småhus: 201.0, blokk: 171.4 },
-  'TEK69': { småhus: 240.2, blokk: 222.1 },
-  'TEK49': { småhus: 240.2, blokk: 222.1 }, // Samme som TEK69 (eldste i Multiconsult-modell)
-  'eldre': { småhus: 240.2, blokk: 222.1 }, // Samme som TEK69 (eldste i Multiconsult-modell)
+  'TEK17': { småhus: 115.55, blokk: 100.41 },
+  'TEK10': { småhus: 115.55, blokk: 100.41 },
+  'TEK07': { småhus: 122.93, blokk: 108.06 },
+  'TEK7':  { småhus: 122.93, blokk: 108.06 }, // Alias for TEK07
+  'TEK97': { småhus: 156.51, blokk: 144.99 },
+  'TEK87': { småhus: 186.96, blokk: 160.21 },
+  'TEK69': { småhus: 222.26, blokk: 206.06 },
+  'TEK49': { småhus: 234.87, blokk: 225.4 },
+  'eldre': { småhus: 335.86, blokk: 272.5 },
 };
 
 /**
