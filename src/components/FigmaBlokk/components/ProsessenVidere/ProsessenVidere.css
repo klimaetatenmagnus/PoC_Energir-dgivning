@@ -9,7 +9,7 @@
   --prosessen-grid-top-factor: 18;
   --prosessen-grid-top-max: 180px;
   --prosessen-grid-side: var(--pkt-spacing-32, 32px);
-  --prosessen-grid-bottom: var(--pkt-spacing-48, 48px);
+  --prosessen-grid-bottom: var(--pkt-spacing-24, 24px);
   --prosessen-step-margin-bottom: var(--pkt-spacing-24, 24px);
   --prosessen-step-circle-size: 230px;
   --prosessen-step-card-width: 300px;
@@ -41,7 +41,7 @@
   --prosessen-grid-top-min: 96px;
   --prosessen-grid-top-factor: 12.5;
   --prosessen-grid-top-max: 132px;
-  --prosessen-grid-bottom: clamp(20px, calc(3 * var(--prosessen-scaled-vh)), 40px);
+  --prosessen-grid-bottom: clamp(16px, calc(3 * var(--prosessen-scaled-vh)), 24px);
   --prosessen-step-margin-bottom: var(--pkt-spacing-12, 12px);
   --prosessen-step-circle-size: 212px;
   --prosessen-step-card-width: 280px;
@@ -50,6 +50,7 @@
   --prosessen-step-icon-margin-bottom: var(--pkt-spacing-4, 4px);
   --prosessen-step-icon-max-width: 104px;
   --prosessen-step-icon-max-height: 88px;
+  --prosessen-grid-side: var(--pkt-spacing-48, 48px);
 }
 
 .prosessen-videre__scale-shell {
@@ -82,13 +83,27 @@
   transform: translateY(calc(100 * var(--prosessen-scaled-vh)));
 }
 
-/* Staggered exit delays per card (only when going to hidden) */
-.prosessen-videre--hidden .pkt-cell:nth-child(1) { transition: transform 0.8s ease-in-out; }
-.prosessen-videre--hidden .pkt-cell:nth-child(2) { transition: transform 0.8s ease-in-out 0.04s; }
-.prosessen-videre--hidden .pkt-cell:nth-child(3) { transition: transform 0.8s ease-in-out 0.08s; }
-.prosessen-videre--hidden .pkt-cell:nth-child(4) { transition: transform 0.8s ease-in-out 0.12s; }
-.prosessen-videre--hidden .pkt-cell:nth-child(5) { transition: transform 0.8s ease-in-out 0.16s; }
-.prosessen-videre--hidden .pkt-cell:nth-child(6) { transition: transform 0.8s ease-in-out 0.20s; }
+/* Staggered exit delays per card (only when going to hidden).
+   CTA button (child 7) exits first, then steps 1–6 follow with 0.04s stagger. */
+.prosessen-videre--hidden .pkt-cell:nth-child(7) { transition: transform 0.8s ease-in-out; }
+.prosessen-videre--hidden .pkt-cell:nth-child(1) { transition: transform 0.8s ease-in-out 0.04s; }
+.prosessen-videre--hidden .pkt-cell:nth-child(2) { transition: transform 0.8s ease-in-out 0.08s; }
+.prosessen-videre--hidden .pkt-cell:nth-child(3) { transition: transform 0.8s ease-in-out 0.12s; }
+.prosessen-videre--hidden .pkt-cell:nth-child(4) { transition: transform 0.8s ease-in-out 0.16s; }
+.prosessen-videre--hidden .pkt-cell:nth-child(5) { transition: transform 0.8s ease-in-out 0.20s; }
+.prosessen-videre--hidden .pkt-cell:nth-child(6) { transition: transform 0.8s ease-in-out 0.24s; }
+
+/* Staggered enter delay – CTA button enters last (steps 1–6 enter simultaneously) */
+.prosessen-videre .pkt-cell:nth-child(7) {
+  transition: transform 0.8s ease-in-out 0.24s;
+}
+
+/* CTA button cell – centered under step 5.
+   Grid gap (24px) provides spacing above; --prosessen-grid-bottom provides equal spacing below. */
+.prosessen-videre__cta-cell {
+  display: flex;
+  justify-content: center;
+}
 
 /* Header */
 .prosessen-videre__header {
@@ -193,7 +208,11 @@
   transition: opacity 0.25s ease;
 }
 
-/* Crossfade on hover */
+/* Crossfade on hover – z-index ensures the expanded card renders above icons in the row below */
+.prosessen-videre__step:hover {
+  z-index: 1;
+}
+
 .prosessen-videre__step:hover .prosessen-videre__step-circle {
   opacity: 0;
   pointer-events: none;

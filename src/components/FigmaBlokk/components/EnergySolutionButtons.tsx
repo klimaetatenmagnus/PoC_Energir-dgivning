@@ -19,6 +19,12 @@ import './EnergySolutionButtons.css';
 
 const ENERGY_RATING_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 
+/** Insert soft hyphens in known compound words for better line-breaking */
+const softHyphenate = (text: string): string =>
+  text
+    .replace('Temperaturstyring', 'Temperatur\u00ADstyring')
+    .replace('Varmepumpe', 'Varme\u00ADpumpe');
+
 // Varmepumpe-typer med energibesparelsesdata (fra CSV)
 const VARMEPUMPE_TYPES = [
   { id: 'luft-luft', label: 'Luft-luft', description: 'Rimeligst, enkel installasjon' },
@@ -596,7 +602,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                     <div className="energy-solution-buttons__item-content">
                       <PktCheckbox
                         id={`tiltak-${tiltak.id}`}
-                        label={tiltak.title}
+                        label={softHyphenate(tiltak.title)}
                         checked={isSelected}
                         onChange={() => toggleChecked(tiltak.id)}
                       />
@@ -629,7 +635,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                     <div className="energy-solution-buttons__item-content energy-solution-buttons__item-content--with-chevron">
                       <PktCheckbox
                         id={`tiltak-${tiltak.id}`}
-                        label={tiltak.title}
+                        label={softHyphenate(tiltak.title)}
                         checked={isSelected}
                         onChange={() => {
                           toggleChecked(tiltak.id);
@@ -726,7 +732,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                       <div className="energy-solution-buttons__item-content">
                         <PktCheckbox
                           id={`tiltak-completed-${tiltak.id}`}
-                          label={tiltak.title}
+                          label={softHyphenate(tiltak.title)}
                           checked={isCompleted}
                           onChange={() => toggleCompleted(tiltak.id)}
                         />
@@ -759,7 +765,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                       <div className="energy-solution-buttons__item-content energy-solution-buttons__item-content--with-chevron">
                         <PktCheckbox
                           id={`tiltak-completed-${tiltak.id}`}
-                          label={tiltak.title}
+                          label={softHyphenate(tiltak.title)}
                           checked={isCompleted}
                           onChange={() => {
                             toggleCompleted(tiltak.id);

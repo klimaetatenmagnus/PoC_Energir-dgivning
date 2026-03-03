@@ -1,4 +1,5 @@
 import React from 'react';
+import { PktButton } from '@oslokommune/punkt-react';
 import { Document, Blokk, PersonPresentingGraph, PersonPresentingQuestion, Shovel, Trees } from './Ikoner';
 import { StepCard } from './StepCard';
 import './ProsessenVidere.css';
@@ -38,7 +39,7 @@ const steps = [
   {
     number: 5,
     text: 'Undersøk støtteordninger',
-    hoverText: 'Det finnes støtteordninger for flere energitiltak - fra både Oslo kommune og Enova. Aktuelle støtteordninger er nevnt under informasjonen for hvert tiltak. Sjekk mulighetene tidlig i planleggingen, så du vet hva som kan være aktuelt for din bolig.',
+    hoverText: null, // handled specially for link
     icon: <Document />,
   },
   {
@@ -53,6 +54,17 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
   showProcess,
   isGulliste = false
 }) => {
+  // Build hover text for step 5 (contains a link)
+  const step5HoverText = (
+    <>
+      Det finnes støtteordninger for flere energitiltak - fra både Oslo kommune og Enova. Aktuelle støtteordninger er nevnt under informasjonen for hvert tiltak. Sjekk mulighetene tidlig i planleggingen, så du vet hva som kan være aktuelt for din bolig.
+      <span style={{ display: 'block', marginTop: '10px' }}>
+        Se hva du kan få støtte til på{' '}
+        <a href="https://klimatilskudd.no" target="_blank" rel="noopener noreferrer">klimatilskudd.no</a>.
+      </span>
+    </>
+  );
+
   // Build hover text for step 2 (contains a link and conditional gulliste text)
   const step2HoverText = (
     <>
@@ -82,11 +94,21 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
               <StepCard
                 number={step.number}
                 text={step.text}
-                hoverText={step.number === 2 ? step2HoverText : step.hoverText}
+                hoverText={step.number === 2 ? step2HoverText : step.number === 5 ? step5HoverText : step.hoverText}
                 icon={step.icon}
               />
             </div>
           ))}
+          <div className="pkt-cell pkt-cell--span12 prosessen-videre__cta-cell">
+            <PktButton
+              skin="secondary"
+              size="small"
+              variant="label-only"
+              onClick={() => window.open('https://klimaoslo.no/sparstrom/', '_blank', 'noopener,noreferrer')}
+            >
+              Få flere energitips på klimaoslo.no/sparstrøm!
+            </PktButton>
+          </div>
         </section>
       </div>
     </div>

@@ -223,12 +223,20 @@
 .energy-solution-buttons__tabs .pkt-tabs__list {
   overflow-x: hidden;
   padding-right: 0.25rem;
+  display: flex;
+}
+
+.energy-solution-buttons__tabs .pkt-tabs__list > * {
+  flex: 1;
+  text-align: center;
 }
 
 /* Tillat flerlinjet tab-tekst */
 .energy-solution-buttons__tabs .pkt-tabs__button {
   white-space: normal;
   text-align: center;
+  justify-content: center;
+  width: 100%;
   line-height: 1.3;
 }
 
