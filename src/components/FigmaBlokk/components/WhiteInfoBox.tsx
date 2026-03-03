@@ -494,6 +494,40 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     return formatNumberWithSpaces(Math.round(numeric));
   }, [adjustedEnergyConsumption, hasEnovaRating, isApartmentBuilding]);
 
+  // Rolling digits for energiforbruk (animeres ved gjennomførte tiltak)
+  const [displayedConsumption, setDisplayedConsumption] = React.useState(() => Math.round(adjustedEnergyConsumption));
+  const consumptionAnimationFrame = React.useRef<number | null>(null);
+  const previousConsumptionRef = React.useRef(Math.round(adjustedEnergyConsumption));
+
+  React.useEffect(() => {
+    const target = Math.round(adjustedEnergyConsumption);
+    if (prefersReducedMotion || (completedSavings ?? 0) <= 0) {
+      previousConsumptionRef.current = target;
+      setDisplayedConsumption(target);
+      return;
+    }
+    const startValue = previousConsumptionRef.current;
+    if (startValue === target) return;
+    const duration = 900;
+    const startTime = performance.now();
+    const tick = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      setDisplayedConsumption(Math.round(startValue + (target - startValue) * easedProgress));
+      if (progress < 1) {
+        consumptionAnimationFrame.current = requestAnimationFrame(tick);
+      } else {
+        previousConsumptionRef.current = target;
+        consumptionAnimationFrame.current = null;
+      }
+    };
+    consumptionAnimationFrame.current = requestAnimationFrame(tick);
+    return () => {
+      if (consumptionAnimationFrame.current !== null) cancelAnimationFrame(consumptionAnimationFrame.current);
+    };
+  }, [adjustedEnergyConsumption, prefersReducedMotion, completedSavings]);
+
   // Ny verdi etter "Nye oppgraderinger" (vises med pil)
   const newConsumptionAfterTiltak = React.useMemo(() => {
     if (!totalEnergySavings || totalEnergySavings <= 0) return null;
@@ -1025,7 +1059,15 @@ const tiltakPreview = selectedTiltakSlug ? (
                     </div>
                     <span className="white-info-box__energy-label">Estimert energiforbruk:</span>
                     <div className="white-info-box__energy-value">
-                      <span className="white-info-box__energy-amount">{baselineEnergyDisplayValue}</span>
+                      {(completedSavings ?? 0) > 0 ? (
+                        <RollingDigitsDisplay
+                          value={displayedConsumption}
+                          prefersReducedMotion={prefersReducedMotion}
+                          className="white-info-box__rolling-digits--consumption"
+                        />
+                      ) : (
+                        <span className="white-info-box__energy-amount">{baselineEnergyDisplayValue}</span>
+                      )}
                       {shouldShowNewConsumption && (
                         <>
                           <span className="white-info-box__consumption-arrow">{'\u2192'}</span>
