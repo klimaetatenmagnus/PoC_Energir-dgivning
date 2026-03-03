@@ -100,7 +100,7 @@ async function finnTeigidFraGnrBnr(gnr: number, bnr: number): Promise<string | n
  * kulturminneregistreringer som tilfeldigvis overlapper eiendommen filtreres bort.
  */
 const GUL_LISTE_MAPPING_VERDIER = [
-  'Listefort kulturminne',
+  'Listeført kulturminne',
   'Regulert til bevaring',
 ];
 
