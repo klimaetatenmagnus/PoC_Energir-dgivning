@@ -101,7 +101,7 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
           ))}
           <div className="pkt-cell pkt-cell--span12 prosessen-videre__cta-cell">
             <PktButton
-              skin="secondary"
+              skin="primary"
               size="small"
               variant="label-only"
               onClick={() => window.open('https://klimaoslo.no/sparstrom/', '_blank', 'noopener,noreferrer')}

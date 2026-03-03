@@ -41,7 +41,7 @@
   --prosessen-grid-top-min: 96px;
   --prosessen-grid-top-factor: 12.5;
   --prosessen-grid-top-max: 132px;
-  --prosessen-grid-bottom: clamp(16px, calc(3 * var(--prosessen-scaled-vh)), 24px);
+  --prosessen-grid-bottom: var(--pkt-spacing-24, 24px);
   --prosessen-step-margin-bottom: var(--pkt-spacing-12, 12px);
   --prosessen-step-circle-size: 212px;
   --prosessen-step-card-width: 280px;
@@ -73,18 +73,22 @@
   pointer-events: auto;
 }
 
-/* Grid cells: base transition (no delay, used when entering) */
-.prosessen-videre .pkt-cell {
-  transition: transform 0.8s ease-in-out;
-}
+/* Staggered enter delays (hidden → visible): steps 1–6 then CTA last */
+.prosessen-videre .pkt-cell:nth-child(1) { transition: transform 0.8s ease-in-out; }
+.prosessen-videre .pkt-cell:nth-child(2) { transition: transform 0.8s ease-in-out 0.04s; }
+.prosessen-videre .pkt-cell:nth-child(3) { transition: transform 0.8s ease-in-out 0.08s; }
+.prosessen-videre .pkt-cell:nth-child(4) { transition: transform 0.8s ease-in-out 0.12s; }
+.prosessen-videre .pkt-cell:nth-child(5) { transition: transform 0.8s ease-in-out 0.16s; }
+.prosessen-videre .pkt-cell:nth-child(6) { transition: transform 0.8s ease-in-out 0.20s; }
+.prosessen-videre .pkt-cell:nth-child(7) { transition: transform 0.8s ease-in-out 0.24s; }
 
 /* Hidden: cells slide down */
 .prosessen-videre--hidden .pkt-cell {
   transform: translateY(calc(100 * var(--prosessen-scaled-vh)));
 }
 
-/* Staggered exit delays per card (only when going to hidden).
-   CTA button (child 7) exits first, then steps 1–6 follow with 0.04s stagger. */
+/* Staggered exit delays (visible → hidden): CTA first, then steps 1–6.
+   Must come AFTER enter rules so same-specificity selectors are overridden. */
 .prosessen-videre--hidden .pkt-cell:nth-child(7) { transition: transform 0.8s ease-in-out; }
 .prosessen-videre--hidden .pkt-cell:nth-child(1) { transition: transform 0.8s ease-in-out 0.04s; }
 .prosessen-videre--hidden .pkt-cell:nth-child(2) { transition: transform 0.8s ease-in-out 0.08s; }
@@ -93,16 +97,13 @@
 .prosessen-videre--hidden .pkt-cell:nth-child(5) { transition: transform 0.8s ease-in-out 0.20s; }
 .prosessen-videre--hidden .pkt-cell:nth-child(6) { transition: transform 0.8s ease-in-out 0.24s; }
 
-/* Staggered enter delay – CTA button enters last (steps 1–6 enter simultaneously) */
-.prosessen-videre .pkt-cell:nth-child(7) {
-  transition: transform 0.8s ease-in-out 0.24s;
-}
-
 /* CTA button cell – centered under step 5.
-   Grid gap (24px) provides spacing above; --prosessen-grid-bottom provides equal spacing below. */
+   Negative margin-top cancels step margin-bottom so only the grid gap remains above,
+   matching --prosessen-grid-bottom below. */
 .prosessen-videre__cta-cell {
   display: flex;
   justify-content: center;
+  margin-top: calc(-1 * var(--prosessen-step-margin-bottom));
 }
 
 /* Header */
