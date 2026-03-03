@@ -186,8 +186,9 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
     if (fjernvarme) {
       const rawByggeaarForTek = savedByggeaar || buildingData?.byggeaar?.toString() || buildingData?.csvData?.byggeaar;
       const byggeaarNum = rawByggeaarForTek ? Number(rawByggeaarForTek) : undefined;
-      if (byggeaarNum && !isNaN(byggeaarNum) && buildingType) {
-        const tekPeriod = calculateTEK(byggeaarNum);
+      if (buildingType) {
+        // calculateTEK håndterer ugyldig/manglende byggeår (gir TEK49)
+        const tekPeriod = calculateTEK(byggeaarNum && !isNaN(byggeaarNum) ? byggeaarNum : 0);
         return calculateEnergyRatingWithFjernvarme(consumptionNum, areaNum, buildingType, tekPeriod as TekPeriodInput, buildingType);
       }
     }

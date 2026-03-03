@@ -355,9 +355,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   }, [updatedBuildingData]);
 
   // TEK-periode for energibesparelses-oppslag
-  const tekPeriod: TekPeriodInput | null = useMemo(() => {
-    if (!buildingYear) return null;
-    return calculateTekPeriod(buildingYear);
+  // calculateTekPeriod håndterer ugyldig/manglende byggeår (gir TEK49)
+  const tekPeriod: TekPeriodInput = useMemo(() => {
+    return calculateTekPeriod(buildingYear || 0);
   }, [buildingYear]);
 
   // Estimert årlig energiforbruk
@@ -1177,11 +1177,11 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
           <PktTabs
             tabs={[
               {
-                text: 'Nye oppgraderinger',
+                text: 'Nye',
                 active: activeTab === 'nye',
               },
               {
-                text: 'Gjennomførte oppgraderinger',
+                text: 'Gjennomførte',
                 active: activeTab === 'gjennomforte',
               },
             ]}

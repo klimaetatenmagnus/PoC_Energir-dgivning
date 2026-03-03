@@ -202,9 +202,13 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
     }
   }
 
-  const csvByggeaar = csvData?.tattIBrukDato
+  const csvByggeaarRaw = csvData?.tattIBrukDato
     ? parseInt(csvData.tattIBrukDato.substring(0, 4))
     : null;
+  const csvByggeaar =
+    csvByggeaarRaw && csvByggeaarRaw > 1800 && csvByggeaarRaw < 2100
+      ? csvByggeaarRaw
+      : null;
 
   let finalBruksareal =
     csvData?.bruksarealTotalt || attest?.enovaBuildingData?.bruksareal || null;

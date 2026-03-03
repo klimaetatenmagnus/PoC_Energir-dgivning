@@ -223,8 +223,8 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         ? Number(buildingData.csvData.byggeaar)
         : undefined;
 
-    if (!byggeaarCandidate) return null;
-    return calculateTEK(byggeaarCandidate) as TekPeriodInput;
+    // calculateTEK håndterer ugyldig/manglende byggeår (gir TEK49)
+    return calculateTEK(byggeaarCandidate || 0) as TekPeriodInput;
   }, [buildingData]);
 
   // Boligtype for energibesparelses-beregninger (småhus eller blokk)
@@ -563,11 +563,11 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         <PktTabs
           tabs={[
             {
-              text: 'Nye oppgraderinger',
+              text: 'Nye',
               active: activeTab === 'nye',
             },
             {
-              text: 'Gjennomførte oppgraderinger',
+              text: 'Gjennomførte',
               active: activeTab === 'gjennomforte',
             },
           ]}

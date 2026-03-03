@@ -420,8 +420,9 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     const yearNum = typeof byggeaar === 'string' ? parseInt(byggeaar) : byggeaar;
     const areaNum = typeof bruksareal === 'string' ? parseFloat(bruksareal) : bruksareal;
 
-    if (yearNum && areaNum && !isNaN(yearNum) && !isNaN(areaNum) && areaNum > 0) {
-      const tek = calculateTEK(yearNum);
+    if (areaNum && !isNaN(areaNum) && areaNum > 0) {
+      // calculateTEK håndterer ugyldig/manglende byggeår (gir TEK49)
+      const tek = calculateTEK(yearNum && !isNaN(yearNum) ? yearNum : 0);
       const intensity = getEnergyIntensityFromTEK(tek, buildingType, areaNum);
       const rating = calculateEnergyRating(intensity, areaNum, buildingType);
       setArrowColor(getEnergyRatingColor(rating));

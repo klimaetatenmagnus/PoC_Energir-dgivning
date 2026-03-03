@@ -49,8 +49,14 @@ const ENERGY_RATING_THRESHOLDS = {
  * Beregn TEK-periode basert på byggeår.
  * Inkluderer 2 års terskel for å ta høyde for at bygg ofte
  * bygges etter forrige TEK-standard de første årene etter ny TEK.
+ *
+ * Ugyldig eller manglende byggeår (0 eller under 1860) gir TEK49
+ * som konservativ standard – de fleste eldre bygg i Oslo er fra
+ * denne perioden og TEK49 gir rimelige estimater for tiltaksberegninger.
  */
 export function calculateTEK(byggeaar: number): string {
+  if (!byggeaar || byggeaar < 1860) return "TEK49";
+
   const terskel = 2; // lag i år i forhold til tek
 
   if (byggeaar >= 2017 + terskel) return "TEK17";     // 2019 and newer
@@ -101,13 +107,14 @@ export function calculateAnnualEnergyConsumption(
   const yearNum = typeof byggeaar === 'string' ? parseInt(byggeaar) : byggeaar;
   const areaNum = typeof bruksareal === 'string' ? parseFloat(bruksareal) : bruksareal;
 
-  // Hvis vi mangler data, returner default
-  if (!yearNum || !areaNum || isNaN(yearNum) || isNaN(areaNum) || areaNum <= 0) {
+  // Hvis vi mangler areal, returner default
+  if (!areaNum || isNaN(areaNum) || areaNum <= 0) {
     return 300000; // Default verdi
   }
 
-  // Beregn TEK
-  const tek = calculateTEK(yearNum);
+  // Beregn TEK – calculateTEK håndterer ugyldig/manglende byggeår (gir TEK49)
+  const validYear = yearNum && !isNaN(yearNum) ? yearNum : 0;
+  const tek = calculateTEK(validYear);
 
   // Få energiintensitet (fast verdi per TEK/bygningstype)
   const energyIntensity = getEnergyIntensityFromTEK(tek, buildingType);

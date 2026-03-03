@@ -139,11 +139,11 @@ export const resolveBuildingCategory = (buildingType?: string): BuildingCategory
 };
 
 export const calculateTekPeriod = (byggeaar: number): TekPeriod => {
-  const threshold = 2;
-
-  if (Number.isNaN(byggeaar)) {
-    return 'eldre';
+  if (!byggeaar || Number.isNaN(byggeaar) || byggeaar < 1860) {
+    return '49';
   }
+
+  const threshold = 2;
 
   if (byggeaar >= 2007 + threshold) {
     return '7';

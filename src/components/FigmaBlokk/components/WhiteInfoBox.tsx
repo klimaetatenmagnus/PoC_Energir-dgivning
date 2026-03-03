@@ -453,8 +453,9 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     if (fjernvarme) {
       const rawByggeaarForTek = savedByggeaar || buildingData?.byggeaar?.toString() || buildingData?.csvData?.byggeaar;
       const byggeaarNum = rawByggeaarForTek ? Number(rawByggeaarForTek) : undefined;
-      if (byggeaarNum && !isNaN(byggeaarNum) && buildingType) {
-        const tekPeriod = calculateTEK(byggeaarNum);
+      if (buildingType) {
+        // calculateTEK håndterer ugyldig/manglende byggeår (gir TEK49)
+        const tekPeriod = calculateTEK(byggeaarNum && !isNaN(byggeaarNum) ? byggeaarNum : 0);
         return calculateEnergyRatingWithFjernvarme(consumptionNum, areaNum, buildingType, tekPeriod as TekPeriodInput, buildingType);
       }
     }
@@ -528,7 +529,7 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     };
   }, [adjustedEnergyConsumption, prefersReducedMotion, completedSavings]);
 
-  // Ny verdi etter "Nye oppgraderinger" (vises med pil)
+  // Ny verdi etter "Nye" (vises med pil)
   const newConsumptionAfterTiltak = React.useMemo(() => {
     if (!totalEnergySavings || totalEnergySavings <= 0) return null;
     const newValue = Math.max(0, adjustedEnergyConsumption - totalEnergySavings);

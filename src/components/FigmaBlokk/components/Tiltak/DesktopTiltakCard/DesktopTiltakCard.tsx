@@ -83,10 +83,11 @@ export const DesktopTiltakCard: React.FC<DesktopTiltakCardProps> = ({
       buildingData.bruksarealM2 ?? buildingData.csvData?.bruksareal_totalt
     );
 
-    if (!byggeaar || !bruksareal) return 0;
+    if (!bruksareal) return 0;
 
     const buildingCategory = resolveBuildingCategory(buildingType);
-    const tekPeriod = calculateTekPeriod(byggeaar);
+    // calculateTekPeriod håndterer ugyldig/manglende byggeår (gir TEK49)
+    const tekPeriod = calculateTekPeriod(byggeaar || 0);
     // Map BuildingCategory til BuildingType for beregning
     const buildingTypeForCalc: BuildingType = buildingCategory === 'blokk' ? 'blokk' : 'småhus';
     const originalConsumption = calculateAnnualEnergyConsumption(
