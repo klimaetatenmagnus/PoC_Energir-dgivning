@@ -285,31 +285,32 @@ export const MobileDistrictComparison: React.FC<MobileDistrictComparisonProps> =
           <span className="mobile-district-card-title__indicator">{activeIndex + 1} / {CARDS.length}</span>
         </div>
 
+        {/* Energiattest-varsel overlay (over hele modalen) */}
+        {showEnovaNotice && isUsingEnovaBulkData && (
+          <div className="mobile-district-enova-notice-overlay">
+            <PktAlert
+              title="Energiattest funnet!"
+              skin="info"
+              closeAlert
+              onClose={() => setShowEnovaNotice(false)}
+            >
+              <p>
+                Vi ser at boligen din er registrert med energiattest fra Enova.
+                For å gi en mest mulig rettferdig sammenligning mellom deg og
+                naboene dine, brukes forbruksdata fra denne attesten i
+                sammenligningen.
+              </p>
+              <p>
+                Verdiene du ser her for energikarakter og energiforbruk vil
+                sannsynligvis avvike noe fra estimatene som brukes ellers i
+                løsningen.
+              </p>
+            </PktAlert>
+          </div>
+        )}
+
         {/* Karusell-innhold med chevron-navigasjon */}
         <div className="mobile-district-carousel">
-          {showEnovaNotice && isUsingEnovaBulkData && (
-            <div className="mobile-district-enova-notice-overlay">
-              <PktAlert
-                title="Energiattest funnet!"
-                skin="info"
-                closeAlert
-                onClose={() => setShowEnovaNotice(false)}
-              >
-                <p>
-                  Vi ser at boligen din er registrert med energiattest fra Enova.
-                  For å gi en mest mulig rettferdig sammenligning mellom deg og
-                  naboene dine, brukes forbruksdata fra denne attesten i
-                  sammenligningen.
-                </p>
-                <p>
-                  Verdiene du ser her for energikarakter og energiforbruk vil
-                  sannsynligvis avvike noe fra estimatene som brukes ellers i
-                  løsningen.
-                </p>
-              </PktAlert>
-            </div>
-          )}
-
           {/* Venstre chevron - vises kun når det er kort til venstre */}
           {activeIndex > 0 && (
             <button

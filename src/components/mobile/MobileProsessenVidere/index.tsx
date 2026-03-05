@@ -1,6 +1,6 @@
 /**
  * MobileProsessenVidere
- * Fullskjerm swipe-karusell for "Veien videre" (6 prosess-steg) på mobil.
+ * Fullskjerm swipe-karusell for "Veien videre" (7 prosess-steg) på mobil.
  *
  * Gjenbruker swipe-mønster fra MobileDistrictComparison:
  * - Touch-basert sveip med 50px terskel
@@ -18,6 +18,7 @@ import {
   PersonPresentingQuestion,
   Document,
   Shovel,
+  FlowerPinwheel,
 } from '../../FigmaBlokk/components/ProsessenVidere/Ikoner';
 import './MobileProsessenVidere.css';
 
@@ -96,8 +97,15 @@ export const MobileProsessenVidere: React.FC<MobileProsessenVidereProps> = ({
     {
       number: 5,
       title: 'Undersøk støtteordninger',
-      description:
-        'Det finnes støtteordninger for flere energitiltak - fra både Oslo kommune og Enova. Aktuelle støtteordninger er nevnt under informasjonen for hvert tiltak. Sjekk mulighetene tidlig i planleggingen, så du vet hva som kan være aktuelt for din bolig.',
+      description: (
+        <>
+          Det finnes støtteordninger for flere energitiltak - fra både Oslo kommune og Enova. Aktuelle støtteordninger er nevnt under informasjonen for hvert tiltak. Sjekk mulighetene tidlig i planleggingen, så du vet hva som kan være aktuelt for din bolig.
+          <span style={{ display: 'block', marginTop: '10px' }}>
+            Se hva du kan få støtte til på{' '}
+            <a href="https://klimatilskudd.no" target="_blank" rel="noopener noreferrer">klimatilskudd.no</a>.
+          </span>
+        </>
+      ),
       icon: <Document />,
     },
     {
@@ -106,6 +114,20 @@ export const MobileProsessenVidere: React.FC<MobileProsessenVidereProps> = ({
       description:
         'Når du først setter i gang, bør det gjøres skikkelig. Velg løsninger som varer og gir lavere energibehov. Husk å følge opp i etterkant – godt vedlikehold sikrer at forbedringene holder seg over tid. Da kan du nyte bedre inneklima og lavere strømregninger.',
       icon: <Shovel />,
+    },
+    {
+      number: 7,
+      title: 'Få flere energisparetips',
+      description: (
+        <>
+          Vil du lære mer om hvordan du kan spare energi i hverdagen? Oslo kommune har samlet gode råd og tips for deg som vil redusere energiforbruket.
+          <span style={{ display: 'block', marginTop: '10px' }}>
+            Les mer på{' '}
+            <a href="https://klimaoslo.no/sparstrom" target="_blank" rel="noopener noreferrer">klimaoslo.no/sparstrøm</a>.
+          </span>
+        </>
+      ),
+      icon: <FlowerPinwheel />,
     },
   ];
 

@@ -71,6 +71,21 @@ export const Pil = () => (
   </svg>
 );
 
+// Flower pinwheel icon (from Punkt illustrasjonsbibliotek - Trees and flowers / Flower / Red+beige)
+export const FlowerPinwheel = () => (
+  <svg width="200" height="200" viewBox="-1 2 23 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10.4618 17.8356C12.2777 17.8356 13.7498 16.3635 13.7498 14.5476C13.7498 12.7317 12.2777 11.2596 10.4618 11.2596C8.6459 11.2596 7.17383 12.7317 7.17383 14.5476C7.17383 16.3635 8.6459 17.8356 10.4618 17.8356Z" fill="#D0BFAE"/>
+    <path d="M13.1523 17.8357V25.6074H20.924L13.1523 17.8357Z" fill="#FF8274"/>
+    <path d="M20.924 25.6074V17.8357H13.1523L20.924 25.6074Z" fill="#F8F0DD"/>
+    <path d="M13.1523 11.2596H20.924V3.48793L13.1523 11.2596Z" fill="#FF8274"/>
+    <path d="M20.924 3.48793H13.1523V11.2596L20.924 3.48793Z" fill="#F8F0DD"/>
+    <path d="M7.77164 11.2596V3.48793H0L7.77164 11.2596Z" fill="#FF8274"/>
+    <path d="M0 3.48793V11.2596H7.77164L0 3.48793Z" fill="#F8F0DD"/>
+    <path d="M7.77164 17.8357H0V25.6074L7.77164 17.8357Z" fill="#FF8274"/>
+    <path d="M0 25.6074H7.77164V17.8357L0 25.6074Z" fill="#F8F0DD"/>
+  </svg>
+);
+
 // Trees icon
 export const Trees = () => (
   <svg width="298" height="176" viewBox="0 0 298 176" fill="none" xmlns="http://www.w3.org/2000/svg">
