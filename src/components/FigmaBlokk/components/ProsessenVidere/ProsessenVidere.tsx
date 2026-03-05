@@ -86,7 +86,10 @@ export const ProsessenVidere: React.FC<ProsessenVidereProps> = ({
   );
 
   return (
-    <div className={`prosessen-videre ${showProcess ? 'prosessen-videre--visible' : 'prosessen-videre--hidden'}`}>
+    <div
+      className={`prosessen-videre ${showProcess ? 'prosessen-videre--visible' : 'prosessen-videre--hidden'}`}
+      inert={!showProcess ? true : undefined}
+    >
       <div className="prosessen-videre__scale-shell">
         <section className="prosessen-videre__grid pkt-grid pkt-grid--gap-size-24">
           {steps.map((step) => (
