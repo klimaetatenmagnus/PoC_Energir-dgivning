@@ -687,8 +687,9 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   // MEN bare hvis brukeren IKKE har redigert nøkkelinformasjon
   const currentKwhPerM2 = React.useMemo(() => {
     let baseKwhPerM2: number;
-    // Hvis brukerens bolig finnes i Enova bulk-data og bruker ikke har redigert, bruk den verdien
-    if (!hasUserEdited && enovaBulkData?.kwhPerM2 && enovaBulkData.kwhPerM2 > 0) {
+    // Hvis brukerens bolig finnes i Enova bulk-data, bruker ikke har redigert,
+    // og ingen gjennomførte tiltak er valgt (for å unngå dobbelttelling), bruk Enova-verdien
+    if (!hasUserEdited && (completedSavings ?? 0) <= 0 && enovaBulkData?.kwhPerM2 && enovaBulkData.kwhPerM2 > 0) {
       baseKwhPerM2 = enovaBulkData.kwhPerM2;
     } else {
       // Bruk TEK-estimering hvis Enova-data ikke finnes eller bruker har redigert
@@ -734,7 +735,7 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   // Bruker samme calculateComparisonSavings() som mobil for konsistent beregning
   // Hopper over Enova-basert beregning hvis brukeren har redigert nøkkelinformasjon
   const comparisonSavings = React.useMemo(() => {
-    if (hasUserEdited || !enovaBulkData?.kwhPerM2 || enovaBulkData.kwhPerM2 <= 0) {
+    if (hasUserEdited || (completedSavings ?? 0) > 0 || !enovaBulkData?.kwhPerM2 || enovaBulkData.kwhPerM2 <= 0) {
       return totalEnergySavings;
     }
     if (!tiltakInfo || tiltakInfo.length === 0) {
@@ -752,18 +753,18 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
       buildingCategory as 'småhus' | 'blokk',
       tiltakInfo
     );
-  }, [hasUserEdited, enovaBulkData, totalEnergySavings, tiltakInfo, buildingCategory, bruksarealForComparison]);
+  }, [hasUserEdited, completedSavings, enovaBulkData, totalEnergySavings, tiltakInfo, buildingCategory, bruksarealForComparison]);
 
   // Beregn energikarakter for sammenligningsmodulen.
   // Bruk Enova-karakteren direkte når bulk data foreligger og bruker ikke har redigert,
   // ellers fall tilbake til NS 3031:2025-beregning.
   const comparisonEnergyGrade = React.useMemo(() => {
     if (currentKwhPerM2 <= 0 || bruksarealForComparison <= 0) return null;
-    if (!hasUserEdited && enovaBulkData?.energikarakter) {
+    if (!hasUserEdited && (completedSavings ?? 0) <= 0 && enovaBulkData?.energikarakter) {
       return enovaBulkData.energikarakter;
     }
     return calculateEnergyRating(currentKwhPerM2, bruksarealForComparison, buildingCategory as 'småhus' | 'blokk' | null);
-  }, [hasUserEdited, currentKwhPerM2, bruksarealForComparison, buildingCategory, enovaBulkData]);
+  }, [hasUserEdited, completedSavings, currentKwhPerM2, bruksarealForComparison, buildingCategory, enovaBulkData]);
 
   // Beregn variabler for bydelssammenligning (må være etter currentKwhPerM2)
   const showComparison = districtStats !== null && currentKwhPerM2 > 0;

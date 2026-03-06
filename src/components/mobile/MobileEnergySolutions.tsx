@@ -846,8 +846,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   // MEN bare hvis brukeren IKKE har redigert nøkkelinformasjon
   const currentKwhPerM2 = useMemo(() => {
     let baseKwhPerM2: number;
-    // Hvis brukerens bolig finnes i Enova bulk-data og bruker ikke har redigert, bruk den verdien
-    if (!hasUserEdited && enovaBulkData?.kwhPerM2 && enovaBulkData.kwhPerM2 > 0) {
+    // Hvis brukerens bolig finnes i Enova bulk-data, bruker ikke har redigert,
+    // og ingen gjennomførte tiltak er valgt (for å unngå dobbelttelling), bruk Enova-verdien
+    if (!hasUserEdited && completedSavingsKWh <= 0 && enovaBulkData?.kwhPerM2 && enovaBulkData.kwhPerM2 > 0) {
       baseKwhPerM2 = enovaBulkData.kwhPerM2;
     } else {
       // Bruk TEK-estimering hvis Enova-data ikke finnes eller bruker har redigert
@@ -868,8 +869,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   // 3. Beregner besparelser basert på Enova-forbruk og disse faktorene
   // Dette gir realistiske besparelser for allerede oppgraderte boliger
   const comparisonSavings = useMemo(() => {
-    // Hopp over Enova-basert beregning hvis bruker har redigert, eller Enova-data mangler
-    if (hasUserEdited || !enovaBulkData?.kwhPerM2 || enovaBulkData.kwhPerM2 <= 0 || !boligtype || !bruksareal || bruksareal <= 0) {
+    // Hopp over Enova-basert beregning hvis bruker har redigert, gjennomførte tiltak er valgt, eller Enova-data mangler
+    if (hasUserEdited || completedSavingsKWh > 0 || !enovaBulkData?.kwhPerM2 || enovaBulkData.kwhPerM2 <= 0 || !boligtype || !bruksareal || bruksareal <= 0) {
       return calculatedSavings;
     }
 
@@ -929,6 +930,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     );
   }, [
     hasUserEdited,
+    completedSavingsKWh,
     enovaBulkData,
     calculatedSavings,
     estimatedAnnualConsumption,
