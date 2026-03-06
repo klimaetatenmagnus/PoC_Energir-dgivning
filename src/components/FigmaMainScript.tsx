@@ -274,8 +274,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       const circleRect = circleRef.current?.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
       const isWindowsScaled = isWindows && dpr > 1.1;
-      const gapBelowBuilding = isWindowsScaled ? 44 : 38;
-      const bottomClearance = isWindows ? (isWindowsScaled ? 84 : 126) : 98;
+      const gapBelowBuilding = isWindowsScaled ? 44 : (isWindows ? 54 : 38);
+      const bottomClearance = isWindows ? (isWindowsScaled ? 84 : 106) : 98;
 
       const desiredTop = buildingRect.bottom + gapBelowBuilding;
       const clampedTop = Math.min(window.innerHeight - bottomClearance, Math.max(96, desiredTop));

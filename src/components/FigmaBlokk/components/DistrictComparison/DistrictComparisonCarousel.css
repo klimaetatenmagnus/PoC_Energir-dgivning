@@ -19,6 +19,7 @@
 .district-carousel__stage {
   position: relative;
   overflow: hidden;
+  padding: 0 36px;
 }
 
 /* ======================================
@@ -47,11 +48,11 @@
 }
 
 .district-carousel__chevron--left {
-  left: 0;
+  left: 2px;
 }
 
 .district-carousel__chevron--right {
-  right: 0;
+  right: 2px;
 }
 
 .district-carousel__chevron .pkt-icon {
