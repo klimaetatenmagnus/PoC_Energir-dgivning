@@ -156,19 +156,25 @@
   transition: transform 0.8s ease-in-out;
 }
 
-/* Windows @ 125/150% display scaling – keep a bit more air around the center column
-   while preserving enough width for the 3×-scaled building SVG. */
-.platform-windows.platform-windows-scaled .tiltak-side__content {
-  gap: clamp(32px, calc(2.6 * var(--scaled-vw)), 40px);
-}
-
 .platform-windows.platform-windows-scaled .tiltak-side__tiltak-panel {
   max-height: calc((100vh / var(--layout-scale, 1)) - clamp(40px, 8vh, 120px) - 120px);
-  width: clamp(296px, calc(17.5vw / var(--layout-scale, 1)), 368px);
+  width: clamp(300px, calc(18vw / var(--layout-scale, 1)), 380px);
 }
 
 .platform-windows.platform-windows-scaled .tiltak-side__info-panel {
-  flex: 0 0 clamp(276px, calc(15.5vw / var(--layout-scale, 1)), 348px);
+  flex: 0 0 clamp(280px, calc(16vw / var(--layout-scale, 1)), 360px);
+}
+
+/* Windows @ 150% display scaling – move side panels outward without consuming
+   more space from the center building area. */
+.platform-windows.platform-windows-scaled.platform-windows-scaled-150 .tiltak-side__tiltak-panel {
+  position: relative;
+  width: clamp(320px, calc(20vw / var(--layout-scale, 1)), 400px);
+  left: calc(-44px / var(--layout-scale, 1));
+}
+
+.platform-windows.platform-windows-scaled.platform-windows-scaled-150 .tiltak-side__info-panel {
+  left: calc(24px / var(--layout-scale, 1));
 }
 
 .tiltak-side__tiltak-panel .energy-solution-buttons {

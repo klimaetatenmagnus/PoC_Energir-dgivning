@@ -65,16 +65,20 @@ export default function App() {
     };
 
     const updateDesktopScale = () => {
+      const root = document.documentElement;
       if (isMobileView) {
-        document.documentElement.style.setProperty('--desktop-scale', '1');
-        document.documentElement.style.setProperty('--display-scale-compensation', '1');
+        root.style.setProperty('--desktop-scale', '1');
+        root.style.setProperty('--display-scale-compensation', '1');
+        root.classList.remove('platform-windows-scaled', 'platform-windows-scaled-150');
         return;
       }
 
       const dpr = window.devicePixelRatio || 1;
-      const root = document.documentElement;
+      const isWindowsScaled = isWindows && dpr > 1.1;
+      const isWindowsScaled150 = isWindows && dpr >= 1.4 && dpr < 1.6;
       root.style.setProperty('--device-pixel-ratio', dpr.toFixed(3));
-      root.classList.toggle('platform-windows-scaled', isWindows && dpr > 1.1);
+      root.classList.toggle('platform-windows-scaled', isWindowsScaled);
+      root.classList.toggle('platform-windows-scaled-150', isWindowsScaled150);
 
       const viewport = window.visualViewport ?? { width: window.innerWidth, height: window.innerHeight };
       const widthRatio = viewport.width / BASE_VIEWPORT.width;
