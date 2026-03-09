@@ -27,12 +27,18 @@
   pointer-events: none;
 }
 
-/* Windows (all) – less vertical headroom than Mac due to taskbar + browser chrome */
+/* Windows (all, non-scaled) – less vertical headroom than Mac due to taskbar + browser chrome.
+   Circle size capped at the base value to prevent the Desktop media query (≥100rem)
+   from inflating it to 260px, which pushes the CTA off-screen. */
 .platform-windows .prosessen-videre {
   --prosessen-grid-top-min: 96px;
   --prosessen-grid-top-factor: 13;
-  --prosessen-grid-top-max: 148px;
+  --prosessen-grid-top-max: 140px;
   --prosessen-step-margin-bottom: var(--pkt-spacing-16, 16px);
+  --prosessen-step-circle-size: 230px;
+  --prosessen-step-card-width: 300px;
+  --prosessen-step-card-min-height: 280px;
+  --prosessen-step-icon-min-height: 72px;
 }
 
 /* Mac-only scaling to ensure all 6 steps fit within the viewport */
