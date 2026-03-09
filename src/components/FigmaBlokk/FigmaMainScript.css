@@ -16,7 +16,7 @@
   --layout-scale: 1;
   --content-scale: 1;
   --content-base-shift-y: 0px;
-  --scaled-vw: calc(1vw / var(--layout-scale));
+  --scaled-vw: calc(1vw / max(1, var(--layout-scale)));
   --scaled-vh: calc(1vh / max(1, var(--layout-scale)));
   --transition-vh: calc(1vh / var(--layout-scale));
 }
@@ -156,9 +156,14 @@
   transition: transform 0.8s ease-in-out;
 }
 
-/* Windows @ 125/150% display scaling needs extra vertical room after layout downscaling. */
+/* Windows @ 125/150% display scaling – layout-aware column widths and extra vertical room. */
 .platform-windows.platform-windows-scaled .tiltak-side__tiltak-panel {
   max-height: calc((100vh / var(--layout-scale, 1)) - clamp(40px, 8vh, 120px) - 120px);
+  width: clamp(360px, calc(24vw / var(--layout-scale, 1)), 450px);
+}
+
+.platform-windows.platform-windows-scaled .tiltak-side__info-panel {
+  flex: 0 0 clamp(340px, calc(22vw / var(--layout-scale, 1)), 420px);
 }
 
 .tiltak-side__tiltak-panel .energy-solution-buttons {
@@ -380,14 +385,9 @@
   min-width: clamp(500px, calc(34 * var(--scaled-vw)), 620px);
 }
 
-/* Scale-down adjustments – compensate column widths when layout-scale < 1
-   so that visual sizes stay proportional after the transform: scale() shrink. */
+/* Scale-down adjustments to keep spacing balanced on mac */
 .tiltak-side--scale-down .tiltak-side__tiltak-panel {
   width: clamp(320px, calc(26 * var(--scaled-vw)), 440px);
-}
-
-.tiltak-side--scale-down .tiltak-side__info-panel {
-  flex: 0 0 clamp(330px, calc(24 * var(--scaled-vw)), 460px);
 }
 
 .tiltak-side--scale-down .tiltak-side__content {

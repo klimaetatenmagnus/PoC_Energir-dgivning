@@ -52,7 +52,7 @@
 /* Windows displays with OS scaling (125%/150%) need a lower floor to avoid clipping on row 2.
    Grid-top and step-margin reduced to prevent the CTA button from being clipped by overflow:hidden. */
 .platform-windows.platform-windows-scaled .prosessen-videre {
-  --prosessen-scale: clamp(0.78, calc((1 + (var(--desktop-scale, 1) - 1) * 0.42) * var(--prosessen-scale-compensation)), 1.02);
+  --prosessen-scale: clamp(0.70, calc((1 + (var(--desktop-scale, 1) - 1) * 0.42) * var(--prosessen-scale-compensation)), 1.02);
   --prosessen-grid-top-min: 76px;
   --prosessen-grid-top-factor: 10;
   --prosessen-grid-top-max: 108px;
