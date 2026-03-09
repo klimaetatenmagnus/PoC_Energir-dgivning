@@ -35,18 +35,19 @@
   --prosessen-grid-top-max: 160px;
 }
 
-/* Windows displays with OS scaling (125%/150%) need a lower floor to avoid clipping on row 2. */
+/* Windows displays with OS scaling (125%/150%) need a lower floor to avoid clipping on row 2.
+   Grid-top and step-margin reduced to prevent the CTA button from being clipped by overflow:hidden. */
 .platform-windows.platform-windows-scaled .prosessen-videre {
   --prosessen-scale: clamp(0.78, calc((1 + (var(--desktop-scale, 1) - 1) * 0.42) * var(--prosessen-scale-compensation)), 1.02);
-  --prosessen-grid-top-min: 96px;
-  --prosessen-grid-top-factor: 12.5;
-  --prosessen-grid-top-max: 132px;
-  --prosessen-grid-bottom: var(--pkt-spacing-24, 24px);
-  --prosessen-step-margin-bottom: var(--pkt-spacing-12, 12px);
+  --prosessen-grid-top-min: 76px;
+  --prosessen-grid-top-factor: 10;
+  --prosessen-grid-top-max: 108px;
+  --prosessen-grid-bottom: var(--pkt-spacing-16, 16px);
+  --prosessen-step-margin-bottom: var(--pkt-spacing-8, 8px);
   --prosessen-step-circle-size: 212px;
   --prosessen-step-card-width: 280px;
   --prosessen-step-card-min-height: 248px;
-  --prosessen-step-icon-min-height: 72px;
+  --prosessen-step-icon-min-height: 64px;
   --prosessen-step-icon-margin-bottom: var(--pkt-spacing-4, 4px);
   --prosessen-step-icon-max-width: 104px;
   --prosessen-step-icon-max-height: 88px;
