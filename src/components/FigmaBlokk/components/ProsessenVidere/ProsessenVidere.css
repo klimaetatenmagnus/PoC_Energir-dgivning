@@ -27,6 +27,14 @@
   pointer-events: none;
 }
 
+/* Windows (all) – less vertical headroom than Mac due to taskbar + browser chrome */
+.platform-windows .prosessen-videre {
+  --prosessen-grid-top-min: 96px;
+  --prosessen-grid-top-factor: 13;
+  --prosessen-grid-top-max: 148px;
+  --prosessen-step-margin-bottom: var(--pkt-spacing-16, 16px);
+}
+
 /* Mac-only scaling to ensure all 6 steps fit within the viewport */
 .platform-mac .prosessen-videre {
   --prosessen-scale: clamp(0.92, calc(0.92 + (var(--desktop-scale, 1) - 1) * 0.35), 1.05);
