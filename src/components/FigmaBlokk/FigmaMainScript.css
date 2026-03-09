@@ -156,17 +156,19 @@
   transition: transform 0.8s ease-in-out;
 }
 
-/* Windows @ 125/150% display scaling – narrower side columns so the building-area
-   is wide enough to contain the 3×-scaled building SVG (136px → 408px visual).
-   With the original column widths, building-area shrinks to ~200px and the building
-   overflows ~100px per side, completely covering the flex gap. */
+/* Windows @ 125/150% display scaling – keep a bit more air around the center column
+   while preserving enough width for the 3×-scaled building SVG. */
+.platform-windows.platform-windows-scaled .tiltak-side__content {
+  gap: clamp(32px, calc(2.6 * var(--scaled-vw)), 40px);
+}
+
 .platform-windows.platform-windows-scaled .tiltak-side__tiltak-panel {
   max-height: calc((100vh / var(--layout-scale, 1)) - clamp(40px, 8vh, 120px) - 120px);
-  width: clamp(300px, calc(18vw / var(--layout-scale, 1)), 380px);
+  width: clamp(296px, calc(17.5vw / var(--layout-scale, 1)), 368px);
 }
 
 .platform-windows.platform-windows-scaled .tiltak-side__info-panel {
-  flex: 0 0 clamp(280px, calc(16vw / var(--layout-scale, 1)), 360px);
+  flex: 0 0 clamp(276px, calc(15.5vw / var(--layout-scale, 1)), 348px);
 }
 
 .tiltak-side__tiltak-panel .energy-solution-buttons {
