@@ -27,6 +27,7 @@
 
 .platform-windows.platform-windows-scaled .tiltak-side {
   --content-base-shift-y: -14px;
+  --building-scale-multiplier: 0.55;
 }
 
 .tiltak-side--animate {
@@ -161,12 +162,6 @@
   gap: clamp(40px, calc(4vw / var(--layout-scale, 1)), 72px);
   padding-left: clamp(12px, calc(1.2vw / var(--layout-scale, 1)), 36px);
   padding-right: clamp(12px, calc(1.2vw / var(--layout-scale, 1)), 36px);
-}
-
-.platform-windows.platform-windows-scaled .tiltak-side__building-area {
-  overflow: clip;
-  padding-left: clamp(8px, calc(1vw / var(--layout-scale, 1)), 24px);
-  padding-right: clamp(8px, calc(1vw / var(--layout-scale, 1)), 24px);
 }
 
 .platform-windows.platform-windows-scaled .tiltak-side__tiltak-panel {
