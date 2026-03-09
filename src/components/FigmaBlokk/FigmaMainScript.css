@@ -156,45 +156,30 @@
   transition: transform 0.8s ease-in-out;
 }
 
-/* Windows @ 125/150% display scaling – layout-aware column widths and extra vertical room. */
+/* Windows @ 125/150% display scaling – layout-aware column widths and extra vertical room.
+   The building SVG (136px) is scaled 3× via transform, overflowing ~100px per side beyond
+   the building-area and visually covering the flex gap. Box-shadows on the side columns
+   (z-index 1000, above the building's z-index 3) mask the overflow with the page background
+   colour so the gap appears as clear space between the columns. */
+.platform-windows.platform-windows-scaled .tiltak-side {
+  --win-scaled-gap: clamp(40px, calc(4vw / var(--layout-scale, 1)), 72px);
+}
+
 .platform-windows.platform-windows-scaled .tiltak-side__content {
-  gap: clamp(40px, calc(4vw / var(--layout-scale, 1)), 72px);
+  gap: var(--win-scaled-gap);
   padding-left: clamp(12px, calc(1.2vw / var(--layout-scale, 1)), 36px);
   padding-right: clamp(12px, calc(1.2vw / var(--layout-scale, 1)), 36px);
-}
-
-/* Mask building overflow in the column gaps so the spacing is visible.
-   The building SVG (136px) is scaled 3x via transform, overflowing ~100px
-   per side beyond the building-area. These pseudo-elements sit in the gap
-   with z-index above the building (3) and the page background colour,
-   creating clear visual separation between the columns. */
-.platform-windows.platform-windows-scaled .tiltak-side__building-area::before,
-.platform-windows.platform-windows-scaled .tiltak-side__building-area::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 120px;
-  background: var(--pkt-color-brand-blue-300, #D1F9FF);
-  z-index: 4;
-  pointer-events: none;
-}
-
-.platform-windows.platform-windows-scaled .tiltak-side__building-area::before {
-  right: 100%;
-}
-
-.platform-windows.platform-windows-scaled .tiltak-side__building-area::after {
-  left: 100%;
 }
 
 .platform-windows.platform-windows-scaled .tiltak-side__tiltak-panel {
   max-height: calc((100vh / var(--layout-scale, 1)) - clamp(40px, 8vh, 120px) - 120px);
   width: clamp(360px, calc(24vw / var(--layout-scale, 1)), 450px);
+  box-shadow: var(--win-scaled-gap) 0 0 0 var(--pkt-color-brand-blue-300, #D1F9FF);
 }
 
 .platform-windows.platform-windows-scaled .tiltak-side__info-panel {
   flex: 0 0 clamp(340px, calc(22vw / var(--layout-scale, 1)), 420px);
+  box-shadow: calc(-1 * var(--win-scaled-gap)) 0 0 0 var(--pkt-color-brand-blue-300, #D1F9FF);
 }
 
 .tiltak-side__tiltak-panel .energy-solution-buttons {
