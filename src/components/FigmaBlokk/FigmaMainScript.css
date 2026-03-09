@@ -16,7 +16,7 @@
   --layout-scale: 1;
   --content-scale: 1;
   --content-base-shift-y: 0px;
-  --scaled-vw: calc(1vw / max(1, var(--layout-scale)));
+  --scaled-vw: calc(1vw / var(--layout-scale));
   --scaled-vh: calc(1vh / max(1, var(--layout-scale)));
   --transition-vh: calc(1vh / var(--layout-scale));
 }
@@ -380,9 +380,14 @@
   min-width: clamp(500px, calc(34 * var(--scaled-vw)), 620px);
 }
 
-/* Scale-down adjustments to keep spacing balanced on mac */
+/* Scale-down adjustments – compensate column widths when layout-scale < 1
+   so that visual sizes stay proportional after the transform: scale() shrink. */
 .tiltak-side--scale-down .tiltak-side__tiltak-panel {
   width: clamp(320px, calc(26 * var(--scaled-vw)), 440px);
+}
+
+.tiltak-side--scale-down .tiltak-side__info-panel {
+  flex: 0 0 clamp(330px, calc(24 * var(--scaled-vw)), 460px);
 }
 
 .tiltak-side--scale-down .tiltak-side__content {
