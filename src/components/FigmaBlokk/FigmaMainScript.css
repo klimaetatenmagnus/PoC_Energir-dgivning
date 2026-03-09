@@ -164,6 +164,7 @@
 }
 
 .platform-windows.platform-windows-scaled .tiltak-side__building-area {
+  overflow: clip;
   padding-left: clamp(8px, calc(1vw / var(--layout-scale, 1)), 24px);
   padding-right: clamp(8px, calc(1vw / var(--layout-scale, 1)), 24px);
 }
