@@ -10,8 +10,8 @@ spec:
     metadata:
       annotations:
         run.googleapis.com/execution-environment: gen2
-        run.googleapis.com/cpu-throttling: "true"
-        autoscaling.knative.dev/minScale: "0"
+        run.googleapis.com/cpu-throttling: "false"
+        autoscaling.knative.dev/minScale: "1"
         autoscaling.knative.dev/maxScale: "4"
         run.googleapis.com/container-dependencies: '{"gmp-collector":["building-info-service"]}'
         run.googleapis.com/secrets: "run-gmp-config:projects/__PROJECT_ID__/secrets/run-gmp-config"
