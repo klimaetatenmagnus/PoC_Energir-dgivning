@@ -173,7 +173,8 @@ export function getBuildingKind(building: {
     if (
       csvType.includes('enebolig') ||
       csvType.includes('tomannsbolig') ||
-      csvType.includes('rekkehus')
+      csvType.includes('rekkehus') ||
+      csvType.includes('småhus')
     ) {
       return 'enebolig';
     }

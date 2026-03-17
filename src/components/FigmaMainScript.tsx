@@ -102,7 +102,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     if (csvBuildingType) {
       return csvBuildingType.includes('enebolig') ||
              csvBuildingType.includes('tomannsbolig') ||
-             csvBuildingType.includes('rekkehus');
+             csvBuildingType.includes('rekkehus') ||
+             csvBuildingType.includes('småhus');
     }
 
     // Fallback to API data

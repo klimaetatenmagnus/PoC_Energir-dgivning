@@ -239,7 +239,7 @@ export default function App() {
 
     if (code === '11' || name.includes('enebolig')) return 'enebolig';
     if (code === '12' || name.includes('tomannsbolig')) return 'tomannsbolig';
-    if (code === '13' || name.includes('rekkehus') || name.includes('kjedehus')) return 'rekkehus';
+    if (code === '13' || name.includes('rekkehus') || name.includes('kjedehus') || name.includes('småhus')) return 'rekkehus';
     if (['14', '15', '16', '17'].includes(code) || name.includes('blokk') || name.includes('leilighet')) return 'blokk';
     return undefined;
   }, [result]);

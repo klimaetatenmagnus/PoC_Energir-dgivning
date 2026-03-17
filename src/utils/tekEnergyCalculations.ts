@@ -221,7 +221,8 @@ export function determineBuildingType(
     if (nameLower.includes('enebolig') ||
         nameLower.includes('tomannsbolig') ||
         nameLower.includes('rekkehus') ||
-        nameLower.includes('kjedehus')) {
+        nameLower.includes('kjedehus') ||
+        nameLower.includes('småhus')) {
       return 'småhus';
     }
     if (nameLower.includes('blokk') ||

@@ -186,7 +186,8 @@ function detectBuildingCategory(
       typeString.includes('enebolig') ||
       typeString.includes('tomannsbolig') ||
       typeString.includes('rekkehus') ||
-      typeString.includes('kjedehus')
+      typeString.includes('kjedehus') ||
+      typeString.includes('småhus')
     ) {
       return 'småhus';
     }

@@ -126,7 +126,8 @@ const determineBuildingTypeKey = (
     buildingTypeCode === '13' ||
     buildingTypeNameLower.includes('rekkehus') ||
     buildingTypeNameLower.includes('kjedehus') ||
-    buildingTypeNameLower.includes('kjedet')
+    buildingTypeNameLower.includes('kjedet') ||
+    buildingTypeNameLower.includes('småhus')
   ) {
     return 'rekkehus';
   }

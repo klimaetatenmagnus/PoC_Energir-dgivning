@@ -114,6 +114,7 @@ export function getDisplayBuildingTypeName(buildingTypeName: string): string {
   if (lower.startsWith('enebolig')) return 'Enebolig';
   if (lower.includes('blokk') || lower.includes('boligbygg')) return 'Blokk';
   if (lower.includes('rekkehus') || lower.includes('kjedehus')) return 'Rekkehus';
+  if (lower.includes('småhus')) return 'Småhus';
 
   return buildingTypeName;
 }

@@ -59,12 +59,13 @@ const determineBuildingTypeKey = (
   if (buildingTypeCode === '12' || buildingTypeNameLower.includes('tomannsbolig')) {
     return 'tomannsbolig';
   }
-  // Rekkehus og kjedet (kode 13)
+  // Rekkehus, kjedet og andre småhus (kode 13)
   if (
     buildingTypeCode === '13' ||
     buildingTypeNameLower.includes('rekkehus') ||
     buildingTypeNameLower.includes('kjedehus') ||
-    buildingTypeNameLower.includes('kjedet')
+    buildingTypeNameLower.includes('kjedet') ||
+    buildingTypeNameLower.includes('småhus')
   ) {
     return 'rekkehus';
   }
