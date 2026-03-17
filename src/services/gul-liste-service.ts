@@ -104,6 +104,16 @@ const GUL_LISTE_MAPPING_VERDIER = [
   'Regulert til bevaring',
 ];
 
+/**
+ * KATEGORI-verdier som ekskluderes fra gul liste-sjekken fordi de gjelder
+ * utomhuselementer (gjerder, hager, murer o.l.) og ikke selve bygningen.
+ * Eksempel: Furulundsveien 2 har et vernet utomhuselement på eiendommen,
+ * men selve bygningen er ikke på gul liste.
+ */
+const EKSKLUDERTE_KATEGORIER = [
+  'Enkeltminne utomhus',
+];
+
 interface FeatureMemberData {
   navn?: string;
   kategori?: string;
@@ -156,11 +166,16 @@ async function sjekkGulListeForTeigid(teigid: string): Promise<GulListeResult> {
 
     // Parser alle featureMembers og filtrerer til kun gul liste-relevante oppføringer.
     // PBE sin tabell kart.gulliste_spatial returnerer ALLE kulturminneregistreringer
-    // som overlapper eiendommen, inkl. arkeologiske funn. Vi bruker MAPPING-feltet
-    // for å skille faktiske gul liste-oppføringer fra irrelevante treff.
+    // som overlapper eiendommen, inkl. arkeologiske funn og utomhuselementer.
+    // Vi bruker MAPPING-feltet for å beholde kun gul liste-oppføringer, og
+    // KATEGORI-feltet for å ekskludere utomhuselementer (gjerder, hager etc.)
+    // som ikke gjelder selve bygningen.
     const allMembers = parseFeatureMembers(xml);
     const gulListeMembers = allMembers.filter(
-      (m) => m.mapping && GUL_LISTE_MAPPING_VERDIER.includes(m.mapping)
+      (m) =>
+        m.mapping &&
+        GUL_LISTE_MAPPING_VERDIER.includes(m.mapping) &&
+        !(m.kategori && EKSKLUDERTE_KATEGORIER.includes(m.kategori))
     );
 
     if (gulListeMembers.length > 0) {
