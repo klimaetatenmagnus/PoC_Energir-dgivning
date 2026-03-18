@@ -74,6 +74,14 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
 
   return (
     <div className="mobile-landing">
+      <a
+        href="https://www.oslo.kommune.no/personvern-og-informasjonskapsler/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mobile-landing__privacy-link"
+      >
+        Personvern og informasjonskapsler
+      </a>
       <div
         className={`mobile-landing__content${headerShouldFadeOut ? ' mobile-landing__content--fading' : ''}`}
       >
@@ -124,15 +132,6 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
             </div>
           )}
         </div>
-
-        <a
-          href="https://www.oslo.kommune.no/personvern-og-informasjonskapsler/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mobile-landing__privacy-link"
-        >
-          Personvern og informasjonskapsler
-        </a>
       </div>
 
       {/* Mini-skyline i bunnen */}
