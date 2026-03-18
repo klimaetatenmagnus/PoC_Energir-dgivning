@@ -865,10 +865,10 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", 'https://klimatilskudd.containers.piwik.pro'],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", ...allowedOrigins],
+      connectSrc: ["'self'", ...allowedOrigins, 'https://klimatilskudd.piwik.pro'],
       frameAncestors: ["'self'", 'https://klimaoslo.no', 'https://www.klimaoslo.no'],
     },
   },

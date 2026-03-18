@@ -13,6 +13,7 @@ import {
   type AddressSuggestion,
 } from '../services/buildingApi';
 import { LYSEVEIEN_3_DATA } from '../testData/lyseveien3';
+import { trackAddressLookup } from '../analytics';
 import { THERESES_11A_DATA } from '../testData/theresegate11a';
 import { THERESES_44A_DATA } from '../testData/theresegate44a';
 import { useLandingAnimation } from '../components/FigmaBlokk/hooks/useLandingAnimation';
@@ -433,6 +434,7 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
     setError(null);
 
     try {
+      trackAddressLookup(trimmed);
       const lookupResult = await buildingApi.lookupAddress(trimmed);
       setResult(lookupResult);
       beginLandingTransition(getBuildingKind(lookupResult));

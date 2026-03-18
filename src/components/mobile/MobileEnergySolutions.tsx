@@ -8,6 +8,7 @@ import {
   PktTabs,
 } from '@oslokommune/punkt-react';
 import { AddressLookupResponse } from '../../services/buildingApi';
+import { trackNeighborComparison } from '../../analytics';
 import {
   DISTRICT_BADGE,
   BUILDING_YEAR_BADGE,
@@ -1481,6 +1482,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               completedSavings={completedSavingsKWh}
               fjernvarme={fjernvarme}
               onCompareClick={() => {
+                trackNeighborComparison();
                 closeInfoBox();
                 // Åpne bydelssammenligning etter exit-animasjonen
                 setTimeout(() => setShowDistrictComparison(true), 300);

@@ -46,5 +46,8 @@ COPY --from=build /app/public ./public
 
 EXPOSE 3001 4000
 
+# Gi node-bruker eierskap slik at appen kan opprette midlertidige mapper (f.eks. soap-dumps)
+RUN chown -R node:node /app
+
 USER node
 CMD ["node", "./dist/backend/building-info-service.mjs"]

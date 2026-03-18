@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { PktButton } from '@oslokommune/punkt-react';
 import { AddressLookupResponse } from '../services/buildingApi';
+import { trackTiltakExpanded } from '../analytics';
 import { useAddressCoordinates } from './FigmaBlokk/hooks/useAddressCoordinates';
 import { EnergySolutionButtons } from './FigmaBlokk/components/EnergySolutionButtons';
 import type { TiltakCanonicalKey } from './FigmaBlokk/utils/tiltakCanonicalKeys';
@@ -157,6 +158,10 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   // State for expanded mode
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [selectedSolution, setSelectedSolution] = React.useState<string | null>(null);
+  const handleSelectSolution = useCallback((solution: string) => {
+    trackTiltakExpanded(solution, 'desktop');
+    setSelectedSolution(solution);
+  }, []);
   const [solarData, setSolarData] = React.useState<SolarEnergyData | null>(null);
   const [showYellowBox, setShowYellowBox] = React.useState(false);
   const [gulListeLoading, setGulListeLoading] = React.useState(true);
@@ -691,7 +696,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               showHeader={showHeader}
               isExpanded={isExpanded}
               onExpand={setIsExpanded}
-              onSelectSolution={setSelectedSolution}
+              onSelectSolution={handleSelectSolution}
               buildingData={{...updatedBuildingData, filteredSolarEnergy: scaledSolarEnergy}}
               yearlyConsumption={energiforbruk}
               onTotalSavingsChange={setTotalEnergySavings}

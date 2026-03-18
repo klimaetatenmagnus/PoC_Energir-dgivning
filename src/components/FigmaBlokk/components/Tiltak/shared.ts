@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import type { AddressLookupResponse } from '../../../../services/buildingApi';
 import { useContentDictionary } from '../../../../hooks/contentHooks';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
+import { trackExternalLinkClick } from '../../../../analytics';
 
 export interface Stotteordning {
   ordning: string;
@@ -105,11 +106,12 @@ export const getOverskriftLabel = (overskrift?: string | null): string => {
   return overskrift;
 };
 
-export const openExternalLink = (url?: string | null): void => {
+export const openExternalLink = (url?: string | null, context?: string): void => {
   if (!url) {
     return;
   }
 
+  trackExternalLinkClick(url, context);
   if (typeof window !== 'undefined') {
     window.open(url, '_blank', 'noopener');
   }

@@ -12,6 +12,7 @@ import { useAddressCoordinates } from "./components/FigmaBlokk/hooks/useAddressC
 import { fetchSolarData, SolarEnergyData } from "./services/solarEnergyService";
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from "./utils/tekEnergyCalculations";
 import { sjekkGulListeMedGnrBnr } from "./services/gul-liste-service";
+import { trackResultViewed, trackPageStep, trackTiltakExpanded } from "./analytics";
 // Enova bulk-data håndteres internt i MobileEnergySolutions (kun for sammenligningsmodulen)
 
 export default function App() {
@@ -210,6 +211,7 @@ export default function App() {
   }, [result, yearlyConsumption]);
 
   const handleSelectMobileTiltak = useCallback((tiltakId: string, savingsKwh?: number) => {
+    trackTiltakExpanded(tiltakId, 'mobile');
     setSelectedMobileTiltak(tiltakId);
     setSelectedMobileTiltakSavings(savingsKwh);
   }, []);
@@ -274,6 +276,15 @@ export default function App() {
         setIsGulliste(false);
       });
   }, [result]);
+
+  // Spor resultatvisning og sidenavigasjon
+  useEffect(() => {
+    if (mode === 'figma-blokk' && result) {
+      const platform = isMobileView ? 'mobile' : 'desktop';
+      trackResultViewed(searchValue, platform);
+      trackPageStep('result', platform);
+    }
+  }, [mode, result, isMobileView, searchValue]);
 
   // Bestem audience basert på gulliste-status
   const audienceForTiltak = useMemo(() => {
