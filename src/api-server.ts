@@ -42,6 +42,9 @@ const contentBucketPrefix = process.env.CONTENT_BUCKET_PREFIX ?? 'content';
 const storage = contentBucketName ? new Storage() : null;
 
 const app = express();
+// Cloud Run (og andre reverse proxyer) setter X-Forwarded-For – Express må vite dette
+// for at express-rate-limit og req.ip skal fungere korrekt.
+app.set('trust proxy', 1);
 const PORT = Number(process.env.API_PORT ?? process.env.PORT ?? 3001);
 
 const logger = createLogger({
@@ -881,6 +884,7 @@ const apiLimiter = rateLimit({
   limit: 100,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  validate: { trustProxy: false, xForwardedForHeader: false },
   message: { error: 'For mange forespørsler, prøv igjen senere' },
 });
 app.use('/api', apiLimiter);
