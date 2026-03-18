@@ -13,6 +13,9 @@ import { metricsRegistry } from '../services/building-info-service/metrics.js';
 import { csvService } from './services/csvService.js';
 import { energyRatingService } from './services/energyRatingService.js';
 import { sjekkGulListe, sjekkGulListeMedGnrBnr } from './services/gul-liste-service.js';
+import helmet from 'helmet';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { TiltakContentSchema, type TiltakContent, type TiltakBenefit } from '../content/tiltak/schema';
 import { TilskuddContentSchema, type TilskuddContent } from '../content/tilskudd/schema';
@@ -843,11 +846,45 @@ function computeCatalogEtag(catalog: ContentCatalogResponse): string | null {
 }
 
 
+// Tillatte origins for CORS
+const allowedOrigins = [
+  'https://energinokkelen.no',
+  'https://www.energinokkelen.no',
+  'https://klimaoslo.no',
+  'https://www.klimaoslo.no',
+  ...(process.env.NODE_ENV !== 'production'
+    ? ['http://localhost:5173', 'http://localhost:3000']
+    : []),
+];
+
 // Middleware
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", ...allowedOrigins],
+      frameAncestors: ["'self'", 'https://klimaoslo.no', 'https://www.klimaoslo.no'],
+    },
+  },
 }));
+app.use(compression());
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: false,
+}));
+
+const apiLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 100,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'For mange forespørsler, prøv igjen senere' },
+});
+app.use('/api', apiLimiter);
+
 app.use(express.json());
 
 // Hindre CDN fra å cache API-responser (inkl. negativ caching av feilresponser)

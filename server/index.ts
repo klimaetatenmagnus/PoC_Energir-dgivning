@@ -1,5 +1,6 @@
 import "../loadEnv.ts";
 import express from "express";
+import helmet from "helmet";
 import fetch from "node-fetch";
 import { getRuntimeConfig } from "../packages/config/src/runtime.ts";
 import { createLogger } from "../src/utils/logger.ts";
@@ -131,6 +132,7 @@ function ensureContext(xml: string, service: string): string {
 
 // ────── 3. Express-proxy med dynamisk tjeneste ───────────────────────────
 const app = express();
+app.use(helmet());
 app.use(express.text({ type: "text/xml" }));
 
 app.post("/api/matrikkel/:service", async (req, res) => {

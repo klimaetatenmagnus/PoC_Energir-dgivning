@@ -8,6 +8,8 @@
 // ---------------------------------------------------------------------------
 
 import express, { type Request, type Response, type RequestHandler } from 'express';
+import helmet from 'helmet';
+import compression from 'compression';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import NodeCache from 'node-cache';
@@ -103,7 +105,19 @@ const xmlParser = new XMLParser({
   parseTagValue: false,
 });
 
-app.use(cors());
+app.use(helmet());
+app.use(compression());
+app.use(cors({
+  origin: [
+    'https://energinokkelen.no',
+    'https://www.energinokkelen.no',
+    'https://klimaoslo.no',
+    'https://www.klimaoslo.no',
+    ...(process.env.NODE_ENV !== 'production'
+      ? ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4003']
+      : []),
+  ],
+}));
 
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });

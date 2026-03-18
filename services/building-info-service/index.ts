@@ -1,5 +1,7 @@
 import '../../loadEnv.ts';
 import express, { type RequestHandler } from 'express';
+import helmet from 'helmet';
+import compression from 'compression';
 import cors from 'cors';
 import NodeCache from 'node-cache';
 
@@ -19,7 +21,19 @@ export type { BuildingDataOptions } from './matrikkel.ts';
 const cache = new NodeCache({ stdTTL: 86_400, checkperiod: 600 });
 
 const app = express();
-app.use(cors());
+app.use(helmet());
+app.use(compression());
+app.use(cors({
+  origin: [
+    'https://energinokkelen.no',
+    'https://www.energinokkelen.no',
+    'https://klimaoslo.no',
+    'https://www.klimaoslo.no',
+    ...(process.env.NODE_ENV !== 'production'
+      ? ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4000']
+      : []),
+  ],
+}));
 
 const lookupHandler: RequestHandler = async (req, res) => {
   const finalizeLookup = startLookupTimer();
