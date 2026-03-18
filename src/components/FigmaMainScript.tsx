@@ -159,7 +159,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [selectedSolution, setSelectedSolution] = React.useState<string | null>(null);
   const handleSelectSolution = useCallback((solution: string) => {
-    trackTiltakExpanded(solution, 'desktop');
+    trackTiltakExpanded(solution);
     setSelectedSolution(solution);
   }, []);
   const [solarData, setSolarData] = React.useState<SolarEnergyData | null>(null);

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { PktButton, PktCheckbox, PktIcon, PktRadioButton, PktTabs } from '@oslokommune/punkt-react';
 import { AddressLookupResponse } from '../../../services/buildingApi';
+import { trackTiltakChecked, trackTiltakCompleted } from '../../../analytics';
 import { useTiltakCatalog } from '../../../hooks/contentHooks';
 import type { TiltakCatalogItem } from '../../../types/contentCatalog';
 import {
@@ -431,6 +432,8 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   const toggleChecked = useCallback((tiltakId: string) => {
     setCheckedItems(prev => {
       const newSet = new Set(prev);
+      const willBeChecked = !newSet.has(tiltakId);
+      trackTiltakChecked(tiltakId, willBeChecked);
       if (newSet.has(tiltakId)) {
         newSet.delete(tiltakId);
       } else {
@@ -452,6 +455,8 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   const toggleCompleted = useCallback((tiltakId: string) => {
     setCompletedItems(prev => {
       const newSet = new Set(prev);
+      const willBeCompleted = !newSet.has(tiltakId);
+      trackTiltakCompleted(tiltakId, willBeCompleted);
       if (newSet.has(tiltakId)) {
         newSet.delete(tiltakId);
       } else {

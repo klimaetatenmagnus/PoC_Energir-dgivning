@@ -8,7 +8,7 @@ import {
   PktTabs,
 } from '@oslokommune/punkt-react';
 import { AddressLookupResponse } from '../../services/buildingApi';
-import { trackNeighborComparison } from '../../analytics';
+import { trackNeighborComparison, trackTiltakChecked, trackTiltakCompleted } from '../../analytics';
 import {
   DISTRICT_BADGE,
   BUILDING_YEAR_BADGE,
@@ -757,6 +757,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   const toggleChecked = useCallback((tiltakId: string) => {
     setCheckedItems((prev) => {
       const newSet = new Set(prev);
+      const willBeChecked = !newSet.has(tiltakId);
+      trackTiltakChecked(tiltakId, willBeChecked);
       if (newSet.has(tiltakId)) {
         newSet.delete(tiltakId);
       } else {
@@ -778,6 +780,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   const toggleCompleted = useCallback((tiltakId: string) => {
     setCompletedItems(prev => {
       const newSet = new Set(prev);
+      const willBeCompleted = !newSet.has(tiltakId);
+      trackTiltakCompleted(tiltakId, willBeCompleted);
       if (newSet.has(tiltakId)) {
         newSet.delete(tiltakId);
       } else {

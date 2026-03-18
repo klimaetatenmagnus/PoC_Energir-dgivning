@@ -37,8 +37,16 @@ export function trackResultViewed(address: string, platform: 'desktop' | 'mobile
   trackEvent('energinokkelen', 'result_viewed', `${platform}:${address}`);
 }
 
-export function trackTiltakExpanded(tiltakId: string, platform: 'desktop' | 'mobile'): void {
-  trackEvent('tiltak', 'tiltak_expanded', `${platform}:${tiltakId}`);
+export function trackTiltakExpanded(tiltakId: string): void {
+  trackEvent('tiltak', 'tiltak_expanded', tiltakId);
+}
+
+export function trackTiltakChecked(tiltakId: string, checked: boolean): void {
+  trackEvent('tiltak', checked ? 'tiltak_checked' : 'tiltak_unchecked', tiltakId);
+}
+
+export function trackTiltakCompleted(tiltakId: string, completed: boolean): void {
+  trackEvent('tiltak', completed ? 'tiltak_completed' : 'tiltak_uncompleted', tiltakId);
 }
 
 export function trackExternalLinkClick(url: string, context?: string): void {

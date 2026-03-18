@@ -211,7 +211,7 @@ export default function App() {
   }, [result, yearlyConsumption]);
 
   const handleSelectMobileTiltak = useCallback((tiltakId: string, savingsKwh?: number) => {
-    trackTiltakExpanded(tiltakId, 'mobile');
+    trackTiltakExpanded(tiltakId);
     setSelectedMobileTiltak(tiltakId);
     setSelectedMobileTiltakSavings(savingsKwh);
   }, []);
