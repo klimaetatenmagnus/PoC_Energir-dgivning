@@ -1,5 +1,4 @@
 import type { Request } from "express";
-import process from "node:process";
 import type { PublishInitiator } from "./cloudBuild.js";
 import { HttpError } from "./httpError.js";
 
@@ -12,11 +11,6 @@ export function resolveUserContext(req: Request): AdminUserContext {
   if (emailHeader) {
     const [, parsedEmail] = emailHeader.split(":");
     email = parsedEmail ? parsedEmail.trim() : emailHeader.trim();
-  }
-
-  if (!email && process.env.NODE_ENV !== "production") {
-    const override = req.header("x-admin-user");
-    email = override?.trim() ?? null;
   }
 
   if (!email) {

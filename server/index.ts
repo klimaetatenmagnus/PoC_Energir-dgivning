@@ -159,6 +159,7 @@ app.post("/api/matrikkel/:service", async (req, res) => {
         Authorization: basicAuth(USERNAME, PASSWORD),
       },
       body: xml,
+      signal: AbortSignal.timeout(30_000),
     });
 
     const text = await resp.text();

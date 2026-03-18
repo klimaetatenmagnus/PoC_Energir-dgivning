@@ -69,6 +69,10 @@ export class CSVService {
   private data: MatrikkelCSVRecord[] = [];
   private isLoaded = false;
   private _readyPromise: Promise<void>;
+  // Indekser for raskere oppslag – bygges etter CSV-lasting
+  private byNormalizedAddress = new Map<string, MatrikkelCSVRecord[]>();
+  private byStreetName = new Map<string, MatrikkelCSVRecord[]>();
+  private byBygningsNr = new Map<string, MatrikkelCSVRecord>();
 
   constructor() {
     this._readyPromise = this.loadCSV();
@@ -140,6 +144,7 @@ export class CSVService {
       }));
 
       this.isLoaded = true;
+      this.buildIndices();
       logger.info(`Loaded ${this.data.length} records from Matrikkel CSV`);
     } catch (error) {
       logger.error('Error loading CSV:', error);
@@ -147,14 +152,45 @@ export class CSVService {
     }
   }
 
+  private buildIndices(): void {
+    const t0 = Date.now();
+    for (const record of this.data) {
+      // Indeks på bygningsnummer
+      if (record.bygningsNr) {
+        this.byBygningsNr.set(record.bygningsNr, record);
+      }
+
+      // Indeks på normalisert adresse
+      const normalized = this.normalizeAddress(record.gateAdresse);
+      if (normalized) {
+        let arr = this.byNormalizedAddress.get(normalized);
+        if (!arr) {
+          arr = [];
+          this.byNormalizedAddress.set(normalized, arr);
+        }
+        arr.push(record);
+
+        // Indeks på gatenavn
+        const street = this.extractStreetName(normalized);
+        if (street) {
+          let streetArr = this.byStreetName.get(street);
+          if (!streetArr) {
+            streetArr = [];
+            this.byStreetName.set(street, streetArr);
+          }
+          streetArr.push(record);
+        }
+      }
+    }
+    logger.info(`Built indices in ${Date.now() - t0}ms (${this.byNormalizedAddress.size} addresses, ${this.byStreetName.size} streets)`);
+  }
+
   /**
    * Search for building by building number
    */
   findByBygningsNr(bygningsNr: string): MatrikkelCSVRecord | null {
     if (!this.isLoaded) return null;
-
-    const record = this.data.find(r => r.bygningsNr === bygningsNr);
-    return record || null;
+    return this.byBygningsNr.get(bygningsNr) ?? null;
   }
 
   /**
@@ -170,22 +206,23 @@ export class CSVService {
     }
     const searchStreet = this.extractStreetName(normalizedSearch);
     const searchHouse = this.extractHouseIdentifier(normalizedSearch);
+
+    // Bruk gatenavn-indeks for å begrense søket i stedet for full scan
+    const pool = searchStreet
+      ? (this.byStreetName.get(searchStreet) ?? [])
+      : this.data;
+
     const candidates: Array<{ record: MatrikkelCSVRecord; score: number }> = [];
 
-    this.data.forEach((record) => {
+    for (const record of pool) {
       const normalizedRecord = this.normalizeAddress(record.gateAdresse);
       if (!normalizedRecord) {
-        return;
-      }
-
-      const recordStreet = this.extractStreetName(normalizedRecord);
-      if (searchStreet && recordStreet && searchStreet !== recordStreet) {
-        return;
+        continue;
       }
 
       const recordHouse = this.extractHouseIdentifier(normalizedRecord);
       if (searchHouse && recordHouse && searchHouse !== recordHouse) {
-        return;
+        continue;
       }
 
       if (
@@ -195,7 +232,7 @@ export class CSVService {
         const score = this.computeMatchScore(normalizedSearch, normalizedRecord);
         candidates.push({ record, score });
       }
-    });
+    }
 
     return candidates
       .sort((a, b) => b.score - a.score)
@@ -215,10 +252,8 @@ export class CSVService {
       return null;
     }
 
-    // Find ALL records matching the address
-    const allMatches = this.data.filter(r =>
-      this.normalizeAddress(r.gateAdresse) === normalizedSearch
-    );
+    // Bruk adresse-indeks for O(1)-oppslag i stedet for full scan
+    const allMatches = this.byNormalizedAddress.get(normalizedSearch) ?? [];
 
     if (allMatches.length === 0) {
       return null;
@@ -327,9 +362,10 @@ export class CSVService {
     const houseNumber = parseInt(houseMatch[1], 10);
     const currentLetter = houseMatch[2].toLowerCase();
 
-    const siblings = this.data.filter(r => {
+    const streetRecords = this.byStreetName.get(street) ?? [];
+    const siblings = streetRecords.filter(r => {
       const rNorm = this.normalizeAddress(r.gateAdresse);
-      if (!rNorm || this.extractStreetName(rNorm) !== street) return false;
+      if (!rNorm) return false;
       const rMatch = rNorm.match(/(\d+)([a-zæøå])$/i);
       if (!rMatch || parseInt(rMatch[1], 10) !== houseNumber) return false;
       if (rMatch[2].toLowerCase() === currentLetter) return false;
@@ -366,11 +402,8 @@ export class CSVService {
 
     const houseNumber = parseInt(houseMatch[1], 10);
 
-    // Get all records on the same street
-    const streetRecords = this.data.filter((r) => {
-      const rNorm = this.normalizeAddress(r.gateAdresse);
-      return rNorm && this.extractStreetName(rNorm) === street;
-    });
+    // Bruk gatenavn-indeks for raskere oppslag
+    const streetRecords = this.byStreetName.get(street) ?? [];
 
     if (streetRecords.length === 0) return null;
 

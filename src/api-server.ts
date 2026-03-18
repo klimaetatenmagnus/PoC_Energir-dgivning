@@ -891,9 +891,15 @@ app.use('/api', apiLimiter);
 
 app.use(express.json());
 
-// Hindre CDN fra å cache API-responser (inkl. negativ caching av feilresponser)
+// Hindre CDN fra å cache muterende API-responser (inkl. negativ caching av feilresponser)
 app.use('/api', (_req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
+  next();
+});
+
+// Tillat caching for stabile config-endepunkter
+app.use('/config', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=600');
   next();
 });
 
@@ -1051,6 +1057,7 @@ async function handleSolarProxy(req: express.Request, res: express.Response): Pr
       headers: {
         accept: req.headers.accept ?? '*/*',
       },
+      signal: AbortSignal.timeout(15_000),
     });
 
     response.headers.forEach((value, key) => {
@@ -1169,12 +1176,15 @@ app.get('/api/address-suggestions', async (req, res) => {
     // Call Geonorge API with fuzzy search
     const response = await fetch(
       `https://ws.geonorge.no/adresser/v1/sok?` +
-      new URLSearchParams({ 
-        sok: query, 
+      new URLSearchParams({
+        sok: query,
         fuzzy: 'true',
         kommunenummer: '0301' // Oslo kommune
       }).toString().replace(/\+/g, '%20'),
-      { headers: { 'User-Agent': 'Energitiltak/1.0' } }
+      {
+        headers: { 'User-Agent': 'Energitiltak/1.0' },
+        signal: AbortSignal.timeout(10_000),
+      }
     );
 
     if (!response.ok) {

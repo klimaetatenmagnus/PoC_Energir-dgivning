@@ -232,7 +232,7 @@ async function lookupAdresse(adresse: string): Promise<LookupAdresseResult> {
       }
 
       for (const variant of uniqueVariants) {
-        const response = await fetch(buildUrl(variant), headers);
+        const response = await fetch(buildUrl(variant), { ...headers, signal: AbortSignal.timeout(15_000) });
         if (!response.ok) {
           continue;
         }
@@ -323,6 +323,7 @@ async function fetchEnergiattest(params: {
             'x-api-key': ENOVA_KEY,
           },
           body: JSON.stringify(body),
+          signal: AbortSignal.timeout(15_000),
         }
       );
 
@@ -456,7 +457,7 @@ async function fetchSolarData(params: {
         }
 
         debugLog(`☀️ Full URL: ${url}`);
-        const response = await fetch(url);
+        const response = await fetch(url, { signal: AbortSignal.timeout(15_000) });
         debugLog(`☀️ Response status: ${response.status}`);
 
         if (!response.ok) {

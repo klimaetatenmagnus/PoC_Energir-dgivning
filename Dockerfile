@@ -46,4 +46,5 @@ COPY --from=build /app/public ./public
 
 EXPOSE 3001 4000
 
+USER node
 CMD ["node", "./dist/backend/building-info-service.mjs"]

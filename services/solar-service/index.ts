@@ -140,7 +140,9 @@ function buildWfsParams(params: WfsQueryParams): URLSearchParams {
 }
 
 async function wfsCall(params: URLSearchParams): Promise<string> {
-  const res = await fetch(`${config.wfsUrl}?${params.toString()}`);
+  const res = await fetch(`${config.wfsUrl}?${params.toString()}`, {
+    signal: AbortSignal.timeout(15_000),
+  });
   if (!res.ok) throw new Error(`WFS ${res.status}`);
   return res.text();
 }
@@ -174,10 +176,35 @@ function parseFeatureMembers(xml: string): Takflate[] {
   });
 }
 
+/* ───────── XML-escape for sikker interpolering i OGC-filtre ────────── */
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/** Validerer at en streng kun inneholder sifre (for GNR/BNR/SNR/BYGG_ID). */
+function assertNumericString(value: string, label: string): void {
+  if (!/^\d+$/.test(value)) {
+    throw new Error(`Ugyldig ${label}: kun sifre tillatt`);
+  }
+}
+
+/** Validerer WKT polygon-format (kun tall, mellomrom, komma, parenteser og POLYGON-nøkkelord). */
+function assertSafeWkt(wkt: string): void {
+  if (!/^POLYGON\s*\(\([\d\s,.-]+\)\)$/i.test(wkt)) {
+    throw new Error('Ugyldig polygon-format');
+  }
+}
+
 /* ───────── 1) BYGG_ID-filter ─────────────────────────────────────────── */
 async function takflaterForByggId(id: string): Promise<Takflate[]> {
+  assertNumericString(id, 'bygg_id');
   const filter = `<Filter xmlns="http://www.opengis.net/ogc">
-    <PropertyIsEqualTo><PropertyName>BYGG_ID</PropertyName><Literal>${id}</Literal></PropertyIsEqualTo>
+    <PropertyIsEqualTo><PropertyName>BYGG_ID</PropertyName><Literal>${escapeXml(id)}</Literal></PropertyIsEqualTo>
   </Filter>`;
 
   const params = buildWfsParams({
@@ -196,8 +223,9 @@ async function takflaterForByggId(id: string): Promise<Takflate[]> {
 
 /* ───────── 2) Polygon-filter ─────────────────────────────────────────── */
 async function takflaterForByggNr(byggNr: string): Promise<Takflate[]> {
+  assertNumericString(byggNr, 'bygg_nr');
   const filter = `<Filter xmlns="http://www.opengis.net/ogc">
-    <PropertyIsEqualTo><PropertyName>BYGGNR</PropertyName><Literal>${byggNr}</Literal></PropertyIsEqualTo>
+    <PropertyIsEqualTo><PropertyName>BYGGNR</PropertyName><Literal>${escapeXml(byggNr)}</Literal></PropertyIsEqualTo>
   </Filter>`;
 
   const params = buildWfsParams({
@@ -215,6 +243,7 @@ async function takflaterForByggNr(byggNr: string): Promise<Takflate[]> {
 }
 
 async function takflaterForPolygon(wkt: string): Promise<Takflate[]> {
+  assertSafeWkt(wkt);
   const cql = `INTERSECTS(msGeometry, SRID=32632;${wkt})`;
 
   const params = buildWfsParams({
@@ -233,13 +262,16 @@ async function takflaterForPolygon(wkt: string): Promise<Takflate[]> {
 
 /* ───────── 3) Matrikkel-filter ───────────────────────────────────────── */
 async function takflaterForMatrikkel(gnr: string, bnr: string, snr?: string): Promise<Takflate[]> {
+  assertNumericString(gnr, 'gnr');
+  assertNumericString(bnr, 'bnr');
+  if (snr) assertNumericString(snr, 'snr');
   const parts = [
-    `<PropertyIsEqualTo><PropertyName>GNR</PropertyName><Literal>${gnr}</Literal></PropertyIsEqualTo>`,
-    `<PropertyIsEqualTo><PropertyName>BNR</PropertyName><Literal>${bnr}</Literal></PropertyIsEqualTo>`,
+    `<PropertyIsEqualTo><PropertyName>GNR</PropertyName><Literal>${escapeXml(gnr)}</Literal></PropertyIsEqualTo>`,
+    `<PropertyIsEqualTo><PropertyName>BNR</PropertyName><Literal>${escapeXml(bnr)}</Literal></PropertyIsEqualTo>`,
   ];
   if (snr) {
     parts.push(
-      `<PropertyIsEqualTo><PropertyName>SNR</PropertyName><Literal>${snr}</Literal></PropertyIsEqualTo>`
+      `<PropertyIsEqualTo><PropertyName>SNR</PropertyName><Literal>${escapeXml(snr)}</Literal></PropertyIsEqualTo>`
     );
   }
   const filter = `<Filter xmlns="http://www.opengis.net/ogc"><And>${parts.join('')}</And></Filter>`;
