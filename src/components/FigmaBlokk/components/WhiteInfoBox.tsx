@@ -19,6 +19,7 @@ import {
 import dictionaryData from '../../../../content/dictionaries/index.json';
 import { DesktopTiltakCard } from './Tiltak';
 import { DistrictComparisonModal } from './DistrictComparison/DistrictComparisonModal';
+import { trackNeighborComparison } from '../../../analytics';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, calculateEnergyRatingWithFjernvarme, calculateTEK } from '../../../utils/tekEnergyCalculations';
 import { calculateComparisonSavings, type TiltakSavingsInfo, type TekPeriodInput } from '../../../utils/energySavingsData';
 import {
@@ -1555,7 +1556,7 @@ buildingTypeCategory={buildingCategory}
           size="small"
           variant="icon-left"
           iconName="eye"
-          onClick={() => setIsComparisonModalOpen(true)}
+          onClick={() => { trackNeighborComparison(); setIsComparisonModalOpen(true); }}
           className="white-info-box__comparison-button"
         >
           <span>Sammenlign deg med naboene dine</span>
