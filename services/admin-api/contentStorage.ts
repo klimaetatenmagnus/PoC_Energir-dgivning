@@ -265,7 +265,7 @@ export class ContentStorage {
 
     const expected = options.expectedGeneration?.trim();
     if (expected) {
-      saveOptions.preconditionOpts = { ifGenerationMatch: expected };
+      saveOptions.preconditionOpts = { ifGenerationMatch: Number(expected) };
     }
 
     try {
