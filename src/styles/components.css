@@ -1052,6 +1052,22 @@
   border-radius: 4px;
 }
 
+/* Personvernlenke på landingssiden */
+.landing__privacy-link {
+  display: block;
+  text-align: center;
+  margin-top: 1.5rem;
+  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  color: rgba(42, 40, 89, 0.5);
+  text-decoration: none;
+}
+
+.landing__privacy-link:hover {
+  color: rgba(42, 40, 89, 0.8);
+  text-decoration: underline;
+}
+
 /* Oslo logo container */
 .oslo-logo-container {
   display: flex;
@@ -1263,6 +1279,22 @@
   justify-content: center;
   padding-top: 1.5rem;
   font-weight: bold;
+}
+
+/* Personvernlenke på mobil landingsside */
+.mobile-landing__privacy-link {
+  display: block;
+  text-align: center;
+  margin-top: 1.25rem;
+  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 11px;
+  color: rgba(42, 40, 89, 0.5);
+  text-decoration: none;
+}
+
+.mobile-landing__privacy-link:hover {
+  color: rgba(42, 40, 89, 0.8);
+  text-decoration: underline;
 }
 
 /* Mini-skyline container */

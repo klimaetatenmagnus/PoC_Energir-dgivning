@@ -116,6 +116,15 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
               </div>
             )}
           </div>
+
+          <a
+            href="https://www.oslo.kommune.no/personvern-og-informasjonskapsler/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="landing__privacy-link"
+          >
+            Personvern og informasjonskapsler
+          </a>
         </div>
       </div>
 

@@ -124,6 +124,15 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
             </div>
           )}
         </div>
+
+        <a
+          href="https://www.oslo.kommune.no/personvern-og-informasjonskapsler/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mobile-landing__privacy-link"
+        >
+          Personvern og informasjonskapsler
+        </a>
       </div>
 
       {/* Mini-skyline i bunnen */}
