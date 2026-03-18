@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { PktButton } from '@oslokommune/punkt-react';
 import { AddressLookupResponse } from '../services/buildingApi';
-import { trackTiltakExpanded } from '../analytics';
+import { trackTiltakExpanded, trackHowToImplement } from '../analytics';
 import { useAddressCoordinates } from './FigmaBlokk/hooks/useAddressCoordinates';
 import { EnergySolutionButtons } from './FigmaBlokk/components/EnergySolutionButtons';
 import type { TiltakCanonicalKey } from './FigmaBlokk/utils/tiltakCanonicalKeys';
@@ -343,6 +343,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   }, [shouldShowProcessButton]);
 
   const handleShowProcess = React.useCallback(() => {
+    trackHowToImplement();
     setIsProcessButtonExiting(true);
     setShowProcess(true);
   }, []);

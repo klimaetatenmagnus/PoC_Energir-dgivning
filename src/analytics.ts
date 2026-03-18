@@ -57,6 +57,10 @@ export function trackNeighborComparison(): void {
   trackEvent('energinokkelen', 'neighbor_comparison');
 }
 
+export function trackHowToImplement(): void {
+  trackEvent('energinokkelen', 'how_to_implement');
+}
+
 export function trackPageStep(step: string, platform?: 'desktop' | 'mobile'): void {
   trackEvent('navigation', 'page_step', platform ? `${platform}:${step}` : step);
 }

@@ -8,7 +8,7 @@ import {
   PktTabs,
 } from '@oslokommune/punkt-react';
 import { AddressLookupResponse } from '../../services/buildingApi';
-import { trackNeighborComparison, trackTiltakChecked, trackTiltakCompleted } from '../../analytics';
+import { trackNeighborComparison, trackTiltakChecked, trackTiltakCompleted, trackHowToImplement } from '../../analytics';
 import {
   DISTRICT_BADGE,
   BUILDING_YEAR_BADGE,
@@ -1606,6 +1606,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
         selectedTiltakCount={checkedItems.size}
         forceCollapsed={isDetailViewActive || showInfoBox}
         onNavigateForward={() => {
+          trackHowToImplement();
           setShowProsessenVidere(true);
         }}
       />
