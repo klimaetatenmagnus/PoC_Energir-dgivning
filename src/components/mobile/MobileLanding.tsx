@@ -49,7 +49,7 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
   handleSuggestionSelect,
   openSuggestions,
 }) => {
-  const { tip: loaderTip, visible: loaderVisible, fadingIn: loaderFadingIn, fadingOut: loaderFadingOut } = useRotatingLoaderTips(loading);
+  const { tip: loaderTip, visible: loaderVisible, opacity: loaderOpacity } = useRotatingLoaderTips(loading);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Map AddressSuggestion[] to PktSearchInput's SearchSuggestion[]
@@ -124,12 +124,12 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
             </PktAlert>
           )}
           {loaderVisible && (
-            <div className={`mobile-landing__loader${loaderFadingIn ? ' mobile-landing__loader--hidden' : ''}${loaderFadingOut ? ' mobile-landing__loader--fading' : ''}`}>
+            <div className="mobile-landing__loader" style={{ opacity: loaderOpacity }}>
               <PktLoader
                 message={loaderTip}
                 size="large"
                 variant="rainbow"
-                isLoading={loading}
+                isLoading
               />
             </div>
           )}

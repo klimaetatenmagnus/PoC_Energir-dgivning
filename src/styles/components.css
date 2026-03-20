@@ -1041,15 +1041,6 @@
   transition: opacity 0.6s ease;
 }
 
-.landing__loader--hidden {
-  opacity: 0;
-  transition: none;
-}
-
-.landing__loader--fading {
-  opacity: 0;
-}
-
 /* Feilmelding under søkefelt */
 .landing__error {
   color: #FF6B6B;
@@ -1291,11 +1282,6 @@
   padding-top: 1.5rem;
   font-weight: bold;
   transition: opacity 0.6s ease;
-}
-
-.mobile-landing__loader--hidden {
-  opacity: 0;
-  transition: none;
 }
 
 .mobile-landing__loader--fading {

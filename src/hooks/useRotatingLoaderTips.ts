@@ -19,13 +19,12 @@ const DEFAULT_TIPS = [
   'Finn tips til å spare strøm på klimaoslo.no/sparstrøm',
 ];
 
-const FADE_OUT_MS = 600;
+const FADE_MS = 600;
 
 export type RotatingLoaderTipsResult = {
   tip: string;
   visible: boolean;
-  fadingIn: boolean;
-  fadingOut: boolean;
+  opacity: number;
 };
 
 function pickRandom(tips: string[], previousTip: string | null): string {
@@ -55,30 +54,24 @@ export function useRotatingLoaderTips(isActive: boolean): RotatingLoaderTipsResu
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive]);
 
-  const [fadingIn, setFadingIn] = useState(false);
-  const [fadingOut, setFadingOut] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [opacity, setOpacity] = useState(0);
 
   useEffect(() => {
     if (isActive) {
+      // Mount with opacity 0, then fade in after browser paints
       setVisible(true);
-      setFadingOut(false);
-      // Start invisible, then trigger fade-in on next frame
-      setFadingIn(true);
-      const raf = requestAnimationFrame(() => {
-        setFadingIn(false);
-      });
-      return () => cancelAnimationFrame(raf);
+      setOpacity(0);
+      const timer = setTimeout(() => setOpacity(1), 30);
+      return () => clearTimeout(timer);
     } else if (visible) {
-      setFadingOut(true);
-      const timer = setTimeout(() => {
-        setFadingOut(false);
-        setVisible(false);
-      }, FADE_OUT_MS);
+      // Fade out, then unmount
+      setOpacity(0);
+      const timer = setTimeout(() => setVisible(false), FADE_MS);
       return () => clearTimeout(timer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive]);
 
-  return { tip, visible, fadingIn, fadingOut };
+  return { tip, visible, opacity };
 }
