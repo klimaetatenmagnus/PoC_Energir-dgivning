@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useContentDictionary } from './contentHooks';
 
 const DEFAULT_TIPS = [
@@ -8,7 +8,7 @@ const DEFAULT_TIPS = [
   'Visste du at du kan få inntil 37 500 kr i Enova-støtte til solceller på privatboligen din?',
   'Visste du at du kan få inntil 20 000 kr i Enova-støtte til nye vinduer og dører i privatboligen din?',
   'Visste du at du kan få inntil 40 000 kr i Enova-støtte til varmepumpe i privatboligen din?',
-  'Visste du at du kan få inntil 22 500 kr i Enova-støtte til etterisolering av taket i privatboligen din?',
+  'Visste du at du kan få inntil 22 500 kr i støtte til etterisolering av taket i privatboligen?',
   'Visste du at du kan få 5 000 kr i støtte til en energirådgiver for privatboligen din?',
   'Visste du at vinduer står for 40 % av varmetapet i en gjennomsnittsbolig?',
   'LED bruker kun en fjerdedel av energien til gamle lyspærer',
@@ -19,17 +19,6 @@ const DEFAULT_TIPS = [
   'Finn tips til å spare strøm på klimaoslo.no/sparstrøm',
 ];
 
-const ROTATION_INTERVAL_MS = 3_000;
-
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
 const FADE_OUT_MS = 600;
 
 export type RotatingLoaderTipsResult = {
@@ -37,6 +26,12 @@ export type RotatingLoaderTipsResult = {
   visible: boolean;
   fadingOut: boolean;
 };
+
+function pickRandom(tips: string[], previousTip: string | null): string {
+  if (tips.length <= 1) return tips[0];
+  const candidates = tips.filter((t) => t !== previousTip);
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
 
 export function useRotatingLoaderTips(isActive: boolean): RotatingLoaderTipsResult {
   const { data: dictionary } = useContentDictionary();
@@ -46,42 +41,16 @@ export function useRotatingLoaderTips(isActive: boolean): RotatingLoaderTipsResu
       ? dictionary.funFacts.map((f) => f.text)
       : DEFAULT_TIPS;
 
-  const shuffledRef = useRef<string[]>([]);
-  const tipsKeyRef = useRef<string>('');
+  const [tip, setTip] = useState(() => pickRandom(tips, null));
+  const previousTipRef = useRef<string | null>(null);
 
-  const tipsKey = tips.join('|');
-  if (tipsKeyRef.current !== tipsKey) {
-    tipsKeyRef.current = tipsKey;
-    shuffledRef.current = shuffleArray(tips);
-  }
-
-  const [index, setIndex] = useState(0);
-
-  const advance = useCallback(() => {
-    setIndex((prev) => {
-      const next = prev + 1;
-      if (next >= shuffledRef.current.length) {
-        shuffledRef.current = shuffleArray(shuffledRef.current);
-        return 0;
-      }
-      return next;
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!isActive) {
-      return;
-    }
-    const timer = setInterval(advance, ROTATION_INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [isActive, advance]);
-
+  // Pick a new random tip each time loading starts
   useEffect(() => {
     if (isActive) {
-      shuffledRef.current = shuffleArray(tips);
-      setIndex(0);
+      const next = pickRandom(tips, previousTipRef.current);
+      previousTipRef.current = next;
+      setTip(next);
     }
-  // Only reshuffle when loading starts, not when tips change
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive]);
 
@@ -104,9 +73,5 @@ export function useRotatingLoaderTips(isActive: boolean): RotatingLoaderTipsResu
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive]);
 
-  return {
-    tip: shuffledRef.current[index] ?? tips[0],
-    visible,
-    fadingOut,
-  };
+  return { tip, visible, fadingOut };
 }
