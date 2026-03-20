@@ -1038,7 +1038,12 @@
   justify-content: center;
   margin-top: 1.5rem;
   font-weight: bold;
-  transition: opacity 0.6s ease-out;
+  transition: opacity 0.6s ease;
+}
+
+.landing__loader--hidden {
+  opacity: 0;
+  transition: none;
 }
 
 .landing__loader--fading {
@@ -1285,7 +1290,12 @@
   justify-content: center;
   padding-top: 1.5rem;
   font-weight: bold;
-  transition: opacity 0.6s ease-out;
+  transition: opacity 0.6s ease;
+}
+
+.mobile-landing__loader--hidden {
+  opacity: 0;
+  transition: none;
 }
 
 .mobile-landing__loader--fading {

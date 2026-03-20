@@ -24,6 +24,7 @@ const FADE_OUT_MS = 600;
 export type RotatingLoaderTipsResult = {
   tip: string;
   visible: boolean;
+  fadingIn: boolean;
   fadingOut: boolean;
 };
 
@@ -54,7 +55,7 @@ export function useRotatingLoaderTips(isActive: boolean): RotatingLoaderTipsResu
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive]);
 
-  // Fade-out when loading finishes
+  const [fadingIn, setFadingIn] = useState(false);
   const [fadingOut, setFadingOut] = useState(false);
   const [visible, setVisible] = useState(false);
 
@@ -62,6 +63,12 @@ export function useRotatingLoaderTips(isActive: boolean): RotatingLoaderTipsResu
     if (isActive) {
       setVisible(true);
       setFadingOut(false);
+      // Start invisible, then trigger fade-in on next frame
+      setFadingIn(true);
+      const raf = requestAnimationFrame(() => {
+        setFadingIn(false);
+      });
+      return () => cancelAnimationFrame(raf);
     } else if (visible) {
       setFadingOut(true);
       const timer = setTimeout(() => {
@@ -73,5 +80,5 @@ export function useRotatingLoaderTips(isActive: boolean): RotatingLoaderTipsResu
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive]);
 
-  return { tip, visible, fadingOut };
+  return { tip, visible, fadingIn, fadingOut };
 }
