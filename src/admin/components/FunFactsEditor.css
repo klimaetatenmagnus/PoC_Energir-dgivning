@@ -1,0 +1,90 @@
+.funfacts-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.funfacts-editor__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.funfacts-editor__card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  height: 100%;
+}
+
+.funfacts-editor__preview-text {
+  margin: 0;
+  flex: 1;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--pkt-color-text-default, #0f1e2e);
+}
+
+.funfacts-editor__card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.funfacts-editor__form {
+  background: var(--pkt-color-background-card, #fff);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.funfacts-editor__form-wrapper {
+  width: 100%;
+}
+
+.funfacts-editor__form-wrapper--inline {
+  grid-column: 1 / -1;
+}
+
+.funfacts-editor__text-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.funfacts-editor__char-count {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--pkt-color-text-secondary, #4c566a);
+  text-align: right;
+}
+
+.funfacts-editor__form-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.funfacts-editor__save-button {
+  min-width: 120px;
+}
+
+.funfacts-editor__empty {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 48rem) {
+  .funfacts-editor__form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .funfacts-editor__save-button {
+    width: 100%;
+  }
+}

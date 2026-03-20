@@ -4,9 +4,11 @@ import {
   BenefitDictionaryEntrySchema,
   ContentDictionarySchema,
   dictionarySchemaVersion,
+  FunFactDictionaryEntrySchema,
   GlossaryTermDictionaryEntrySchema,
   type BenefitDictionaryEntry,
   type ContentDictionary,
+  type FunFactDictionaryEntry,
   type GlossaryTermDictionaryEntry,
 } from "../../content/dictionaries/schema";
 import { resolveUserContext } from "./auth.js";
@@ -33,6 +35,15 @@ const GlossaryTermMutationSchema = z.object({
 });
 
 const GlossaryTermDeleteSchema = z.object({
+  generation: z.string().min(1, { message: "Generation må oppgis" }),
+});
+
+const FunFactMutationSchema = z.object({
+  generation: z.string().min(1, { message: "Generation må oppgis" }),
+  funFact: FunFactDictionaryEntrySchema,
+});
+
+const FunFactDeleteSchema = z.object({
   generation: z.string().min(1, { message: "Generation må oppgis" }),
 });
 
@@ -328,6 +339,144 @@ export function createDictionaryRouter(storage: ContentStorage) {
     }
   });
 
+  // --- Fun facts CRUD ---
+
+  router.post("/dictionary/fun-facts", async (req, res, next) => {
+    try {
+      const body = FunFactMutationSchema.parse(req.body ?? {});
+      const actor = resolveUserContext(req);
+      const { dictionary } = await loadDictionary(storage);
+
+      const funFacts = dictionary.funFacts ?? [];
+      if (funFacts.some((entry) => entry.id === body.funFact.id)) {
+        throw new HttpError(
+          409,
+          `Fun fact ${body.funFact.id} finnes allerede`
+        );
+      }
+
+      const updatedDictionary: ContentDictionary = {
+        ...dictionary,
+        schemaVersion: dictionarySchemaVersion,
+        funFacts: [
+          ...funFacts,
+          normaliseFunFactEntry(body.funFact),
+        ],
+      };
+
+      const result = await storage.writeJson(DICTIONARY_PATH, updatedDictionary, {
+        expectedGeneration: body.generation,
+      });
+
+      logger.info(
+        `${actor.email} opprettet fun fact ${body.funFact.id} (generation=${result.generation ?? "ukjent"})`
+      );
+
+      res.status(201).json({
+        funFact: normaliseFunFactEntry(body.funFact),
+        generation: result.generation,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.put("/dictionary/fun-facts/:id", async (req, res, next) => {
+    try {
+      const body = FunFactMutationSchema.parse(req.body ?? {});
+      const actor = resolveUserContext(req);
+      const factId = req.params.id?.trim();
+      if (!factId) {
+        throw new HttpError(400, "Mangler fun-fact-id i path");
+      }
+      if (body.funFact.id !== factId) {
+        throw new HttpError(
+          400,
+          "ID i body må matche ID i path ved oppdatering"
+        );
+      }
+
+      const { dictionary } = await loadDictionary(storage);
+      const funFacts = dictionary.funFacts ?? [];
+      const index = funFacts.findIndex((entry) => entry.id === factId);
+      if (index === -1) {
+        throw new HttpError(
+          404,
+          `Fant ikke fun fact med id ${factId}`
+        );
+      }
+
+      const updatedFunFacts = [...funFacts];
+      updatedFunFacts[index] = normaliseFunFactEntry(body.funFact);
+
+      const updatedDictionary: ContentDictionary = {
+        ...dictionary,
+        schemaVersion: dictionarySchemaVersion,
+        funFacts: updatedFunFacts,
+      };
+
+      const result = await storage.writeJson(DICTIONARY_PATH, updatedDictionary, {
+        expectedGeneration: body.generation,
+      });
+
+      logger.info(
+        `${actor.email} oppdaterte fun fact ${factId} (generation=${result.generation ?? "ukjent"})`
+      );
+
+      res.json({
+        funFact: updatedFunFacts[index],
+        generation: result.generation,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.delete("/dictionary/fun-facts/:id", async (req, res, next) => {
+    try {
+      const body = FunFactDeleteSchema.parse(req.body ?? {});
+      const actor = resolveUserContext(req);
+      const factId = req.params.id?.trim();
+      if (!factId) {
+        throw new HttpError(400, "Mangler fun-fact-id i path");
+      }
+
+      const { dictionary } = await loadDictionary(storage);
+      const funFacts = dictionary.funFacts ?? [];
+      const index = funFacts.findIndex((entry) => entry.id === factId);
+      if (index === -1) {
+        throw new HttpError(
+          404,
+          `Fant ikke fun fact med id ${factId}`
+        );
+      }
+
+      const updatedFunFacts = funFacts.filter(
+        (entry) => entry.id !== factId
+      );
+      const updatedDictionary: ContentDictionary = {
+        ...dictionary,
+        schemaVersion: dictionarySchemaVersion,
+        funFacts: updatedFunFacts,
+      };
+
+      const result = await storage.writeJson(DICTIONARY_PATH, updatedDictionary, {
+        expectedGeneration: body.generation,
+      });
+
+      logger.info(
+        `${actor.email} slettet fun fact ${factId} (generation=${result.generation ?? "ukjent"})`
+      );
+
+      res.json({
+        generation: result.generation,
+        deletedId: factId,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 }
 
@@ -372,5 +521,14 @@ function normaliseGlossaryTermEntry(
       label: link.label.trim(),
       url: link.url.trim(),
     })),
+  };
+}
+
+function normaliseFunFactEntry(
+  entry: FunFactDictionaryEntry
+): FunFactDictionaryEntry {
+  return {
+    id: entry.id.trim(),
+    text: entry.text.trim(),
   };
 }

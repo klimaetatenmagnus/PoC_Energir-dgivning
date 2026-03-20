@@ -58,6 +58,13 @@ export const ProviderDictionaryEntrySchema = z
   })
   .strict();
 
+export const FunFactDictionaryEntrySchema = z
+  .object({
+    id: SlugSchema,
+    text: NonEmptyStringSchema,
+  })
+  .strict();
+
 export const ContentDictionarySchema = z
   .object({
     schemaVersion: z.literal(dictionarySchemaVersion),
@@ -65,7 +72,8 @@ export const ContentDictionarySchema = z
     benefits: z.array(BenefitDictionaryEntrySchema),
     supportTags: z.array(SupportTagDictionaryEntrySchema),
     glossaryTerms: z.array(GlossaryTermDictionaryEntrySchema).default([]),
-    providers: z.array(ProviderDictionaryEntrySchema).default([])
+    providers: z.array(ProviderDictionaryEntrySchema).default([]),
+    funFacts: z.array(FunFactDictionaryEntrySchema).default([])
   })
   .strict();
 
@@ -74,4 +82,5 @@ export type BenefitDictionaryEntry = z.infer<typeof BenefitDictionaryEntrySchema
 export type SupportTagDictionaryEntry = z.infer<typeof SupportTagDictionaryEntrySchema>;
 export type GlossaryTermDictionaryEntry = z.infer<typeof GlossaryTermDictionaryEntrySchema>;
 export type ProviderDictionaryEntry = z.infer<typeof ProviderDictionaryEntrySchema>;
+export type FunFactDictionaryEntry = z.infer<typeof FunFactDictionaryEntrySchema>;
 export type ContentDictionary = z.infer<typeof ContentDictionarySchema>;

@@ -81,6 +81,11 @@ export interface AdminProviderDictionaryEntry {
   color?: string;
 }
 
+export interface AdminFunFactDictionaryEntry {
+  id: string;
+  text: string;
+}
+
 export interface AdminContentDictionary {
   schemaVersion: number;
   buildingTypes: AdminBuildingTypeDictionaryEntry[];
@@ -88,6 +93,7 @@ export interface AdminContentDictionary {
   supportTags: AdminSupportTagDictionaryEntry[];
   glossaryTerms: AdminGlossaryTermDictionaryEntry[];
   providers: AdminProviderDictionaryEntry[];
+  funFacts: AdminFunFactDictionaryEntry[];
 }
 
 export interface AdminDictionaryContextValue {

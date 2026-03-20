@@ -35,7 +35,12 @@ export default defineConfig({
       "/lookup": "http://localhost:4002",
       "/solinnstraling": "http://localhost:4003",
       "/api": "http://localhost:3001",
-      "/admin/api": "http://localhost:4100",
+      "/admin/api": {
+        target: "http://localhost:4100",
+        headers: {
+          "x-goog-authenticated-user-email": "accounts.google.com:local-redaktor@energinokkelen.dev",
+        },
+      },
       "/config": {
         target: "http://localhost:3001",
         changeOrigin: true

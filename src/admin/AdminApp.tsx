@@ -3,6 +3,7 @@ import "./admin.css";
 import { ModeCards } from "./components/ModeCards";
 import { ContentList } from "./components/ContentList";
 import { BenefitsPage } from "./components/BenefitsPage";
+import { FunFactsPage } from "./components/FunFactsPage";
 import { GlossaryPage } from "./components/GlossaryPage";
 import { TiltakEditorPage } from "./components/TiltakEditorPage";
 import { TilskuddEditorPage } from "./components/TilskuddEditorPage";
@@ -47,7 +48,7 @@ function AdminShell() {
     null
   );
   const [previewMode, setPreviewMode] = useState<AdminMode | null>(null);
-  const [activeView, setActiveView] = useState<"dashboard" | "benefits" | "glossary" | "editor">(
+  const [activeView, setActiveView] = useState<"dashboard" | "benefits" | "glossary" | "funfacts" | "editor">(
     "dashboard"
   );
   const [editItem, setEditItem] = useState<AdminContentItem | null>(null);
@@ -133,7 +134,7 @@ function AdminShell() {
               Innholdsredigering
             </h1>
             <p className="admin-subtitle">
-              Administrer tiltakskort og tilskuddsordninger.
+              Administrer tiltakskort, tilskuddsordninger og fun facts.
             </p>
           </div>
         </header>
@@ -143,7 +144,7 @@ function AdminShell() {
             {!mode && (
               <>
                 <PktHeading level={3}>Hva vil du redigere?</PktHeading>
-                <ModeCards onSelect={setMode} />
+                <ModeCards onSelect={setMode} onOpenFunFacts={() => setActiveView("funfacts")} />
               </>
             )}
 
@@ -183,6 +184,10 @@ function AdminShell() {
 
         {activeView === "glossary" && (
           <GlossaryPage onBack={() => setActiveView("dashboard")} />
+        )}
+
+        {activeView === "funfacts" && (
+          <FunFactsPage onBack={() => setActiveView("dashboard")} />
         )}
 
         {activeView === "editor" && editItem && mode === "tiltak" && (

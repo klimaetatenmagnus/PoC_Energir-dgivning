@@ -2,6 +2,7 @@ import React, { RefObject, useRef, useCallback } from 'react';
 import type { KeyboardEvent } from 'react';
 import { PktSearchInput, PktAlert, PktLoader } from '@oslokommune/punkt-react';
 import { type AddressSuggestion } from '../../services/buildingApi';
+import { useRotatingLoaderTips } from '../../hooks/useRotatingLoaderTips';
 import { OsloLogo } from '../FigmaBlokk/components/OsloLogo';
 import { MiniSkyline } from './MiniSkyline';
 
@@ -48,6 +49,7 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
   handleSuggestionSelect,
   openSuggestions,
 }) => {
+  const loaderTip = useRotatingLoaderTips(loading);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Map AddressSuggestion[] to PktSearchInput's SearchSuggestion[]
@@ -124,7 +126,7 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
           {loading && (
             <div className="mobile-landing__loader">
               <PktLoader
-                message="Henter boliginformasjon..."
+                message={loaderTip}
                 size="large"
                 variant="rainbow"
                 isLoading

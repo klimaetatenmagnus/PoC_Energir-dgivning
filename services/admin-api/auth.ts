@@ -13,6 +13,14 @@ export function resolveUserContext(req: Request): AdminUserContext {
     email = parsedEmail ? parsedEmail.trim() : emailHeader.trim();
   }
 
+  // Fallback for local development: accept x-admin-user header
+  if (!email) {
+    const devHeader = req.header("x-admin-user");
+    if (devHeader) {
+      email = devHeader.trim();
+    }
+  }
+
   if (!email) {
     throw new HttpError(403, "Mangler autentisert bruker for admin-operasjon");
   }

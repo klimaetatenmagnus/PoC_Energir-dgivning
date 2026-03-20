@@ -1,6 +1,7 @@
 import React, { RefObject, useRef, useCallback } from 'react';
 import { PktSearchInput, PktLoader } from '@oslokommune/punkt-react';
 import { type AddressSuggestion } from '../../services/buildingApi';
+import { useRotatingLoaderTips } from '../../hooks/useRotatingLoaderTips';
 import { OsloLogo } from './components/OsloLogo';
 import { OsloSkyline } from './components/OsloSkyline';
 import { SKYLINE_LIGHTS_ENABLED } from './constants';
@@ -42,6 +43,7 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
   isEnebolig,
   hasResult,
 }) => {
+  const loaderTip = useRotatingLoaderTips(loading);
   const landingForeground = 'var(--pkt-color-brand-dark-blue-1000, #2A2859)';
   const pinnedEnebolig = hasResult ? isEnebolig : undefined;
   const pinnedBlock = hasResult ? !isEnebolig : undefined;
@@ -116,7 +118,7 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
             {loading && (
               <div className="landing__loader">
                 <PktLoader
-                  message="Henter boliginformasjon..."
+                  message={loaderTip}
                   size="large"
                   variant="rainbow"
                   isLoading

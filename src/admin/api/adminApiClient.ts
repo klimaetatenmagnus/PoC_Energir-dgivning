@@ -1,6 +1,7 @@
 import type {
   AdminBenefitDictionaryEntry,
   AdminDictionaryResponse,
+  AdminFunFactDictionaryEntry,
   AdminGlossaryTermDictionaryEntry,
   AdminTiltakMetadata,
 } from "../types";
@@ -357,6 +358,51 @@ export async function deleteGlossaryTerm(
 ): Promise<{ generation: string | null; deletedId: string }> {
   return request<{ generation: string | null; deletedId: string }>(
     `/dictionary/glossary-terms/${termId}`,
+    {
+      method: "DELETE",
+      body: JSON.stringify({ generation }),
+    }
+  );
+}
+
+// ===== FUN FACTS API =====
+
+type FunFactMutationPayload = {
+  entry: AdminFunFactDictionaryEntry;
+  generation: string;
+};
+
+export type FunFactMutationResponse = {
+  funFact: AdminFunFactDictionaryEntry;
+  generation: string | null;
+};
+
+export async function upsertFunFact(
+  payload: FunFactMutationPayload,
+  mode: "create" | "update"
+): Promise<FunFactMutationResponse> {
+  if (mode === "create") {
+    return request<FunFactMutationResponse>("/dictionary/fun-facts", {
+      method: "POST",
+      body: JSON.stringify({ generation: payload.generation, funFact: payload.entry }),
+    });
+  }
+
+  return request<FunFactMutationResponse>(
+    `/dictionary/fun-facts/${payload.entry.id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ generation: payload.generation, funFact: payload.entry }),
+    }
+  );
+}
+
+export async function deleteFunFact(
+  factId: string,
+  generation: string
+): Promise<{ generation: string | null; deletedId: string }> {
+  return request<{ generation: string | null; deletedId: string }>(
+    `/dictionary/fun-facts/${factId}`,
     {
       method: "DELETE",
       body: JSON.stringify({ generation }),

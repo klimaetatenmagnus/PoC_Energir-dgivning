@@ -2,12 +2,21 @@ import { PktLinkCard } from "@oslokommune/punkt-react";
 import { AdminMode } from "../types";
 import "./ModeCards.css";
 
+type CardId = AdminMode | "funfacts";
+
 interface ModeCardsProps {
   onSelect: (mode: AdminMode) => void;
+  onOpenFunFacts?: () => void;
 }
 
+const eyebrowLabels: Record<CardId, string> = {
+  tiltak: "Tiltak",
+  tilskudd: "Tilskudd",
+  funfacts: "Lasteskjerm",
+};
+
 const modeCards: Array<{
-  id: AdminMode;
+  id: CardId;
   title: string;
   description: string;
   highlights: string[];
@@ -34,9 +43,20 @@ const modeCards: Array<{
       "Lenker til søknadsskjema",
     ],
   },
+  {
+    id: "funfacts",
+    title: "Fun facts",
+    description:
+      "Rediger tekstene som vises mens brukeren venter på boliginformasjon.",
+    highlights: [
+      "Tips om energitilskudd",
+      "Motiverende fakta",
+      "Lenker til klimatilskudd.no",
+    ],
+  },
 ];
 
-export function ModeCards({ onSelect }: ModeCardsProps) {
+export function ModeCards({ onSelect, onOpenFunFacts }: ModeCardsProps) {
   return (
     <div className="mode-cards">
       {modeCards.map((card) => (
@@ -47,13 +67,17 @@ export function ModeCards({ onSelect }: ModeCardsProps) {
           href="#"
           onClick={(event) => {
             event.preventDefault();
-            onSelect(card.id);
+            if (card.id === "funfacts") {
+              onOpenFunFacts?.();
+            } else {
+              onSelect(card.id);
+            }
           }}
         >
           <div className="mode-cards__content">
             <div>
               <p className="mode-cards__eyebrow">
-                {card.id === "tiltak" ? "Tiltak" : "Tilskudd"}
+                {eyebrowLabels[card.id]}
               </p>
               <h3 className="mode-cards__title">{card.title}</h3>
               <p className="mode-cards__description">{card.description}</p>

@@ -492,5 +492,67 @@
       "url": "https://kulturminnefondet.no/",
       "color": "#E0ADFF"
     }
+  ],
+  "funFacts": [
+    {
+      "id": "oslo-vinduer-dorer",
+      "text": "Visste du at Oslo kommune dekker inntil 20 % av kostnaden for nye vinduer og dører i borettslag og sameier?"
+    },
+    {
+      "id": "oslo-solenergi",
+      "text": "Visste du at Oslo kommune dekker inntil 30 % av kostnaden for solenergi i borettslag og sameier?"
+    },
+    {
+      "id": "enova-borettslag",
+      "text": "Visste du at borettslag og sameier kan få inntil 10 millioner kroner i støtte til energitiltak fra Enova?"
+    },
+    {
+      "id": "enova-solceller",
+      "text": "Visste du at du kan få inntil 37 500 kr i Enova-støtte til solceller på privatboligen din?"
+    },
+    {
+      "id": "enova-vinduer-dorer",
+      "text": "Visste du at du kan få inntil 20 000 kr i Enova-støtte til nye vinduer og dører i privatboligen din?"
+    },
+    {
+      "id": "enova-varmepumpe",
+      "text": "Visste du at du kan få inntil 40 000 kr i Enova-støtte til varmepumpe i privatboligen din?"
+    },
+    {
+      "id": "enova-etterisolering",
+      "text": "Visste du at du kan få inntil 22 500 kr i støtte til etterisolering av taket i privatboligen?"
+    },
+    {
+      "id": "enova-energiradgiver",
+      "text": "Visste du at du kan få 5 000 kr i støtte til en energirådgiver for privatboligen din?"
+    },
+    {
+      "id": "varmetap-vinduer",
+      "text": "Visste du at vinduer står for 40 % av varmetapet i en gjennomsnittsbolig?"
+    },
+    {
+      "id": "led-sparepotensial",
+      "text": "LED bruker kun en fjerdedel av energien til gamle lyspærer"
+    },
+    {
+      "id": "temperatur-grad",
+      "text": "Senk temperaturen én grad – spar opptil 5 % på oppvarmingen"
+    },
+    {
+      "id": "vask-lavere-temp",
+      "text": "Vask klær på 30 °C i stedet for 40 °C – det bruker nesten halve energien"
+    },
+    {
+      "id": "varmepumpe-besparelse",
+      "text": "Visste du at en varmepumpe kan spare en enebolig for rundt 5 000–15 000 kr i året?"
+    },
+    {
+      "id": "klimatilskudd-lenke",
+      "text": "Se alle energitilskudd du kan søke på: klimatilskudd.no"
+    },
+    {
+      "id": "sparstrom-lenke",
+      "text": "Finn tips til å spare strøm på klimaoslo.no/sparstrøm"
+    }
   ]
 }
