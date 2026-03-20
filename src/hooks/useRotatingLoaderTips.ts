@@ -30,7 +30,15 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-export function useRotatingLoaderTips(isActive: boolean): string {
+const FADE_OUT_MS = 600;
+
+export type RotatingLoaderTipsResult = {
+  tip: string;
+  visible: boolean;
+  fadingOut: boolean;
+};
+
+export function useRotatingLoaderTips(isActive: boolean): RotatingLoaderTipsResult {
   const { data: dictionary } = useContentDictionary();
 
   const tips =
@@ -77,5 +85,28 @@ export function useRotatingLoaderTips(isActive: boolean): string {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive]);
 
-  return shuffledRef.current[index] ?? tips[0];
+  // Fade-out when loading finishes
+  const [fadingOut, setFadingOut] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (isActive) {
+      setVisible(true);
+      setFadingOut(false);
+    } else if (visible) {
+      setFadingOut(true);
+      const timer = setTimeout(() => {
+        setFadingOut(false);
+        setVisible(false);
+      }, FADE_OUT_MS);
+      return () => clearTimeout(timer);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive]);
+
+  return {
+    tip: shuffledRef.current[index] ?? tips[0],
+    visible,
+    fadingOut,
+  };
 }

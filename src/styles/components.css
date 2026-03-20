@@ -1038,6 +1038,11 @@
   justify-content: center;
   margin-top: 1.5rem;
   font-weight: bold;
+  transition: opacity 0.6s ease-out;
+}
+
+.landing__loader--fading {
+  opacity: 0;
 }
 
 /* Feilmelding under søkefelt */
@@ -1280,6 +1285,11 @@
   justify-content: center;
   padding-top: 1.5rem;
   font-weight: bold;
+  transition: opacity 0.6s ease-out;
+}
+
+.mobile-landing__loader--fading {
+  opacity: 0;
 }
 
 /* Personvernlenke øverst til høyre på mobil landingsside */

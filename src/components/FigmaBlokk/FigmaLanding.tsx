@@ -43,7 +43,7 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
   isEnebolig,
   hasResult,
 }) => {
-  const loaderTip = useRotatingLoaderTips(loading);
+  const { tip: loaderTip, visible: loaderVisible, fadingOut: loaderFading } = useRotatingLoaderTips(loading);
   const landingForeground = 'var(--pkt-color-brand-dark-blue-1000, #2A2859)';
   const pinnedEnebolig = hasResult ? isEnebolig : undefined;
   const pinnedBlock = hasResult ? !isEnebolig : undefined;
@@ -115,13 +115,13 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
               ref={inputRef}
             />
             {error && <div className="landing__error">{error.message}</div>}
-            {loading && (
-              <div className="landing__loader">
+            {loaderVisible && (
+              <div className={`landing__loader${loaderFading ? ' landing__loader--fading' : ''}`}>
                 <PktLoader
                   message={loaderTip}
                   size="large"
                   variant="rainbow"
-                  isLoading
+                  isLoading={loading}
                 />
               </div>
             )}
