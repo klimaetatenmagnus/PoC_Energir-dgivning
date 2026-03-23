@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { PktButton, PktCheckbox, PktIcon, PktRadioButton, PktTabs } from '@oslokommune/punkt-react';
 import { AddressLookupResponse } from '../../../services/buildingApi';
 import { trackTiltakChecked, trackTiltakCompleted } from '../../../analytics';
@@ -867,8 +868,8 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         </ul>
       </div>
 
-      {/* Info modal - "Hvordan fungerer siden?" */}
-      {showInfoModal && (
+      {/* Info modal - rendret via portal for å unngå at ancestor transform bryter position:fixed */}
+      {showInfoModal && createPortal(
         <div className="energy-solution-buttons__modal-overlay" onClick={() => setShowInfoModal(false)}>
           <div
             className="energy-solution-buttons__modal"
@@ -952,7 +953,8 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
               </p>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
