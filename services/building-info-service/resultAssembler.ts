@@ -210,14 +210,28 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
       ? csvByggeaarRaw
       : null;
 
+  // 9999 er en kjent sentinel-verdi i Matrikkelen som betyr «ukjent areal».
+  const isSentinel = (v: number | null | undefined): boolean =>
+    v === 9999 || v === 99999;
+
   let finalBruksareal =
     csvData?.bruksarealTotalt || attest?.enovaBuildingData?.bruksareal || null;
+
+  if (isSentinel(finalBruksareal)) {
+    if (LOG) {
+      debugLog(
+        `⚠️  Bruksareal ${finalBruksareal} m² er sentinel-verdi – behandles som ukjent`
+      );
+    }
+    finalBruksareal = null;
+  }
 
   if (
     finalBruksareal === null &&
     erSeksjonertEiendom &&
     totalBygningsareal &&
-    totalBygningsareal > 0
+    totalBygningsareal > 0 &&
+    !isSentinel(totalBygningsareal)
   ) {
     finalBruksareal = totalBygningsareal;
     if (LOG) {
@@ -228,7 +242,8 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
   }
 
   if (finalBruksareal === null) {
-    finalBruksareal = bygg.bruksarealM2 ?? null;
+    const matrikkelAreal = bygg.bruksarealM2 ?? null;
+    finalBruksareal = isSentinel(matrikkelAreal) ? null : matrikkelAreal;
   }
 
   const finalByggeaar =
