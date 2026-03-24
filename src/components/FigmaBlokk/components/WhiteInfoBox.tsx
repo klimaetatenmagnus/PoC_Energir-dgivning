@@ -579,7 +579,7 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     if (shouldShowYellowBox) cursor += INFO_ROW_GAP; // vernestatus
     if (shouldShowApartmentAreaRow) cursor += INFO_ROW_GAP; // apartmentArea
     return cursor - INFO_ROW_GAP; // Go back one to get the last row's Y
-  }, [isBlockBuilding, shouldShowYellowBox, shouldShowApartmentAreaRow]);
+  }, [shouldShowYellowBox, shouldShowApartmentAreaRow]);
 
   const energyInfoTop = lastInfoBaseline + INFO_ROW_GAP + missingVernestatusGap;
   const energyBlockBottom = energyInfoTop + energyBlockHeight;
