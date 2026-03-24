@@ -576,7 +576,6 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
     let cursor = BASE_INFO_Y;
     cursor += INFO_ROW_GAP; // byggeaar
     cursor += INFO_ROW_GAP; // areal
-    if (isBlockBuilding) cursor += INFO_ROW_GAP; // eierType
     if (shouldShowYellowBox) cursor += INFO_ROW_GAP; // vernestatus
     if (shouldShowApartmentAreaRow) cursor += INFO_ROW_GAP; // apartmentArea
     return cursor - INFO_ROW_GAP; // Go back one to get the last row's Y
@@ -1004,12 +1003,6 @@ const tiltakPreview = selectedTiltakSlug ? (
                     <span className="white-info-box__info-label">Areal:</span>
                     <span className="white-info-box__info-value">{savedAreal || 'Ukjent'} m²</span>
                   </div>
-                  {isBlockBuilding && (
-                    <div className="white-info-box__info-row">
-                      <span className="white-info-box__info-label">Eiertype:</span>
-                      <span className="white-info-box__info-value">Borettslag</span>
-                    </div>
-                  )}
                   {shouldShowYellowBox && (
                     <div className="white-info-box__info-row white-info-box__info-row--vernestatus">
                       <span className="white-info-box__info-label">Vernestatus:</span>
@@ -1109,10 +1102,6 @@ const tiltakPreview = selectedTiltakSlug ? (
                   </div>
                   {isBlockBuilding && (
                     <>
-                      <div className="white-info-box__info-row">
-                        <span className="white-info-box__info-label">Eiertype:</span>
-                        <span className="white-info-box__info-value">Borettslag</span>
-                      </div>
                       <div className="white-info-box__edit-row">
                         <label className="white-info-box__edit-label" htmlFor="edit-areal-leilighet-desktop">Areal leilighet (m²):</label>
                         <input

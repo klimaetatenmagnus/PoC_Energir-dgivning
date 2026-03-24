@@ -332,10 +332,6 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
                 </div>
                 {isBlockBuilding && (
                   <>
-                    <div className="mobile-info-box__info-row">
-                      <span className="mobile-info-box__info-label">Eiertype:</span>
-                      <span className="mobile-info-box__info-value">Borettslag</span>
-                    </div>
                     {savedArealLeilighet && (
                       <div className="mobile-info-box__info-row">
                         <span className="mobile-info-box__info-label">Areal leilighet:</span>
