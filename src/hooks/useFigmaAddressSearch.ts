@@ -163,6 +163,8 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
   const [landingSnapshot, setLandingSnapshot] = useState<LandingSnapshot | null>(null);
   const [fadeCompleted, setFadeCompleted] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
+  const isPopStateNav = useRef(false);
+  const skipNextPopState = useRef(false);
   const { beginTransition, forceReset: resetOverlay } = useTransitionOverlay();
   const { isMobileView } = useResponsive();
 
@@ -179,6 +181,13 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
       clearSession();
     }
   }, [mode, searchValue, result]);
+
+  // Synkroniser modus med nettleserhistorikk slik at back-knappen fungerer
+  useEffect(() => {
+    if (mode === 'figma-blokk') {
+      window.history.pushState({ mode: 'figma-blokk' }, '');
+    }
+  }, [mode]);
 
   const captureLandingSnapshot = useCallback((buildingKind: BuildingKind) => {
     if (typeof window === 'undefined') {
@@ -512,9 +521,18 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
   const handleBack = useCallback(() => {
     if (isReturning) return;
 
+    const triggeredByPopState = isPopStateNav.current;
+    isPopStateNav.current = false;
+
     // 1. Start page 2 fade-out
     setIsReturning(true);
     resetOverlay();
+
+    // Pop historikkinnslaget hvis tilbake ble utløst av in-app-knappen (ikke nettleserens back)
+    if (!triggeredByPopState) {
+      skipNextPopState.current = true;
+      window.history.back();
+    }
 
     // 2. After page 2 fades out, switch to page 1
     setTimeout(() => {
@@ -533,6 +551,22 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
       startFadeIn();
     }, BACK_FADE_OUT_MS);
   }, [isReturning, resetOverlay, prepareFadeIn, startFadeIn]);
+
+  // Håndter nettleserens back/forward-knapper
+  useEffect(() => {
+    const onPopState = () => {
+      if (skipNextPopState.current) {
+        skipNextPopState.current = false;
+        return;
+      }
+      if (mode === 'figma-blokk' && !isReturning) {
+        isPopStateNav.current = true;
+        handleBack();
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [mode, isReturning, handleBack]);
 
   const isEnebolig = useMemo(() => {
     if (!result) {

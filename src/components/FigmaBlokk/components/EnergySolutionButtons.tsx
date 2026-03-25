@@ -163,6 +163,18 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   const showInfoModal = externalShowInfoModal !== undefined ? externalShowInfoModal : internalShowInfoModal;
   const setShowInfoModal = onShowInfoModalChange || setInternalShowInfoModal;
 
+  // Lukk info-modal med Escape-tasten
+  useEffect(() => {
+    if (!showInfoModal) return;
+    const onKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowInfoModal(false);
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [showInfoModal, setShowInfoModal]);
+
   // Varmepumpe-spesifikk state
   const [selectedVarmepumpeType, setSelectedVarmepumpeType] = useState<VarmepumpeType>('luft-luft');
   const [varmepumpeExpanded, setVarmepumpeExpanded] = useState(false);

@@ -39,6 +39,9 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
         {motivationalMessage.text}
       </div>
 
+      {/* Overskrift */}
+      <div className="carousel-card__title">Energiforbruk</div>
+
       {/* Visuell sammenligning med bars */}
       <div className="carousel-card__bars">
         <div className="carousel-card__bar-row">
@@ -81,7 +84,7 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
       <div className={`carousel-card__summary ${isBetterThanAvg ? 'carousel-card__summary--positive' : 'carousel-card__summary--negative'}`}>
         {isBetterThanAvg
           ? `${Math.round(Math.abs(percentageDifferenceFromAvg))}% bedre enn bydelssnitt`
-          : `${Math.round(Math.abs(percentageDifferenceFromAvg))}% over bydelssnitt`
+          : `${Math.round(Math.abs(percentageDifferenceFromAvg))}% mindre energieffektiv enn bydelssnitt`
         }
       </div>
 
