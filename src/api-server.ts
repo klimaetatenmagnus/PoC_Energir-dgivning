@@ -12,6 +12,7 @@ import { Storage } from '@google-cloud/storage';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
 import { metricsRegistry } from '../services/building-info-service/metrics.js';
 import { csvService } from './services/csvService.js';
+import { lookupBuildingFromEnovaData } from './services/districtStatisticsService.js';
 import { energyRatingService } from './services/energyRatingService.js';
 import { sjekkGulListe, sjekkGulListeMedGnrBnr } from './services/gul-liste-service.js';
 import helmet from 'helmet';
@@ -1134,27 +1135,84 @@ app.post('/api/address-lookup', async (req, res) => {
     });
   } catch (error) {
     const duration = Date.now() - startTime;
-    logger.error(`Lookup failed after ${duration}ms:`, error);
-    
+    logger.warn(`Lookup failed after ${duration}ms, trying CSV fallback:`, error);
+
     // Handle authentication errors specially
     if (error instanceof Error && error.message.includes('401')) {
-      res.status(503).json({ 
+      res.status(503).json({
         error: 'Matrikkel API authentication failed. Using test data instead.',
         address,
         testMode: true,
-        _meta: {
-          duration,
-          timestamp: new Date().toISOString()
-        }
+        _meta: { duration, timestamp: new Date().toISOString() }
       });
-    } else {
-      res.status(500).json({ 
+      return;
+    }
+
+    // Fallback: bygg resultat fra CSV + Enova bulk-data
+    try {
+      const csvRecord = csvService.findByExactAddress(address)
+        ?? csvService.findByAddress(address)[0]
+        ?? null;
+
+      if (!csvRecord) {
+        res.status(500).json({
+          error: 'Adressen ble ikke funnet. Tjenesten for adresseoppslag er midlertidig utilgjengelig.',
+          address,
+          _meta: { duration: Date.now() - startTime, timestamp: new Date().toISOString() },
+        });
+        return;
+      }
+
+      // Slå opp energiattest fra Enova bulk-data
+      const enovaData = await lookupBuildingFromEnovaData(csvRecord.bygningsNr);
+
+      // Bygg byggeår fra CSV-dato (YYYYMMDD → YYYY)
+      const byggeaar = csvRecord.tattIBrukDato
+        ? parseInt(csvRecord.tattIBrukDato.slice(0, 4), 10) || null
+        : null;
+
+      const fallbackResult = {
+        gnr: 0,
+        bnr: 0,
+        bygningsnummer: csvRecord.bygningsNr,
+        bygningstype: csvRecord.bygningstypeNavn,
+        bygningstypeKode: csvRecord.bygningstype3siffer,
+        bruksarealM2: csvRecord.bruksarealTotalt || null,
+        totalBygningsareal: csvRecord.bruksarealTotalt || null,
+        byggeaar,
+        ...(enovaData ? {
+          energiattest: {
+            energikarakter: enovaData.energikarakter,
+          },
+        } : {}),
+        csvData: {
+          bygningsNr: csvRecord.bygningsNr,
+          bruksarealTotalt: csvRecord.bruksarealTotalt,
+          bygningstype3siffer: csvRecord.bygningstype3siffer,
+          bygningstypeNavn: csvRecord.bygningstypeNavn,
+          tattIBrukDato: csvRecord.tattIBrukDato,
+          gateAdresse: csvRecord.gateAdresse,
+          bydelsnavn: csvRecord.bydelsnavn,
+          delbydelsnavn: csvRecord.delbydelsnavn,
+          antallEtasjer: csvRecord.antallEtasjer,
+          bygningsstatusNavn: csvRecord.bygningsstatusNavn,
+        },
+        adresse: address,
+        _meta: {
+          duration: Date.now() - startTime,
+          timestamp: new Date().toISOString(),
+          source: 'csv-fallback',
+        },
+      };
+
+      infoLog(`CSV fallback successful for ${address} (${csvRecord.bygningsNr})`);
+      res.json(fallbackResult);
+    } catch (csvError) {
+      logger.error('CSV fallback also failed:', csvError);
+      res.status(500).json({
         error: error instanceof Error ? error.message : 'Unknown error',
         address,
-        _meta: {
-          duration,
-          timestamp: new Date().toISOString()
-        }
+        _meta: { duration, timestamp: new Date().toISOString() },
       });
     }
   }
@@ -1238,16 +1296,33 @@ app.get('/api/address-suggestions', async (req, res) => {
     });
   } catch (error) {
     const duration = Date.now() - startTime;
-    logger.error(`Address suggestions failed after ${duration}ms:`, error);
-    
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Unknown error',
-      query,
-      _meta: {
-        duration,
-        timestamp: new Date().toISOString()
-      }
-    });
+    logger.warn(`Geonorge suggestions failed after ${duration}ms, falling back to CSV`, error);
+
+    // Fallback: bruk lokale CSV-data for adresseforslag
+    try {
+      const csvResults = csvService.searchSuggestions(query as string);
+      const suggestions = csvResults.map((addr) => ({
+        adressetekst: addr,
+        adresse: `${addr}, OSLO`,
+      }));
+
+      infoLog(`CSV fallback: ${suggestions.length} suggestions`);
+      res.json({
+        suggestions,
+        _meta: {
+          duration: Date.now() - startTime,
+          timestamp: new Date().toISOString(),
+          source: 'csv-fallback',
+        },
+      });
+    } catch (csvError) {
+      logger.error('CSV fallback also failed:', csvError);
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Unknown error',
+        query,
+        _meta: { duration, timestamp: new Date().toISOString() },
+      });
+    }
   }
 });
 

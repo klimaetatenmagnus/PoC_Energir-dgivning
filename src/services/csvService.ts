@@ -194,6 +194,72 @@ export class CSVService {
   }
 
   /**
+   * Søk etter adresseforslag fra CSV-indeksen.
+   * Brukes som fallback når Geonorge er utilgjengelig.
+   */
+  searchSuggestions(query: string, limit = 10): string[] {
+    if (!this.isLoaded) return [];
+
+    const normalized = this.normalizeAddress(query);
+    if (!normalized) return [];
+
+    const street = this.extractStreetName(normalized);
+    const pool = street ? (this.byStreetName.get(street) ?? []) : [];
+
+    if (pool.length === 0 && street) {
+      // Fuzzy: prøv gatenavn som starter med søketeksten
+      const results: string[] = [];
+      for (const [key, records] of this.byStreetName) {
+        if (key.startsWith(normalized) || normalized.startsWith(key)) {
+          for (const r of records) {
+            if (results.length >= limit) break;
+            const addr = this.formatAddress(r.gateAdresse);
+            if (!results.includes(addr)) results.push(addr);
+          }
+        }
+        if (results.length >= limit) break;
+      }
+      return results.sort();
+    }
+
+    // Filtrer og dedupliser
+    const seen = new Set<string>();
+    const matches: Array<{ address: string; score: number }> = [];
+
+    for (const record of pool) {
+      const recordNorm = this.normalizeAddress(record.gateAdresse);
+      if (!recordNorm) continue;
+      if (normalized && !recordNorm.includes(normalized) && !normalized.includes(recordNorm)) continue;
+
+      const code = parseInt(record.bygningstype3siffer, 10);
+      if (code >= 180) continue; // Skip garasjer
+
+      const addr = this.formatAddress(record.gateAdresse);
+      if (seen.has(addr)) continue;
+      seen.add(addr);
+
+      const score = this.computeMatchScore(normalized, recordNorm);
+      matches.push({ address: addr, score });
+    }
+
+    return matches
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map((m) => m.address);
+  }
+
+  private formatAddress(gateAdresse: string): string {
+    // "TELEMARKSVINGEN 21" → "Telemarksvingen 21"
+    const parts = gateAdresse.trim().split(/\s+/);
+    return parts
+      .map((p, i) => {
+        if (i > 0 && /^\d/.test(p)) return p; // husnummer
+        return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+      })
+      .join(' ');
+  }
+
+  /**
    * Search for buildings by address (fuzzy match)
    */
   findByAddress(address: string): MatrikkelCSVRecord[] {
