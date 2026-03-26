@@ -3,6 +3,7 @@ import '../loadEnv.js';
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
+import { fetchWithRetry } from './utils/fetchWithRetry.js';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import type { Dirent } from 'node:fs';
@@ -1173,8 +1174,8 @@ app.get('/api/address-suggestions', async (req, res) => {
   const startTime = Date.now();
 
   try {
-    // Call Geonorge API with fuzzy search
-    const response = await fetch(
+    // Call Geonorge API with fuzzy search (retry ved throttling/timeout)
+    const response = await fetchWithRetry(
       `https://ws.geonorge.no/adresser/v1/sok?` +
       new URLSearchParams({
         sok: query,
@@ -1183,7 +1184,7 @@ app.get('/api/address-suggestions', async (req, res) => {
       }).toString().replace(/\+/g, '%20'),
       {
         headers: { 'User-Agent': 'Energitiltak/1.0' },
-        signal: AbortSignal.timeout(10_000),
+        timeoutMs: 5_000,
       }
     );
 

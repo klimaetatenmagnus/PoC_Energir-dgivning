@@ -1,4 +1,5 @@
 import fetch, { Response as FetchResponse } from 'node-fetch';
+import { fetchWithRetry } from '../../src/utils/fetchWithRetry.ts';
 import proj4 from 'proj4';
 
 import { ByggInfo } from '../../src/clients/StoreClient.ts';
@@ -232,11 +233,11 @@ async function lookupAdresse(adresse: string): Promise<LookupAdresseResult> {
       }
 
       for (const variant of uniqueVariants) {
-        const response = await fetch(buildUrl(variant), { ...headers, signal: AbortSignal.timeout(15_000) });
-        if (!response.ok) {
-          continue;
-        }
         try {
+          const response = await fetchWithRetry(buildUrl(variant), { ...headers, timeoutMs: 5_000 });
+          if (!response.ok) {
+            continue;
+          }
           return await parse(response);
         } catch {
           continue;
