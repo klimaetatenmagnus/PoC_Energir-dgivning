@@ -91,7 +91,7 @@ Småhus;TEK69;Ventilasjonsgjenvinning;1;19.844;0;-1.806;162.36;29.8;30.1;222.26;
 Boligblokk;TEK69;Ventilasjonsgjenvinning;1;47.096;0;0.9;146.16;29.8;30;205.96;0.71;1;0.97
 Småhus;TEK97;Etterisolering yttervegg;1;3.7;0;0;92.61;29.8;34.1;156.51;0.9600475111;1;1
 Småhus;TEK97;Etterisolering av kjeller og loft;1;0.4;0;0;92.61;29.8;34.1;156.51;0.995680812;1;1
-Småhus;TEK97;Oppgradering av vinduer gul liste;1;14.2;0;0;92.61;29.8;34.1;156.51;0.8466688263;1;1
+Småhus;TEK97;Oppgradering av vinduer gul liste;1;6.1;0;0;92.61;29.8;34.1;156.51;0.9341323831;1;1
 Småhus;TEK97;Oppgradering av vinduer standard;1;14.2;0;0;92.61;29.8;34.1;156.51;0.8466688263;1;1
 Småhus;TEK87;Ventilasjonsgjenvinning;1;16.968;0;1.196;127.26;29.8;29.9;186.96;0.88;1;0.96
 Småhus;TEK97;Luft-luft varmepumpe;1;30.3087;0;0;92.61;29.8;34.1;156.51;0.6727272727;1;1
@@ -99,7 +99,7 @@ Småhus;TEK97;Luft-væske varmepumpe;1;44.4528;8.94;0;92.61;29.8;34.1;156.51;0.5
 Småhus;TEK97;Væske-væske varmepumpe;1;53.5815;7.748;0;92.61;29.8;34.1;156.51;0.4214285714;0.74;1
 Boligblokk;TEK97;Etterisolering yttervegg;1;7.3;0;0;80.19;29.8;35;144.99;0.9089662053;1;1
 Boligblokk;TEK97;Etterisolering av kjeller og loft;1;0;0;0;80.19;29.8;35;144.99;1;1;1
-Boligblokk;TEK97;Oppgradering av vinduer gul liste;1;12.1;0;0;80.19;29.8;35;144.99;0.8491083676;1;1
+Boligblokk;TEK97;Oppgradering av vinduer gul liste;1;5;0;0;80.19;29.8;35;144.99;0.9376480858;1;1
 Boligblokk;TEK97;Oppgradering av vinduer standard;1;12.1;0;0;80.19;29.8;35;144.99;0.8491083676;1;1
 Boligblokk;TEK87;Ventilasjonsgjenvinning;1;36.927;0;1.485;100.71;29.8;29.7;160.21;0.67;1;0.95
 Boligblokk;TEK97;Luft-luft varmepumpe;1;26.244;0;0;80.19;29.8;35;144.99;0.6727272727;1;1
