@@ -36,6 +36,14 @@ const VARMEPUMPE_TYPES = [
 
 type VarmepumpeType = typeof VARMEPUMPE_TYPES[number]['id'];
 
+// Vinduer-typer for tolags/trelags-valg
+const VINDUER_TYPES = [
+  { id: 'tolags', label: 'To-lags glass', description: 'Enklere oppgradering' },
+  { id: 'trelags', label: 'Tre-lags glass', description: 'Best isolasjon' },
+] as const;
+
+type VinduerType = typeof VINDUER_TYPES[number]['id'];
+
 const isRatingBetter = (first: string, second: string): boolean => {
   const index1 = ENERGY_RATING_ORDER.indexOf(first.toUpperCase() as typeof ENERGY_RATING_ORDER[number]);
   const index2 = ENERGY_RATING_ORDER.indexOf(second.toUpperCase() as typeof ENERGY_RATING_ORDER[number]);
@@ -179,6 +187,12 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   const [selectedVarmepumpeType, setSelectedVarmepumpeType] = useState<VarmepumpeType>('luft-luft');
   const [varmepumpeExpanded, setVarmepumpeExpanded] = useState(false);
 
+  // Vinduer-spesifikk state (tolags/trelags-valg)
+  const [selectedVinduerTypeNye, setSelectedVinduerTypeNye] = useState<VinduerType>('trelags');
+  const [vinduerNyeExpanded, setVinduerNyeExpanded] = useState(false);
+  const [completedVinduerType, setCompletedVinduerType] = useState<VinduerType>('tolags');
+  const [vinduerCompletedExpanded, setVinduerCompletedExpanded] = useState(false);
+
   // Tab-state for tiltakslisten
   const [activeTab, setActiveTab] = useState<'nye' | 'gjennomforte'>('nye');
 
@@ -287,15 +301,31 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   }, [isCatalogLoading, filteredTiltak]);
 
   // "Velg energioppgraderinger" – alle minus de som er avkrysset i gjennomførte
+  // Vinduer-unntak: gjennomført tolags fjerner IKKE vinduer fra nye (trelags er fortsatt tilgjengelig)
   const nyeTiltak = useMemo(() =>
-    displayTiltak.filter(t => !completedItems.has(t.id)),
-    [displayTiltak, completedItems]
+    displayTiltak.filter(t => {
+      if (t.id === 'vinduer') {
+        if (!completedItems.has('vinduer')) return true;
+        // Gjennomført trelags → skjul fra nye. Gjennomført tolags → vis (for trelags-oppgradering).
+        return completedVinduerType !== 'trelags';
+      }
+      return !completedItems.has(t.id);
+    }),
+    [displayTiltak, completedItems, completedVinduerType]
   );
 
   // "Gjennomførte energioppgraderinger" – alle minus de som er avkrysset i nye
+  // Vinduer-unntak: behold i gjennomførte hvis tolags er gjennomført og trelags er valgt som nye
   const gjennomforteTiltak = useMemo(() =>
-    displayTiltak.filter(t => !checkedItems.has(t.id)),
-    [displayTiltak, checkedItems]
+    displayTiltak.filter(t => {
+      if (t.id === 'vinduer') {
+        if (checkedItems.has('vinduer') && completedItems.has('vinduer') && completedVinduerType === 'tolags') {
+          return true;
+        }
+      }
+      return !checkedItems.has(t.id);
+    }),
+    [displayTiltak, checkedItems, completedItems, completedVinduerType]
   );
 
   // Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
@@ -349,12 +379,13 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         const rates = getRateForTiltakId(tiltak.id, tekPeriod, boligtype, {
           erPaaGulListe,
           varmepumpeTab: tiltak.id === 'varmepumpe' ? selectedVarmepumpeType : undefined,
+          vinduerTab: tiltak.id === 'vinduer' ? selectedVinduerTypeNye : undefined,
         });
         if (rates !== null) info.push({ title: tiltak.id, rates });
       }
     });
     return info;
-  }, [boligtype, buildingData?.filteredSolarEnergy, checkedItems, displayTiltak, erPaaGulListe, selectedVarmepumpeType, tekPeriod]);
+  }, [boligtype, buildingData?.filteredSolarEnergy, checkedItems, displayTiltak, erPaaGulListe, selectedVarmepumpeType, selectedVinduerTypeNye, tekPeriod]);
 
   // Tiltak-info for gjennomførte tiltak (speiler tiltakInfo for checkedItems)
   const completedTiltakInfo = React.useMemo<TiltakSavingsInfo[]>(() => {
@@ -370,12 +401,13 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         const rates = getRateForTiltakId(tiltak.id, tekPeriod, boligtype, {
           erPaaGulListe,
           varmepumpeTab: tiltak.id === 'varmepumpe' ? selectedVarmepumpeType : undefined,
+          vinduerTab: tiltak.id === 'vinduer' ? completedVinduerType : undefined,
         });
         if (rates !== null) info.push({ title: tiltak.id, rates });
       }
     });
     return info;
-  }, [boligtype, buildingData?.filteredSolarEnergy, completedItems, displayTiltak, erPaaGulListe, selectedVarmepumpeType, tekPeriod]);
+  }, [boligtype, buildingData?.filteredSolarEnergy, completedItems, completedVinduerType, displayTiltak, erPaaGulListe, selectedVarmepumpeType, tekPeriod]);
 
   // Besparelse fra gjennomførte tiltak (baseline-reduksjon)
   const completedSavingsKWh = React.useMemo(() => {
@@ -386,10 +418,17 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   }, [completedTiltakInfo, yearlyConsumption, estimatedAnnualConsumption, tekPeriod, boligtype, bruksareal]);
 
   // Samlet besparelse for ALLE tiltak (gjennomførte + nye)
-  const allTiltakInfo = React.useMemo(
-    () => [...completedTiltakInfo, ...tiltakInfo],
-    [completedTiltakInfo, tiltakInfo]
-  );
+  // Vinduer-overlap: tolags (gjennomført) + trelags (nye) skal IKKE multipliseres –
+  // trelags erstatter tolags for samme komponent, så bruk kun trelags i total.
+  const allTiltakInfo = React.useMemo(() => {
+    const hasCompletedVinduerTolags = completedItems.has('vinduer') && completedVinduerType === 'tolags';
+    const hasNyeVinduer = checkedItems.has('vinduer');
+    if (hasCompletedVinduerTolags && hasNyeVinduer) {
+      const completedWithoutVinduer = completedTiltakInfo.filter(t => t.title !== 'vinduer');
+      return [...completedWithoutVinduer, ...tiltakInfo];
+    }
+    return [...completedTiltakInfo, ...tiltakInfo];
+  }, [completedTiltakInfo, tiltakInfo, completedItems, checkedItems, completedVinduerType]);
 
   const totalCombinedSavingsKWh = React.useMemo(() => {
     if (allTiltakInfo.length === 0) return 0;
@@ -452,18 +491,21 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       } else {
         newSet.add(tiltakId);
         // Gjensidig ekskludering: fjern fra completedItems
-        setCompletedItems(prevCompleted => {
-          if (prevCompleted.has(tiltakId)) {
-            const updated = new Set(prevCompleted);
-            updated.delete(tiltakId);
-            return updated;
-          }
-          return prevCompleted;
-        });
+        // Vinduer-unntak: behold gjennomført tolags (de kan sameksistere med nye trelags)
+        if (tiltakId !== 'vinduer' || completedVinduerType === 'trelags') {
+          setCompletedItems(prevCompleted => {
+            if (prevCompleted.has(tiltakId)) {
+              const updated = new Set(prevCompleted);
+              updated.delete(tiltakId);
+              return updated;
+            }
+            return prevCompleted;
+          });
+        }
       }
       return newSet;
     });
-  }, []);
+  }, [completedVinduerType]);
 
   const toggleCompleted = useCallback((tiltakId: string) => {
     setCompletedItems(prev => {
@@ -475,14 +517,17 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       } else {
         newSet.add(tiltakId);
         // Gjensidig ekskludering: fjern fra checkedItems
-        setCheckedItems(prevChecked => {
-          if (prevChecked.has(tiltakId)) {
-            const updated = new Set(prevChecked);
-            updated.delete(tiltakId);
-            return updated;
-          }
-          return prevChecked;
-        });
+        // Vinduer-unntak: default er tolags, som tillater nye trelags – ikke fjern
+        if (tiltakId !== 'vinduer') {
+          setCheckedItems(prevChecked => {
+            if (prevChecked.has(tiltakId)) {
+              const updated = new Set(prevChecked);
+              updated.delete(tiltakId);
+              return updated;
+            }
+            return prevChecked;
+          });
+        }
       }
       return newSet;
     });
@@ -611,8 +656,12 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
             nyeTiltak.map((tiltak) => {
               const isSelected = checkedItems.has(tiltak.id);
               const isVarmepumpe = tiltak.id === 'varmepumpe';
+              const isVinduer = tiltak.id === 'vinduer';
+              // Vinduer vises som expanderbar kun for gul-liste UTEN gjennomført tolags
+              const vinduerShowExpansion = isVinduer && erPaaGulListe
+                && !(completedItems.has('vinduer') && completedVinduerType === 'tolags');
 
-              if (!isVarmepumpe) {
+              if (!isVarmepumpe && !vinduerShowExpansion) {
                 return (
                   <li
                     key={tiltak.id}
@@ -623,7 +672,13 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                         id={`tiltak-${tiltak.id}`}
                         label={softHyphenate(tiltak.title)}
                         checked={isSelected}
-                        onChange={() => toggleChecked(tiltak.id)}
+                        onChange={() => {
+                          toggleChecked(tiltak.id);
+                          // Vinduer som enkel checkbox = alltid trelags
+                          if (isVinduer) {
+                            setSelectedVinduerTypeNye('trelags');
+                          }
+                        }}
                       />
                     </div>
                     <div className="energy-solution-buttons__actions">
@@ -640,6 +695,99 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                         Les mer
                       </PktButton>
                     </div>
+                  </li>
+                );
+              }
+
+              // Vinduer med utvidbar seksjon (gul-liste, tolags/trelags-valg)
+              if (vinduerShowExpansion) {
+                return (
+                  <li
+                    key={tiltak.id}
+                    className={`energy-solution-buttons__item energy-solution-buttons__item--expandable${isSelected ? ' energy-solution-buttons__item--selected' : ''}`}
+                  >
+                    <div className="energy-solution-buttons__varmepumpe-header">
+                      <div className="energy-solution-buttons__item-content energy-solution-buttons__item-content--with-chevron">
+                        <PktCheckbox
+                          id={`tiltak-${tiltak.id}`}
+                          label={softHyphenate(tiltak.title)}
+                          checked={isSelected}
+                          onChange={() => {
+                            toggleChecked(tiltak.id);
+                            if (isSelected) {
+                              setVinduerNyeExpanded(false);
+                              setSelectedVinduerTypeNye('trelags');
+                            } else {
+                              setVinduerNyeExpanded(true);
+                              setSelectedVinduerTypeNye('trelags');
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="energy-solution-buttons__chevron-toggle"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const willExpand = !vinduerNyeExpanded;
+                            setVinduerNyeExpanded(willExpand);
+                            if (willExpand && !checkedItems.has('vinduer')) {
+                              toggleChecked('vinduer');
+                            }
+                          }}
+                          aria-expanded={vinduerNyeExpanded}
+                          aria-label={vinduerNyeExpanded ? 'Skjul vindusvalg' : 'Vis vindusvalg'}
+                        >
+                          <PktIcon
+                            name="chevron-thin-down"
+                            className={`energy-solution-buttons__chevron${vinduerNyeExpanded ? ' energy-solution-buttons__chevron--expanded' : ''}`}
+                          />
+                        </button>
+                      </div>
+                      <div className="energy-solution-buttons__actions">
+                        <PktButton
+                          skin="secondary"
+                          size="small"
+                          variant="label-only"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectSolution(tiltak.id);
+                            onExpand(true);
+                          }}
+                        >
+                          Les mer
+                        </PktButton>
+                      </div>
+                    </div>
+
+                    {/* Utvidbar seksjon for vinduer-typer */}
+                    {isSelected && vinduerNyeExpanded && (
+                      <div className="energy-solution-buttons__varmepumpe-options">
+                        {VINDUER_TYPES.map((type) => {
+                          const isTypeSelected = isSelected && selectedVinduerTypeNye === type.id;
+                          return (
+                            <div
+                              key={type.id}
+                              className={`energy-solution-buttons__varmepumpe-option${isTypeSelected ? ' energy-solution-buttons__varmepumpe-option--selected' : ''}`}
+                            >
+                              <PktRadioButton
+                                id={`vinduer-nye-type-${type.id}`}
+                                name="vinduer-nye-type"
+                                label={type.label}
+                                value={type.id}
+                                checked={isTypeSelected}
+                                checkHelptext={type.description}
+                                onChange={() => {
+                                  setSelectedVinduerTypeNye(type.id);
+                                  if (!checkedItems.has('vinduer')) {
+                                    toggleChecked('vinduer');
+                                  }
+                                }}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </li>
                 );
               }
@@ -741,8 +889,9 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
               {gjennomforteTiltak.map((tiltak) => {
                 const isCompleted = completedItems.has(tiltak.id);
                 const isVarmepumpe = tiltak.id === 'varmepumpe';
+                const isVinduer = tiltak.id === 'vinduer';
 
-                if (!isVarmepumpe) {
+                if (!isVarmepumpe && !isVinduer) {
                   return (
                     <li
                       key={tiltak.id}
@@ -770,6 +919,110 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                           Les mer
                         </PktButton>
                       </div>
+                    </li>
+                  );
+                }
+
+                // Vinduer med utvidbar seksjon (gjennomførte, alltid expanderbar)
+                if (isVinduer) {
+                  return (
+                    <li
+                      key={tiltak.id}
+                      className={`energy-solution-buttons__item energy-solution-buttons__item--expandable${isCompleted ? ' energy-solution-buttons__item--selected' : ''}`}
+                    >
+                      <div className="energy-solution-buttons__varmepumpe-header">
+                        <div className="energy-solution-buttons__item-content energy-solution-buttons__item-content--with-chevron">
+                          <PktCheckbox
+                            id={`tiltak-completed-${tiltak.id}`}
+                            label={softHyphenate(tiltak.title)}
+                            checked={isCompleted}
+                            onChange={() => {
+                              toggleCompleted(tiltak.id);
+                              if (isCompleted) {
+                                setVinduerCompletedExpanded(false);
+                                setCompletedVinduerType('tolags');
+                              } else {
+                                setVinduerCompletedExpanded(true);
+                                setCompletedVinduerType('tolags');
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="energy-solution-buttons__chevron-toggle"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const willExpand = !vinduerCompletedExpanded;
+                              setVinduerCompletedExpanded(willExpand);
+                              if (willExpand && !completedItems.has('vinduer')) {
+                                toggleCompleted('vinduer');
+                              }
+                            }}
+                            aria-expanded={vinduerCompletedExpanded}
+                            aria-label={vinduerCompletedExpanded ? 'Skjul vindusvalg' : 'Vis vindusvalg'}
+                          >
+                            <PktIcon
+                              name="chevron-thin-down"
+                              className={`energy-solution-buttons__chevron${vinduerCompletedExpanded ? ' energy-solution-buttons__chevron--expanded' : ''}`}
+                            />
+                          </button>
+                        </div>
+                        <div className="energy-solution-buttons__actions">
+                          <PktButton
+                            skin="secondary"
+                            size="small"
+                            variant="label-only"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectSolution(tiltak.id);
+                              onExpand(true);
+                            }}
+                          >
+                            Les mer
+                          </PktButton>
+                        </div>
+                      </div>
+
+                      {/* Utvidbar seksjon for vinduer-typer (gjennomførte) */}
+                      {isCompleted && vinduerCompletedExpanded && (
+                        <div className="energy-solution-buttons__varmepumpe-options">
+                          {VINDUER_TYPES.map((type) => {
+                            const isTypeSelected = isCompleted && completedVinduerType === type.id;
+                            return (
+                              <div
+                                key={type.id}
+                                className={`energy-solution-buttons__varmepumpe-option${isTypeSelected ? ' energy-solution-buttons__varmepumpe-option--selected' : ''}`}
+                              >
+                                <PktRadioButton
+                                  id={`vinduer-completed-type-${type.id}`}
+                                  name="vinduer-completed-type"
+                                  label={type.label}
+                                  value={type.id}
+                                  checked={isTypeSelected}
+                                  checkHelptext={type.description}
+                                  onChange={() => {
+                                    setCompletedVinduerType(type.id);
+                                    if (!completedItems.has('vinduer')) {
+                                      toggleCompleted('vinduer');
+                                    }
+                                    // Trelags gjennomført → fjern vinduer fra nye tiltak
+                                    if (type.id === 'trelags') {
+                                      setCheckedItems(prev => {
+                                        if (prev.has('vinduer')) {
+                                          const updated = new Set(prev);
+                                          updated.delete('vinduer');
+                                          return updated;
+                                        }
+                                        return prev;
+                                      });
+                                    }
+                                  }}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </li>
                   );
                 }

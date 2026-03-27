@@ -113,8 +113,8 @@ Boligblokk;TEK49;Luft-luft varmepumpe;1;54.1964;0;0;165.6;29.8;30;225.4;0.672727
 Boligblokk;TEK49;Luft-væske varmepumpe;1;79.488;8.94;0;165.6;29.8;30;225.4;0.52;0.7;1
 Boligblokk;TEK49;Etterisolering yttervegg;1;59.1;0;0;165.6;29.8;30;225.4;0.643115942;1;1
 Boligblokk;TEK49;Etterisolering av kjeller og loft;1;7.2;0;0;165.6;29.8;30;225.4;0.9565217391;1;1
-Boligblokk;TEK49;Oppgradering av vinduer gul liste;1;38.5;0;0;165.6;29.8;30;225.4;0.7675120773;1;1
-Boligblokk;TEK49;Oppgradering av vinduer standard;1;31.6;0;0;165.6;29.8;30;225.4;0.809178744;1;1
+Boligblokk;TEK49;Oppgradering av vinduer gul liste;1;31.6;0;0;165.6;29.8;30;225.4;0.809178744;1;1
+Boligblokk;TEK49;Oppgradering av vinduer standard;1;38.5;0;0;165.6;29.8;30;225.4;0.7675120773;1;1
 Boligblokk;TEK49;Temperaturstyring;0;9.936;0;0;165.6;29.8;30;225.4;0.94;1;1
 Småhus;TEK49;Ventilasjonsgjenvinning;1;0;0;0;174.87;29.8;30.2;234.87;1;1;1
 Småhus;TEK49;Væske-væske varmepumpe;1;101.175;7.748;0;174.87;29.8;30.2;234.87;0.4214285714;0.74;1
@@ -122,8 +122,8 @@ Småhus;TEK49;Luft-væske varmepumpe;1;83.9376;8.94;0;174.87;29.8;30.2;234.87;0.
 Småhus;TEK49;Luft-luft varmepumpe;1;57.2302;0;0;174.87;29.8;30.2;234.87;0.6727272727;1;1
 Småhus;TEK49;Etterisolering yttervegg;1;40.9;0;0;174.87;29.8;30.2;234.87;0.7661119689;1;1
 Småhus;TEK49;Etterisolering av kjeller og loft;1;13.3;0;0;174.87;29.8;30.2;234.87;0.9239435009;1;1
-Småhus;TEK49;Oppgradering av vinduer gul liste;1;41.9;0;0;174.87;29.8;30.2;234.87;0.7603934351;1;1
-Småhus;TEK49;Oppgradering av vinduer standard;1;33.9;0;0;174.87;29.8;30.2;234.87;0.8061417053;1;1
+Småhus;TEK49;Oppgradering av vinduer gul liste;1;33.9;0;0;174.87;29.8;30.2;234.87;0.8061417053;1;1
+Småhus;TEK49;Oppgradering av vinduer standard;1;41.9;0;0;174.87;29.8;30.2;234.87;0.7603934351;1;1
 Småhus;TEK49;Temperaturstyring;0;10.4922;0;0;174.87;29.8;30.2;234.87;0.94;1;1
 Boligblokk;Eldre;Ventilasjonsgjenvinning;1;0;0;0;212.4;29.8;30.3;272.5;1;1;1
 Boligblokk;Eldre;Væske-væske varmepumpe;1;101.649;4.768;0;212.4;29.8;30.3;272.5;0.5214285714;0.84;1
@@ -183,6 +183,16 @@ export const VARMEPUMPE_TAB_TO_TYPE: Record<string, TiltakType> = {
   'luft-vaeske': 'luft_vaeske_varmepumpe',
   'vaeske-vann': 'vaeske_vaeske_varmepumpe',
   'vaeske-vaeske': 'vaeske_vaeske_varmepumpe',
+};
+
+/**
+ * Mapping fra vinduer-tab til TiltakType.
+ * Brukes når vinduer-kortet har aktiv tab som spesifiserer glasstype.
+ * tolags = vinduer_gul_liste (samme energidata), trelags = vinduer_standard.
+ */
+export const VINDUER_TAB_TO_TYPE: Record<string, TiltakType> = {
+  'tolags': 'vinduer_gul_liste',
+  'trelags': 'vinduer_standard',
 };
 
 // Re-export TEKPeriod from types/energy.ts
@@ -979,6 +989,10 @@ export function getRateForTiltak(
  * @example
  * // Varmepumpe med spesifikk type
  * const rates = getRateForTiltakId('varmepumpe', 'TEK69', 'småhus', { varmepumpeTab: 'luft-vann' });
+ *
+ * @example
+ * // Vinduer med spesifikk glasstype
+ * const rates = getRateForTiltakId('vinduer', 'TEK69', 'småhus', { vinduerTab: 'tolags' });
  */
 export function getRateForTiltakId(
   tiltakId: string,
@@ -987,9 +1001,10 @@ export function getRateForTiltakId(
   options?: {
     erPaaGulListe?: boolean;
     varmepumpeTab?: string;
+    vinduerTab?: string;
   }
 ): EnergyTypeRates | null {
-  const { erPaaGulListe = false, varmepumpeTab } = options ?? {};
+  const { erPaaGulListe = false, varmepumpeTab, vinduerTab } = options ?? {};
 
   // Spesialhåndtering for varmepumpe med tabs
   if (tiltakId === 'varmepumpe' && varmepumpeTab && varmepumpeTab !== 'generelt') {
@@ -999,10 +1014,19 @@ export function getRateForTiltakId(
     }
   }
 
-  // Spesialhåndtering for vinduer med gul liste
+  // Spesialhåndtering for vinduer med tabs (tolags/trelags)
   if (tiltakId === 'vinduer') {
+    if (vinduerTab) {
+      const vinduerType = VINDUER_TAB_TO_TYPE[vinduerTab];
+      if (vinduerType) {
+        // Send erPaaGulListe som matcher ønsket type, slik at getEnergySavingsRate
+        // sin override-logikk bevarer riktig type (tolags = gul_liste-rater)
+        return getEnergySavingsRate(vinduerType, tekPeriod, boligtype, vinduerType === 'vinduer_gul_liste');
+      }
+    }
+    // Fallback uten tab: gul liste → tolags, ellers → trelags
     const vinduerType: TiltakType = erPaaGulListe ? 'vinduer_gul_liste' : 'vinduer_standard';
-    return getEnergySavingsRate(vinduerType, tekPeriod, boligtype);
+    return getEnergySavingsRate(vinduerType, tekPeriod, boligtype, erPaaGulListe);
   }
 
   // Standard oppslag via TILTAK_ID_TO_TYPE
