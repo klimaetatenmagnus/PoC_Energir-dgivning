@@ -16,17 +16,39 @@ export const TiltakSavings: React.FC<TiltakSavingsProps> = ({
   // Når tooltip vises: beregn posisjon ut fra savings-seksjonens rect.
   // Tooltip rendres via portal til document.body for å slippe klipping fra
   // foreldre med overflow: hidden (desktop-tiltak-card__body).
+  // Vi plasserer over savings-boksen hvis det er nok plass, ellers under;
+  // og begrenser maks-høyde til tilgjengelig plass i viewporten.
   useLayoutEffect(() => {
     if (!showTooltip || !sectionRef.current) return;
     const update = () => {
       if (!sectionRef.current) return;
       const rect = sectionRef.current.getBoundingClientRect();
-      setTooltipStyle({
-        position: 'fixed',
-        bottom: window.innerHeight - rect.top + 4,
-        left: rect.left,
-        width: rect.width,
-      });
+      const viewportH = window.innerHeight;
+      const viewportMargin = 12;
+      const gap = 4;
+      const spaceAbove = rect.top - viewportMargin - gap;
+      const spaceBelow = viewportH - rect.bottom - viewportMargin - gap;
+      // Plasser over dersom det er tilstrekkelig plass; ellers under.
+      const placeAbove = spaceAbove >= 200 || spaceAbove >= spaceBelow;
+      if (placeAbove) {
+        setTooltipStyle({
+          position: 'fixed',
+          bottom: viewportH - rect.top + gap,
+          left: rect.left,
+          width: rect.width,
+          maxHeight: Math.max(120, spaceAbove),
+          overflowY: 'auto',
+        });
+      } else {
+        setTooltipStyle({
+          position: 'fixed',
+          top: rect.bottom + gap,
+          left: rect.left,
+          width: rect.width,
+          maxHeight: Math.max(120, spaceBelow),
+          overflowY: 'auto',
+        });
+      }
     };
     update();
     window.addEventListener('scroll', update, true);
