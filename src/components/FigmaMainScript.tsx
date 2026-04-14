@@ -514,7 +514,16 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       setHasCheckedGulListe(true);
 
       try {
-        const result = await sjekkGulListeMedGnrBnr(buildingData.gnr, buildingData.bnr);
+        // Send representasjonspunkt for point-in-polygon-sjekk — unngår falske
+        // positiver der flere bygg deler gnr/bnr men bare noen er vernet.
+        const repPoint = buildingData.representasjonspunkt
+          ? {
+              x: buildingData.representasjonspunkt.east,
+              y: buildingData.representasjonspunkt.north,
+              epsg: buildingData.representasjonspunkt.epsg,
+            }
+          : undefined;
+        const result = await sjekkGulListeMedGnrBnr(buildingData.gnr, buildingData.bnr, repPoint);
 
         if (result.erPaaGulListe) {
           setShowYellowBox(true);

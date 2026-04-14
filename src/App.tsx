@@ -267,7 +267,17 @@ export default function App() {
     const gnr = typeof gnrRaw === 'string' ? Number(gnrRaw) : gnrRaw;
     const bnr = typeof bnrRaw === 'string' ? Number(bnrRaw) : bnrRaw;
 
-    sjekkGulListeMedGnrBnr(gnr, bnr)
+    // Send bygningens representasjonspunkt for point-in-polygon-sjekk
+    // (forhindrer falske positiver for naboer på samme gnr/bnr).
+    const repPoint = result.representasjonspunkt
+      ? {
+          x: result.representasjonspunkt.east,
+          y: result.representasjonspunkt.north,
+          epsg: result.representasjonspunkt.epsg,
+        }
+      : undefined;
+
+    sjekkGulListeMedGnrBnr(gnr, bnr, repPoint)
       .then((gulListeResult) => {
         setIsGulliste(gulListeResult.erPaaGulListe);
       })

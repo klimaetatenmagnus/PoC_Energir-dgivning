@@ -10,8 +10,15 @@
  */
 
 import axios from 'axios';
+import proj4 from 'proj4';
 import { getAppConfig } from '../runtimeConfig.ts';
 import { createLogger } from '../utils/logger';
+
+// EPSG:32632 (UTM zone 32N) brukes av PBE sine WFS-polygoner.
+// EPSG:4258 (ETRS89 lat/lon) er det Geonorge returnerer som representasjonspunkt.
+proj4.defs('EPSG:32632', '+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs');
+proj4.defs('EPSG:4258', '+proj=longlat +ellps=GRS80 +no_defs');
+proj4.defs('EPSG:25833', '+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs');
 
 const logger = createLogger({ prefix: 'gul-liste-service' });
 
@@ -46,6 +53,7 @@ interface MatrikkelData {
   adressekode?: number;
   husnummer?: number;
   bokstav?: string;
+  representasjonspunkt?: GulListePoint;
 }
 
 /**
@@ -120,6 +128,37 @@ interface FeatureMemberData {
   vern?: string;
   type?: string;
   mapping?: string;
+  /** Polygon-ringer i EPSG:32632 ([x, y]-par). Første ring er ytre, øvrige er hull. */
+  polygonRings?: Array<Array<[number, number]>>;
+}
+
+/**
+ * Parser en posList (romadskilte koordinater) til et [x, y]-array.
+ */
+function parsePosList(posList: string): Array<[number, number]> {
+  const nums = posList.trim().split(/\s+/).map(Number);
+  const pairs: Array<[number, number]> = [];
+  for (let i = 0; i + 1 < nums.length; i += 2) {
+    if (Number.isFinite(nums[i]) && Number.isFinite(nums[i + 1])) {
+      pairs.push([nums[i], nums[i + 1]]);
+    }
+  }
+  return pairs;
+}
+
+/**
+ * Parser alle posList-elementer i et XML-block til polygon-ringer.
+ * Støtter både enkle polygoner og MultiPolygon. Første ring er ytre-grense.
+ */
+function parsePolygonRings(memberXml: string): Array<Array<[number, number]>> {
+  const rings: Array<Array<[number, number]>> = [];
+  const posListRegex = /<gml:posList[^>]*>([^<]+)<\/gml:posList>/g;
+  let match: RegExpExecArray | null;
+  while ((match = posListRegex.exec(memberXml)) !== null) {
+    const ring = parsePosList(match[1]);
+    if (ring.length >= 3) rings.push(ring);
+  }
+  return rings;
 }
 
 /**
@@ -139,6 +178,7 @@ function parseFeatureMembers(xml: string): FeatureMemberData[] {
       vern: memberXml.match(/<ms:VERN>(.*?)<\/ms:VERN>/)?.[1],
       type: memberXml.match(/<ms:TYPE>(.*?)<\/ms:TYPE>/)?.[1],
       mapping: memberXml.match(/<ms:MAPPING>(.*?)<\/ms:MAPPING>/)?.[1],
+      polygonRings: parsePolygonRings(memberXml),
     });
   }
 
@@ -146,9 +186,72 @@ function parseFeatureMembers(xml: string): FeatureMemberData[] {
 }
 
 /**
- * Sjekker om et teigid er på Gul liste
+ * Ray-casting point-in-polygon. Ringen er [x, y]-par i samme CRS som punktet.
+ * Fungerer for konvekse og konkave polygoner.
  */
-async function sjekkGulListeForTeigid(teigid: string): Promise<GulListeResult> {
+function pointInRing(px: number, py: number, ring: Array<[number, number]>): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    const intersect =
+      yi > py !== yj > py &&
+      px < ((xj - xi) * (py - yi)) / (yj - yi + 0) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * Sjekker om punktet ligger innenfor minst én av polygonets ringer.
+ * (Vi tolker hver ring som et gyldig ytre-grense-polygon; dette stemmer for
+ * enkelt-ring-polygoner som PBE returnerer.)
+ */
+function pointInPolygonRings(
+  point: [number, number],
+  rings: Array<Array<[number, number]>>
+): boolean {
+  return rings.some((ring) => pointInRing(point[0], point[1], ring));
+}
+
+export interface GulListePoint {
+  /** Punkt i EPSG:32632 (UTM zone 32N) — eller oppgi epsg for auto-konvertering. */
+  x: number;
+  y: number;
+  epsg?: string;
+}
+
+/**
+ * Konverterer et koordinat til EPSG:32632 hvis det ikke allerede er der.
+ */
+function toUtm32(point: GulListePoint): [number, number] | null {
+  const sourceEpsg = point.epsg ?? 'EPSG:32632';
+  if (sourceEpsg === 'EPSG:32632') {
+    return [point.x, point.y];
+  }
+  try {
+    const [x, y] = proj4(sourceEpsg, 'EPSG:32632', [point.x, point.y]);
+    return [x, y];
+  } catch (err) {
+    logger.warn(`Kunne ikke konvertere koordinat fra ${sourceEpsg} til EPSG:32632:`, err);
+    return null;
+  }
+}
+
+/**
+ * Sjekker om et teigid er på Gul liste.
+ *
+ * Hvis `point` oppgis (bygningens representasjonspunkt), gjør vi i tillegg
+ * point-in-polygon mot de gul-liste-relevante polygonene. Dette skiller
+ * mellom ulike bygg på samme eiendom: én eiendom kan inneholde både vernede
+ * bygg (f.eks. hovedbygning) og ikke-vernede bygg (f.eks. tilbygg/naboer
+ * med samme gnr/bnr). Uten punkt-sjekken får vi falske positiver der hele
+ * eiendommen markeres gul liste selv om bare ett bygg er vernet.
+ */
+async function sjekkGulListeForTeigid(
+  teigid: string,
+  point?: GulListePoint
+): Promise<GulListeResult> {
   try {
     const url = PBE_WFS_URL;
     const params = {
@@ -171,12 +274,32 @@ async function sjekkGulListeForTeigid(teigid: string): Promise<GulListeResult> {
     // KATEGORI-feltet for å ekskludere utomhuselementer (gjerder, hager etc.)
     // som ikke gjelder selve bygningen.
     const allMembers = parseFeatureMembers(xml);
-    const gulListeMembers = allMembers.filter(
+    let gulListeMembers = allMembers.filter(
       (m) =>
         m.mapping &&
         GUL_LISTE_MAPPING_VERDIER.includes(m.mapping) &&
         !(m.kategori && EKSKLUDERTE_KATEGORIER.includes(m.kategori))
     );
+
+    // Point-in-polygon: filtrer til kun oppføringer som faktisk dekker bygningens
+    // representasjonspunkt. Forhindrer falske positiver på eiendommer med flere
+    // bygg der bare noen er vernet (f.eks. Malerhaugveien 2A/2J vernet, 2V ikke).
+    if (point && gulListeMembers.length > 0) {
+      const utm = toUtm32(point);
+      if (utm) {
+        const containingMembers = gulListeMembers.filter(
+          (m) => m.polygonRings && m.polygonRings.length > 0 && pointInPolygonRings(utm, m.polygonRings)
+        );
+        if (containingMembers.length !== gulListeMembers.length) {
+          logger.info(
+            `Teigid ${teigid}: ${gulListeMembers.length} gul-liste-oppføring(er) totalt, ` +
+              `${containingMembers.length} inneholder bygningens representasjonspunkt ` +
+              `(${utm[0].toFixed(1)}, ${utm[1].toFixed(1)})`
+          );
+        }
+        gulListeMembers = containingMembers;
+      }
+    }
 
     if (gulListeMembers.length > 0) {
       // Foretrekk Enkeltminne-oppføringer fremfor Lokalitet-duplikater
@@ -201,7 +324,7 @@ async function sjekkGulListeForTeigid(teigid: string): Promise<GulListeResult> {
 
     if (allMembers.length > 0) {
       logger.info(
-        `Teigid ${teigid} har ${allMembers.length} kulturminneregistrering(er), men ingen er gul liste (MAPPING: ${allMembers.map((m) => m.mapping ?? 'mangler').join(', ')})`
+        `Teigid ${teigid} har ${allMembers.length} kulturminneregistrering(er), men ingen er gul liste for denne bygningen (MAPPING: ${allMembers.map((m) => m.mapping ?? 'mangler').join(', ')})`
       );
     }
 
@@ -241,7 +364,16 @@ async function hentMatrikkelDataFraAdresse(adresse: string): Promise<MatrikkelDa
     
     if (response.data.adresser && response.data.adresser.length > 0) {
       const adresseData = response.data.adresser[0];
-      
+
+      // Hent representasjonspunkt (Geonorge bruker EPSG:4258 lat/lon)
+      const repPoint: GulListePoint | undefined = adresseData.representasjonspunkt
+        ? {
+            x: adresseData.representasjonspunkt.lon,
+            y: adresseData.representasjonspunkt.lat,
+            epsg: adresseData.representasjonspunkt.epsg ?? 'EPSG:4258',
+          }
+        : undefined;
+
       // Noen adresser returnerer matrikkelinfo direkte
       if (adresseData.gardsnummer && adresseData.bruksnummer) {
         return {
@@ -250,7 +382,8 @@ async function hentMatrikkelDataFraAdresse(adresse: string): Promise<MatrikkelDa
           bruksnummer: adresseData.bruksnummer,
           adressekode: adresseData.adressekode,
           husnummer: adresseData.husnummer,
-          bokstav: adresseData.bokstav
+          bokstav: adresseData.bokstav,
+          representasjonspunkt: repPoint,
         };
       }
       
@@ -287,13 +420,13 @@ async function hentMatrikkelDataFraAdresse(adresse: string): Promise<MatrikkelDa
  * @param adresse - Adressen som skal sjekkes (f.eks. "Thereses gate 3, Oslo")
  * @returns GulListeResult med status og detaljer
  */
-export async function sjekkGulListe(adresse: string): Promise<GulListeResult> {
+export async function sjekkGulListe(adresse: string, point?: GulListePoint): Promise<GulListeResult> {
   try {
-    // Steg 1: Hent GNR/BNR fra adresse
+    // Steg 1: Hent GNR/BNR fra adresse (og hent samtidig representasjonspunkt hvis ikke oppgitt)
     logger.info(`Sjekker Gul liste for ${adresse}`);
-    
+
     const matrikkelData = await hentMatrikkelDataFraAdresse(adresse);
-    
+
     if (!matrikkelData) {
       return {
         erPaaGulListe: false,
@@ -301,17 +434,20 @@ export async function sjekkGulListe(adresse: string): Promise<GulListeResult> {
         adresse: adresse
       };
     }
-    
+
     logger.info(
       `Fant GNR ${matrikkelData.gardsnummer}, BNR ${matrikkelData.bruksnummer}`
     );
-    
+
+    // Bruk punkt fra Geonorge-oppslag hvis ikke oppgitt eksplisitt
+    const effectivePoint = point ?? matrikkelData.representasjonspunkt;
+
     // Steg 2: Finn teigid fra GNR/BNR
     const teigid = await finnTeigidFraGnrBnr(
       matrikkelData.gardsnummer,
       matrikkelData.bruksnummer
     );
-    
+
     if (!teigid) {
       return {
         erPaaGulListe: false,
@@ -321,12 +457,12 @@ export async function sjekkGulListe(adresse: string): Promise<GulListeResult> {
         adresse: adresse
       };
     }
-    
+
     logger.info(`Fant teigid ${teigid}`);
-    
-    // Steg 3: Sjekk om teigid er på Gul liste
-    const gulListeResultat = await sjekkGulListeForTeigid(teigid);
-    
+
+    // Steg 3: Sjekk om teigid er på Gul liste, med point-in-polygon hvis punkt tilgjengelig
+    const gulListeResultat = await sjekkGulListeForTeigid(teigid, effectivePoint);
+
     return {
       ...gulListeResultat,
       gnr: matrikkelData.gardsnummer,
@@ -347,11 +483,15 @@ export async function sjekkGulListe(adresse: string): Promise<GulListeResult> {
 /**
  * Sjekker gul liste direkte med GNR/BNR (hvis du allerede har disse)
  */
-export async function sjekkGulListeMedGnrBnr(gnr: number, bnr: number): Promise<GulListeResult> {
+export async function sjekkGulListeMedGnrBnr(
+  gnr: number,
+  bnr: number,
+  point?: GulListePoint
+): Promise<GulListeResult> {
   try {
     // Finn teigid
     const teigid = await finnTeigidFraGnrBnr(gnr, bnr);
-    
+
     if (!teigid) {
       return {
         erPaaGulListe: false,
@@ -360,10 +500,10 @@ export async function sjekkGulListeMedGnrBnr(gnr: number, bnr: number): Promise<
         error: 'Kunne ikke finne teigid for eiendommen'
       };
     }
-    
-    // Sjekk Gul liste
-    const gulListeResultat = await sjekkGulListeForTeigid(teigid);
-    
+
+    // Sjekk Gul liste (point-in-polygon hvis punkt oppgitt)
+    const gulListeResultat = await sjekkGulListeForTeigid(teigid, point);
+
     return {
       ...gulListeResultat,
       gnr: gnr,
