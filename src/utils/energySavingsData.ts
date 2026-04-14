@@ -195,6 +195,45 @@ export const VINDUER_TAB_TO_TYPE: Record<string, TiltakType> = {
   'trelags': 'vinduer_standard',
 };
 
+/**
+ * Returnerer hvilke vinduer-typer (tolags/trelags) som er relevante å tilby
+ * som oppgradering for gitt TEK-periode, boligtype og gul-liste-status.
+ *
+ * Regler:
+ * - Gul liste-bygg: kun tolags (vinduer_gul_liste) tillatt av vernehensyn.
+ * - Ikke-gul-liste-bygg: trelags (standard) er byggekravet fra TEK10.
+ *   Tolags-oppgradering tilbys derfor kun når trelags-data også finnes
+ *   (dvs. eldre bygg der oppgradering er aktuelt). For TEK10+ som allerede
+ *   har trelags som baseline tilbys ingen vinduer-oppgradering.
+ * - Type må ha CSV-data OG gi reell effekt for å inkluderes.
+ *
+ * Brukes til å skjule radio-valg når kun én type er relevant (eller ingen).
+ */
+export function getAvailableVinduerTypes(
+  tekPeriod: TekPeriodInput,
+  boligtype: Boligtype,
+  erPaaGulListe: boolean
+): Array<'tolags' | 'trelags'> {
+  const tolagsRates = getEnergySavingsRate('vinduer_gul_liste', tekPeriod, boligtype, true);
+  const tolagsValid = tolagsRates !== null && hasEnergyEffect(tolagsRates);
+
+  if (erPaaGulListe) {
+    // Gul liste: kun tolags er tillatt.
+    return tolagsValid ? ['tolags'] : [];
+  }
+
+  // Ikke gul liste: trelags er byggekrav fra TEK10. Tolags tilbys kun sammen
+  // med trelags (dvs. for eldre bygg der begge er aktuelle oppgraderinger).
+  const trelagsRates = getEnergySavingsRate('vinduer_standard', tekPeriod, boligtype, false);
+  const trelagsValid = trelagsRates !== null && hasEnergyEffect(trelagsRates);
+
+  if (!trelagsValid) {
+    return [];
+  }
+
+  return tolagsValid ? ['tolags', 'trelags'] : ['trelags'];
+}
+
 // Re-export TEKPeriod from types/energy.ts
 export type { TEKPeriod } from '../types/energy';
 

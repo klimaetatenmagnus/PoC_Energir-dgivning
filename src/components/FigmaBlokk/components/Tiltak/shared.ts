@@ -21,7 +21,7 @@ export interface TiltakComponentProps {
 
 export type BuildingCategory = 'enebolig' | 'rekkehus' | 'blokk';
 export type EnergyBuildingCategory = 'småhus' | 'blokk';
-export type TekPeriod = 'eldre' | '49' | '69' | '87' | '97' | '7';
+export type TekPeriod = 'eldre' | '49' | '69' | '87' | '97' | '7' | '10' | '17';
 const DEFAULT_BUILDING_CATEGORY: BuildingCategory = 'enebolig';
 
 /**
@@ -146,6 +146,14 @@ export const calculateTekPeriod = (byggeaar: number): TekPeriod => {
   }
 
   const threshold = 2;
+
+  if (byggeaar >= 2017 + threshold) {
+    return '17';
+  }
+
+  if (byggeaar >= 2010 + threshold) {
+    return '10';
+  }
 
   if (byggeaar >= 2007 + threshold) {
     return '7';

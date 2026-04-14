@@ -31,9 +31,9 @@ import { computeAggregatedSavingsNok } from '../../utils/tiltakSavings';
 import {
   calculateCombinedSavings,
   calculateComparisonSavings,
+  getAvailableVinduerTypes,
   getRateForTiltakId,
   hasEnergyEffect,
-  TILTAK_ID_TO_TYPE,
   type TiltakSavingsInfo,
   type Boligtype,
   type TekPeriodInput,
@@ -175,14 +175,12 @@ const filterTiltakForBuilding = (
       t.minBuildingYear === undefined ||
       (buildingYear !== undefined && buildingYear < t.minBuildingYear);
 
-    // Energieffekt-filter (som desktop)
+    // Energieffekt-filter (som desktop): skjul alle tiltak uten effekt for aktuelt bygg.
+    // Unntak: solenergi (produksjon, alltid vist).
     let energyEffectMatch = true;
     if (tekPeriod && boligtype && t.id !== 'solenergi') {
       const rates = getRateForTiltakId(t.id, tekPeriod, boligtype, { erPaaGulListe });
-      const isRateBasedTiltak = t.id in TILTAK_ID_TO_TYPE && TILTAK_ID_TO_TYPE[t.id] !== null;
-      if (rates === null && isRateBasedTiltak) {
-        energyEffectMatch = false; // Skjul rate-basert tiltak uten data for denne TEK-perioden
-      } else if (rates !== null && !hasEnergyEffect(rates)) {
+      if (rates === null || !hasEnergyEffect(rates)) {
         energyEffectMatch = false;
       }
     }
@@ -376,6 +374,13 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   const tekPeriod: TekPeriodInput = useMemo(() => {
     return calculateTekPeriod(buildingYear || 0);
   }, [buildingYear]);
+
+  // Hvilke vinduer-typer er aktuelle (jf. desktop).
+  const availableVinduerTypes = useMemo<Array<'tolags' | 'trelags'>>(() => {
+    if (!tekPeriod || !boligtype) return [];
+    return getAvailableVinduerTypes(tekPeriod, boligtype, erPaaGulListe);
+  }, [tekPeriod, boligtype, erPaaGulListe]);
+  const vinduerSingleType = availableVinduerTypes.length === 1 ? availableVinduerTypes[0] : null;
 
   // Estimert årlig energiforbruk
   const estimatedAnnualConsumption = useMemo(() => {
@@ -1282,8 +1287,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                   const isVinduer = tiltak.id === 'vinduer';
                   const isSelected = checkedItems.has(tiltak.id);
                   const isLast = index === nyeTiltak.length - 1;
-                  // Vinduer vises som expanderbar kun for gul-liste UTEN gjennomført tolags
-                  const vinduerShowExpansion = isVinduer && erPaaGulListe
+                  // Vinduer vises som expanderbar kun når flere typer er relevante.
+                  const vinduerShowExpansion = isVinduer
+                    && availableVinduerTypes.length > 1
                     && !(completedItems.has('vinduer') && completedVinduerType === 'tolags');
 
                   if (!isVarmepumpe && !vinduerShowExpansion) {
@@ -1296,7 +1302,10 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                             checked={isSelected}
                             onChange={() => {
                               toggleChecked(tiltak.id);
-                              if (isVinduer) setSelectedVinduerTypeNye('trelags');
+                              // Auto-velg tilgjengelig type når vi viser som enkel checkbox.
+                              if (isVinduer && vinduerSingleType) {
+                                setSelectedVinduerTypeNye(vinduerSingleType);
+                              }
                             }}
                           />
                         </div>
@@ -1487,8 +1496,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                   const isLast = index === gjennomforteTiltak.length - 1;
                   const isVarmepumpe = tiltak.id === 'varmepumpe';
                   const isVinduer = tiltak.id === 'vinduer';
+                  const vinduerAsSimpleCheckbox = isVinduer && availableVinduerTypes.length <= 1;
 
-                  if (!isVarmepumpe && !isVinduer) {
+                  if (!isVarmepumpe && (!isVinduer || vinduerAsSimpleCheckbox)) {
                     return (
                       <li key={tiltak.id} className={`mobile-energy-solutions__tiltak-item${isLast ? ' mobile-energy-solutions__tiltak-item--last' : ''}${isCompleted ? ' mobile-energy-solutions__tiltak-item--selected' : ''}`}>
                         <div className="mobile-energy-solutions__tiltak-content">
@@ -1496,7 +1506,12 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                             id={`tiltak-completed-${tiltak.id}`}
                             label={tiltak.title}
                             checked={isCompleted}
-                            onChange={() => toggleCompleted(tiltak.id)}
+                            onChange={() => {
+                              toggleCompleted(tiltak.id);
+                              if (isVinduer && vinduerSingleType) {
+                                setCompletedVinduerType(vinduerSingleType);
+                              }
+                            }}
                           />
                         </div>
                         <PktButton
@@ -1512,8 +1527,8 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
                     );
                   }
 
-                  // Vinduer med utvidbar seksjon (gjennomførte, alltid expanderbar)
-                  if (isVinduer) {
+                  // Vinduer med utvidbar seksjon (kun når flere typer er relevante)
+                  if (isVinduer && availableVinduerTypes.length > 1) {
                     return (
                       <li key={tiltak.id} className={`mobile-energy-solutions__tiltak-item mobile-energy-solutions__tiltak-item--expandable${isLast ? ' mobile-energy-solutions__tiltak-item--last' : ''}${isCompleted ? ' mobile-energy-solutions__tiltak-item--selected' : ''}`}>
                         <div className="mobile-energy-solutions__varmepumpe-header">

@@ -7,9 +7,9 @@ import { useTiltakCatalog } from '../../../hooks/contentHooks';
 import type { TiltakCatalogItem } from '../../../types/contentCatalog';
 import {
   calculateCombinedSavings,
+  getAvailableVinduerTypes,
   getRateForTiltakId,
   hasEnergyEffect,
-  TILTAK_ID_TO_TYPE,
   type TiltakSavingsInfo,
   type TekPeriodInput,
   type Boligtype,
@@ -118,16 +118,16 @@ const filterTiltakForBuilding = (
       t.minBuildingYear === undefined || // Ingen filter = vis alltid
       (buildingYear !== undefined && buildingYear < t.minBuildingYear);
 
-    // Energieffekt-filter: skjul tiltak uten effekt for denne TEK-standarden
-    // Unntak: Solenergi har alltid effekt (det er produksjon, ikke besparelse)
+    // Energieffekt-filter: skjul tiltak uten effekt for denne TEK-standarden.
+    // Unntak: Solenergi har alltid effekt (det er produksjon, ikke besparelse).
+    // Alle andre tiltak skjules hvis de ikke gir noen besparelse for aktuelt bygg:
+    //   - Ingen rates (f.eks. tetting, eller rate-basert tiltak uten CSV-data for TEK-perioden)
+    //   - Rates finnes men gir ingen effekt (alle rater = 1)
     let energyEffectMatch = true;
     if (tekPeriod && boligtype && t.id !== 'solenergi') {
       const rates = getRateForTiltakId(t.id, tekPeriod, boligtype, { erPaaGulListe });
-      const isRateBasedTiltak = t.id in TILTAK_ID_TO_TYPE && TILTAK_ID_TO_TYPE[t.id] !== null;
-      if (rates === null && isRateBasedTiltak) {
-        energyEffectMatch = false; // Skjul rate-basert tiltak uten data for denne TEK-perioden
-      } else if (rates !== null && !hasEnergyEffect(rates)) {
-        energyEffectMatch = false; // Skjul tiltak uten effekt
+      if (rates === null || !hasEnergyEffect(rates)) {
+        energyEffectMatch = false;
       }
     }
 
@@ -273,6 +273,16 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       buildingData?.bygningstype || buildingData?.csvData?.bygningstype
     );
   }, [buildingData]);
+
+  // Hvilke vinduer-typer er aktuelle å tilby for dette bygget?
+  // - Gul liste: kun tolags (vernehensyn)
+  // - Eldre bygg (pre-TEK10): begge hvis data finnes
+  // - TEK10+ uten gul liste: ingen (trelags er byggekrav, ingen oppgradering relevant)
+  const availableVinduerTypes = React.useMemo<Array<'tolags' | 'trelags'>>(() => {
+    if (!tekPeriod || !boligtype) return [];
+    return getAvailableVinduerTypes(tekPeriod, boligtype, erPaaGulListe);
+  }, [tekPeriod, boligtype, erPaaGulListe]);
+  const vinduerSingleType = availableVinduerTypes.length === 1 ? availableVinduerTypes[0] : null;
 
   // Filtrer tiltak fra katalog basert på byggtype, byggår og energieffekt
   const filteredTiltak = useMemo(() => {
@@ -687,8 +697,11 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
               const isSelected = checkedItems.has(tiltak.id);
               const isVarmepumpe = tiltak.id === 'varmepumpe';
               const isVinduer = tiltak.id === 'vinduer';
-              // Vinduer vises som expanderbar kun for gul-liste UTEN gjennomført tolags
-              const vinduerShowExpansion = isVinduer && erPaaGulListe
+              // Vinduer vises som expanderbar KUN når det er flere typer å velge mellom.
+              // For gul liste (kun tolags) og TEK10+ generelt har vi én eller null typer,
+              // og da vises vinduer som enkel checkbox (ingen radio).
+              const vinduerShowExpansion = isVinduer
+                && availableVinduerTypes.length > 1
                 && !(completedItems.has('vinduer') && completedVinduerType === 'tolags');
 
               if (!isVarmepumpe && !vinduerShowExpansion) {
@@ -704,9 +717,10 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                         checked={isSelected}
                         onChange={() => {
                           toggleChecked(tiltak.id);
-                          // Vinduer som enkel checkbox = alltid trelags
-                          if (isVinduer) {
-                            setSelectedVinduerTypeNye('trelags');
+                          // Enkel checkbox brukes når kun én vinduer-type er relevant.
+                          // Auto-velg den typen slik at besparelsesberegningen er konsistent.
+                          if (isVinduer && vinduerSingleType) {
+                            setSelectedVinduerTypeNye(vinduerSingleType);
                           }
                         }}
                       />
@@ -920,8 +934,10 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                 const isCompleted = completedItems.has(tiltak.id);
                 const isVarmepumpe = tiltak.id === 'varmepumpe';
                 const isVinduer = tiltak.id === 'vinduer';
+                // Vinduer får enkel checkbox når kun én type er relevant (f.eks. gul-liste TEK10+).
+                const vinduerAsSimpleCheckbox = isVinduer && availableVinduerTypes.length <= 1;
 
-                if (!isVarmepumpe && !isVinduer) {
+                if (!isVarmepumpe && (!isVinduer || vinduerAsSimpleCheckbox)) {
                   return (
                     <li
                       key={tiltak.id}
@@ -932,7 +948,13 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                           id={`tiltak-completed-${tiltak.id}`}
                           label={softHyphenate(tiltak.title)}
                           checked={isCompleted}
-                          onChange={() => toggleCompleted(tiltak.id)}
+                          onChange={() => {
+                            toggleCompleted(tiltak.id);
+                            // Auto-velg tilgjengelig vinduer-type når vi viser som enkel checkbox.
+                            if (isVinduer && vinduerSingleType) {
+                              setCompletedVinduerType(vinduerSingleType);
+                            }
+                          }}
                         />
                       </div>
                       <div className="energy-solution-buttons__actions">
@@ -953,8 +975,8 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
                   );
                 }
 
-                // Vinduer med utvidbar seksjon (gjennomførte, alltid expanderbar)
-                if (isVinduer) {
+                // Vinduer med utvidbar seksjon (kun når flere typer er relevante)
+                if (isVinduer && availableVinduerTypes.length > 1) {
                   return (
                     <li
                       key={tiltak.id}
