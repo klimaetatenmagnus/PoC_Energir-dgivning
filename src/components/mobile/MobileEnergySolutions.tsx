@@ -27,6 +27,7 @@ import { MobileDistrictComparison } from './MobileDistrictComparison';
 import { MobileProsessenVidere } from './MobileProsessenVidere';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, calculateEnergyRatingWithFjernvarme } from '../../utils/tekEnergyCalculations';
 import { calculateTekPeriod, parseNumericValue } from '../FigmaBlokk/components/Tiltak/shared';
+import { computeAggregatedSavingsNok } from '../../utils/tiltakSavings';
 import {
   calculateCombinedSavings,
   calculateComparisonSavings,
@@ -479,6 +480,24 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
 
   // Beregn total besparelse basert på valgte tiltak
   const [calculatedSavings, setCalculatedSavings] = useState(0);
+
+  // Sol-andel av marginal besparelse (for sentral kr-beregning).
+  // Sol legges lineært, så scaledSolarEnergy er sol-bidraget hvis solenergi er valgt som nytt tiltak.
+  const marginalSolarKwh = useMemo(() => {
+    if (!checkedItems.has('solenergi')) return 0;
+    return scaledSolarEnergy && scaledSolarEnergy > 0 ? scaledSolarEnergy : 0;
+  }, [checkedItems, scaledSolarEnergy]);
+
+  const calculatedSavingsNok = useMemo(
+    () =>
+      computeAggregatedSavingsNok({
+        totalKwh: calculatedSavings,
+        solarKwhContribution: marginalSolarKwh,
+        boligtype,
+        energyPricePerKwh: 1.1,
+      }),
+    [calculatedSavings, marginalSolarKwh, boligtype]
+  );
   // Antall valgte tiltak som ikke kunne beregnes (manglende data)
   const [uncalculableCount, setUncalculableCount] = useState(0);
 
@@ -1715,6 +1734,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               mapCoordinates={mapCoordinates}
               showYellowBox={showYellowBox}
               totalEnergySavings={calculatedSavings}
+              totalEnergySavingsNok={calculatedSavingsNok}
               onCollapse={closeInfoBox}
               showCompareButton={!!districtStats}
               completedSavings={completedSavingsKWh}
@@ -1833,6 +1853,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       {/* Besparelsesfooter - alltid synlig når tiltak er valgt, også i detaljvisning */}
       <MobileSavingsFooter
         totalSavingsKwh={calculatedSavings}
+        totalSavingsNok={calculatedSavingsNok}
         isVisible={showFooter && !showDistrictComparison && !showProsessenVidere}
         uncalculableCount={uncalculableCount}
         estimatedRating={effectiveEstimatedRating}

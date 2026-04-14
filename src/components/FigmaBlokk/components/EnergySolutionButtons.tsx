@@ -15,6 +15,7 @@ import {
   type Boligtype,
 } from '../../../utils/energySavingsData';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateTEK, calculateEnergyRating, calculateEnergyRatingWithFjernvarme } from '../../../utils/tekEnergyCalculations';
+import { computeAggregatedSavingsNok } from '../../../utils/tiltakSavings';
 import { getCanonicalKey, type TiltakCanonicalKey } from '../utils/tiltakCanonicalKeys';
 import type { ContentAudience } from '../../../../content/schema-helpers';
 import './EnergySolutionButtons.css';
@@ -142,6 +143,8 @@ interface EnergySolutionButtonsProps {
   buildingData?: AddressLookupResponse;
   yearlyConsumption?: string;
   onTotalSavingsChange?: (savings: number) => void;
+  /** Marginal besparelse fra nye tiltak i kroner. Anvender bl.a. sol-faktor for småhus. */
+  onTotalSavingsNokChange?: (savingsNok: number) => void;
   onTiltakInfoChange?: (tiltakInfo: TiltakSavingsInfo[]) => void;
   /** Callback when tiltak selection changes. Uses canonical keys (not display titles) for stability. */
   onSelectionChange?: (activeTiltak: TiltakCanonicalKey[], finalRating?: string | null) => void;
@@ -159,7 +162,7 @@ interface EnergySolutionButtonsProps {
   onFjernvarmeChange?: (v: boolean) => void;
 }
 
-export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onTiltakInfoChange, onSelectionChange, audience = 'standard', showInfoModal: externalShowInfoModal, onShowInfoModalChange, onCompletedSavingsChange, fjernvarme, onFjernvarmeChange }) => {
+export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onTotalSavingsNokChange, onTiltakInfoChange, onSelectionChange, audience = 'standard', showInfoModal: externalShowInfoModal, onShowInfoModalChange, onCompletedSavingsChange, fjernvarme, onFjernvarmeChange }) => {
   // Utled gul liste-status fra audience prop (FigmaMainScript er "single source of truth" via PBE-oppslag)
   const erPaaGulListe = audience === 'gulliste';
   // Animasjoner (fadeIn, slideUpFadeIn) er definert i EnergySolutionButtons.css
@@ -443,6 +446,26 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     [totalCombinedSavingsKWh, completedSavingsKWh]
   );
 
+  // Sol-andel (kun fra nye tiltak, siden det er nye tiltak brukeren ser besparelse for).
+  // Sol legges lineært i calculateCombinedSavings, så summen av solarProductionKwh
+  // tilsvarer sol-delen av newSavingsKWh.
+  const newSolarKwhContribution = React.useMemo(
+    () => tiltakInfo.reduce((sum, t) => sum + (t.solarProductionKwh ?? 0), 0),
+    [tiltakInfo]
+  );
+
+  // Marginal besparelse i kroner, med sol-faktor for småhus anvendt på sol-andelen.
+  const newSavingsNok = React.useMemo(
+    () =>
+      computeAggregatedSavingsNok({
+        totalKwh: newSavingsKWh,
+        solarKwhContribution: newSolarKwhContribution,
+        boligtype,
+        energyPricePerKwh: 1.1,
+      }),
+    [newSavingsKWh, newSolarKwhContribution, boligtype]
+  );
+
   // Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
   const newRating = React.useMemo(() => {
     if (!estimatedRating || !yearlyConsumption || (checkedItems.size === 0 && completedItems.size === 0) || !bruksareal) {
@@ -558,6 +581,13 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       onTotalSavingsChange(newSavingsKWh);
     }
   }, [onTotalSavingsChange, newSavingsKWh]);
+
+  // Send marginal besparelse i kroner (anvender sol-faktor for småhus).
+  useEffect(() => {
+    if (onTotalSavingsNokChange) {
+      onTotalSavingsNokChange(newSavingsNok);
+    }
+  }, [onTotalSavingsNokChange, newSavingsNok]);
 
   // Send tiltakInfo til parent-komponenten når den endres
   useEffect(() => {

@@ -16,7 +16,7 @@ import { AddressLookupResponse } from '../../services/buildingApi';
 import '../../config/badges.css';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, calculateEnergyRatingWithFjernvarme, calculateTEK } from '../../utils/tekEnergyCalculations';
 import { type TekPeriodInput } from '../../utils/energySavingsData';
-import { convertKwhToNok, formatCurrency, formatNumberWithSpaces } from '../../utils/energy';
+import { formatCurrency, formatNumberWithSpaces } from '../../utils/energy';
 import { getOsloMapExportUrl } from '../../utils/coordinateUtils';
 import './MobileInfoBox.css';
 
@@ -30,7 +30,8 @@ interface MobileInfoBoxProps {
   mapCoordinates: { lat: number; lng: number } | null;
   showYellowBox?: boolean;
   totalEnergySavings?: number;
-  energyPricePerKwh?: number;
+  /** Ferdig beregnet kr fra sentral util (anvender bl.a. sol-faktor). */
+  totalEnergySavingsNok: number;
   onUpdateBuildingData?: (byggeaar: string, areal: string, arealLeilighet: string, energiforbruk: string) => void;
   onCollapse?: () => void;
   /** Vis "Sammenlign med naboer"-knappen */
@@ -69,7 +70,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   mapCoordinates,
   showYellowBox = false,
   totalEnergySavings = 0,
-  energyPricePerKwh = 1.1,
+  totalEnergySavingsNok,
   onUpdateBuildingData,
   onCollapse,
   showCompareButton = false,
@@ -214,8 +215,8 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   const _shouldShowSavings = totalEnergySavings > 0;
   const roundedSavingsKwh = useMemo(() => roundToNearestThousandValue(totalEnergySavings), [totalEnergySavings]);
   const roundedSavingsNok = useMemo(
-    () => roundToNearestThousandValue(convertKwhToNok(totalEnergySavings, energyPricePerKwh)),
-    [totalEnergySavings, energyPricePerKwh]
+    () => roundToNearestThousandValue(totalEnergySavingsNok),
+    [totalEnergySavingsNok]
   );
   const _formattedSavingsKwh = useMemo(() => formatNumberWithSpaces(roundedSavingsKwh), [roundedSavingsKwh]);
   const _formattedSavingsCurrency = useMemo(() => formatCurrency(roundedSavingsNok), [roundedSavingsNok]);

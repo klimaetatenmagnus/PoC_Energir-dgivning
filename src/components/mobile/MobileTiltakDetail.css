@@ -457,6 +457,16 @@
   margin: 0;
 }
 
+.mobile-tiltak-detail__savings-tooltip-subheader {
+  margin-top: var(--pkt-spacing-12, 0.75rem);
+  margin-bottom: var(--pkt-spacing-4, 0.25rem);
+}
+
+.mobile-tiltak-detail__savings-tooltip-subheader strong {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 1rem;
+}
+
 /* Mindre titler for Støtteordninger og Søknadsplikt accordions */
 .mobile-tiltak-detail__main > .pkt-accordion .pkt-accordion-item__title {
   font-size: 1.125rem;

@@ -258,6 +258,10 @@
   margin: 0 0 8px 0;
 }
 
+.desktop-tiltak-card__savings-tooltip h4:not(:first-child) {
+  margin-top: 12px;
+}
+
 .desktop-tiltak-card__savings-tooltip p {
   font-family: 'Oslo Sans', sans-serif;
   font-size: 14px;

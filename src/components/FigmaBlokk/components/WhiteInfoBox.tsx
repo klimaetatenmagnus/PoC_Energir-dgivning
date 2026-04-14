@@ -32,7 +32,7 @@ import {
 } from '../../../services/districtStatisticsService';
 import type { DistrictStats, EnergyGrade } from '../../../types/districtStatistics';
 
-import { convertKwhToNok, formatCurrency, formatNumberWithSpaces } from '../../../utils/energy';
+import { formatCurrency, formatNumberWithSpaces } from '../../../utils/energy';
 import { getOsloMapExportUrl } from '../../../utils/coordinateUtils';
 import { AddressLookupResponse } from '../../../services/buildingApi';
 import '../../../config/badges.css';
@@ -189,9 +189,10 @@ interface WhiteInfoBoxProps {
   showYellowBox?: boolean;
   onUpdateBuildingData?: (byggeaar: string, areal: string, arealLeilighet: string, energiforbruk: string) => void;
   totalEnergySavings?: number;
+  /** Ferdig beregnet kroner-besparelse fra sentral util (tiltakSavings.ts). */
+  totalEnergySavingsNok: number;
   tiltakInfo?: TiltakSavingsInfo[];
   gulListeLoading?: boolean;
-  energyPricePerKwh?: number;
   animateSavings?: boolean;
   onShowInfo?: () => void;
   completedSavings?: number;
@@ -213,9 +214,9 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   showYellowBox = true,
   onUpdateBuildingData,
   totalEnergySavings = 0,
+  totalEnergySavingsNok,
   tiltakInfo,
   gulListeLoading = false,
-  energyPricePerKwh = 1.1,
   animateSavings = true,
   onShowInfo,
   completedSavings = 0,
@@ -268,9 +269,10 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
     () => roundToNearestThousandValue(totalEnergySavings),
     [totalEnergySavings]
   );
+  // Sentral kr-verdi fra tiltakSavings.ts (anvender bl.a. sol-faktor for småhus).
   const roundedSavingsNok = React.useMemo(
-    () => roundToNearestThousandValue(convertKwhToNok(totalEnergySavings, energyPricePerKwh)),
-    [totalEnergySavings, energyPricePerKwh]
+    () => roundToNearestThousandValue(totalEnergySavingsNok),
+    [totalEnergySavingsNok]
   );
   const formattedSavingsKwh = React.useMemo(
     () => formatNumberWithSpaces(roundedSavingsKwh),

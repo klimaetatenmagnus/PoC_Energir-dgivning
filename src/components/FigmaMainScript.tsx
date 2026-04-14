@@ -353,6 +353,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
   // State for total energy savings
   const [totalEnergySavings, setTotalEnergySavings] = React.useState<number>(0);
+  const [totalEnergySavingsNok, setTotalEnergySavingsNok] = React.useState<number>(0);
   const [completedSavings, setCompletedSavings] = React.useState<number>(0);
   const [tiltakInfo, setTiltakInfo] = React.useState<TiltakSavingsInfo[]>([]);
   const [newEnergyRating, setNewEnergyRating] = React.useState<string | null>(null);
@@ -701,6 +702,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               buildingData={{...updatedBuildingData, filteredSolarEnergy: scaledSolarEnergy}}
               yearlyConsumption={energiforbruk}
               onTotalSavingsChange={setTotalEnergySavings}
+              onTotalSavingsNokChange={setTotalEnergySavingsNok}
               onTiltakInfoChange={setTiltakInfo}
               onSelectionChange={handleSelectionChange}
               audience={showYellowBox ? 'gulliste' : 'standard'}
@@ -778,6 +780,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               gulListeLoading={gulListeLoading}
               onUpdateBuildingData={handleUpdateBuildingData}
               totalEnergySavings={totalEnergySavings}
+              totalEnergySavingsNok={totalEnergySavingsNok}
               tiltakInfo={tiltakInfo}
               onShowInfo={() => setShowInfoModal(true)}
               completedSavings={completedSavings}

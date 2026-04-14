@@ -16,6 +16,8 @@ const ENERGY_RATING_COLORS: Record<string, string> = {
 
 interface MobileSavingsFooterProps {
   totalSavingsKwh: number;
+  /** Ferdig beregnet kr fra sentral util (anvender bl.a. sol-faktor). */
+  totalSavingsNok: number;
   energyPricePerKwh?: number;
   isVisible: boolean;
   /** Antall tiltak som ikke kunne beregnes (manglende data) */
@@ -66,6 +68,7 @@ const TICK_COUNT = 40;
  */
 export const MobileSavingsFooter: React.FC<MobileSavingsFooterProps> = ({
   totalSavingsKwh,
+  totalSavingsNok,
   energyPricePerKwh = 1.1,
   isVisible,
   uncalculableCount = 0,
@@ -132,11 +135,6 @@ export const MobileSavingsFooter: React.FC<MobileSavingsFooterProps> = ({
     newScale: number;
   } | null>(null);
 
-  // Beregn besparelse i NOK
-  const totalSavingsNok = useMemo(
-    () => convertKwhToNok(totalSavingsKwh, energyPricePerKwh),
-    [totalSavingsKwh, energyPricePerKwh]
-  );
 
   // Avrund verdier for visning
   const roundedKwh = useMemo(

@@ -4,8 +4,9 @@ import type { TiltakSavingsProps } from './types';
 
 export const TiltakSavings: React.FC<TiltakSavingsProps> = ({
   annualSavingsKwh,
-  energyPricePerKwh = 1.1,
-  sourceDescription
+  annualSavingsNok,
+  sourceDescription,
+  economicsNote
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -16,8 +17,9 @@ export const TiltakSavings: React.FC<TiltakSavingsProps> = ({
   };
 
   const roundedSavingsKwh = roundToNearestThousand(annualSavingsKwh);
-  const savingsNok = roundToNearestThousand(annualSavingsKwh * energyPricePerKwh);
+  const savingsNok = roundToNearestThousand(annualSavingsNok);
   const hasData = annualSavingsKwh > 0;
+  const hasTooltipContent = Boolean(sourceDescription) || Boolean(economicsNote);
 
   if (!hasData) {
     return (
@@ -36,7 +38,7 @@ export const TiltakSavings: React.FC<TiltakSavingsProps> = ({
     <section className="desktop-tiltak-card__savings">
       <div className="desktop-tiltak-card__savings-header">
         <span className="desktop-tiltak-card__savings-label">Årlig besparelse</span>
-        {sourceDescription && (
+        {hasTooltipContent && (
           <button
             className="desktop-tiltak-card__savings-info"
             onMouseEnter={() => setShowTooltip(true)}
@@ -58,10 +60,20 @@ export const TiltakSavings: React.FC<TiltakSavingsProps> = ({
           {formatNumberWithSpaces(roundedSavingsKwh)} kWh
         </span>
       </div>
-      {showTooltip && sourceDescription && (
+      {showTooltip && hasTooltipContent && (
         <div className="desktop-tiltak-card__savings-tooltip" role="tooltip">
-          <h4>Kilde</h4>
-          <p>{sourceDescription}</p>
+          {sourceDescription && (
+            <>
+              <h4>Kilde</h4>
+              <p>{sourceDescription}</p>
+            </>
+          )}
+          {economicsNote && (
+            <>
+              <h4>Om besparelsen</h4>
+              <p>{economicsNote}</p>
+            </>
+          )}
         </div>
       )}
     </section>

@@ -14,6 +14,7 @@ import { calculateAnnualEnergyConsumption } from '../../../../../utils/tekEnergy
 import type { BuildingType } from '../../../../../utils/tekEnergyCalculations';
 import { calculateCombinedSavings, getRateForTiltakId } from '../../../../../utils/energySavingsData';
 import type { TiltakSavingsInfo, Boligtype } from '../../../../../utils/energySavingsData';
+import { computeTiltakSavings } from '../../../../../utils/tiltakSavings';
 import { TiltakTabs } from './TiltakTabs';
 import { TiltakContent } from './TiltakContent';
 import { TiltakBenefits } from './TiltakBenefits';
@@ -196,15 +197,32 @@ export const DesktopTiltakCard: React.FC<DesktopTiltakCardProps> = ({
 
         <aside className="desktop-tiltak-card__sidebar">
           <TiltakBenefits benefits={enrichedBenefits} />
-          <TiltakSavings
-            annualSavingsKwh={annualSavingsKwh}
-            energyPricePerKwh={1.1}
-            sourceDescription={
+          {(() => {
+            const energyBoligtype: Boligtype =
+              resolveBuildingCategory(buildingType) === 'blokk' ? 'blokk' : 'småhus';
+            const { kwh: savingsKwh, nok: savingsNok } = computeTiltakSavings({
+              tiltakId,
+              kwhSaved: annualSavingsKwh,
+              boligtype: energyBoligtype,
+            });
+            const economicsNote =
+              tiltakId === 'solenergi' && energyBoligtype === 'småhus'
+                ? resolvedContent?.savingsEconomicsNote?.smaahus
+                : undefined;
+            const sourceDescription =
               tiltakId === 'solenergi'
-                ? 'Basert på solinnstråling og takflater for bygningen'
-                : 'Basert på bygningens alder og størrelse'
-            }
-          />
+                ? resolvedContent?.energySourceDescription ??
+                  'Basert på solinnstråling og takflater for bygningen'
+                : 'Basert på bygningens alder og størrelse';
+            return (
+              <TiltakSavings
+                annualSavingsKwh={savingsKwh}
+                annualSavingsNok={savingsNok}
+                sourceDescription={sourceDescription}
+                economicsNote={economicsNote}
+              />
+            );
+          })()}
         </aside>
       </div>
 

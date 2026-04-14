@@ -45,8 +45,11 @@ export interface TiltakBenefitsProps {
 
 export interface TiltakSavingsProps {
   annualSavingsKwh: number;
-  energyPricePerKwh?: number;
+  /** Ferdig beregnet kroner-besparelse fra sentral util (tiltakSavings.ts). */
+  annualSavingsNok: number;
   sourceDescription?: string;
+  /** Tilleggstekst i tooltip som forklarer evt. boligtype-spesifikk prisjustering. */
+  economicsNote?: string;
 }
 
 export interface TiltakGrantsProps {

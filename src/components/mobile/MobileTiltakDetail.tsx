@@ -11,7 +11,9 @@ import { resolveTiltakBenefits } from '../../utils/benefitUtils';
 import type { ContentAudience } from '../../../content/schema-helpers';
 import type { TiltakTabsSection } from '../../../content/tiltak/schema';
 import { useGrantAwareStotteordninger } from '../FigmaBlokk/components/Tiltak/useGrantAwareStotteordninger';
-import { useProviderColors, getOverskriftLabel, openExternalLink } from '../FigmaBlokk/components/Tiltak/shared';
+import { useProviderColors, getOverskriftLabel, openExternalLink, resolveBuildingCategory } from '../FigmaBlokk/components/Tiltak/shared';
+import type { Boligtype } from '../../utils/energySavingsData';
+import { computeTiltakSavings } from '../../utils/tiltakSavings';
 import { OsloLogo } from '../FigmaBlokk/components/OsloLogo';
 import { BenefitChipList } from '../common/BenefitChip';
 import './MobileTiltakDetail.css';
@@ -116,11 +118,28 @@ export const MobileTiltakDetail: React.FC<MobileTiltakDetailProps> = ({
     );
   }, [resolvedContent?.buildingTypeParagraphs, normalizedBuildingType]);
 
-  // Beregn årlig besparelse i kr
+  // Sentralt beregnet kr-besparelse (anvender bl.a. solenergi-prisjustering for småhus).
+  const energyBoligtype: Boligtype = useMemo(
+    () => (resolveBuildingCategory(buildingType) === 'blokk' ? 'blokk' : 'småhus'),
+    [buildingType]
+  );
+
   const annualSavingsNok = useMemo(() => {
     if (!annualSavingsKwh) return null;
-    return annualSavingsKwh * energyPricePerKwh;
-  }, [annualSavingsKwh, energyPricePerKwh]);
+    const { nok } = computeTiltakSavings({
+      tiltakId,
+      kwhSaved: annualSavingsKwh,
+      boligtype: energyBoligtype,
+      energyPricePerKwh,
+    });
+    return nok;
+  }, [annualSavingsKwh, energyPricePerKwh, tiltakId, energyBoligtype]);
+
+  const savingsEconomicsNote = useMemo(() => {
+    if (tiltakId !== 'solenergi') return undefined;
+    if (energyBoligtype !== 'småhus') return undefined;
+    return resolvedContent?.savingsEconomicsNote?.smaahus;
+  }, [tiltakId, energyBoligtype, resolvedContent?.savingsEconomicsNote]);
 
   // Separer søknadsplikt fra generell accordion og hent highlight-entry
   const { permitItem, permitHighlightEntry, generalAccordion } = useMemo(() => {
@@ -420,6 +439,14 @@ export const MobileTiltakDetail: React.FC<MobileTiltakDetailProps> = ({
                   {resolvedContent?.energySourceDescription ??
                     'Estimatet er basert på byggets energiforbruk og generelle antakelser om besparelse for denne typen tiltak. Faktisk besparelse kan variere avhengig av boligens tilstand, bruksmønster og strømpriser.'}
                 </p>
+                {savingsEconomicsNote && (
+                  <>
+                    <div className="mobile-tiltak-detail__savings-tooltip-subheader">
+                      <strong>Om besparelsen</strong>
+                    </div>
+                    <p>{savingsEconomicsNote}</p>
+                  </>
+                )}
               </div>
             )}
           </section>
