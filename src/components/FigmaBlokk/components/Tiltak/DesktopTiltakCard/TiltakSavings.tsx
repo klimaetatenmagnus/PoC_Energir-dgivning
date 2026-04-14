@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { formatNumberWithSpaces } from '../shared';
 import type { TiltakSavingsProps } from './types';
 
@@ -9,6 +10,32 @@ export const TiltakSavings: React.FC<TiltakSavingsProps> = ({
   economicsNote
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties | null>(null);
+
+  // Når tooltip vises: beregn posisjon ut fra savings-seksjonens rect.
+  // Tooltip rendres via portal til document.body for å slippe klipping fra
+  // foreldre med overflow: hidden (desktop-tiltak-card__body).
+  useLayoutEffect(() => {
+    if (!showTooltip || !sectionRef.current) return;
+    const update = () => {
+      if (!sectionRef.current) return;
+      const rect = sectionRef.current.getBoundingClientRect();
+      setTooltipStyle({
+        position: 'fixed',
+        bottom: window.innerHeight - rect.top + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    };
+    update();
+    window.addEventListener('scroll', update, true);
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update, true);
+      window.removeEventListener('resize', update);
+    };
+  }, [showTooltip]);
 
   // Rund til nærmeste 1000 for konsistens med WhiteInfoBox
   const roundToNearestThousand = (value: number): number => {
@@ -35,7 +62,7 @@ export const TiltakSavings: React.FC<TiltakSavingsProps> = ({
   }
 
   return (
-    <section className="desktop-tiltak-card__savings">
+    <section className="desktop-tiltak-card__savings" ref={sectionRef}>
       <div className="desktop-tiltak-card__savings-header">
         <span className="desktop-tiltak-card__savings-label">Årlig besparelse</span>
         {hasTooltipContent && (
@@ -60,22 +87,28 @@ export const TiltakSavings: React.FC<TiltakSavingsProps> = ({
           {formatNumberWithSpaces(roundedSavingsKwh)} kWh
         </span>
       </div>
-      {showTooltip && hasTooltipContent && (
-        <div className="desktop-tiltak-card__savings-tooltip" role="tooltip">
-          {sourceDescription && (
-            <>
-              <h4>Kilde</h4>
-              <p>{sourceDescription}</p>
-            </>
-          )}
-          {economicsNote && (
-            <>
-              <h4>Om besparelsen</h4>
-              <p>{economicsNote}</p>
-            </>
-          )}
-        </div>
-      )}
+      {showTooltip && hasTooltipContent && tooltipStyle &&
+        createPortal(
+          <div
+            className="desktop-tiltak-card__savings-tooltip"
+            role="tooltip"
+            style={tooltipStyle}
+          >
+            {sourceDescription && (
+              <>
+                <h4>Kilde</h4>
+                <p>{sourceDescription}</p>
+              </>
+            )}
+            {economicsNote && (
+              <>
+                <h4>Om besparelsen</h4>
+                <p>{economicsNote}</p>
+              </>
+            )}
+          </div>,
+          document.body
+        )}
     </section>
   );
 };
