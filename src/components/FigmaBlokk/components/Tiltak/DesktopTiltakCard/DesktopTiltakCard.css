@@ -247,6 +247,9 @@
   z-index: 10;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   border-radius: 4px;
+  /* box-sizing: border-box slik at maxHeight (satt inline) inkluderer padding,
+     så siste linje ikke klippes utenfor viewporten. */
+  box-sizing: border-box;
   /* Begrens høyde slik at lange tekster får intern scroll i stedet for å
      klippes av foreldre med overflow: hidden. */
   max-height: 60vh;
@@ -272,6 +275,9 @@
   font-weight: 300;
   line-height: 22px;
   margin: 0;
+  /* Sørg for at lange URL-er brytes inn i boksen i stedet for å klippes. */
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .desktop-tiltak-card__savings--empty {

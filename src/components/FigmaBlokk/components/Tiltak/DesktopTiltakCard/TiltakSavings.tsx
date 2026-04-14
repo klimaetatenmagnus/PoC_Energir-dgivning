@@ -1,4 +1,4 @@
-import React, { useState, useRef, useLayoutEffect } from 'react';
+import React, { useState, useRef, useLayoutEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { formatNumberWithSpaces } from '../shared';
 import type { TiltakSavingsProps } from './types';
@@ -11,7 +11,27 @@ export const TiltakSavings: React.FC<TiltakSavingsProps> = ({
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const sectionRef = useRef<HTMLElement | null>(null);
+  const hideTimeoutRef = useRef<number | null>(null);
   const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties | null>(null);
+
+  // Tooltip må holdes åpen både ved hover på ?-knapp og hover på selve tooltippen,
+  // slik at brukeren får musa over tooltippen (f.eks. for å scrolle).
+  const openTooltip = useCallback(() => {
+    if (hideTimeoutRef.current !== null) {
+      window.clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    setShowTooltip(true);
+  }, []);
+  const scheduleClose = useCallback(() => {
+    if (hideTimeoutRef.current !== null) {
+      window.clearTimeout(hideTimeoutRef.current);
+    }
+    hideTimeoutRef.current = window.setTimeout(() => {
+      setShowTooltip(false);
+      hideTimeoutRef.current = null;
+    }, 200);
+  }, []);
 
   // Når tooltip vises: beregn posisjon ut fra savings-seksjonens rect.
   // Tooltip rendres via portal til document.body for å slippe klipping fra
@@ -90,10 +110,10 @@ export const TiltakSavings: React.FC<TiltakSavingsProps> = ({
         {hasTooltipContent && (
           <button
             className="desktop-tiltak-card__savings-info"
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-            onFocus={() => setShowTooltip(true)}
-            onBlur={() => setShowTooltip(false)}
+            onMouseEnter={openTooltip}
+            onMouseLeave={scheduleClose}
+            onFocus={openTooltip}
+            onBlur={scheduleClose}
             aria-label="Vis kilde for besparelseberegning"
             type="button"
           >
@@ -115,6 +135,8 @@ export const TiltakSavings: React.FC<TiltakSavingsProps> = ({
             className="desktop-tiltak-card__savings-tooltip"
             role="tooltip"
             style={tooltipStyle}
+            onMouseEnter={openTooltip}
+            onMouseLeave={scheduleClose}
           >
             {sourceDescription && (
               <>
