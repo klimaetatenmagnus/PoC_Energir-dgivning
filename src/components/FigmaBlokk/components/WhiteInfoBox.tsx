@@ -1535,8 +1535,8 @@ buildingTypeCategory={buildingCategory}
           left: '16px',
           bottom: '16px',
           zIndex: 1001,
-          opacity: showHeader && !isExpanded ? 1 : 0,
-          pointerEvents: isExpanded ? 'none' : 'auto',
+          opacity: showHeader && !isExpanded && !isGulListeInfoOpen ? 1 : 0,
+          pointerEvents: isExpanded || isGulListeInfoOpen ? 'none' : 'auto',
           transition: isExpanded
             ? 'opacity 0.3s ease-in-out'
             : 'opacity 0.5s ease-in-out 0.8s',
