@@ -1318,7 +1318,7 @@ buildingTypeCategory={buildingCategory}
             width: `${BOX_WIDTH}px`,
             maxHeight: '700px',
             backgroundColor: '#FFE7BC',
-            zIndex: 200,
+            zIndex: 1100,
             fontFamily: 'Oslo Sans, sans-serif',
             display: 'flex',
             flexDirection: 'column'
