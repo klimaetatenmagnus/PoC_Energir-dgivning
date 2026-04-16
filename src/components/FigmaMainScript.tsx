@@ -18,6 +18,11 @@ import { THERESES_44A_DATA } from '../testData/theresegate44a';
 import { Enebolig2LayerSvg, Blokk2LayerSvg } from './FigmaBlokk/components/BuildingSprites';
 import type { LandingSnapshot } from '../hooks/useFigmaAddressSearch';
 import { useTransitionOverlay, toViewportRect } from '../context/useTransitionOverlay';
+import { useEiendomsgruppe } from '../hooks/useEiendomsgruppe';
+import {
+  EiendomsgruppeToggle,
+  type ViewMode,
+} from './EiendomsgruppeToggle/EiendomsgruppeToggle';
 import { createLogger } from '../utils/logger';
 import './FigmaBlokk/FigmaMainScript.css';
 
@@ -96,6 +101,19 @@ interface FigmaBlokkProps {
 }
 
 export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingData, onBack }) => {
+  // Speculativ deteksjon + aggregering av borettslag/sameie
+  const eiendomsgruppe = useEiendomsgruppe({
+    kommunenummer: buildingData.gnr && buildingData.bnr ? '0301' : undefined,
+    gaardsnummer: buildingData.gnr,
+    bruksnummer: buildingData.bnr,
+  });
+  const [viewMode, setViewMode] = React.useState<ViewMode>('enkelt');
+  // Fall tilbake til enkelt hvis toggle forsvinner (f.eks. feilet aggregat)
+  React.useEffect(() => {
+    if (!eiendomsgruppe.shouldShowToggle && viewMode !== 'enkelt') {
+      setViewMode('enkelt');
+    }
+  }, [eiendomsgruppe.shouldShowToggle, viewMode]);
   // Check if building is an Enebolig
   const isEnebolig = React.useMemo(() => {
     // First check CSV/Excel data
@@ -703,6 +721,49 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
           <div className={`tiltak-side__content${activeTiltak.length > 0 && !isExpanded && !showProcess ? ' tiltak-side__content--with-process' : ''}${showProcess ? ' tiltak-side__content--transitioning' : ''}`}>
           {/* Left column: Tiltak list */}
           <aside className="tiltak-side__tiltak-panel">
+            <EiendomsgruppeToggle
+              state={eiendomsgruppe}
+              viewMode={viewMode}
+              onChange={setViewMode}
+            />
+            {viewMode === 'gruppe' && eiendomsgruppe.aggregat && (
+              <div
+                className="eiendomsgruppe-sammendrag"
+                role="region"
+                aria-label="Oppsummering for hele gruppen"
+                style={{
+                  marginTop: 12,
+                  padding: 16,
+                  borderRadius: 12,
+                  background: 'rgba(42, 40, 89, 0.06)',
+                  fontSize: 14,
+                  lineHeight: 1.5,
+                }}
+              >
+                <strong>{eiendomsgruppe.detection?.navn ?? `Hele ${eiendomsgruppe.detection?.type}et`}</strong>
+                <div>
+                  {eiendomsgruppe.aggregat.antallEnheter} boliger fordelt på{' '}
+                  {eiendomsgruppe.aggregat.antallUnikeBygg} bygg
+                </div>
+                <div>
+                  Samlet bruksareal:{' '}
+                  {eiendomsgruppe.aggregat.totalBruksarealM2.toLocaleString('nb-NO')} m²
+                </div>
+                {eiendomsgruppe.aggregat.totalSolarPotensialKwhPerAar > 0 && (
+                  <div>
+                    Solpotensial:{' '}
+                    {eiendomsgruppe.aggregat.totalSolarPotensialKwhPerAar.toLocaleString('nb-NO')}{' '}
+                    kWh/år på {eiendomsgruppe.aggregat.totalTakarealM2.toLocaleString('nb-NO')} m² tak
+                  </div>
+                )}
+                <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+                  TEK-fordeling:{' '}
+                  {Object.entries(eiendomsgruppe.aggregat.tekFordeling)
+                    .map(([tek, n]) => `${tek}: ${n}`)
+                    .join(', ')}
+                </div>
+              </div>
+            )}
             <EnergySolutionButtons
               showHeader={showHeader}
               isExpanded={isExpanded}

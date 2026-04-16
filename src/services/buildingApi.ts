@@ -89,6 +89,63 @@ export interface ApiError {
   details?: unknown;
 }
 
+/* ──────────────────────── Eiendomsgruppe ──────────────────────── */
+
+export type EiendomsgruppeType = "borettslag" | "sameie" | "enkelt";
+
+export interface EiendomsgruppeDetection {
+  type: EiendomsgruppeType;
+  navn?: string;
+  organisasjonsnummer?: string;
+  borettslagId?: string;
+  matrikkelenhetRot?: {
+    kommunenummer: string;
+    gaardsnummer: number;
+    bruksnummer: number;
+  };
+  antallEnheter: number;
+  detektertMs: number;
+}
+
+export interface EiendomsgruppeBygning {
+  byggId: number;
+  byggeaar: number | null;
+  bruksarealM2: number | null;
+  tekStandard: string;
+  bygningstypeKodeId: number | null;
+  antallEnheterIBygg: number;
+  solar?: {
+    takAreal_m2: number | null;
+    sol_kwh_bygg_tot: number | null;
+    sol_kwh_m2_yr: number | null;
+    filteredSolarEnergy: number | null;
+    antallTakflater: number;
+  } | null;
+}
+
+export interface EiendomsgruppeResult {
+  type: "borettslag" | "sameie";
+  navn?: string;
+  organisasjonsnummer?: string;
+  borettslagId?: string;
+  matrikkelenhetRot?: {
+    kommunenummer: string;
+    gaardsnummer: number;
+    bruksnummer: number;
+  };
+  antallEnheter: number;
+  antallUnikeBygg: number;
+  totalBruksarealM2: number;
+  byggeaarFordeling: Record<string, number>;
+  tekFordeling: Record<string, number>;
+  totalSolarPotensialKwhPerAar: number;
+  totalTakarealM2: number;
+  antallByggMedSolarData: number;
+  bygninger: EiendomsgruppeBygning[];
+  warnings: string[];
+  _meta?: { duration: number };
+}
+
 // Mock data for testing
 const mockData: Record<string, AddressLookupResponse> = {
   "Kapellveien 156B, 0493 Oslo": {
@@ -279,6 +336,61 @@ export class BuildingApiService {
       typeof record.gnr === 'number' &&
       typeof record.bnr === 'number'
     );
+  }
+
+  /* ─────────────────── Eiendomsgruppe-endepunkter ─────────────────── */
+
+  async detekterEiendomsgruppe(params: {
+    kommunenummer: string;
+    gaardsnummer: number;
+    bruksnummer: number;
+  }): Promise<EiendomsgruppeDetection> {
+    const response = await fetch(this.buildUrl('/eiendomsgruppe/detekter'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (!response.ok) {
+      const err = (await response.json().catch(() => ({}))) as ApiError;
+      throw new Error(
+        err.message ?? err.error ?? `HTTP ${response.status}: Detektor feilet`
+      );
+    }
+    return (await response.json()) as EiendomsgruppeDetection;
+  }
+
+  async fetchBorettslagAggregat(
+    organisasjonsnummer: string
+  ): Promise<EiendomsgruppeResult> {
+    const response = await fetch(
+      this.buildUrl(`/eiendomsgruppe/borettslag/${organisasjonsnummer}`)
+    );
+    if (!response.ok) {
+      const err = (await response.json().catch(() => ({}))) as ApiError;
+      throw new Error(
+        err.message ?? err.error ?? `HTTP ${response.status}`
+      );
+    }
+    return (await response.json()) as EiendomsgruppeResult;
+  }
+
+  async fetchSameieAggregat(
+    kommunenummer: string,
+    gaardsnummer: number,
+    bruksnummer: number
+  ): Promise<EiendomsgruppeResult> {
+    const response = await fetch(
+      this.buildUrl(
+        `/eiendomsgruppe/sameie/${kommunenummer}/${gaardsnummer}/${bruksnummer}`
+      )
+    );
+    if (!response.ok) {
+      const err = (await response.json().catch(() => ({}))) as ApiError;
+      throw new Error(
+        err.message ?? err.error ?? `HTTP ${response.status}`
+      );
+    }
+    return (await response.json()) as EiendomsgruppeResult;
   }
 }
 
