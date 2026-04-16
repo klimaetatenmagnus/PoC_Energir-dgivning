@@ -21,9 +21,59 @@ import {
   storeService,
   grunnbokEnabled,
 } from "./context.ts";
+import proj4 from "proj4";
 import type { Borettslagsandel } from "./types.ts";
 import { MatrikkelBruksenhetHelper } from "./MatrikkelBruksenhetHelper.ts";
 import { TtlCache } from "./cache.ts";
+import type { SolarEnergyData } from "../../src/services/solarEnergyService.ts";
+
+proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
+
+const SOLAR_SERVICE_BASE_URL = (
+  process.env.SOLAR_SERVICE_BASE_URL ?? "http://localhost:4003"
+).replace(/\/$/, "");
+
+/**
+ * Backend-safe solar fetch: går direkte til solar-service via HTTP uten
+ * å gå innom `import.meta.env` (som bare finnes i Vite/browser-kontekst).
+ */
+async function fetchSolarDataBackend(params: {
+  byggId?: number;
+  representasjonspunkt?: { east: number; north: number; epsg: string };
+}): Promise<SolarEnergyData | null> {
+  const searchParams = new URLSearchParams();
+
+  let lat: number | undefined;
+  let lon: number | undefined;
+  if (params.representasjonspunkt) {
+    const wgs84 = proj4("EPSG:32632", "EPSG:4326", [
+      params.representasjonspunkt.east,
+      params.representasjonspunkt.north,
+    ]);
+    lon = wgs84[0];
+    lat = wgs84[1];
+  }
+
+  if (lat && lon) {
+    searchParams.set("lat", String(lat));
+    searchParams.set("lon", String(lon));
+  } else if (params.byggId) {
+    searchParams.set("bygg_id", String(params.byggId));
+  } else {
+    return null;
+  }
+
+  const url = `${SOLAR_SERVICE_BASE_URL}/solinnstraling?${searchParams.toString()}`;
+  try {
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as SolarEnergyData;
+  } catch {
+    return null;
+  }
+}
 
 export interface AggregatedBuilding {
   byggId: number;
@@ -32,6 +82,13 @@ export interface AggregatedBuilding {
   tekStandard: string;
   bygningstypeKodeId: number | null;
   antallEnheterIBygg: number;
+  solar?: {
+    takAreal_m2: number | null;
+    sol_kwh_bygg_tot: number | null;
+    sol_kwh_m2_yr: number | null;
+    filteredSolarEnergy: number | null;
+    antallTakflater: number;
+  } | null;
 }
 
 export interface EiendomsgruppeResult {
@@ -48,6 +105,9 @@ export interface EiendomsgruppeResult {
   totalBruksarealM2: number;
   byggeaarFordeling: Record<string, number>;
   tekFordeling: Record<string, number>;
+  totalSolarPotensialKwhPerAar: number;
+  totalTakarealM2: number;
+  antallByggMedSolarData: number;
   bygninger: AggregatedBuilding[];
   warnings: string[];
 }
@@ -111,28 +171,68 @@ async function hentByggInfo(
   return all;
 }
 
+async function hentSolarDataParallelt(
+  byggInfo: ByggInfo[],
+  concurrency = 10
+): Promise<Map<number, SolarEnergyData | null>> {
+  const result = new Map<number, SolarEnergyData | null>();
+  for (let i = 0; i < byggInfo.length; i += concurrency) {
+    const batch = byggInfo.slice(i, i + concurrency);
+    const results = await Promise.all(
+      batch.map(async (b) => {
+        const data = await fetchSolarDataBackend({
+          byggId: b.id,
+          representasjonspunkt: b.representasjonspunkt,
+        });
+        return [b.id, data] as const;
+      })
+    );
+    for (const [id, data] of results) result.set(id, data);
+  }
+  return result;
+}
+
 function aggregerBygg(
   byggInfo: ByggInfo[],
-  byggIdCount: Map<number, number>
+  byggIdCount: Map<number, number>,
+  solarByByggId: Map<number, SolarEnergyData | null>
 ): {
   antallUnikeBygg: number;
   totalBruksarealM2: number;
   byggeaarFordeling: Record<string, number>;
   tekFordeling: Record<string, number>;
+  totalSolarPotensialKwhPerAar: number;
+  totalTakarealM2: number;
+  antallByggMedSolarData: number;
   bygninger: AggregatedBuilding[];
 } {
-  const bygninger: AggregatedBuilding[] = byggInfo.map((b) => ({
-    byggId: b.id,
-    byggeaar: b.byggeaar ?? null,
-    bruksarealM2: b.bruksarealM2 ?? null,
-    tekStandard: calculateTEK(b.byggeaar ?? 0),
-    bygningstypeKodeId: b.bygningstypeKodeId ?? null,
-    antallEnheterIBygg: byggIdCount.get(b.id) ?? 0,
-  }));
+  const bygninger: AggregatedBuilding[] = byggInfo.map((b) => {
+    const solar = solarByByggId.get(b.id);
+    return {
+      byggId: b.id,
+      byggeaar: b.byggeaar ?? null,
+      bruksarealM2: b.bruksarealM2 ?? null,
+      tekStandard: calculateTEK(b.byggeaar ?? 0),
+      bygningstypeKodeId: b.bygningstypeKodeId ?? null,
+      antallEnheterIBygg: byggIdCount.get(b.id) ?? 0,
+      solar: solar
+        ? {
+            takAreal_m2: solar.takAreal_m2 ?? null,
+            sol_kwh_bygg_tot: solar.sol_kwh_bygg_tot ?? null,
+            sol_kwh_m2_yr: solar.sol_kwh_m2_yr ?? null,
+            filteredSolarEnergy: solar.filteredSolarEnergy ?? null,
+            antallTakflater: solar.takflater?.length ?? 0,
+          }
+        : null,
+    };
+  });
 
   const byggeaarFordeling: Record<string, number> = {};
   const tekFordeling: Record<string, number> = {};
   let totalBruksareal = 0;
+  let totalSolarKwh = 0;
+  let totalTakareal = 0;
+  let antallByggMedSolarData = 0;
 
   for (const b of bygninger) {
     const yearKey =
@@ -142,6 +242,11 @@ function aggregerBygg(
     byggeaarFordeling[yearKey] = (byggeaarFordeling[yearKey] ?? 0) + 1;
     tekFordeling[b.tekStandard] = (tekFordeling[b.tekStandard] ?? 0) + 1;
     if (b.bruksarealM2) totalBruksareal += b.bruksarealM2;
+    if (b.solar) {
+      antallByggMedSolarData++;
+      if (b.solar.sol_kwh_bygg_tot) totalSolarKwh += b.solar.sol_kwh_bygg_tot;
+      if (b.solar.takAreal_m2) totalTakareal += b.solar.takAreal_m2;
+    }
   }
 
   return {
@@ -149,6 +254,9 @@ function aggregerBygg(
     totalBruksarealM2: totalBruksareal,
     byggeaarFordeling,
     tekFordeling,
+    totalSolarPotensialKwhPerAar: Math.round(totalSolarKwh),
+    totalTakarealM2: Math.round(totalTakareal),
+    antallByggMedSolarData,
     bygninger,
   };
 }
@@ -225,6 +333,7 @@ async function aggregateForBorettslagInternal(
 
   const byggIds = Array.from(byggIdCount.keys());
   const byggInfo = await hentByggInfo(byggIds, warnings);
+  const solarByByggId = await hentSolarDataParallelt(byggInfo);
 
   return {
     type: "borettslag",
@@ -232,7 +341,7 @@ async function aggregateForBorettslagInternal(
     borettslagId,
     antallEnheter: aktive.length,
     warnings,
-    ...aggregerBygg(byggInfo, byggIdCount),
+    ...aggregerBygg(byggInfo, byggIdCount, solarByByggId),
   };
 }
 
@@ -312,12 +421,13 @@ async function aggregateForSameieInternal(
 
   const byggIds = Array.from(byggIdCount.keys());
   const byggInfo = await hentByggInfo(byggIds, warnings);
+  const solarByByggId = await hentSolarDataParallelt(byggInfo);
 
   return {
     type: "sameie",
     matrikkelenhetRot: { kommunenummer, gaardsnummer, bruksnummer },
     antallEnheter,
     warnings,
-    ...aggregerBygg(byggInfo, byggIdCount),
+    ...aggregerBygg(byggInfo, byggIdCount, solarByByggId),
   };
 }
