@@ -4,10 +4,18 @@ import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 
 const DEFAULT_MATRIKKEL_BASE_URL = "https://www.matrikkel.no/matrikkelapi/wsapi/v1";
+const DEFAULT_GRUNNBOK_BASE_URL_PROD = "https://grunnbok.no/grunnbok/wsapi/v2";
+const DEFAULT_GRUNNBOK_BASE_URL_TEST = "https://syntest.grunnbok.no/grunnbok/wsapi/v2";
 
 type MarvinEnvironment = "prod" | "test";
 
 type MatrikkelCredentials = {
+  baseUrl: string;
+  username: string;
+  password: string;
+};
+
+type GrunnbokCredentials = {
   baseUrl: string;
   username: string;
   password: string;
@@ -32,6 +40,11 @@ type RuntimeConfig = {
     prod: MatrikkelCredentials;
     test: MatrikkelCredentials;
     current: MatrikkelCredentials;
+  };
+  grunnbok: {
+    prod: GrunnbokCredentials;
+    test: GrunnbokCredentials;
+    current: GrunnbokCredentials;
   };
   enova: {
     apiKey?: string;
@@ -132,6 +145,23 @@ export function getRuntimeConfig(): RuntimeConfig {
     password: requireEnv("MATRIKKEL_PASSWORD"),
   };
 
+  const grunnbokUsername = process.env.GRUNNBOK_USERNAME;
+  const grunnbokPassword = process.env.GRUNNBOK_PASSWORD;
+  const grunnbokUsernameTest = process.env.GRUNNBOK_USERNAME_TEST ?? grunnbokUsername;
+  const grunnbokPasswordTest = process.env.GRUNNBOK_PASSWORD_TEST ?? grunnbokPassword;
+
+  const grunnbokProd: GrunnbokCredentials = {
+    baseUrl: process.env.GRUNNBOK_API_BASE_URL_PROD ?? DEFAULT_GRUNNBOK_BASE_URL_PROD,
+    username: grunnbokUsername ?? "",
+    password: grunnbokPassword ?? "",
+  };
+
+  const grunnbokTest: GrunnbokCredentials = {
+    baseUrl: process.env.GRUNNBOK_API_BASE_URL_TEST ?? DEFAULT_GRUNNBOK_BASE_URL_TEST,
+    username: grunnbokUsernameTest ?? "",
+    password: grunnbokPasswordTest ?? "",
+  };
+
   const buildingInfoPort =
     process.env.BUILDING_INFO_PORT !== undefined
       ? optionalNumber("BUILDING_INFO_PORT", 4000)
@@ -143,6 +173,11 @@ export function getRuntimeConfig(): RuntimeConfig {
       prod: matrikkelProd,
       test: matrikkelTest,
       current: environment === "prod" ? matrikkelProd : matrikkelTest,
+    },
+    grunnbok: {
+      prod: grunnbokProd,
+      test: grunnbokTest,
+      current: environment === "prod" ? grunnbokProd : grunnbokTest,
     },
     enova: {
       apiKey: process.env.ENOVA_API_KEY,
@@ -164,4 +199,9 @@ export function getRuntimeConfig(): RuntimeConfig {
   return config;
 }
 
-export type { RuntimeConfig, MatrikkelCredentials, MarvinEnvironment };
+export type {
+  RuntimeConfig,
+  MatrikkelCredentials,
+  GrunnbokCredentials,
+  MarvinEnvironment,
+};

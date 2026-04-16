@@ -40,6 +40,14 @@ availableSecrets:
       env: MATRIKKEL_SYSTEM_VERSION
     - versionName: projects/$PROJECT_ID/secrets/ENOVA_API_KEY/versions/latest
       env: ENOVA_API_KEY
+    - versionName: projects/$PROJECT_ID/secrets/GRUNNBOK_USERNAME/versions/latest
+      env: GRUNNBOK_USERNAME
+    - versionName: projects/$PROJECT_ID/secrets/GRUNNBOK_PASSWORD/versions/latest
+      env: GRUNNBOK_PASSWORD
+    - versionName: projects/$PROJECT_ID/secrets/GRUNNBOK_API_BASE_URL_PROD/versions/latest
+      env: GRUNNBOK_API_BASE_URL_PROD
+    - versionName: projects/$PROJECT_ID/secrets/GRUNNBOK_API_BASE_URL_TEST/versions/latest
+      env: GRUNNBOK_API_BASE_URL_TEST
     - versionName: projects/$PROJECT_ID/secrets/LIVE/versions/latest
       env: LIVE
 steps:
@@ -63,6 +71,10 @@ steps:
       - MATRIKKEL_SNAPSHOT_VERSION
       - MATRIKKEL_SYSTEM_VERSION
       - ENOVA_API_KEY
+      - GRUNNBOK_USERNAME
+      - GRUNNBOK_PASSWORD
+      - GRUNNBOK_API_BASE_URL_PROD
+      - GRUNNBOK_API_BASE_URL_TEST
       - LIVE
     entrypoint: bash
     args:

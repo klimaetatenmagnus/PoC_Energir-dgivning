@@ -90,6 +90,26 @@ spec:
                 secretKeyRef:
                   name: ENOVA_API_KEY
                   key: latest
+            - name: GRUNNBOK_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: GRUNNBOK_USERNAME
+                  key: latest
+            - name: GRUNNBOK_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: GRUNNBOK_PASSWORD
+                  key: latest
+            - name: GRUNNBOK_API_BASE_URL_PROD
+              valueFrom:
+                secretKeyRef:
+                  name: GRUNNBOK_API_BASE_URL_PROD
+                  key: latest
+            - name: GRUNNBOK_API_BASE_URL_TEST
+              valueFrom:
+                secretKeyRef:
+                  name: GRUNNBOK_API_BASE_URL_TEST
+                  key: latest
             - name: LIVE
               valueFrom:
                 secretKeyRef:
@@ -177,6 +197,26 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: ENOVA_API_KEY
+                  key: latest
+            - name: GRUNNBOK_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: GRUNNBOK_USERNAME
+                  key: latest
+            - name: GRUNNBOK_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: GRUNNBOK_PASSWORD
+                  key: latest
+            - name: GRUNNBOK_API_BASE_URL_PROD
+              valueFrom:
+                secretKeyRef:
+                  name: GRUNNBOK_API_BASE_URL_PROD
+                  key: latest
+            - name: GRUNNBOK_API_BASE_URL_TEST
+              valueFrom:
+                secretKeyRef:
+                  name: GRUNNBOK_API_BASE_URL_TEST
                   key: latest
             - name: LIVE
               valueFrom:
