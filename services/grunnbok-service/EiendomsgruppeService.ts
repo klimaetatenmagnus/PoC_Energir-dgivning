@@ -23,6 +23,7 @@ import {
 } from "./context.ts";
 import type { Borettslagsandel } from "./types.ts";
 import { MatrikkelBruksenhetHelper } from "./MatrikkelBruksenhetHelper.ts";
+import { TtlCache } from "./cache.ts";
 
 export interface AggregatedBuilding {
   byggId: number;
@@ -152,12 +153,27 @@ function aggregerBygg(
   };
 }
 
+const aggregatCache = new TtlCache<EiendomsgruppeResult>(60 * 60 * 1000);
+
+export function clearEiendomsgruppeCache(): void {
+  aggregatCache.clear();
+}
+
 /**
  * Aggregerer bygninger for et borettslag.
  * Flyt: orgnr → andeler (Grunnbok) → adresser med bruksenhetIdFraMatrikkelen
  *       → Matrikkel-bruksenheter → byggIds (dedupet) → ByggInfo.
  */
 export async function aggregateForBorettslag(
+  organisasjonsnummer: string
+): Promise<EiendomsgruppeResult> {
+  return aggregatCache.getOrCompute(
+    `borettslag:${organisasjonsnummer}`,
+    () => aggregateForBorettslagInternal(organisasjonsnummer)
+  );
+}
+
+async function aggregateForBorettslagInternal(
   organisasjonsnummer: string
 ): Promise<EiendomsgruppeResult> {
   if (!grunnbokEnabled() || !identService || !registerenhetService || !storeService) {
@@ -226,6 +242,17 @@ export async function aggregateForBorettslag(
  *       → for hver: bruksenhet-IDer → byggId (via StoreService) → dedupet → ByggInfo.
  */
 export async function aggregateForSameie(
+  kommunenummer: string,
+  gaardsnummer: number,
+  bruksnummer: number
+): Promise<EiendomsgruppeResult> {
+  return aggregatCache.getOrCompute(
+    `sameie:${kommunenummer}-${gaardsnummer}-${bruksnummer}`,
+    () => aggregateForSameieInternal(kommunenummer, gaardsnummer, bruksnummer)
+  );
+}
+
+async function aggregateForSameieInternal(
   kommunenummer: string,
   gaardsnummer: number,
   bruksnummer: number

@@ -15,6 +15,12 @@ import { csvService } from './services/csvService.js';
 import { lookupBuildingFromEnovaData } from './services/districtStatisticsService.js';
 import { energyRatingService } from './services/energyRatingService.js';
 import { sjekkGulListe, sjekkGulListeMedGnrBnr } from './services/gul-liste-service.js';
+import { detekterEiendomsgruppe } from '../services/grunnbok-service/EiendomsgruppeDetector.ts';
+import {
+  aggregateForBorettslag,
+  aggregateForSameie,
+} from '../services/grunnbok-service/EiendomsgruppeService.ts';
+import { grunnbokEnabled } from '../services/grunnbok-service/context.ts';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
@@ -1466,6 +1472,111 @@ app.post('/api/gul-liste/sjekk-gnr-bnr', async (req, res) => {
     });
   }
 });
+
+/* =========================================================
+   Eiendomsgruppe (borettslag / sameie)
+   ========================================================= */
+
+app.post('/api/eiendomsgruppe/detekter', async (req, res) => {
+  if (!grunnbokEnabled()) {
+    return res.status(503).json({
+      error: 'Grunnbok-tilgang ikke konfigurert',
+    });
+  }
+
+  const { kommunenummer, gaardsnummer, bruksnummer } = req.body ?? {};
+  if (
+    typeof kommunenummer !== 'string' ||
+    typeof gaardsnummer !== 'number' ||
+    typeof bruksnummer !== 'number'
+  ) {
+    return res.status(400).json({
+      error: 'kommunenummer (string), gaardsnummer (number) og bruksnummer (number) er påkrevd',
+    });
+  }
+
+  try {
+    const detection = await detekterEiendomsgruppe({
+      kommunenummer,
+      gaardsnummer,
+      bruksnummer,
+    });
+    res.json(detection);
+  } catch (error) {
+    logger.warn('detekterEiendomsgruppe feilet', {
+      error: error instanceof Error ? error.message : String(error),
+      kommunenummer,
+      gaardsnummer,
+      bruksnummer,
+    });
+    res.status(500).json({
+      error: 'Kunne ikke detektere eiendomsgruppe',
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+app.get('/api/eiendomsgruppe/borettslag/:orgnr', async (req, res) => {
+  if (!grunnbokEnabled()) {
+    return res.status(503).json({ error: 'Grunnbok-tilgang ikke konfigurert' });
+  }
+
+  const { orgnr } = req.params;
+  if (!/^\d{9}$/.test(orgnr)) {
+    return res.status(400).json({ error: 'Ugyldig organisasjonsnummer (forventer 9 siffer)' });
+  }
+
+  const started = Date.now();
+  try {
+    const result = await aggregateForBorettslag(orgnr);
+    res.json({ ...result, _meta: { duration: Date.now() - started } });
+  } catch (error) {
+    logger.warn('aggregateForBorettslag feilet', {
+      error: error instanceof Error ? error.message : String(error),
+      orgnr,
+    });
+    res.status(500).json({
+      error: 'Kunne ikke hente borettslag',
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+app.get(
+  '/api/eiendomsgruppe/sameie/:kommunenummer/:gnr/:bnr',
+  async (req, res) => {
+    if (!grunnbokEnabled()) {
+      return res.status(503).json({ error: 'Grunnbok-tilgang ikke konfigurert' });
+    }
+
+    const kommunenummer = req.params.kommunenummer;
+    const gnr = Number(req.params.gnr);
+    const bnr = Number(req.params.bnr);
+
+    if (!/^\d{4}$/.test(kommunenummer) || !Number.isFinite(gnr) || !Number.isFinite(bnr)) {
+      return res.status(400).json({
+        error: 'Ugyldige parametre — forventer kommunenummer (4 siffer), gnr, bnr',
+      });
+    }
+
+    const started = Date.now();
+    try {
+      const result = await aggregateForSameie(kommunenummer, gnr, bnr);
+      res.json({ ...result, _meta: { duration: Date.now() - started } });
+    } catch (error) {
+      logger.warn('aggregateForSameie feilet', {
+        error: error instanceof Error ? error.message : String(error),
+        kommunenummer,
+        gnr,
+        bnr,
+      });
+      res.status(500).json({
+        error: 'Kunne ikke hente sameie',
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+);
 
 // Catch-all: logg requests som ikke matcher noen rute (diagnostikk for 404-feil)
 app.use('/api', (req, res) => {
