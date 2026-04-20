@@ -432,3 +432,10 @@
 .mobile-info-box .pkt-accordion-item__content {
   padding-top: var(--pkt-spacing-8, 0.5rem);
 }
+
+/* View-mode toggle (Vis borettslag / Vis din bolig) */
+.mobile-info-box__view-toggle {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: calc(-1 * var(--pkt-spacing-8, 0.5rem));
+}

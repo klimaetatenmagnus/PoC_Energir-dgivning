@@ -50,7 +50,9 @@
 
 .tiltak-side__header--visible {
   opacity: 1;
-  pointer-events: auto;
+  /* Beholder pointer-events: none fra base — interaktive elementer inne i
+   * header-inner får pointer-events: auto via egen regel, slik at klikk på
+   * tomme områder av headeren passerer gjennom til underliggende UI. */
   transition: opacity 0.5s ease-in-out 0.5s;
 }
 
@@ -67,6 +69,13 @@
   gap: 16px;
   transform: scale(var(--header-scale, 1));
   transform-origin: top left;
+  /* La klikk passere gjennom tomme områder av headeren – bare faktiske
+   * interaktive barn (logo/knapper) skal fange pointer events. */
+  pointer-events: none;
+}
+
+.tiltak-side__header-inner > * {
+  pointer-events: auto;
 }
 
 .tiltak-side__logo-row {

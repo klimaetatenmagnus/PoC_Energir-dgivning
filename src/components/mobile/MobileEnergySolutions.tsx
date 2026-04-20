@@ -14,6 +14,7 @@ import {
   BUILDING_YEAR_BADGE,
   getBuildingTypeBadgeConfig,
   getDisplayBuildingTypeName,
+  getEiendomsgruppeBadgeConfig,
 } from '../../config/badgeConfig';
 import '../../config/badges.css';
 import { Enebolig2LayerSvg, Blokk2LayerSvg } from '../FigmaBlokk/components/BuildingSprites';
@@ -22,6 +23,10 @@ import { useTiltakCatalog } from '../../hooks/contentHooks';
 import type { TiltakCatalogItem } from '../../types/contentCatalog';
 import { OsloLogo } from '../FigmaBlokk/components/OsloLogo';
 import { MobileInfoBox } from './MobileInfoBox';
+import { capitalizeAdresse } from '../../utils/adresseFormat';
+import { useEiendomsgruppe } from '../../hooks/useEiendomsgruppe';
+import { gruppenavn as gruppenavnFmt } from '../../utils/eiendomsgruppeFormat';
+import { beregnGruppeBaselineForbruk } from '../../utils/eiendomsgruppeSavings';
 import { MobileSavingsFooter } from './MobileSavingsFooter';
 import { MobileDistrictComparison } from './MobileDistrictComparison';
 import { MobileProsessenVidere } from './MobileProsessenVidere';
@@ -204,6 +209,41 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   isUsingEnovaData: _isUsingEnovaData = false,
   isDetailViewActive = false,
 }) => {
+  // Borettslag/sameie-deteksjon + aggregat
+  const mobileEiendomsgruppe = useEiendomsgruppe({
+    kommunenummer: buildingData.kommunenummer ?? '0301',
+    gaardsnummer: buildingData.gnr,
+    bruksnummer: buildingData.bnr,
+  });
+  const [mobileViewMode, setMobileViewMode] = React.useState<'enkelt' | 'gruppe'>('enkelt');
+  React.useEffect(() => {
+    if (!mobileEiendomsgruppe.shouldShowToggle && mobileViewMode !== 'enkelt') {
+      setMobileViewMode('enkelt');
+    }
+  }, [mobileEiendomsgruppe.shouldShowToggle, mobileViewMode]);
+  const mobileEiendomsgruppeVisning = React.useMemo(() => {
+    if (
+      mobileEiendomsgruppe.aggregat &&
+      mobileEiendomsgruppe.detection &&
+      mobileEiendomsgruppe.detection.type !== 'enkelt'
+    ) {
+      return {
+        navn: gruppenavnFmt(
+          mobileEiendomsgruppe.detection.type,
+          mobileEiendomsgruppe.detection.navn,
+          buildingData.adresse,
+        ),
+        type: mobileEiendomsgruppe.detection.type,
+        antallEnheter: mobileEiendomsgruppe.aggregat.antallEnheter,
+        antallUnikeBygg: mobileEiendomsgruppe.aggregat.antallUnikeBygg,
+        totalBruksarealM2: mobileEiendomsgruppe.aggregat.totalBruksarealM2,
+        byggeaar: mobileEiendomsgruppe.aggregat.bygninger.map((b) => b.byggeaar),
+        estimatedAnnualConsumptionKWh: beregnGruppeBaselineForbruk(mobileEiendomsgruppe.aggregat.bygninger),
+      } as const;
+    }
+    return undefined;
+  }, [mobileEiendomsgruppe.aggregat, mobileEiendomsgruppe.detection, buildingData.adresse]);
+
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
   const [_showEnergyInfo, _setShowEnergyInfo] = useState(false); // Beholdes for fremtidig bruk i energibesparelses-boksen
@@ -1164,40 +1204,62 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       <main className="mobile-energy-solutions__main">
         {/* Adresse og nøkkelinfo - midtstilt */}
         <section className="mobile-energy-solutions__address-section">
-          <h1 className="mobile-energy-solutions__address">{addressOnly}</h1>
-          <div className="mobile-energy-solutions__tags">
-            {districtName && (
-              <PktTag
-                skin={DISTRICT_BADGE.skin}
-                aria-label={`${DISTRICT_BADGE.ariaLabelPrefix}: ${districtName}`}
-              >
-                <PktIcon name={DISTRICT_BADGE.iconName} />
-                <span>{districtName}</span>
-              </PktTag>
-            )}
-            {buildingTypeName && (() => {
-              const displayName = getDisplayBuildingTypeName(buildingTypeName);
-              const badgeConfig = getBuildingTypeBadgeConfig(buildingTypeName);
-              return (
-                <PktTag
-                  skin={badgeConfig.skin}
-                  aria-label={`${badgeConfig.ariaLabelPrefix}: ${displayName}`}
-                >
-                  <PktIcon name={badgeConfig.iconName} />
-                  <span>{displayName}</span>
-                </PktTag>
-              );
-            })()}
-            {buildingYear && (
-              <PktTag
-                skin={BUILDING_YEAR_BADGE.skin}
-                aria-label={`${BUILDING_YEAR_BADGE.ariaLabelPrefix}: ${buildingYear}`}
-              >
-                <PktIcon name={BUILDING_YEAR_BADGE.iconName} />
-                <span>Byggeår {buildingYear}</span>
-              </PktTag>
-            )}
-          </div>
+          {(() => {
+            const isGroupMobile = mobileViewMode === 'gruppe' && Boolean(mobileEiendomsgruppeVisning);
+            const summaryAddress = isGroupMobile
+              ? mobileEiendomsgruppeVisning!.navn
+              : capitalizeAdresse(addressOnly);
+            const summaryTypeLabel = isGroupMobile
+              ? (mobileEiendomsgruppeVisning!.type === 'borettslag' ? 'Borettslag' : 'Sameie')
+              : getDisplayBuildingTypeName(buildingTypeName);
+            const summaryTypeConfig = isGroupMobile
+              ? getEiendomsgruppeBadgeConfig(mobileEiendomsgruppeVisning!.type)
+              : getBuildingTypeBadgeConfig(buildingTypeName);
+            return (
+              <>
+                <h1 className="mobile-energy-solutions__address">{summaryAddress}</h1>
+                <div className="mobile-energy-solutions__tags">
+                  {districtName && (
+                    <PktTag
+                      skin={DISTRICT_BADGE.skin}
+                      aria-label={`${DISTRICT_BADGE.ariaLabelPrefix}: ${districtName}`}
+                    >
+                      <PktIcon name={DISTRICT_BADGE.iconName} />
+                      <span>{districtName}</span>
+                    </PktTag>
+                  )}
+                  {summaryTypeLabel && (
+                    <PktTag
+                      skin={summaryTypeConfig.skin}
+                      aria-label={`${summaryTypeConfig.ariaLabelPrefix}: ${summaryTypeLabel}`}
+                    >
+                      <PktIcon name={summaryTypeConfig.iconName} />
+                      <span>{summaryTypeLabel}</span>
+                    </PktTag>
+                  )}
+                  {isGroupMobile ? (
+                    <PktTag
+                      skin={BUILDING_YEAR_BADGE.skin}
+                      aria-label={`Antall boenheter: ${mobileEiendomsgruppeVisning!.antallEnheter}`}
+                    >
+                      <PktIcon name="group" />
+                      <span>{mobileEiendomsgruppeVisning!.antallEnheter.toLocaleString('nb-NO')} boenheter</span>
+                    </PktTag>
+                  ) : (
+                    buildingYear && (
+                      <PktTag
+                        skin={BUILDING_YEAR_BADGE.skin}
+                        aria-label={`${BUILDING_YEAR_BADGE.ariaLabelPrefix}: ${buildingYear}`}
+                      >
+                        <PktIcon name={BUILDING_YEAR_BADGE.iconName} />
+                        <span>Byggeår {buildingYear}</span>
+                      </PktTag>
+                    )
+                  )}
+                </div>
+              </>
+            );
+          })()}
           {/* Vis mer om boligen - kun chevron */}
           <button
             className="mobile-energy-solutions__show-more-trigger"
@@ -1751,9 +1813,13 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               totalEnergySavings={calculatedSavings}
               totalEnergySavingsNok={calculatedSavingsNok}
               onCollapse={closeInfoBox}
-              showCompareButton={!!districtStats}
+              showCompareButton={!!districtStats && mobileViewMode !== 'gruppe'}
               completedSavings={completedSavingsKWh}
               fjernvarme={fjernvarme}
+              viewMode={mobileViewMode}
+              eiendomsgruppeVisning={mobileEiendomsgruppeVisning}
+              showViewModeToggle={Boolean(mobileEiendomsgruppeVisning) && mobileEiendomsgruppe.shouldShowToggle}
+              onToggleViewMode={(next) => setMobileViewMode(next)}
               onCompareClick={() => {
                 trackNeighborComparison();
                 closeInfoBox();

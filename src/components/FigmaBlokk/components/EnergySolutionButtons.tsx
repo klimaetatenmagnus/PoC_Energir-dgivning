@@ -1,12 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { PktButton, PktCheckbox, PktIcon, PktRadioButton, PktTabs } from '@oslokommune/punkt-react';
-import { AddressLookupResponse } from '../../../services/buildingApi';
+import { AddressLookupResponse, type EiendomsgruppeBygning } from '../../../services/buildingApi';
 import { trackTiltakChecked, trackTiltakCompleted } from '../../../analytics';
 import { useTiltakCatalog } from '../../../hooks/contentHooks';
 import type { TiltakCatalogItem } from '../../../types/contentCatalog';
 import {
-  calculateCombinedSavings,
   getAvailableVinduerTypes,
   getRateForTiltakId,
   hasEnergyEffect,
@@ -16,6 +15,8 @@ import {
 } from '../../../utils/energySavingsData';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateTEK, calculateEnergyRating, calculateEnergyRatingWithFjernvarme } from '../../../utils/tekEnergyCalculations';
 import { computeAggregatedSavingsNok } from '../../../utils/tiltakSavings';
+import { computeBygningSavings } from '../../../utils/bygningSavings';
+import { computeEiendomsgruppeSavings } from '../../../utils/eiendomsgruppeSavings';
 import { getCanonicalKey, type TiltakCanonicalKey } from '../utils/tiltakCanonicalKeys';
 import type { ContentAudience } from '../../../../content/schema-helpers';
 import './EnergySolutionButtons.css';
@@ -160,9 +161,17 @@ interface EnergySolutionButtonsProps {
   fjernvarme?: boolean;
   /** Callback for å endre fjernvarme-status */
   onFjernvarmeChange?: (v: boolean) => void;
+  /**
+   * Når satt til 'gruppe' *og* aggregatedBuildings er gitt, beregner komponenten
+   * savings for hele borettslaget/sameiet i stedet for enkeltboligen. Samme
+   * checkbox-state deles mellom visningene.
+   */
+  viewMode?: 'enkelt' | 'gruppe';
+  /** Bygninger i gruppen (fra EiendomsgruppeService). Brukes kun i viewMode='gruppe'. */
+  aggregatedBuildings?: EiendomsgruppeBygning[];
 }
 
-export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onTotalSavingsNokChange, onTiltakInfoChange, onSelectionChange, audience = 'standard', showInfoModal: externalShowInfoModal, onShowInfoModalChange, onCompletedSavingsChange, fjernvarme, onFjernvarmeChange }) => {
+export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onTotalSavingsNokChange, onTiltakInfoChange, onSelectionChange, audience = 'standard', showInfoModal: externalShowInfoModal, onShowInfoModalChange, onCompletedSavingsChange, fjernvarme, onFjernvarmeChange, viewMode = 'enkelt', aggregatedBuildings }) => {
   // Utled gul liste-status fra audience prop (FigmaMainScript er "single source of truth" via PBE-oppslag)
   const erPaaGulListe = audience === 'gulliste';
   // Animasjoner (fadeIn, slideUpFadeIn) er definert i EnergySolutionButtons.css
@@ -284,6 +293,59 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   }, [tekPeriod, boligtype, erPaaGulListe]);
   const vinduerSingleType = availableVinduerTypes.length === 1 ? availableVinduerTypes[0] : null;
 
+  // Aktiver gruppe-modus kun hvis vi er i 'gruppe' og har aggregat-bygg.
+  const isGroupMode = viewMode === 'gruppe' && Array.isArray(aggregatedBuildings) && aggregatedBuildings.length > 0;
+
+  // Per-bygg filtrert tiltaksliste for gruppe-aggregering. Speiler samme
+  // byggtype/byggår/energieffekt-filter som enkeltmodus bruker.
+  const publishedCatalog = React.useMemo(
+    () => (catalogData?.items ?? []).filter((t) => t.status === 'published'),
+    [catalogData]
+  );
+
+  const filterTiltakForAggregatedBygg = React.useCallback(
+    (b: EiendomsgruppeBygning) => {
+      const bYear = b.byggeaar ?? 0;
+      const bTek = calculateTEK(bYear) as TekPeriodInput;
+      const bType = determineBuildingType(
+        b.bygningstypeKodeId != null ? String(b.bygningstypeKodeId) : undefined,
+        undefined,
+      ) as Boligtype;
+      const bTypeKey = determineBuildingTypeKey(
+        b.bygningstypeKodeId != null ? String(b.bygningstypeKodeId).substring(0, 2) : '',
+        '',
+      );
+      return filterTiltakForBuilding(
+        publishedCatalog,
+        bTypeKey,
+        b.byggeaar ?? undefined,
+        bTek,
+        bType,
+        erPaaGulListe,
+      );
+    },
+    [publishedCatalog, erPaaGulListe]
+  );
+
+  // Union av tiltak som er applicerbare i minst ett bygg — brukes som
+  // displayTiltak i gruppe-modus. Beholder rekkefølge fra publishedCatalog.
+  const groupUnionTiltak = React.useMemo(() => {
+    if (!isGroupMode) return null;
+    const applicableIds = new Set<string>();
+    for (const b of aggregatedBuildings!) {
+      for (const t of filterTiltakForAggregatedBygg(b)) {
+        applicableIds.add(t.id);
+      }
+    }
+    return publishedCatalog
+      .filter((t) => applicableIds.has(t.id))
+      .map((t) => ({
+        id: t.id,
+        title: t.title,
+        canonicalKey: getCanonicalKey(t.id, t.title),
+      }));
+  }, [isGroupMode, aggregatedBuildings, publishedCatalog, filterTiltakForAggregatedBygg]);
+
   // Filtrer tiltak fra katalog basert på byggtype, byggår og energieffekt
   const filteredTiltak = useMemo(() => {
     if (!catalogData?.items || catalogData.items.length === 0) {
@@ -298,20 +360,18 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     return filterTiltakForBuilding(publishedTiltak, buildingTypeKey, buildingYear, tekPeriod, boligtype, erPaaGulListe);
   }, [catalogData, buildingTypeKey, buildingYear, tekPeriod, boligtype, erPaaGulListe]);
 
-  // Dynamisk tiltak-liste fra katalogen (filtrert på byggtype, audience og energieffekt)
-  // Each item includes a canonicalKey for stable SVG overlay matching
+  // Dynamisk tiltak-liste fra katalogen (filtrert på byggtype, audience og energieffekt).
+  // I gruppe-modus brukes unionen av tiltak som er applicerbare i minst ett bygg.
+  // Each item includes a canonicalKey for stable SVG overlay matching.
   const displayTiltak: Array<{ id: string; title: string; canonicalKey: TiltakCanonicalKey | null }> = useMemo(() => {
-    // Vis tom liste mens katalog lastes
-    if (isCatalogLoading) {
-      return [];
-    }
-
+    if (isCatalogLoading) return [];
+    if (viewMode === 'gruppe' && groupUnionTiltak) return groupUnionTiltak;
     return filteredTiltak.map((t) => ({
       id: t.id,
       title: t.title,
       canonicalKey: getCanonicalKey(t.id, t.title)
     }));
-  }, [isCatalogLoading, filteredTiltak]);
+  }, [isCatalogLoading, filteredTiltak, viewMode, groupUnionTiltak]);
 
   // "Velg energioppgraderinger" – alle minus de som er avkrysset i gjennomførte
   // Vinduer-unntak: gjennomført tolags fjerner IKKE vinduer fra nye (trelags er fortsatt tilgjengelig)
@@ -376,105 +436,91 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     return calculateAnnualEnergyConsumption(byggeaarCandidate, bruksareal, buildingType);
   }, [buildingData, bruksareal]);
 
-  // Ekstraher tiltakInfo til egen useMemo for gjenbruk (bl.a. i sammenligningsmodulen)
-  const tiltakInfo = React.useMemo<TiltakSavingsInfo[]>(() => {
-    if (checkedItems.size === 0 || !boligtype || !tekPeriod) return [];
-    const info: TiltakSavingsInfo[] = [];
-    checkedItems.forEach((tiltakId) => {
-      const tiltak = displayTiltak.find((t) => t.id === tiltakId);
-      if (!tiltak) return;
-      if (tiltak.id === 'solenergi') {
-        const solarEnergy = buildingData?.filteredSolarEnergy || 0;
-        if (solarEnergy > 0) {
-          info.push({ title: tiltak.id, rates: null, solarProductionKwh: solarEnergy });
-        }
-      } else {
-        const rates = getRateForTiltakId(tiltak.id, tekPeriod, boligtype, {
-          erPaaGulListe,
-          varmepumpeTab: tiltak.id === 'varmepumpe' ? selectedVarmepumpeType : undefined,
-          vinduerTab: tiltak.id === 'vinduer' ? selectedVinduerTypeNye : undefined,
-        });
-        if (rates !== null) info.push({ title: tiltak.id, rates });
-      }
-    });
-    return info;
-  }, [boligtype, buildingData?.filteredSolarEnergy, checkedItems, displayTiltak, erPaaGulListe, selectedVarmepumpeType, selectedVinduerTypeNye, tekPeriod]);
-
-  // Tiltak-info for gjennomførte tiltak (speiler tiltakInfo for checkedItems)
-  const completedTiltakInfo = React.useMemo<TiltakSavingsInfo[]>(() => {
-    if (completedItems.size === 0 || !boligtype || !tekPeriod) return [];
-    const info: TiltakSavingsInfo[] = [];
-    completedItems.forEach((tiltakId) => {
-      const tiltak = displayTiltak.find((t) => t.id === tiltakId);
-      if (!tiltak) return;
-      if (tiltak.id === 'solenergi') {
-        const solarEnergy = buildingData?.filteredSolarEnergy || 0;
-        if (solarEnergy > 0) info.push({ title: tiltak.id, rates: null, solarProductionKwh: solarEnergy });
-      } else {
-        const rates = getRateForTiltakId(tiltak.id, tekPeriod, boligtype, {
-          erPaaGulListe,
-          varmepumpeTab: tiltak.id === 'varmepumpe' ? selectedVarmepumpeType : undefined,
-          vinduerTab: tiltak.id === 'vinduer' ? completedVinduerType : undefined,
-        });
-        if (rates !== null) info.push({ title: tiltak.id, rates });
-      }
-    });
-    return info;
-  }, [boligtype, buildingData?.filteredSolarEnergy, completedItems, completedVinduerType, displayTiltak, erPaaGulListe, selectedVarmepumpeType, tekPeriod]);
-
-  // Besparelse fra gjennomførte tiltak (baseline-reduksjon)
-  const completedSavingsKWh = React.useMemo(() => {
-    if (completedTiltakInfo.length === 0) return 0;
-    const consumptionNum = yearlyConsumption ? parseFloat(yearlyConsumption) : estimatedAnnualConsumption;
-    if (!Number.isFinite(consumptionNum) || consumptionNum <= 0) return 0;
-    return calculateCombinedSavings(consumptionNum, completedTiltakInfo, tekPeriod!, boligtype!, bruksareal);
-  }, [completedTiltakInfo, yearlyConsumption, estimatedAnnualConsumption, tekPeriod, boligtype, bruksareal]);
-
-  // Samlet besparelse for ALLE tiltak (gjennomførte + nye)
-  // Vinduer-overlap: tolags (gjennomført) + trelags (nye) skal IKKE multipliseres –
-  // trelags erstatter tolags for samme komponent, så bruk kun trelags i total.
-  const allTiltakInfo = React.useMemo(() => {
-    const hasCompletedVinduerTolags = completedItems.has('vinduer') && completedVinduerType === 'tolags';
-    const hasNyeVinduer = checkedItems.has('vinduer');
-    if (hasCompletedVinduerTolags && hasNyeVinduer) {
-      const completedWithoutVinduer = completedTiltakInfo.filter(t => t.title !== 'vinduer');
-      return [...completedWithoutVinduer, ...tiltakInfo];
+  // Sentral besparelsesberegning — én kjede for per-bygg savings. I gruppe-modus
+  // delegeres til computeEiendomsgruppeSavings som kjører per-bygg-helperen i
+  // løkke og summerer kWh/kr med riktig sol-prisjustering per bygg.
+  const savings = React.useMemo(() => {
+    if (isGroupMode && groupUnionTiltak) {
+      const result = computeEiendomsgruppeSavings({
+        bygninger: aggregatedBuildings!.map((b) => ({
+          byggId: b.byggId,
+          byggeaar: b.byggeaar,
+          bruksarealM2: b.bruksarealM2,
+          bygningstypeKodeId: b.bygningstypeKodeId,
+          solar: b.solar ? { filteredSolarEnergy: b.solar.filteredSolarEnergy } : null,
+        })),
+        displayTiltak: groupUnionTiltak.map((t) => ({ id: t.id, title: t.title })),
+        displayTiltakForBygg: (bygg) => {
+          const orig = aggregatedBuildings!.find((a) => a.byggId === bygg.byggId);
+          if (!orig) return [];
+          return filterTiltakForAggregatedBygg(orig).map((t) => ({ id: t.id, title: t.title }));
+        },
+        checkedItems,
+        completedItems,
+        selectedVarmepumpeType,
+        selectedVinduerTypeNye,
+        completedVinduerType,
+        erPaaGulListe,
+      });
+      return {
+        tiltakInfo: [] as TiltakSavingsInfo[],
+        completedSavingsKWh: result.totalCompletedSavingsKWh,
+        totalCombinedSavingsKWh: result.totalCombinedSavingsKWh,
+        newSavingsKWh: result.totalNewSavingsKWh,
+        newSolarKwhContribution: result.totalNewSolarKwhContribution,
+        newSavingsNok: result.totalNewSavingsNok,
+      };
     }
-    return [...completedTiltakInfo, ...tiltakInfo];
-  }, [completedTiltakInfo, tiltakInfo, completedItems, checkedItems, completedVinduerType]);
-
-  const totalCombinedSavingsKWh = React.useMemo(() => {
-    if (allTiltakInfo.length === 0) return 0;
     const consumptionNum = yearlyConsumption ? parseFloat(yearlyConsumption) : estimatedAnnualConsumption;
-    if (!Number.isFinite(consumptionNum) || consumptionNum <= 0) return 0;
-    return calculateCombinedSavings(consumptionNum, allTiltakInfo, tekPeriod!, boligtype!, bruksareal);
-  }, [allTiltakInfo, yearlyConsumption, estimatedAnnualConsumption, tekPeriod, boligtype, bruksareal]);
-
-  // Marginal besparelse fra nye tiltak (det brukeren ser i besparelseskortet)
-  const newSavingsKWh = React.useMemo(
-    () => Math.max(0, totalCombinedSavingsKWh - completedSavingsKWh),
-    [totalCombinedSavingsKWh, completedSavingsKWh]
-  );
-
-  // Sol-andel (kun fra nye tiltak, siden det er nye tiltak brukeren ser besparelse for).
-  // Sol legges lineært i calculateCombinedSavings, så summen av solarProductionKwh
-  // tilsvarer sol-delen av newSavingsKWh.
-  const newSolarKwhContribution = React.useMemo(
-    () => tiltakInfo.reduce((sum, t) => sum + (t.solarProductionKwh ?? 0), 0),
-    [tiltakInfo]
-  );
-
-  // Marginal besparelse i kroner, med sol-faktor for småhus anvendt på sol-andelen.
-  const newSavingsNok = React.useMemo(
-    () =>
-      computeAggregatedSavingsNok({
-        totalKwh: newSavingsKWh,
-        solarKwhContribution: newSolarKwhContribution,
+    const base = computeBygningSavings({
+      tekPeriod: tekPeriod ?? null,
+      boligtype,
+      bruksareal,
+      filteredSolarEnergy: buildingData?.filteredSolarEnergy,
+      yearlyConsumption: consumptionNum,
+      displayTiltak,
+      checkedItems,
+      completedItems,
+      selectedVarmepumpeType,
+      selectedVinduerTypeNye,
+      completedVinduerType,
+      erPaaGulListe,
+    });
+    return {
+      ...base,
+      newSavingsNok: computeAggregatedSavingsNok({
+        totalKwh: base.newSavingsKWh,
+        solarKwhContribution: base.newSolarKwhContribution,
         boligtype,
         energyPricePerKwh: 1.1,
       }),
-    [newSavingsKWh, newSolarKwhContribution, boligtype]
-  );
+    };
+  }, [
+    isGroupMode,
+    aggregatedBuildings,
+    groupUnionTiltak,
+    filterTiltakForAggregatedBygg,
+    tekPeriod,
+    boligtype,
+    bruksareal,
+    buildingData?.filteredSolarEnergy,
+    yearlyConsumption,
+    estimatedAnnualConsumption,
+    displayTiltak,
+    checkedItems,
+    completedItems,
+    selectedVarmepumpeType,
+    selectedVinduerTypeNye,
+    completedVinduerType,
+    erPaaGulListe,
+  ]);
+  const {
+    tiltakInfo,
+    completedSavingsKWh,
+    totalCombinedSavingsKWh,
+    newSavingsKWh,
+    newSavingsNok,
+  } = savings;
 
   // Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
   const newRating = React.useMemo(() => {

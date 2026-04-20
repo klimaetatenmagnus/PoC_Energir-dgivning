@@ -4,6 +4,9 @@ import { AddressLookupResponse } from '../services/buildingApi';
 import { trackTiltakExpanded, trackHowToImplement } from '../analytics';
 import { useAddressCoordinates } from './FigmaBlokk/hooks/useAddressCoordinates';
 import { EnergySolutionButtons } from './FigmaBlokk/components/EnergySolutionButtons';
+import { gruppenavn as gruppenavnFmt } from '../utils/eiendomsgruppeFormat';
+import { beregnGruppeBaselineForbruk } from '../utils/eiendomsgruppeSavings';
+import { isBlockBuilding as isBlockBuildingType } from '../config/badgeConfig';
 import type { TiltakCanonicalKey } from './FigmaBlokk/utils/tiltakCanonicalKeys';
 import type { TiltakSavingsInfo } from '../utils/energySavingsData';
 import { WhiteInfoBox } from './FigmaBlokk/components/WhiteInfoBox';
@@ -652,7 +655,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
   const addressOnly = searchAddress.split(',')[0];
 
   // Calculate district name width for green box
-  const districtName = buildingData.csvData?.bydelsnavn || 'Bydel';
+  const districtName = buildingData.csvData?.bydelsnavn || buildingData.csvData?.delbydelsnavn || '';
 
   // Get building type name
   const defaultBuildingType = isEnebolig ? 'Enebolig' : 'Blokk';
@@ -721,49 +724,6 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
           <div className={`tiltak-side__content${activeTiltak.length > 0 && !isExpanded && !showProcess ? ' tiltak-side__content--with-process' : ''}${showProcess ? ' tiltak-side__content--transitioning' : ''}`}>
           {/* Left column: Tiltak list */}
           <aside className="tiltak-side__tiltak-panel">
-            <EiendomsgruppeToggle
-              state={eiendomsgruppe}
-              viewMode={viewMode}
-              onChange={setViewMode}
-            />
-            {viewMode === 'gruppe' && eiendomsgruppe.aggregat && (
-              <div
-                className="eiendomsgruppe-sammendrag"
-                role="region"
-                aria-label="Oppsummering for hele gruppen"
-                style={{
-                  marginTop: 12,
-                  padding: 16,
-                  borderRadius: 12,
-                  background: 'rgba(42, 40, 89, 0.06)',
-                  fontSize: 14,
-                  lineHeight: 1.5,
-                }}
-              >
-                <strong>{eiendomsgruppe.detection?.navn ?? `Hele ${eiendomsgruppe.detection?.type}et`}</strong>
-                <div>
-                  {eiendomsgruppe.aggregat.antallEnheter} boliger fordelt på{' '}
-                  {eiendomsgruppe.aggregat.antallUnikeBygg} bygg
-                </div>
-                <div>
-                  Samlet bruksareal:{' '}
-                  {eiendomsgruppe.aggregat.totalBruksarealM2.toLocaleString('nb-NO')} m²
-                </div>
-                {eiendomsgruppe.aggregat.totalSolarPotensialKwhPerAar > 0 && (
-                  <div>
-                    Solpotensial:{' '}
-                    {eiendomsgruppe.aggregat.totalSolarPotensialKwhPerAar.toLocaleString('nb-NO')}{' '}
-                    kWh/år på {eiendomsgruppe.aggregat.totalTakarealM2.toLocaleString('nb-NO')} m² tak
-                  </div>
-                )}
-                <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-                  TEK-fordeling:{' '}
-                  {Object.entries(eiendomsgruppe.aggregat.tekFordeling)
-                    .map(([tek, n]) => `${tek}: ${n}`)
-                    .join(', ')}
-                </div>
-              </div>
-            )}
             <EnergySolutionButtons
               showHeader={showHeader}
               isExpanded={isExpanded}
@@ -781,6 +741,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               onCompletedSavingsChange={setCompletedSavings}
               fjernvarme={fjernvarme}
               onFjernvarmeChange={setFjernvarme}
+              viewMode={viewMode}
+              aggregatedBuildings={eiendomsgruppe.aggregat?.bygninger}
             />
           </aside>
 
@@ -834,6 +796,27 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
 
           {/* Right column: Info panel */}
           <aside className="tiltak-side__info-panel">
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                width: 360,
+                display: 'flex',
+                justifyContent: 'flex-end',
+                bottom: 708,
+                zIndex: 1001,
+                pointerEvents: 'auto',
+              }}
+            >
+              <EiendomsgruppeToggle
+                state={eiendomsgruppe}
+                viewMode={viewMode}
+                onChange={setViewMode}
+                searchedAdresse={addressOnly}
+                enkeltIcon={isBlockBuildingType(buildingTypeName) ? 'organization' : 'home'}
+                visible={showHeader && !isExpanded}
+              />
+            </div>
             <WhiteInfoBox
               showHeader={showHeader}
               isExpanded={isExpanded}
@@ -855,6 +838,20 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               onShowInfo={() => setShowInfoModal(true)}
               completedSavings={completedSavings}
               fjernvarme={fjernvarme}
+              viewMode={viewMode}
+              eiendomsgruppeVisning={
+                viewMode === 'gruppe' && eiendomsgruppe.aggregat && eiendomsgruppe.detection && eiendomsgruppe.detection.type !== 'enkelt'
+                  ? {
+                      navn: gruppenavnFmt(eiendomsgruppe.detection.type, eiendomsgruppe.detection.navn, addressOnly),
+                      type: eiendomsgruppe.detection.type,
+                      antallEnheter: eiendomsgruppe.aggregat.antallEnheter,
+                      antallUnikeBygg: eiendomsgruppe.aggregat.antallUnikeBygg,
+                      totalBruksarealM2: eiendomsgruppe.aggregat.totalBruksarealM2,
+                      byggeaar: eiendomsgruppe.aggregat.bygninger.map((b) => b.byggeaar),
+                      estimatedAnnualConsumptionKWh: beregnGruppeBaselineForbruk(eiendomsgruppe.aggregat.bygninger),
+                    }
+                  : undefined
+              }
             />
           </aside>
           </div>

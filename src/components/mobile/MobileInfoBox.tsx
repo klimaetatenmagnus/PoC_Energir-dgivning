@@ -11,7 +11,11 @@ import {
   DISTRICT_BADGE,
   getBuildingTypeBadgeConfig,
   getDisplayBuildingTypeName,
+  getEiendomsgruppeBadgeConfig,
+  isBlockBuilding as isBlockBuildingType,
 } from '../../config/badgeConfig';
+import { capitalizeAdresse } from '../../utils/adresseFormat';
+import { gruppenavn as gruppenavnFmt } from '../../utils/eiendomsgruppeFormat';
 import { AddressLookupResponse } from '../../services/buildingApi';
 import '../../config/badges.css';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, calculateEnergyRatingWithFjernvarme, calculateTEK } from '../../utils/tekEnergyCalculations';
@@ -42,6 +46,22 @@ interface MobileInfoBoxProps {
   completedSavings?: number;
   /** Om brukeren har fjernvarme */
   fjernvarme?: boolean;
+  /** 'enkelt' = bolig, 'gruppe' = borettslag/sameie */
+  viewMode?: 'enkelt' | 'gruppe';
+  /** Aggregert borettslag/sameie-info. Brukes i viewMode='gruppe'. */
+  eiendomsgruppeVisning?: {
+    navn: string;
+    type: 'borettslag' | 'sameie';
+    antallEnheter: number;
+    antallUnikeBygg: number;
+    totalBruksarealM2: number;
+    byggeaar: Array<number | null>;
+    estimatedAnnualConsumptionKWh: number;
+  };
+  /** Callback når toggle-knappen klikkes (tar inn ny viewMode). */
+  onToggleViewMode?: (next: 'enkelt' | 'gruppe') => void;
+  /** Vis toggle-knappen. Default skjult. */
+  showViewModeToggle?: boolean;
 }
 
 const roundToNearestThousandValue = (value: number): number => {
@@ -77,13 +97,36 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   onCompareClick,
   completedSavings = 0,
   fjernvarme,
+  viewMode = 'enkelt',
+  eiendomsgruppeVisning,
+  onToggleViewMode,
+  showViewModeToggle = false,
 }) => {
+  const isGroupMode = viewMode === 'gruppe' && Boolean(eiendomsgruppeVisning);
+  const displayAddress = isGroupMode
+    ? eiendomsgruppeVisning!.navn
+    : capitalizeAdresse(addressOnly);
+  const displayBuildingTypeLabel = isGroupMode
+    ? (eiendomsgruppeVisning!.type === 'borettslag' ? 'Borettslag' : 'Sameie')
+    : getDisplayBuildingTypeName(buildingTypeName);
+  const displayBuildingBadgeConfig = isGroupMode
+    ? getEiendomsgruppeBadgeConfig(eiendomsgruppeVisning!.type)
+    : getBuildingTypeBadgeConfig(buildingTypeName);
+  const toggleIconName = isGroupMode
+    ? (isBlockBuildingType(buildingTypeName) ? 'organization' : 'home')
+    : (eiendomsgruppeVisning
+        ? (eiendomsgruppeVisning.type === 'borettslag' ? 'organization' : 'home')
+        : 'organization');
+  const toggleLabel = isGroupMode
+    ? 'Vis din bolig'
+    : (eiendomsgruppeVisning
+        ? `Vis for ${gruppenavnFmt(eiendomsgruppeVisning.type, eiendomsgruppeVisning.navn, addressOnly)}`
+        : 'Vis gruppe');
   const [isEditMode, setIsEditMode] = useState(false);
   const [isGulListeInfoOpen, setIsGulListeInfoOpen] = useState(false);
 
   // Bygningstypevisning (bruker sentral badge-konfigurasjon)
-  const displayBuildingTypeName = getDisplayBuildingTypeName(buildingTypeName);
-  const buildingBadgeConfig = getBuildingTypeBadgeConfig(buildingTypeName);
+  // (erstattet av displayBuildingTypeLabel/displayBuildingBadgeConfig over)
   const isBlockBuilding = buildingTypeName.toLowerCase() === 'blokk' || buildingTypeName === 'Store boligbygg';
 
   // Store the original fetched values so "Tilbakestill" can always reset to them
@@ -158,10 +201,12 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   // Justert energiforbruk basert på gjennomførte tiltak
   // Avrundes til nærmeste 1000 for konsistent visning
   const adjustedEnergyConsumption = useMemo(() => {
-    const base = Number(savedEnergiforbruk || '0');
+    const base = isGroupMode && eiendomsgruppeVisning
+      ? eiendomsgruppeVisning.estimatedAnnualConsumptionKWh
+      : Number(savedEnergiforbruk || '0');
     if (!Number.isFinite(base) || base <= 0 || !completedSavings || completedSavings <= 0) return base;
     return roundToNearestThousandValue(Math.max(0, base - completedSavings));
-  }, [savedEnergiforbruk, completedSavings]);
+  }, [savedEnergiforbruk, completedSavings, isGroupMode, eiendomsgruppeVisning]);
 
   // Formatert energiforbruk (justert for gjennomførte tiltak)
   const formattedEnergyConsumption = useMemo(() => {
@@ -244,7 +289,20 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
     <div className="mobile-info-box">
       {/* Adresse og tags */}
       <div className="mobile-info-box__header">
-        <h2 className="mobile-info-box__address">{addressOnly}</h2>
+        <h2 className="mobile-info-box__address">{displayAddress}</h2>
+        {showViewModeToggle && onToggleViewMode && (
+          <div className="mobile-info-box__view-toggle">
+            <PktButton
+              skin="primary"
+              size="small"
+              variant="icon-left"
+              iconName={toggleIconName}
+              onClick={() => onToggleViewMode(isGroupMode ? 'enkelt' : 'gruppe')}
+            >
+              {toggleLabel}
+            </PktButton>
+          </div>
+        )}
         <div className="mobile-info-box__tags">
           {districtName && (
             <PktTag
@@ -255,13 +313,13 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
               <span>{districtName}</span>
             </PktTag>
           )}
-          {displayBuildingTypeName && (
+          {displayBuildingTypeLabel && (
             <PktTag
-              skin={buildingBadgeConfig.skin}
-              aria-label={`${buildingBadgeConfig.ariaLabelPrefix}: ${displayBuildingTypeName}`}
+              skin={displayBuildingBadgeConfig.skin}
+              aria-label={`${displayBuildingBadgeConfig.ariaLabelPrefix}: ${displayBuildingTypeLabel}`}
             >
-              <PktIcon name={buildingBadgeConfig.iconName} />
-              <span>{displayBuildingTypeName}</span>
+              <PktIcon name={displayBuildingBadgeConfig.iconName} />
+              <span>{displayBuildingTypeLabel}</span>
             </PktTag>
           )}
         </div>
@@ -306,7 +364,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
           <div className="mobile-info-box__key-info">
             {!isEditMode ? (
               <>
-                <PktButton
+                {!isGroupMode && (<PktButton
                   skin="tertiary"
                   size="small"
                   variant="icon-left"
@@ -322,14 +380,25 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
                   className="mobile-info-box__edit-button"
                 >
                   Rediger
-                </PktButton>
+                </PktButton>)}
+                {isGroupMode ? (
+                  <div className="mobile-info-box__info-row">
+                    <span className="mobile-info-box__info-label">Antall boenheter:</span>
+                    <span className="mobile-info-box__info-value">{eiendomsgruppeVisning!.antallEnheter.toLocaleString('nb-NO')}</span>
+                  </div>
+                ) : (
+                  <div className="mobile-info-box__info-row">
+                    <span className="mobile-info-box__info-label">Byggeår:</span>
+                    <span className="mobile-info-box__info-value">{savedByggeaar || 'Ukjent'}</span>
+                  </div>
+                )}
                 <div className="mobile-info-box__info-row">
-                  <span className="mobile-info-box__info-label">Byggeår:</span>
-                  <span className="mobile-info-box__info-value">{savedByggeaar || 'Ukjent'}</span>
-                </div>
-                <div className="mobile-info-box__info-row">
-                  <span className="mobile-info-box__info-label">Bruksareal:</span>
-                  <span className="mobile-info-box__info-value">{savedAreal || 'Ukjent'} m²</span>
+                  <span className="mobile-info-box__info-label">{isGroupMode ? 'Samlet areal:' : 'Bruksareal:'}</span>
+                  <span className="mobile-info-box__info-value">
+                    {isGroupMode
+                      ? `${eiendomsgruppeVisning!.totalBruksarealM2.toLocaleString('nb-NO')} m²`
+                      : `${savedAreal || 'Ukjent'} m²`}
+                  </span>
                 </div>
                 {isBlockBuilding && (
                   <>
@@ -345,7 +414,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
                   <span className="mobile-info-box__info-label">Estimert energiforbruk:</span>
                   <span className="mobile-info-box__info-value">{formattedEnergyConsumption} kWh/år</span>
                 </div>
-                <div className="mobile-info-box__info-row mobile-info-box__info-row--rating">
+                {!isGroupMode && (<div className="mobile-info-box__info-row mobile-info-box__info-row--rating">
                   <span className="mobile-info-box__info-label">Estimert energikarakter:</span>
                   <div className="mobile-info-box__energy-rating-value">
                     {normalizedCurrentRating ? (
@@ -359,7 +428,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
                       <span className="mobile-info-box__energy-rating-empty">Ukjent</span>
                     )}
                   </div>
-                </div>
+                </div>)}
               </>
             ) : (
               <>

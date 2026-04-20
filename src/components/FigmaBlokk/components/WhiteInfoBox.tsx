@@ -10,7 +10,10 @@ import {
   DISTRICT_BADGE,
   getBuildingTypeBadgeConfig,
   getDisplayBuildingTypeName,
+  getEiendomsgruppeBadgeConfig,
 } from '../../../config/badgeConfig';
+import { capitalizeAdresse } from '../../../utils/adresseFormat';
+
 import { useContentDictionary } from '../../../hooks/contentHooks';
 import {
   renderParagraphWithGlossary,
@@ -197,6 +200,19 @@ interface WhiteInfoBoxProps {
   onShowInfo?: () => void;
   completedSavings?: number;
   fjernvarme?: boolean;
+  /** 'enkelt' = enkeltboligs-visning (default). 'gruppe' = borettslag/sameie. */
+  viewMode?: 'enkelt' | 'gruppe';
+  /** Aggregert borettslag/sameie-info. Brukes kun i viewMode='gruppe'. */
+  eiendomsgruppeVisning?: {
+    navn: string;
+    type: 'borettslag' | 'sameie';
+    antallEnheter: number;
+    antallUnikeBygg: number;
+    totalBruksarealM2: number;
+    byggeaar: Array<number | null>;
+    /** Samlet estimert årsforbruk for gruppen (kWh), beregnet fra alle bygg. */
+    estimatedAnnualConsumptionKWh: number;
+  };
 }
 
 export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
@@ -221,7 +237,19 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   onShowInfo,
   completedSavings = 0,
   fjernvarme,
+  viewMode = 'enkelt',
+  eiendomsgruppeVisning,
 }) => {
+  const isGroupMode = viewMode === 'gruppe' && Boolean(eiendomsgruppeVisning);
+  const displayAddress = isGroupMode
+    ? eiendomsgruppeVisning!.navn
+    : capitalizeAdresse(addressOnly);
+  const displayBuildingTypeLabel = isGroupMode
+    ? (eiendomsgruppeVisning!.type === 'borettslag' ? 'Borettslag' : 'Sameie')
+    : getDisplayBuildingTypeName(buildingTypeName);
+  const displayBuildingBadgeConfig = isGroupMode
+    ? getEiendomsgruppeBadgeConfig(eiendomsgruppeVisning!.type)
+    : getBuildingTypeBadgeConfig(buildingTypeName);
   // State for delayed height expansion
   const [expandHeight, setExpandHeight] = React.useState(false);
 
@@ -352,13 +380,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
 
   // State for address text scaling
   const [addressScale, setAddressScale] = React.useState(1);
-  const textRef = React.useRef<SVGTextElement>(null);
-
-  // Use the display text for building type (using central badge config)
-  const displayBuildingTypeName = getDisplayBuildingTypeName(buildingTypeName);
-
-  // Get badge configuration from central config
-  const buildingBadgeConfig = getBuildingTypeBadgeConfig(buildingTypeName);
+  const [addressBlockHeight, setAddressBlockHeight] = React.useState(48);
+  const textRef = React.useRef<HTMLHeadingElement>(null) as unknown as React.MutableRefObject<SVGTextElement | HTMLHeadingElement | null>;
 
   const tiltakBuildingType = React.useMemo(
     () => resolveTiltakBuildingType(buildingData, buildingTypeName),
@@ -432,10 +455,12 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   // Flyttes opp for å brukes i computedEnergyRating nedenfor
   // Avrundes til nærmeste 1000 for konsistent visning
   const adjustedEnergyConsumption = React.useMemo(() => {
-    const base = Number(savedEnergiforbruk || '0');
+    const base = isGroupMode && eiendomsgruppeVisning
+      ? eiendomsgruppeVisning.estimatedAnnualConsumptionKWh
+      : Number(savedEnergiforbruk || '0');
     if (!Number.isFinite(base) || base <= 0 || !completedSavings || completedSavings <= 0) return base;
     return roundToNearestThousandValue(Math.max(0, base - completedSavings));
-  }, [savedEnergiforbruk, completedSavings]);
+  }, [savedEnergiforbruk, completedSavings, isGroupMode, eiendomsgruppeVisning]);
 
   // Bruker sentral calculateEnergyRating fra tekEnergyCalculations.ts
   // Bruker adjustedEnergyConsumption slik at gjennomførte tiltak oppdaterer baseline-karakteren
@@ -617,19 +642,26 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   
   // Calculate address text scaling
   React.useEffect(() => {
-    if (textRef.current && addressOnly) {
-      // Temporarily set to default size to measure
-      textRef.current.setAttribute('font-size', '36');
-      const bbox = textRef.current.getBBox();
-      const naturalWidth = bbox.width;
-      
-      // Calculate scale to fit within box with 30px margins
-      const availableWidth = BOX_WIDTH - 60; // 30px margin on each side
-      const scale = Math.min(1, availableWidth / naturalWidth);
-      
-      setAddressScale(scale);
-    }
-  }, [addressOnly]);
+    const el = textRef.current as unknown as (HTMLHeadingElement | SVGTextElement | null);
+    if (!el || !displayAddress) return;
+    // Adressen ligger i <h2>. Mål scrollWidth/clientWidth for skalering,
+    // og scrollHeight for å flytte badges-raden ned ved 2+ linjer.
+    const htmlEl = el as HTMLElement;
+    const clientWidth = htmlEl.clientWidth ?? 0;
+    const scrollWidth = htmlEl.scrollWidth ?? 0;
+    if (clientWidth === 0) return;
+    // Skaler ned kun hvis én ekstra linje ikke er tilstrekkelig (lang uten mellomrom).
+    const wrappedNaturally = htmlEl.scrollHeight > clientWidth; // heuristic
+    const overflow = scrollWidth > clientWidth && !wrappedNaturally;
+    const scale = overflow ? Math.max(0.6, clientWidth / Math.max(1, scrollWidth)) : 1;
+    setAddressScale(scale);
+    // scrollHeight etter scaling reflekterer faktisk høyde
+    setAddressBlockHeight(Math.ceil(htmlEl.scrollHeight));
+  }, [displayAddress]);
+
+  // Adresse-wrap: når adressen går over flere linjer enn default forventet,
+  // må alt innhold under skyves ned for å unngå overlap med badges/info.
+  const addressShift = Math.max(0, (ADDRESS_TOP_MARGIN + addressBlockHeight + 12) - BADGE_ROW_Y);
 
   // Hent bydels- og delbydel-statistikk for sammenligning
   // Slå også opp brukerens bolig i Enova bulk-data for å sikre "epler med epler"-sammenligning
@@ -886,22 +918,28 @@ const tiltakPreview = selectedTiltakSlug ? (
       <rect width="840" height="790" y="-90" fill="white"/>
       <g clipPath="url(#clip0_325_12689)">
         <g style={{ opacity: isExpanded ? 0 : 1, transition: isExpanded ? 'opacity 0.3s ease-in-out' : 'opacity 0.5s ease-in-out 0.5s' }}>
-        {/* Address text with proportional scaling */}
-        <text 
-          ref={textRef}
-          x="30" 
-          y={ADDRESS_TOP_MARGIN}
-          dominantBaseline="hanging"
-          fontFamily="Oslo Sans, sans-serif" 
-          fontWeight="500"
-          fontStyle="normal"
-          fontSize={36 * addressScale} 
-          letterSpacing="-0.2"
-          fill="#2A2859"
-          textAnchor="start"
-        >
-          {addressOnly}
-        </text>
+        {/* Adresse/gruppenavn med word-break via foreignObject (lar lange navn bryte til flere linjer) */}
+        <foreignObject x="30" y={ADDRESS_TOP_MARGIN - 4} width={BOX_WIDTH - 60} height={Math.max(96, addressBlockHeight + 12)} style={{ overflow: "visible" }}>
+          <h2
+            xmlns="http://www.w3.org/1999/xhtml"
+            ref={textRef as unknown as React.RefObject<HTMLHeadingElement>}
+            className="white-info-box__address-heading"
+            style={{
+              fontFamily: "'Oslo Sans', sans-serif",
+              fontWeight: 500,
+              fontSize: `${36 * addressScale}px`,
+              letterSpacing: '-0.2px',
+              color: '#2A2859',
+              margin: 0,
+              lineHeight: 1.1,
+              wordBreak: 'break-word',
+              overflowWrap: 'anywhere',
+            }}
+          >
+            {displayAddress}
+          </h2>
+        </foreignObject>
+        <g transform={`translate(0, ${addressShift})`}>
         {/* Badges med PktTag - bruker sentral badge-konfigurasjon */}
         <foreignObject x="30" y={BADGE_ROW_Y} width={BOX_WIDTH - 60} height="68">
           <div
@@ -923,13 +961,13 @@ const tiltakPreview = selectedTiltakSlug ? (
                 <span>{districtName}</span>
               </PktTag>
             )}
-            {displayBuildingTypeName && (
+            {displayBuildingTypeLabel && (
               <PktTag
-                skin={buildingBadgeConfig.skin}
-                aria-label={`${buildingBadgeConfig.ariaLabelPrefix}: ${displayBuildingTypeName}`}
+                skin={displayBuildingBadgeConfig.skin}
+                aria-label={`${displayBuildingBadgeConfig.ariaLabelPrefix}: ${displayBuildingTypeLabel}`}
               >
-                <PktIcon name={buildingBadgeConfig.iconName} />
-                <span>{displayBuildingTypeName}</span>
+                <PktIcon name={displayBuildingBadgeConfig.iconName} />
+                <span>{displayBuildingTypeLabel}</span>
               </PktTag>
             )}
           </div>
@@ -960,7 +998,7 @@ const tiltakPreview = selectedTiltakSlug ? (
                   />
                 )}
               </div>
-              <PktButton
+              {!isGroupMode && (<PktButton
                 skin="tertiary"
                 size="small"
                 variant="icon-left"
@@ -986,7 +1024,7 @@ const tiltakPreview = selectedTiltakSlug ? (
                 }}
               >
                 {isEditMode ? 'Lagre' : 'Rediger'}
-              </PktButton>
+              </PktButton>)}
             </div>
             <div
               className={`white-info-box__key-info${
@@ -997,13 +1035,24 @@ const tiltakPreview = selectedTiltakSlug ? (
             >
               {!isEditMode ? (
                 <>
+                  {isGroupMode ? (
+                    <div className="white-info-box__info-row">
+                      <span className="white-info-box__info-label">Antall boenheter:</span>
+                      <span className="white-info-box__info-value">{eiendomsgruppeVisning!.antallEnheter.toLocaleString('nb-NO')}</span>
+                    </div>
+                  ) : (
+                    <div className="white-info-box__info-row">
+                      <span className="white-info-box__info-label">Byggeår:</span>
+                      <span className="white-info-box__info-value">{savedByggeaar || 'Ukjent'}</span>
+                    </div>
+                  )}
                   <div className="white-info-box__info-row">
-                    <span className="white-info-box__info-label">Byggeår:</span>
-                    <span className="white-info-box__info-value">{savedByggeaar || 'Ukjent'}</span>
-                  </div>
-                  <div className="white-info-box__info-row">
-                    <span className="white-info-box__info-label">Areal:</span>
-                    <span className="white-info-box__info-value">{savedAreal || 'Ukjent'} m²</span>
+                    <span className="white-info-box__info-label">{isGroupMode ? 'Samlet areal:' : 'Areal:'}</span>
+                    <span className="white-info-box__info-value">
+                      {isGroupMode
+                        ? `${eiendomsgruppeVisning!.totalBruksarealM2.toLocaleString('nb-NO')} m²`
+                        : `${savedAreal || 'Ukjent'} m²`}
+                    </span>
                   </div>
                   {shouldShowYellowBox && (
                     <div className="white-info-box__info-row white-info-box__info-row--vernestatus">
@@ -1029,7 +1078,7 @@ const tiltakPreview = selectedTiltakSlug ? (
                     </div>
                   )}
                   <div className="white-info-box__energy-block">
-                    <div className="white-info-box__energy-rating">
+                    {!isGroupMode && (<div className="white-info-box__energy-rating">
                       <span className="white-info-box__energy-rating-label">{energyRatingLabel}:</span>
                       <div className="white-info-box__energy-rating-value">
                         {normalizedCurrentRating ? (
@@ -1054,7 +1103,7 @@ const tiltakPreview = selectedTiltakSlug ? (
                           </>
                         ) : null}
                       </div>
-                    </div>
+                    </div>)}
                     <span className="white-info-box__energy-label">Estimert energiforbruk:</span>
                     <div className="white-info-box__energy-value">
                       {(completedSavings ?? 0) > 0 ? (
@@ -1279,6 +1328,7 @@ const tiltakPreview = selectedTiltakSlug ? (
 {/* Gul liste info overlay - plassert utenfor SVG for bedre tilgjengelighet */}
         
       </g>
+</g>
       
       <defs>
         <clipPath id="clip0_325_12689">
@@ -1542,7 +1592,8 @@ buildingTypeCategory={buildingCategory}
             : 'opacity 0.5s ease-in-out 0.8s',
         }}
       >
-        <PktButton
+        {!isGroupMode && (
+<PktButton
           skin="primary"
           size="small"
           variant="icon-left"
@@ -1552,6 +1603,7 @@ buildingTypeCategory={buildingCategory}
         >
           <span>Sammenlign deg med naboene dine</span>
         </PktButton>
+)}
       </div>
     )}
     </>

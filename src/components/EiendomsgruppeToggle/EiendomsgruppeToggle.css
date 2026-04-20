@@ -1,12 +1,6 @@
 .eiendomsgruppe-toggle {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 12px;
-  background: var(--pkt-color-brand-beige-light, #f5f0e6);
-  border: 1px solid var(--pkt-color-neutral-grey-300, #d8d4c4);
-  max-width: 100%;
-  flex-wrap: wrap;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .eiendomsgruppe-toggle--loading {
@@ -15,35 +9,30 @@
   border: none;
 }
 
-.eiendomsgruppe-toggle__option {
-  background: transparent;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--pkt-color-neutral-grey-900, #2a2859);
-  cursor: pointer;
-  transition: background-color 120ms ease-in-out, color 120ms ease-in-out;
-  white-space: nowrap;
+
+/* Fade-inn/ut sammen med øvrige side-2-komponenter (staggers rett etter tiltakslisten) */
+.eiendomsgruppe-toggle--hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease-in-out;
+}
+.eiendomsgruppe-toggle--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.5s ease-in-out 0.4s;
 }
 
-.eiendomsgruppe-toggle__option:hover {
-  background: rgba(42, 40, 89, 0.08);
+/* Loader + tekst-layout */
+.eiendomsgruppe-toggle--loading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
 }
 
-.eiendomsgruppe-toggle__option:focus-visible {
-  outline: 2px solid var(--pkt-color-brand-blue, #2a2859);
-  outline-offset: 2px;
-}
-
-.eiendomsgruppe-toggle__option--active {
-  background: var(--pkt-color-brand-blue, #2a2859);
-  color: var(--pkt-color-neutral-white, #fff);
-}
-
-.eiendomsgruppe-toggle__option--active:hover {
-  background: var(--pkt-color-brand-blue, #2a2859);
-  color: var(--pkt-color-neutral-white, #fff);
+.eiendomsgruppe-toggle__loader-text {
+  font-family: 'Oslo Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
 }

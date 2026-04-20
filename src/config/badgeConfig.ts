@@ -80,10 +80,45 @@ export const DEFAULT_BUILDING_TYPE_BADGE: BadgeConfig = {
 };
 
 /**
- * Hent badge-konfigurasjon for en bygningstype
- * @param buildingTypeName - Navnet på bygningstypen (case-insensitive)
+ * Badge-konfigurasjon for borettslag (bruker blokk-ikon).
+ */
+export const BORETTSLAG_BADGE: BadgeConfig = {
+  iconName: 'organization',
+  skin: 'blue',
+  ariaLabelPrefix: 'Boligvirksomhet',
+};
+
+/**
+ * Badge-konfigurasjon for sameie (bruker hus-ikon).
+ */
+export const SAMEIE_BADGE: BadgeConfig = {
+  iconName: 'home',
+  skin: 'blue',
+  ariaLabelPrefix: 'Boligvirksomhet',
+};
+
+/**
+ * Hent badge-konfigurasjon for borettslag eller sameie.
+ */
+export function getEiendomsgruppeBadgeConfig(
+  type: 'borettslag' | 'sameie',
+): BadgeConfig {
+  return type === 'borettslag' ? BORETTSLAG_BADGE : SAMEIE_BADGE;
+}
+
+/**
+ * Hent badge-konfigurasjon for en bygningstype. Bruker isBlockBuilding-heuristikk
+ * først slik at varianter som "Store frittliggende boligbygg..." også får
+ * blokk-ikon (organization) selv uten eksakt navn-match.
  */
 export function getBuildingTypeBadgeConfig(buildingTypeName: string): BadgeConfig {
+  if (isBlockBuilding(buildingTypeName)) {
+    return {
+      iconName: 'organization',
+      skin: 'blue',
+      ariaLabelPrefix: 'Bygningstype',
+    };
+  }
   const normalizedName = buildingTypeName.toLowerCase().trim();
   return BUILDING_TYPE_BADGES[normalizedName] ?? DEFAULT_BUILDING_TYPE_BADGE;
 }
