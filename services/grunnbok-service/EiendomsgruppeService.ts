@@ -26,6 +26,7 @@ import type { Borettslagsandel } from "./types.ts";
 import { MatrikkelBruksenhetHelper } from "./MatrikkelBruksenhetHelper.ts";
 import { TtlCache } from "./cache.ts";
 import type { SolarEnergyData } from "../../src/services/solarEnergyService.ts";
+import { csvService } from "../../src/services/csvService.ts";
 
 proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
 
@@ -75,10 +76,21 @@ async function fetchSolarDataBackend(params: {
   }
 }
 
+/**
+ * Matrikkel bruker 1900 og 1901 som kjente sentinel-verdier for "ukjent byggeår".
+ * Disse bør ikke behandles som reelle byggeår i UI-beregninger og -visninger.
+ */
+function isSentinelByggeaar(y: number | null | undefined): boolean {
+  return y === 1900 || y === 1901;
+}
+
+export type BruksarealKilde = "csv" | "matrikkel" | "ukjent";
+
 export interface AggregatedBuilding {
   byggId: number;
   byggeaar: number | null;
   bruksarealM2: number | null;
+  bruksarealKilde: BruksarealKilde;
   tekStandard: string;
   bygningstypeKodeId: number | null;
   antallEnheterIBygg: number;
@@ -208,11 +220,29 @@ function aggregerBygg(
 } {
   const bygninger: AggregatedBuilding[] = byggInfo.map((b) => {
     const solar = solarByByggId.get(b.id);
+    // Kildehierarki: Oslo kommunes CSV (komplett pr. bygningsnummer) > Matrikkel.
+    // Bakgrunn: for enkelte borettslag (f.eks. Myrer) returnerer Matrikkel
+    // `etasjedata/bruksarealTotalt=0` og faller tilbake til
+    // `alternativtArealBygning`, som viser seg å være ~1/4 av ekte BRA.
+    // CSV gir konsekvent korrekte tall så lenge bygningsnummeret finnes i Oslo.
+    const csvMatch = b.bygningsnummer
+      ? csvService.findByBygningsNr(b.bygningsnummer)
+      : null;
+    let bruksarealM2: number | null = null;
+    let bruksarealKilde: BruksarealKilde = "ukjent";
+    if (csvMatch?.bruksarealTotalt && csvMatch.bruksarealTotalt > 0) {
+      bruksarealM2 = csvMatch.bruksarealTotalt;
+      bruksarealKilde = "csv";
+    } else if (b.bruksarealM2 && b.bruksarealM2 > 0) {
+      bruksarealM2 = b.bruksarealM2;
+      bruksarealKilde = "matrikkel";
+    }
     return {
       byggId: b.id,
-      byggeaar: b.byggeaar ?? null,
-      bruksarealM2: b.bruksarealM2 ?? null,
-      tekStandard: calculateTEK(b.byggeaar ?? 0),
+      byggeaar: isSentinelByggeaar(b.byggeaar) ? null : (b.byggeaar ?? null),
+      bruksarealM2,
+      bruksarealKilde,
+      tekStandard: calculateTEK(isSentinelByggeaar(b.byggeaar) ? 0 : (b.byggeaar ?? 0)),
       bygningstypeKodeId: b.bygningstypeKodeId ?? null,
       antallEnheterIBygg: byggIdCount.get(b.id) ?? 0,
       solar: solar
