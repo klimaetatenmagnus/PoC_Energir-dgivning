@@ -143,12 +143,7 @@ cd ~/PoC_Energir-dgivning-grunnbok
 ./scripts/start-ui-only.sh
 ```
 
-**Husk:** `start-ui-only.sh` setter `LIVE=1` men IKKE `API_ENV=prod`. For at Grunnbok skal treffe prod-endepunktet må du restarte api-serveren manuelt:
-
-```bash
-kill $(lsof -ti:3001)
-API_ENV=prod LIVE=1 npx tsx src/api-server.ts &
-```
+**Merk:** `start-ui-only.sh` i denne worktreen setter nå `API_ENV=prod` for alle tre backend-tjenester (api-server, building-info-service, solar-service) slik at Grunnbok + Matrikkel + Enova treffer prod-endepunktene.
 
 ### Test-adresser
 

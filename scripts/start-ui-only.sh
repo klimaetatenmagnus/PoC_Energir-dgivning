@@ -69,19 +69,19 @@ fi
 
 # Start building-info-service
 echo "🏢 Starting building-info-service on port 4000..."
-LOG_SOAP=1 npx tsx services/building-info-service/index.ts &
+API_ENV=prod LIVE=1 LOG_SOAP=1 npx tsx services/building-info-service/index.ts &
 BUILDING_PID=$!
 
 # Start solar-service
 echo "☀️  Starting solar-service on port 4003..."
-PORT=4003 npx tsx services/solar-service/index.ts &
+API_ENV=prod PORT=4003 npx tsx services/solar-service/index.ts &
 SOLAR_PID=$!
 
 # Start API server
 echo "🔧 Starting API server on port 3001..."
 echo "  USERNAME: ${MATRIKKEL_USERNAME:0:10}..."
 echo "  BASE_URL: $MATRIKKEL_API_BASE_URL_PROD"
-LIVE=1 npx tsx src/api-server.ts &
+API_ENV=prod LIVE=1 npx tsx src/api-server.ts &
 API_PID=$!
 
 # Start admin API
