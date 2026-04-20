@@ -21,6 +21,10 @@ logsBucket: gs://energinokkelen-build-logs
 
 options:
   logging: LEGACY
+  # Tillat at enkelte substitution-noekler (f.eks. _CONTENT_BUCKET) er deklarert
+  # uten aa vaere referert i steps — uten dette feiler manuell `gcloud builds submit`
+  # med --substitutions: "key X in the substitution data is not matched".
+  substitution_option: ALLOW_LOOSE
 
 availableSecrets:
   secretManager:
