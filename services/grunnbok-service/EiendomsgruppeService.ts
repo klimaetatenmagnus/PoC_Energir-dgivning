@@ -27,6 +27,7 @@ import { MatrikkelBruksenhetHelper } from "./MatrikkelBruksenhetHelper.ts";
 import { TtlCache } from "./cache.ts";
 import type { SolarEnergyData } from "../../src/services/solarEnergyService.ts";
 import { csvService } from "../../src/services/csvService.ts";
+import { shouldProcessBuildingType } from "../../src/utils/buildingTypeUtils.ts";
 
 proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
 
@@ -207,7 +208,8 @@ async function hentSolarDataParallelt(
 function aggregerBygg(
   byggInfo: ByggInfo[],
   byggIdCount: Map<number, number>,
-  solarByByggId: Map<number, SolarEnergyData | null>
+  solarByByggId: Map<number, SolarEnergyData | null>,
+  warnings: string[]
 ): {
   antallUnikeBygg: number;
   totalBruksarealM2: number;
@@ -218,7 +220,20 @@ function aggregerBygg(
   antallByggMedSolarData: number;
   bygninger: AggregatedBuilding[];
 } {
-  const bygninger: AggregatedBuilding[] = byggInfo.map((b) => {
+  // Filtrer bort ikke-boligbygg (garasjer, uthus, næringsbygg, m.m.) så
+  // aggregeringen bare dekker boligmassen. Uten dette havner f.eks.
+  // garasjeseksjoner i sameier i byggtellingen og inflaterer m²/boenhet.
+  const boligByggInfo = byggInfo.filter((b) =>
+    shouldProcessBuildingType(b.bygningstypeKodeId)
+  );
+  const antallFiltrert = byggInfo.length - boligByggInfo.length;
+  if (antallFiltrert > 0) {
+    warnings.push(
+      `Ekskluderte ${antallFiltrert} ikke-boligbygg (garasje/uthus/næring) fra aggregeringen`
+    );
+  }
+
+  const bygninger: AggregatedBuilding[] = boligByggInfo.map((b) => {
     const solar = solarByByggId.get(b.id);
     // Kildehierarki: Oslo kommunes CSV (komplett pr. bygningsnummer) > Matrikkel.
     // Bakgrunn: for enkelte borettslag (f.eks. Myrer) returnerer Matrikkel
@@ -371,7 +386,7 @@ async function aggregateForBorettslagInternal(
     borettslagId,
     antallEnheter: aktive.length,
     warnings,
-    ...aggregerBygg(byggInfo, byggIdCount, solarByByggId),
+    ...aggregerBygg(byggInfo, byggIdCount, solarByByggId, warnings),
   };
 }
 
@@ -458,6 +473,6 @@ async function aggregateForSameieInternal(
     matrikkelenhetRot: { kommunenummer, gaardsnummer, bruksnummer },
     antallEnheter,
     warnings,
-    ...aggregerBygg(byggInfo, byggIdCount, solarByByggId),
+    ...aggregerBygg(byggInfo, byggIdCount, solarByByggId, warnings),
   };
 }
