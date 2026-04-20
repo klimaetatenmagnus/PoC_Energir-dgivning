@@ -94,8 +94,29 @@ export async function detekterEiendomsgruppe(
     };
   }
 
-  const andeler = await registerenhetsrettsandelService.findAndelerIRetter(retter[0]);
-  if (andeler.length === 0) {
+  // En eiendom kan ha flere retter (f.eks. Oslo kommune som tomteeier +
+  // borettslag som hjemmelshaver til bygningen). Sjekk alle retter parallelt
+  // og finn den første som peker paa en borettslags-juridisk person.
+  const andelsSvc = registerenhetsrettsandelService;
+  const storeSvc = storeService;
+  const rettSjekker = await Promise.all(
+    retter.map(async (rettId) => {
+      const andeler = await andelsSvc.findAndelerIRetter(rettId);
+      if (andeler.length === 0) return null;
+      const andel = await storeSvc.getRegisterenhetsrettsandel(andeler[0]);
+      if (!andel.rettighetshaverId) return null;
+      const person = await storeSvc.getPerson(andel.rettighetshaverId);
+      return { person };
+    })
+  );
+
+  const borettslagTreff = rettSjekker.find(
+    (r) =>
+      r?.person.type === "juridisk" &&
+      /borettslag|boligbyggelag/i.test(r.person.navn)
+  );
+
+  if (!borettslagTreff) {
     return {
       type: "enkelt",
       antallEnheter: 1,
@@ -103,31 +124,7 @@ export async function detekterEiendomsgruppe(
     };
   }
 
-  // Hent den første andelen for å få rettighetshaverId
-  const andel = await storeService.getRegisterenhetsrettsandel(andeler[0]);
-  if (!andel.rettighetshaverId) {
-    return {
-      type: "enkelt",
-      antallEnheter: 1,
-      detektertMs: Date.now() - start,
-    };
-  }
-
-  const person = await storeService.getPerson(andel.rettighetshaverId);
-
-  // Borettslag-kriterier: juridisk person hvor navn inneholder "Borettslag"
-  // (inkluderer "borettslag", "Brl", "B/L" etc. men vi holder oss til det enkle)
-  const erBorettslag =
-    person.type === "juridisk" &&
-    /borettslag|boligbyggelag/i.test(person.navn);
-
-  if (!erBorettslag) {
-    return {
-      type: "enkelt",
-      antallEnheter: 1,
-      detektertMs: Date.now() - start,
-    };
-  }
+  const { person } = borettslagTreff;
 
   // Finn borettslagId og antall andeler
   const borettslagId = await identService.findBorettslagId(

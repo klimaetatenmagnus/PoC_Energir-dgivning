@@ -2,7 +2,9 @@
  * Tester detektor mot tre forventede utfall:
  *  - Oppsal Borettslag (gnr 146/bnr 238)    → type: 'borettslag', navn: 'Oppsal Borettslag'
  *  - Hesteskoen sameie (gnr 73/bnr 739)     → type: 'sameie', antall seksjoner
- *  - Pilestredet 37 (gnr 209/bnr 58)        → type: 'enkelt' (eiet av Wang Eiendomsselskap AS)
+ *  - Pilestredet 37 (gnr 209/bnr 58)        → type: 'sameie' (2 seksjoner)
+ *  - Gustav Jensens gate 7 (gnr 221/bnr 224) → type: 'borettslag' (Vøyenvollen —
+ *    to retter der kun den andre peker på borettslaget, regresjon mot retter[0]-bug)
  *
  * Kjøres med:
  *   API_ENV=prod LIVE=1 npx tsx scripts/test-eiendomsgruppe-detektor.ts
@@ -26,6 +28,14 @@ const cases = [
     label: "Pilestredet 37 (2-seksjons sameie)",
     input: { kommunenummer: "0301", gaardsnummer: 209, bruksnummer: 58 },
     forventet: "sameie" as const,
+  },
+  {
+    // Gustav Jensens gate 7: tomten eies av Oslo kommune (rett 1), men
+    // Vøyenvollen Borettslag er hjemmelshaver til bygningen (rett 2).
+    // Regresjon mot tidligere bug der detektoren kun sjekket retter[0].
+    label: "Gustav Jensens gate 7 (borettslag bak 2. rett)",
+    input: { kommunenummer: "0301", gaardsnummer: 221, bruksnummer: 224 },
+    forventet: "borettslag" as const,
   },
 ];
 
