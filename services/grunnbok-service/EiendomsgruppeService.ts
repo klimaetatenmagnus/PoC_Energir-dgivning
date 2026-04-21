@@ -67,8 +67,12 @@ async function fetchSolarDataBackend(params: {
 
   const url = `${SOLAR_SERVICE_BASE_URL}/solinnstraling?${searchParams.toString()}`;
   try {
+    // Kort timeout (5s) slik at aggregeringen ikke blir stående og vente naar
+    // PBE Solkart er flaky (observert ECONNRESET-bolker). Normal responstid er
+    // <1s. Ved timeout returnerer vi null og lar aggregatet fortsette uten
+    // solar-data for det bygget.
     const response = await fetch(url, {
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(5_000),
     });
     if (!response.ok) return null;
     return (await response.json()) as SolarEnergyData;
