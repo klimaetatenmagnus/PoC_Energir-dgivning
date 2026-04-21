@@ -95,26 +95,35 @@ export async function detekterEiendomsgruppe(
   }
 
   // En eiendom kan ha flere retter (f.eks. Oslo kommune som tomteeier +
-  // borettslag som hjemmelshaver til bygningen). Sjekk alle retter parallelt
-  // og finn den første som peker paa en borettslags-juridisk person.
+  // borettslag som hjemmelshaver til bygningen), og en rett kan ha flere
+  // andeler der tidligere hjemmelshavere ligger som historiske. Let i alle
+  // retter og alle aktive andeler etter en borettslags-juridisk person.
   const andelsSvc = registerenhetsrettsandelService;
   const storeSvc = storeService;
   const rettSjekker = await Promise.all(
     retter.map(async (rettId) => {
-      const andeler = await andelsSvc.findAndelerIRetter(rettId);
-      if (andeler.length === 0) return null;
-      const andel = await storeSvc.getRegisterenhetsrettsandel(andeler[0]);
-      if (!andel.rettighetshaverId) return null;
-      const person = await storeSvc.getPerson(andel.rettighetshaverId);
-      return { person };
+      const andelIds = await andelsSvc.findAndelerIRetter(rettId);
+      if (andelIds.length === 0) return null;
+      const andeler = await Promise.all(
+        andelIds.map((id) => storeSvc.getRegisterenhetsrettsandel(id))
+      );
+      const aktive = andeler.filter(
+        (a) => !a.historisk && a.rettighetshaverId
+      );
+      for (const a of aktive) {
+        const person = await storeSvc.getPerson(a.rettighetshaverId!);
+        if (
+          person.type === "juridisk" &&
+          /borettslag|boligbyggelag/i.test(person.navn)
+        ) {
+          return { person };
+        }
+      }
+      return null;
     })
   );
 
-  const borettslagTreff = rettSjekker.find(
-    (r) =>
-      r?.person.type === "juridisk" &&
-      /borettslag|boligbyggelag/i.test(r.person.navn)
-  );
+  const borettslagTreff = rettSjekker.find((r) => r !== null);
 
   if (!borettslagTreff) {
     return {

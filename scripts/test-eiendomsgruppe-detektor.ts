@@ -5,6 +5,8 @@
  *  - Pilestredet 37 (gnr 209/bnr 58)        → type: 'sameie' (2 seksjoner)
  *  - Gustav Jensens gate 7 (gnr 221/bnr 224) → type: 'borettslag' (Vøyenvollen —
  *    to retter der kun den andre peker på borettslaget, regresjon mot retter[0]-bug)
+ *  - Grefsenkollveien 7B (gnr 75/bnr 1226)  → type: 'borettslag' (7/9 — første
+ *    andel er historisk med tidligere eier, regresjon mot andeler[0]-bug)
  *
  * Kjøres med:
  *   API_ENV=prod LIVE=1 npx tsx scripts/test-eiendomsgruppe-detektor.ts
@@ -35,6 +37,14 @@ const cases = [
     // Regresjon mot tidligere bug der detektoren kun sjekket retter[0].
     label: "Gustav Jensens gate 7 (borettslag bak 2. rett)",
     input: { kommunenummer: "0301", gaardsnummer: 221, bruksnummer: 224 },
+    forventet: "borettslag" as const,
+  },
+  {
+    // Grefsenkollveien 7B: rett med to andeler der andel[0] er historisk
+    // (Oslo Sanitetsforening) og andel[1] er aktivt borettslag. Regresjon
+    // mot bug der detektoren tok andeler[0] uten å sjekke historisk-flagg.
+    label: "Grefsenkollveien 7B (borettslag bak historisk andel)",
+    input: { kommunenummer: "0301", gaardsnummer: 75, bruksnummer: 1226 },
     forventet: "borettslag" as const,
   },
 ];
