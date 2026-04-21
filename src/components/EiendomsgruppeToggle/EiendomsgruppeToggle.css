@@ -36,3 +36,19 @@
   font-weight: 600;
   color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
 }
+
+/* Tillat at lange borettslag-/sameienavn flyter over flere linjer i knappen,
+   i stedet for å gå utover knapperammen. */
+.eiendomsgruppe-toggle .pkt-btn {
+  max-width: 100%;
+  height: auto;
+  min-height: 48px;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.25;
+}
+.eiendomsgruppe-toggle .pkt-btn > span,
+.eiendomsgruppe-toggle .pkt-btn__label {
+  white-space: normal;
+  overflow-wrap: break-word;
+}

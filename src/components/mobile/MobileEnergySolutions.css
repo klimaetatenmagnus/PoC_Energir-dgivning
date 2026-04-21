@@ -280,6 +280,47 @@
   display: block;
 }
 
+/* To bygninger i gruppe-modus: primær og sekundær er stablet i samme
+   koordinatsystem. Sekundær sitter bak og litt til venstre, med fade +
+   slide-animasjon når data-gruppe-active='true'. */
+.mobile-energy-solutions__building-instance {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  transform-origin: right bottom;
+  transition: transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 400ms ease-out;
+}
+
+.mobile-energy-solutions__building-instance--primary {
+  position: relative;
+  z-index: 3;
+}
+
+/* Primær: behold base-origin (right bottom) så bunnlinjen ikke hopper, og
+   skaler ned — venstre kant trekkes inn mot høyre (= visuell skalering mot
+   høyre), topp trekkes ned (= mot vertikal midte). */
+.mobile-energy-solutions__building-illustration[data-gruppe-active='true']
+  .mobile-energy-solutions__building-instance--primary {
+  transform: scale(0.85);
+}
+
+.mobile-energy-solutions__building-instance--secondary {
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-100%) scale(0.75);
+}
+
+.mobile-energy-solutions__building-illustration[data-gruppe-active='true']
+  .mobile-energy-solutions__building-instance--secondary {
+  opacity: 1;
+  transform: translateX(-72%) scale(0.75);
+}
+
 /* Enebolig - større størrelse, tett inntil skalaen */
 .mobile-energy-solutions__building-svg--enebolig {
   width: 70px;

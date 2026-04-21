@@ -149,6 +149,44 @@
   transition: transform 0.8s ease-in-out 0.12s;
 }
 
+/* Gruppe-modus: i side 2 ↔ 3-overgangen må også sekundær bygning
+   slide opp/ned på samme måte som primær. Primær beholder sin gruppe-skew
+   (translateX + scale) og får translateY på toppen; sekundær beholder sin
+   egen offset og får samme translateY. Sekundær forsinkes ~40ms etter primær
+   for mild stagger mellom de to byggene, og info-panelet skyves tilsvarende
+   ut i kjeden så det kommer sist. */
+.tiltak-side__content--transitioning
+  .tiltak-side__building--primary[data-gruppe-active='true'] {
+  transform: translateY(calc(-100 * var(--transition-vh)))
+    translateX(calc(var(--building-scale, 1) * 22%))
+    scale(calc(var(--building-scale, 1) * var(--building-scale-multiplier, 1) * 0.85));
+  transition: transform 0.8s ease-in-out 0.08s;
+}
+.tiltak-side__content--transitioning
+  .tiltak-side__building--secondary {
+  /* Når ikke gruppe-aktiv: sekundær er uansett opacity 0, men vi lar den
+     følge vertikal bevegelse så den ikke henger etter ved re-entry. */
+  transform: translateY(calc(-100 * var(--transition-vh)))
+    translateX(calc(-50% - 100%))
+    scale(calc(var(--building-scale, 1) * var(--building-scale-multiplier, 1) * 0.75));
+  transition: transform 0.8s ease-in-out 0.12s, opacity 400ms ease-out;
+}
+.tiltak-side__content--transitioning
+  .tiltak-side__building--secondary[data-gruppe-active='true'] {
+  transform: translateY(calc(-100 * var(--transition-vh)))
+    translateX(calc(-50% - 68%))
+    scale(calc(var(--building-scale, 1) * var(--building-scale-multiplier, 1) * 0.75));
+  transition: transform 0.8s ease-in-out 0.12s, opacity 400ms ease-out;
+}
+
+/* Gruppe-modus: info-panelet skyves fra 0.12s til 0.16s så animasjonskjeden
+   blir 'tiltak-panel (0) → sirkel (40) → primær (80) → sekundær (120) →
+   info-panel (160)'. Gir en litt lengre, jevnere kjede når to bygg deltar. */
+.tiltak-side__content--transitioning[data-gruppe-active='true']
+  .tiltak-side__info-panel {
+  transition: transform 0.8s ease-in-out 0.16s;
+}
+
 /* ==========================================================================
    Tiltak-panel (venstre kolonne)
    ========================================================================== */
@@ -251,6 +289,46 @@
   transform: scale(calc(var(--building-scale, 1) * var(--building-scale-multiplier, 1)));
   transform-origin: bottom center;
   transition: transform 0.8s ease-in-out, opacity 0.4s ease-in-out;
+}
+
+/* ==========================================================================
+   Gruppe-modus: to bygninger (borettslag/sameie)
+   Primær skaleres ned med transform-origin mot høyre-senter (trekker seg mot
+   høyre side av sirkelen). Sekundær slider inn fra venstre, fader inn og
+   legger seg delvis bak primær med ~35% overlapp.
+   ========================================================================== */
+
+/* Primær beholder 'bottom center' transform-origin fra baseregelen — å bytte
+   origin midt i en transition gir synlig hopp. I stedet skaleres den ned og
+   forskyves litt til høyre via translateX, slik at plassen til venstre åpner
+   seg for sekundær-bygningen uten å løfte eller flytte bunnlinjen. */
+.tiltak-side__building--primary[data-gruppe-active='true'] {
+  transform: translateX(calc(var(--building-scale, 1) * 22%))
+    scale(calc(var(--building-scale, 1) * var(--building-scale-multiplier, 1) * 0.85));
+  /* 0.8s matcher øvrige transitions i tiltak-siden — kritisk for at
+     side 3 → 2-retningen (som bruker denne grunnregelen som destinasjon)
+     får samme tempo som de andre kolonnene. */
+  transition: transform 0.8s ease-in-out;
+}
+
+.tiltak-side__building--secondary {
+  position: absolute;
+  left: 50%;
+  z-index: 2;
+  transform-origin: bottom center;
+  opacity: 0;
+  transform: translateX(calc(-50% - 100%))
+    scale(calc(var(--building-scale, 1) * var(--building-scale-multiplier, 1) * 0.75));
+  /* 0.04s transform-delay gir stagger bak primær både under gruppe-toggle og
+     ved side 3 → 2-retur (som bruker denne grunnregelen som destinasjon). */
+  transition: transform 0.8s ease-in-out 0.04s, opacity 400ms ease-out;
+  pointer-events: none;
+}
+
+.tiltak-side__building--secondary[data-gruppe-active='true'] {
+  opacity: 1;
+  transform: translateX(calc(-50% - 68%))
+    scale(calc(var(--building-scale, 1) * var(--building-scale-multiplier, 1) * 0.75));
 }
 
 /* Prosess-knapp - fixed utenfor tiltak-side for uavhengig stacking context */

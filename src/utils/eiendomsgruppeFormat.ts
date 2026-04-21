@@ -21,7 +21,13 @@ export function gruppenavn(
 ): string {
   if (type === 'borettslag') {
     if (navn) {
-      const stripped = navn.replace(/\s+borettslag$/i, '').trim();
+      // Grunnbok-navn kan ha "borettslag(et)" både foran og bak
+      // (f.eks. "BORETTSLAGET VØYENVOLLEN" eller "Oppsal borettslag").
+      // Strip begge varianter før vi konsekvent setter " borettslag" på igjen.
+      const stripped = navn
+        .replace(/^\s*borettslag(?:et)?\s+/i, '')
+        .replace(/\s+borettslag(?:et)?$/i, '')
+        .trim();
       return `${stripped} borettslag`;
     }
     return 'borettslaget';

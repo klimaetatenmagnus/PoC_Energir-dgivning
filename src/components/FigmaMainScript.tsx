@@ -721,7 +721,10 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       >
         {/* Three-column flex layout */}
         <main className="tiltak-side__content-shell">
-          <div className={`tiltak-side__content${activeTiltak.length > 0 && !isExpanded && !showProcess ? ' tiltak-side__content--with-process' : ''}${showProcess ? ' tiltak-side__content--transitioning' : ''}`}>
+          <div
+            className={`tiltak-side__content${activeTiltak.length > 0 && !isExpanded && !showProcess ? ' tiltak-side__content--with-process' : ''}${showProcess ? ' tiltak-side__content--transitioning' : ''}`}
+            data-gruppe-active={viewMode === 'gruppe' ? 'true' : 'false'}
+          >
           {/* Left column: Tiltak list */}
           <aside className="tiltak-side__tiltak-panel">
             <EnergySolutionButtons
@@ -758,7 +761,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
             {isEnebolig && (
               <div
                 ref={eneboligRef}
-                className="tiltak-side__building"
+                className="tiltak-side__building tiltak-side__building--primary"
+                data-gruppe-active={viewMode === 'gruppe' ? 'true' : 'false'}
                 style={{
                   ['--building-scale' as string]: detailScale,
                   opacity: buildingReady || overlayPhase === 'settling' ? 1 : 0,
@@ -776,7 +780,8 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
             {!isEnebolig && (
               <div
                 ref={blokkRef}
-                className="tiltak-side__building"
+                className="tiltak-side__building tiltak-side__building--primary"
+                data-gruppe-active={viewMode === 'gruppe' ? 'true' : 'false'}
                 style={{
                   ['--building-scale' as string]: detailScale,
                   opacity: buildingReady || overlayPhase === 'settling' ? 1 : 0,
@@ -789,6 +794,34 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
                   arrowState={arrowState}
                   arrowColor={arrowColor}
                 />
+              </div>
+            )}
+
+            {/* Sekundær bygning: rendres alltid, men fader/slider inn kun når viewMode === 'gruppe'.
+                Ingen ref/id — TransitionOverlayRenderer bruker kun primær bygning. */}
+            {buildingReady && (
+              <div
+                className="tiltak-side__building tiltak-side__building--secondary"
+                data-gruppe-active={viewMode === 'gruppe' ? 'true' : 'false'}
+                aria-hidden="true"
+                style={{
+                  ['--building-scale' as string]: detailScale,
+                  bottom: `${-blokkBottomCompensation}px`,
+                }}
+              >
+                {isEnebolig ? (
+                  <Enebolig2LayerSvg
+                    activeTiltak={activeTiltak}
+                    arrowState={arrowState}
+                    arrowColor={arrowColor}
+                  />
+                ) : (
+                  <Blokk2LayerSvg
+                    activeTiltak={activeTiltak}
+                    arrowState={arrowState}
+                    arrowColor={arrowColor}
+                  />
+                )}
               </div>
             )}
 
@@ -805,7 +838,9 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
                 justifyContent: 'flex-end',
                 bottom: 708,
                 zIndex: 1001,
-                pointerEvents: 'auto',
+                // Kun fange klikk når toggle faktisk er synlig — ellers stjeler
+                // wrapperen klikk fra tiltaksinfo-kortet under (f.eks. tilbake-knappen).
+                pointerEvents: showHeader && !isExpanded ? 'auto' : 'none',
               }}
             >
               <EiendomsgruppeToggle

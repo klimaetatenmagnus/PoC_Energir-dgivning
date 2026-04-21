@@ -1289,28 +1289,53 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
           <div
             className="mobile-energy-solutions__building-illustration"
             ref={buildingIllustrationRef}
+            data-gruppe-active={mobileViewMode === 'gruppe' ? 'true' : 'false'}
             style={{
               opacity: buildingIllustrationOpacity,
               transition: overlayPhase === 'settling' ? 'none' : undefined,
             }}
           >
-            {isBlokk ? (
-              <Blokk2LayerSvg
-                id="mobile-target-blokk"
-                className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--blokk"
-                activeTiltak={activeTiltak}
-                arrowState={arrowState}
-                arrowColor={arrowColor}
-              />
-            ) : (
-              <Enebolig2LayerSvg
-                id="mobile-target-enebolig"
-                className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--enebolig"
-                activeTiltak={activeTiltak}
-                arrowState={arrowState}
-                arrowColor={arrowColor}
-              />
-            )}
+            {/* Sekundær bygning — rendres først i DOM så den havner bak primær
+                (kun visuell; ingen id/ref, overlay-handoff bruker primær). */}
+            <span
+              className="mobile-energy-solutions__building-instance mobile-energy-solutions__building-instance--secondary"
+              aria-hidden="true"
+            >
+              {isBlokk ? (
+                <Blokk2LayerSvg
+                  className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--blokk"
+                  activeTiltak={activeTiltak}
+                  arrowState={arrowState}
+                  arrowColor={arrowColor}
+                />
+              ) : (
+                <Enebolig2LayerSvg
+                  className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--enebolig"
+                  activeTiltak={activeTiltak}
+                  arrowState={arrowState}
+                  arrowColor={arrowColor}
+                />
+              )}
+            </span>
+            <span className="mobile-energy-solutions__building-instance mobile-energy-solutions__building-instance--primary">
+              {isBlokk ? (
+                <Blokk2LayerSvg
+                  id="mobile-target-blokk"
+                  className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--blokk"
+                  activeTiltak={activeTiltak}
+                  arrowState={arrowState}
+                  arrowColor={arrowColor}
+                />
+              ) : (
+                <Enebolig2LayerSvg
+                  id="mobile-target-enebolig"
+                  className="mobile-energy-solutions__building-svg mobile-energy-solutions__building-svg--enebolig"
+                  activeTiltak={activeTiltak}
+                  arrowState={arrowState}
+                  arrowColor={arrowColor}
+                />
+              )}
+            </span>
           </div>
         </div>
 
