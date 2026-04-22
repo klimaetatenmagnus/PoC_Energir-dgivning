@@ -22,7 +22,6 @@ import {
   grunnbokEnabled,
 } from "./context.ts";
 import proj4 from "proj4";
-import type { Borettslagsandel } from "./types.ts";
 import { MatrikkelBruksenhetHelper } from "./MatrikkelBruksenhetHelper.ts";
 import { TtlCache } from "./cache.ts";
 import type { SolarEnergyData } from "../../src/services/solarEnergyService.ts";
@@ -162,31 +161,53 @@ const bruksenhetHelper = new MatrikkelBruksenhetHelper(
   matrikkelConfig.password
 );
 
+/**
+ * Parallell map med konkurransegrense. Oppsummerer kallstedet: i stedet for
+ * å kjøre N sekvensielle batch-runder (hver runde må vente på den tregeste
+ * i forrige batch), holder vi `concurrency` inn-flight fetches til enhver
+ * tid. For Oppsal-borettslaget (598 andeler) reduserer dette SOAP-roundtrip-
+ * tida fra ~30 × batch-latency til ~ceil(598/concurrency) × request-latency.
+ */
+async function pMap<T, R>(
+  items: readonly T[],
+  fn: (item: T, index: number) => Promise<R>,
+  concurrency: number,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (true) {
+      const i = next++;
+      if (i >= items.length) return;
+      results[i] = await fn(items[i], i);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
 async function hentByggInfo(
   byggIds: number[],
   warnings: string[],
-  concurrency = 10
+  concurrency = 30
 ): Promise<ByggInfo[]> {
-  const all: ByggInfo[] = [];
-  for (let i = 0; i < byggIds.length; i += concurrency) {
-    const batch = byggIds.slice(i, i + concurrency);
-    const results = await Promise.all(
-      batch.map(async (id) => {
-        try {
-          return await byggStoreClient.getObject(id);
-        } catch (err) {
-          warnings.push(
-            `Bygginfo feilet for byggId ${id}: ${
-              err instanceof Error ? err.message : String(err)
-            }`
-          );
-          return null;
-        }
-      })
-    );
-    for (const r of results) if (r) all.push(r);
-  }
-  return all;
+  const results = await pMap(
+    byggIds,
+    async (id) => {
+      try {
+        return await byggStoreClient.getObject(id);
+      } catch (err) {
+        warnings.push(
+          `Bygginfo feilet for byggId ${id}: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+        return null;
+      }
+    },
+    concurrency,
+  );
+  return results.filter((r): r is ByggInfo => r !== null);
 }
 
 async function hentSolarDataParallelt(
@@ -380,35 +401,32 @@ async function aggregateForBorettslagInternal(
     await registerenhetService.findBorettslagsandelerForBorettslag(borettslagId);
   if (andelIds.length === 0) throw new Error("Ingen andeler i borettslaget");
 
-  // Hent andeler (batched)
-  const andeler: Borettslagsandel[] = [];
-  for (let i = 0; i < andelIds.length; i += 20) {
-    const batch = andelIds.slice(i, i + 20);
-    const results = await Promise.all(
-      batch.map((id) => storeService!.getBorettslagsandel(id))
-    );
-    andeler.push(...results);
-  }
-  const aktive = andeler.filter((a) => !a.utgaatt);
-
-  // Hent adresser for å få bruksenhetIdFraMatrikkelen
-  const bruksenhetIds = new Set<number>();
-  for (let i = 0; i < aktive.length; i += 20) {
-    const batch = aktive.slice(i, i + 20).filter((a) => a.adresseId);
-    const adresser = await Promise.all(
-      batch.map((a) => storeService!.getAdresse(a.adresseId!))
-    );
-    for (const adr of adresser) {
-      if (adr.bruksenhetIdFraMatrikkelen) {
-        bruksenhetIds.add(Number(adr.bruksenhetIdFraMatrikkelen));
-      }
-    }
-  }
+  // Kombinert pipeline: andel → adresse → bruksenhetId. Tidligere ble dette
+  // gjort som to separate serielle batch-loops (20 parallelle per runde), som
+  // betyr at Oppsal-borettslaget (598 andeler) tok ~30 runder × 2 faser =
+  // 60 sekvensielle SOAP-runder. Her holder vi 50 fetches inn-flight av
+  // gangen, med én gjennomgående pipeline.
+  let antallAktive = 0;
+  const resolved = await pMap(
+    andelIds,
+    async (id) => {
+      const andel = await storeService!.getBorettslagsandel(id);
+      if (andel.utgaatt) return null;
+      antallAktive++;
+      if (!andel.adresseId) return null;
+      const adresse = await storeService!.getAdresse(andel.adresseId);
+      return adresse.bruksenhetIdFraMatrikkelen
+        ? Number(adresse.bruksenhetIdFraMatrikkelen)
+        : null;
+    },
+    50,
+  );
+  const bruksenhetIds = new Set<number>(resolved.filter((x): x is number => x !== null));
 
   // Matrikkel: bruksenhetId → byggId
   const { byggIdCount, misses } = await bruksenhetHelper.mapBruksenhetIdsToByggIds(
     Array.from(bruksenhetIds),
-    10
+    30,
   );
   if (misses > 0) {
     warnings.push(`${misses} bruksenheter manglet byggId i Matrikkel-responsen`);
@@ -422,7 +440,7 @@ async function aggregateForBorettslagInternal(
     type: "borettslag",
     organisasjonsnummer,
     borettslagId,
-    antallEnheter: aktive.length,
+    antallEnheter: antallAktive,
     warnings,
     ...aggregerBygg(byggInfo, byggIdCount, solarByByggId, warnings),
   };
@@ -476,19 +494,16 @@ async function aggregateForSameieInternal(
     matrikkelContext
   );
 
-  // For hver matrikkelenhet: hent bruksenhet-IDer (parallellisert)
+  // For hver matrikkelenhet: hent bruksenhet-IDer (parallellisert med 30
+  // inn-flight SOAP-kall — tidligere seriale batcher à 20 parallelle).
+  const bruksenhetResults = await pMap(
+    matIds,
+    (meId) => bruksenhetHelper.findBruksenhetIdsForMatrikkelenhet(meId),
+    30,
+  );
   const allBruksenhetIds = new Set<number>();
-  const batchSize = 20;
-  for (let i = 0; i < matIds.length; i += batchSize) {
-    const batch = matIds.slice(i, i + batchSize);
-    const results = await Promise.all(
-      batch.map((meId) =>
-        bruksenhetHelper.findBruksenhetIdsForMatrikkelenhet(meId)
-      )
-    );
-    for (const ids of results) {
-      for (const id of ids) allBruksenhetIds.add(id);
-    }
+  for (const ids of bruksenhetResults) {
+    for (const id of ids) allBruksenhetIds.add(id);
   }
 
   if (antallEnheter === 0) antallEnheter = allBruksenhetIds.size;
@@ -496,7 +511,7 @@ async function aggregateForSameieInternal(
   // Bruksenheter → byggIds (dedup)
   const { byggIdCount, misses } = await bruksenhetHelper.mapBruksenhetIdsToByggIds(
     Array.from(allBruksenhetIds),
-    10
+    30,
   );
   if (misses > 0) {
     warnings.push(`${misses} bruksenheter manglet byggId`);
