@@ -439,3 +439,13 @@
   justify-content: flex-start;
   margin-top: calc(-1 * var(--pkt-spacing-8, 0.5rem));
 }
+
+.mobile-info-box__view-toggle--loading {
+  align-items: center;
+  gap: var(--pkt-spacing-8, 0.5rem);
+}
+
+.mobile-info-box__view-toggle-loader-text {
+  font-size: 0.875rem;
+  color: var(--pkt-color-neutral-grey-600, #6b6b6b);
+}

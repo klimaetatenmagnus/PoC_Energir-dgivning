@@ -6,6 +6,7 @@ import {
   PktTag,
   PktAlert,
   PktIcon,
+  PktLoader,
 } from '@oslokommune/punkt-react';
 import {
   DISTRICT_BADGE,
@@ -58,6 +59,10 @@ interface MobileInfoBoxProps {
     byggeaar: Array<number | null>;
     estimatedAnnualConsumptionKWh: number;
   };
+  /** Er aggregat-henting fortsatt i gang? Da vises en loader i toggle-området. */
+  isAggregatLoading?: boolean;
+  /** Navn på borettslaget/sameiet vi henter data for (brukes i loader-tekst). */
+  eiendomsgruppeLoaderNavn?: string;
   /** Callback når toggle-knappen klikkes (tar inn ny viewMode). */
   onToggleViewMode?: (next: 'enkelt' | 'gruppe') => void;
   /** Vis toggle-knappen. Default skjult. */
@@ -101,6 +106,8 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   eiendomsgruppeVisning,
   onToggleViewMode,
   showViewModeToggle = false,
+  isAggregatLoading = false,
+  eiendomsgruppeLoaderNavn,
 }) => {
   const isGroupMode = viewMode === 'gruppe' && Boolean(eiendomsgruppeVisning);
   const displayAddress = isGroupMode
@@ -290,7 +297,17 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
       {/* Adresse og tags */}
       <div className="mobile-info-box__header">
         <h2 className="mobile-info-box__address">{displayAddress}</h2>
-        {showViewModeToggle && onToggleViewMode && (
+        {showViewModeToggle && isAggregatLoading && (
+          <div className="mobile-info-box__view-toggle mobile-info-box__view-toggle--loading">
+            <PktLoader size="small" variant="rainbow" isLoading>
+              <span />
+            </PktLoader>
+            <span className="mobile-info-box__view-toggle-loader-text">
+              Henter data for {eiendomsgruppeLoaderNavn ?? 'borettslaget/sameiet'}
+            </span>
+          </div>
+        )}
+        {showViewModeToggle && !isAggregatLoading && onToggleViewMode && (
           <div className="mobile-info-box__view-toggle">
             <PktButton
               skin="primary"

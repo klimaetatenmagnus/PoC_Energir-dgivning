@@ -26,7 +26,10 @@ import { MobileInfoBox } from './MobileInfoBox';
 import { capitalizeAdresse } from '../../utils/adresseFormat';
 import { useEiendomsgruppe } from '../../hooks/useEiendomsgruppe';
 import { gruppenavn as gruppenavnFmt } from '../../utils/eiendomsgruppeFormat';
-import { beregnGruppeBaselineForbruk } from '../../utils/eiendomsgruppeSavings';
+import {
+  beregnGruppeBaselineForbruk,
+  computeEiendomsgruppeSavings,
+} from '../../utils/eiendomsgruppeSavings';
 import { MobileSavingsFooter } from './MobileSavingsFooter';
 import { MobileDistrictComparison } from './MobileDistrictComparison';
 import { MobileProsessenVidere } from './MobileProsessenVidere';
@@ -525,6 +528,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
 
   // Beregn total besparelse basert på valgte tiltak
   const [calculatedSavings, setCalculatedSavings] = useState(0);
+  // Overstyring for gruppe-modus: summert NOK fra computeEiendomsgruppeSavings
+  // som tar hensyn til forskjellige boligtyper/priser per bygg.
+  const [groupCalculatedSavingsNok, setGroupCalculatedSavingsNok] = useState<number | null>(null);
 
   // Sol-andel av marginal besparelse (for sentral kr-beregning).
   // Sol legges lineært, så scaledSolarEnergy er sol-bidraget hvis solenergi er valgt som nytt tiltak.
@@ -534,14 +540,20 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   }, [checkedItems, scaledSolarEnergy]);
 
   const calculatedSavingsNok = useMemo(
-    () =>
-      computeAggregatedSavingsNok({
+    () => {
+      // I gruppe-modus beregnes NOK per bygg og summeres i
+      // computeEiendomsgruppeSavings (med riktig sol-prisjustering per bygg).
+      if (groupCalculatedSavingsNok !== null) {
+        return groupCalculatedSavingsNok;
+      }
+      return computeAggregatedSavingsNok({
         totalKwh: calculatedSavings,
         solarKwhContribution: marginalSolarKwh,
         boligtype,
         energyPricePerKwh: 1.1,
-      }),
-    [calculatedSavings, marginalSolarKwh, boligtype]
+      });
+    },
+    [groupCalculatedSavingsNok, calculatedSavings, marginalSolarKwh, boligtype]
   );
   // Antall valgte tiltak som ikke kunne beregnes (manglende data)
   const [uncalculableCount, setUncalculableCount] = useState(0);
@@ -641,8 +653,66 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     if (checkedItems.size === 0 && completedItems.size === 0) {
       setCalculatedSavings(0);
       setUncalculableCount(0);
+      setGroupCalculatedSavingsNok(null);
       return;
     }
+
+    // Gruppe-modus: aggreger besparelse per bygg i borettslaget/sameiet.
+    const aggBygg = mobileEiendomsgruppe.aggregat?.bygninger;
+    if (
+      mobileViewMode === 'gruppe' &&
+      aggBygg &&
+      aggBygg.length > 0 &&
+      catalogData?.items
+    ) {
+      const publishedCatalog = catalogData.items.filter((t) => t.status === 'published');
+      const displayTiltakForGruppe = publishedCatalog.map((t) => ({ id: t.id, title: t.title }));
+      const filterForBygg = (b: { byggeaar: number | null; bygningstypeKodeId: number | null }) => {
+        const bYear = b.byggeaar ?? 0;
+        const bTek = calculateTekPeriod(bYear) as TekPeriodInput;
+        const bType = determineBuildingType(
+          b.bygningstypeKodeId != null ? String(b.bygningstypeKodeId) : undefined,
+          undefined,
+        );
+        const bTypeKey = determineBuildingTypeKey(
+          b.bygningstypeKodeId != null ? String(b.bygningstypeKodeId).substring(0, 2) : '',
+          '',
+        );
+        return filterTiltakForBuilding(
+          publishedCatalog,
+          bTypeKey,
+          b.byggeaar ?? undefined,
+          bTek,
+          bType,
+          erPaaGulListe,
+        ).map((t) => ({ id: t.id, title: t.title }));
+      };
+      const result = computeEiendomsgruppeSavings({
+        bygninger: aggBygg.map((b) => ({
+          byggId: b.byggId,
+          byggeaar: b.byggeaar,
+          bruksarealM2: b.bruksarealM2,
+          bygningstypeKodeId: b.bygningstypeKodeId,
+          solar: b.solar ? { filteredSolarEnergy: b.solar.filteredSolarEnergy } : null,
+        })),
+        displayTiltak: displayTiltakForGruppe,
+        displayTiltakForBygg: filterForBygg,
+        checkedItems,
+        completedItems,
+        selectedVarmepumpeType,
+        selectedVinduerTypeNye,
+        completedVinduerType,
+        erPaaGulListe,
+      });
+      setCalculatedSavings(result.totalNewSavingsKWh);
+      setGroupCalculatedSavingsNok(result.totalNewSavingsNok);
+      setUncalculableCount(0);
+      return;
+    }
+
+    // Enkelt-modus (og fallback når gruppe-aggregatet ikke er klart enda):
+    // beregn besparelse for den ene boligen.
+    setGroupCalculatedSavingsNok(null);
 
     // Beregn verdier direkte
     const parsedBruksareal = parseNumericValue(bruksareal);
@@ -743,6 +813,9 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     erPaaGulListe,
     selectedVarmepumpeType,
     selectedVinduerTypeNye,
+    mobileViewMode,
+    mobileEiendomsgruppe.aggregat,
+    catalogData,
   ]);
 
   // Lokal effektiv energikarakter — oppdateres ved redigering og gjennomførte tiltak
@@ -1843,7 +1916,21 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               fjernvarme={fjernvarme}
               viewMode={mobileViewMode}
               eiendomsgruppeVisning={mobileEiendomsgruppeVisning}
-              showViewModeToggle={Boolean(mobileEiendomsgruppeVisning) && mobileEiendomsgruppe.shouldShowToggle}
+              showViewModeToggle={mobileEiendomsgruppe.shouldShowToggle}
+              isAggregatLoading={
+                mobileEiendomsgruppe.shouldShowToggle &&
+                (mobileEiendomsgruppe.aggregatLoading ||
+                  (!mobileEiendomsgruppe.aggregat && !mobileEiendomsgruppe.aggregatError))
+              }
+              eiendomsgruppeLoaderNavn={
+                mobileEiendomsgruppe.detection?.type === 'borettslag'
+                  ? mobileEiendomsgruppe.detection.navn ?? 'borettslaget'
+                  : gruppenavnFmt(
+                      mobileEiendomsgruppe.detection?.type ?? 'sameie',
+                      mobileEiendomsgruppe.detection?.navn,
+                      buildingData.adresse,
+                    )
+              }
               onToggleViewMode={(next) => setMobileViewMode(next)}
               onCompareClick={() => {
                 trackNeighborComparison();
