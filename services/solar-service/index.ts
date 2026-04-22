@@ -32,6 +32,7 @@ import type {
   WfsFeature,
   WfsQueryParams,
 } from './types.js';
+import { getSolarCsvService, SOLAR_FILTER_DEFAULTS } from '../../src/services/solarCsvService.js';
 
 /* ───────── SRID-definisjoner ─────────────────────────────────────────── */
 proj4.defs('EPSG:32632', '+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs');
@@ -820,12 +821,44 @@ const solinnstralingHandler: RequestHandler = async (
       return;
     }
 
-    let takflater: Takflate[] = [];
-
-    /* -------- Søkeprioritet ------------------------------------------------ */
+    /* -------- CSV-primærkilde (PBE-WFS-snapshot) ------------------------- */
     const byggNrParam = query.bygg_nr ?? query.bygningsnummer;
     const byggNr = Array.isArray(byggNrParam) ? byggNrParam[0] : byggNrParam;
+    if (byggNr) {
+      const csvSvc = getSolarCsvService();
+      await csvSvc.waitForReady();
+      const bnrInt = Number(byggNr);
+      if (Number.isFinite(bnrInt)) {
+        const agg = csvSvc.getForBygningsnummer(bnrInt);
+        if (agg) {
+          const csvTakflater: Takflate[] = agg.takflater.map((t) => ({
+            tak_id: t.tak_id,
+            bygg_id: null,
+            bygg_nr: String(bnrInt),
+            area_m2: t.area_m2,
+            irr_kwh_m2_yr: t.irr_kwh_m2_yr,
+            kWh_tot: t.area_m2 * t.irr_kwh_m2_yr,
+          }));
+          const response: SolarApiResponse = {
+            reference: config.referenceKwh,
+            takflater: csvTakflater,
+            takAreal_m2: agg.takAreal_m2 || null,
+            sol_kwh_m2_yr: agg.sol_kwh_m2_yr || null,
+            sol_kwh_bygg_tot: agg.sol_kwh_bygg_tot,
+            filteredSolarEnergy: agg.filteredSolarEnergy,
+            category: agg.sol_kwh_m2_yr ? categorize(agg.sol_kwh_m2_yr) : 'Ukjent',
+          };
+          CACHE.set(cacheKey, response);
+          res.json(response);
+          return;
+        }
+        infoLog('CSV-miss for bygningsnummer, faller tilbake til WFS', { bygningsnummer: bnrInt });
+      }
+    }
 
+    let takflater: Takflate[] = [];
+
+    /* -------- Fallback: WFS-baserte søk ------------------------------------ */
     if (byggNr) {
       try {
         takflater = await takflaterForByggNr(sanitizeByggNr(byggNr));
@@ -953,12 +986,21 @@ const solinnstralingHandler: RequestHandler = async (
       0
     );
     const avgIrr = sumArea ? sumPot / sumArea : null;
+    // Ny filter-formel: kun takflater med irr > minRadiation OG area >= minArea,
+    // effektiv produksjon = areal × irr × areaCoverage × panelEfficiency.
     const filteredSolarEnergy = takflater
-      .filter((tak) => (Number(tak?.irr_kwh_m2_yr) || 0) > config.minRadiation)
+      .filter((tak) => {
+        const irr = Number(tak?.irr_kwh_m2_yr) || 0;
+        const area = Number(tak?.area_m2) || 0;
+        return irr > config.minRadiation && area >= SOLAR_FILTER_DEFAULTS.minArea;
+      })
       .reduce((sum, tak) => {
         const irr = Number(tak?.irr_kwh_m2_yr) || 0;
         const area = Number(tak?.area_m2) || 0;
-        return sum + irr * area * config.solarPanelEfficiency;
+        return (
+          sum +
+          irr * area * SOLAR_FILTER_DEFAULTS.areaCoverage * config.solarPanelEfficiency
+        );
       }, 0);
 
     const result: SolarApiResponse = {

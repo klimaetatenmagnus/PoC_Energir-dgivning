@@ -244,6 +244,8 @@ spec:
               value: "4003"
             - name: SOLAR_SERVICE_HOST
               value: "0.0.0.0"
+            - name: DATA_BUCKET
+              value: "energinokkelen-data"
             - name: PBE_MAP_BASE_URL
               valueFrom:
                 secretKeyRef:

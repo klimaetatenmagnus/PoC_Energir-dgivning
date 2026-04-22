@@ -27,6 +27,7 @@ import { MatrikkelBruksenhetHelper } from "./MatrikkelBruksenhetHelper.ts";
 import { TtlCache } from "./cache.ts";
 import type { SolarEnergyData } from "../../src/services/solarEnergyService.ts";
 import { csvService } from "../../src/services/csvService.ts";
+import { getSolarCsvService } from "../../src/services/solarCsvService.ts";
 import { shouldProcessBuildingType } from "../../src/utils/buildingTypeUtils.ts";
 
 proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
@@ -193,8 +194,41 @@ async function hentSolarDataParallelt(
   concurrency = 10
 ): Promise<Map<number, SolarEnergyData | null>> {
   const result = new Map<number, SolarEnergyData | null>();
-  for (let i = 0; i < byggInfo.length; i += concurrency) {
-    const batch = byggInfo.slice(i, i + concurrency);
+  const csvSvc = getSolarCsvService();
+  await csvSvc.waitForReady();
+
+  // Primær: oppslag i lokal PBE-WFS-CSV via bygningsnummer (ingen HTTP-hop,
+  // BYGGNR-basert = ingen nabo-takflate-støy). Fallback til HTTP mot
+  // solar-service for bygg uten bygningsnummer eller som ikke finnes i CSV-en
+  // (f.eks. nyoppførte bygg etter siste WFS-snapshot).
+  const fallbackBygg: ByggInfo[] = [];
+  for (const b of byggInfo) {
+    const bnr = b.bygningsnummer ? Number(b.bygningsnummer) : null;
+    if (bnr && Number.isFinite(bnr)) {
+      const agg = csvSvc.getForBygningsnummer(bnr);
+      if (agg) {
+        const data: SolarEnergyData = {
+          takflater: agg.takflater.map((t) => ({
+            tak_id: t.tak_id,
+            bygg_id: null,
+            area_m2: t.area_m2,
+            irr_kwh_m2_yr: t.irr_kwh_m2_yr,
+            kWh_tot: t.area_m2 * t.irr_kwh_m2_yr,
+          })),
+          takAreal_m2: agg.takAreal_m2,
+          sol_kwh_m2_yr: agg.sol_kwh_m2_yr,
+          sol_kwh_bygg_tot: agg.sol_kwh_bygg_tot,
+          filteredSolarEnergy: agg.filteredSolarEnergy,
+        };
+        result.set(b.id, data);
+        continue;
+      }
+    }
+    fallbackBygg.push(b);
+  }
+
+  for (let i = 0; i < fallbackBygg.length; i += concurrency) {
+    const batch = fallbackBygg.slice(i, i + concurrency);
     const results = await Promise.all(
       batch.map(async (b) => {
         const data = await fetchSolarDataBackend({

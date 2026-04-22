@@ -148,7 +148,9 @@ export default function App() {
     const gnr = typeof gnrRaw === 'string' ? Number(gnrRaw) : gnrRaw;
     const bnr = typeof bnrRaw === 'string' ? Number(bnrRaw) : bnrRaw;
 
-    fetchSolarData({ gnr, bnr })
+    const bygningsnummer = result.bygningsnummer || result.csvData?.bygningsnummer;
+
+    fetchSolarData({ bygningsnummer, gnr, bnr })
       .then((data) => {
         setSolarData(data);
       })

@@ -63,6 +63,7 @@ type SolarServiceResponse = {
 };
 
 export async function fetchSolarData(params: {
+  bygningsnummer?: string | number;
   byggId?: number;
   lat?: number;
   lon?: number;
@@ -101,8 +102,11 @@ export async function fetchSolarData(params: {
       // });
     }
     
-    // Prioritize coordinates over building ID
-    if (lat && lon) {
+    // Prioriter bygningsnummer (BYGGNR-basert oppslag i lokal PBE-CSV —
+    // presist per bygg, ingen nabo-takflater fra koordinat-buffer).
+    if (params.bygningsnummer != null && params.bygningsnummer !== '') {
+      searchParams.set('bygningsnummer', String(params.bygningsnummer));
+    } else if (lat && lon) {
       searchParams.set('lat', String(lat));
       searchParams.set('lon', String(lon));
       // console.log(`☀️ Fetching solar data for coordinates: ${lat}, ${lon}`);
