@@ -1,6 +1,9 @@
 import axios from "axios";
+import https from "https";
 import { randomUUID } from "crypto";
 import type { GrunnbokContext } from "./types.ts";
+
+const keepAliveAgent = new https.Agent({ keepAlive: true, maxSockets: 100 });
 
 const LOG = process.env.LOG_SOAP === "1" || process.env.LOG_GRUNNBOK === "1";
 
@@ -79,6 +82,7 @@ export class GrunnbokSoapClient {
       auth: { username: this.username, password: this.password },
       timeout: 30_000,
       validateStatus: () => true,
+      httpsAgent: keepAliveAgent,
     });
 
     const body = typeof data === "string" ? data : String(data);

@@ -47,6 +47,9 @@ const ID_NAMESPACE_PREFIX: Record<StoreIdType, "rre" | "reg" | "pers" | "adr"> =
   PersonId: "pers",
 };
 
+/** Maks IDer per batch-kall. Verifisert mot Grunnbok prod opp til 408. */
+const MAX_BATCH_SIZE = 200;
+
 export class StoreService extends GrunnbokSoapClient {
   private async fetchRaw(
     id: string,
@@ -64,6 +67,45 @@ export class StoreService extends GrunnbokSoapClient {
     `;
     const envelope = this.wrapEnvelope(NS, body);
     return this.postSoap("StoreServiceWS", envelope);
+  }
+
+  /** Henter rå XML for en batch av IDer via getObjects. Caller bruker
+   *  splitItemChunks() til å parse hvert objekt. */
+  private async fetchRawBatch(
+    ids: readonly string[],
+    idType: StoreIdType
+  ): Promise<string> {
+    const prefix = ID_NAMESPACE_PREFIX[idType];
+    const ctxXml = buildContextXml(this.ctx);
+    const items = ids
+      .map(
+        (id) =>
+          `<bt:item xsi:type="${prefix}:${idType}"><bt:value>${id}</bt:value></bt:item>`
+      )
+      .join("");
+    const body = `
+      <store:getObjects>
+        <store:ids>${items}</store:ids>
+        <store:grunnbokContext>${ctxXml}</store:grunnbokContext>
+      </store:getObjects>
+    `;
+    const envelope = this.wrapEnvelope(NS, body);
+    return this.postSoap("StoreServiceWS", envelope);
+  }
+
+  /** Henter en stor liste av samme objekttype i batch-er á MAX_BATCH_SIZE.
+   *  Returnerer rå XML-fragmenter (én per item) i samme rekkefølge som input. */
+  private async fetchAllItemChunks(
+    ids: readonly string[],
+    idType: StoreIdType
+  ): Promise<string[]> {
+    const chunks: string[] = [];
+    for (let i = 0; i < ids.length; i += MAX_BATCH_SIZE) {
+      const slice = ids.slice(i, i + MAX_BATCH_SIZE);
+      const xml = await this.fetchRawBatch(slice, idType);
+      chunks.push(...splitItemChunks(xml));
+    }
+    return chunks;
   }
 
   async getRegisterenhetsrettsandel(
@@ -208,4 +250,103 @@ export class StoreService extends GrunnbokSoapClient {
       adresseIdFraMatrikkelen: adresseIdMatrikkel,
     };
   }
+
+  async getBorettslagsandelerBatch(
+    ids: readonly string[]
+  ): Promise<Borettslagsandel[]> {
+    if (ids.length === 0) return [];
+    const chunks = await this.fetchAllItemChunks(ids, "BorettslagsandelId");
+    return chunks.map((chunk) => parseBorettslagsandelChunk(chunk));
+  }
+
+  async getAdresserBatch(ids: readonly string[]): Promise<Adresse[]> {
+    if (ids.length === 0) return [];
+    const chunks = await this.fetchAllItemChunks(ids, "AdresseId");
+    return chunks.map((chunk) => parseAdresseChunk(chunk));
+  }
+}
+
+/** Splitter <return>...<item>...</item><item>...</item>...</return> til én streng per item. */
+function splitItemChunks(xml: string): string[] {
+  const matches = xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/g);
+  const out: string[] = [];
+  for (const m of matches) out.push(m[1]);
+  return out;
+}
+
+function parseBorettslagsandelChunk(chunk: string): Borettslagsandel {
+  const id =
+    extractFirst(chunk, /<id\b[^>]*>\s*<value>(\d+)<\/value>/) ?? "";
+  return {
+    id,
+    borettslagId:
+      extractFirst(chunk, /<ns\d+:borettslagId>\s*<value>(\d+)<\/value>/) ?? "",
+    andelsnummer: Number(
+      extractFirst(chunk, /<ns\d+:andelsnummer>(\d+)<\/ns\d+:andelsnummer>/)
+    ),
+    adresseId:
+      extractFirst(chunk, /<ns\d+:adresseId>\s*<value>(\d+)<\/value>/) ??
+      undefined,
+    utgaatt:
+      extractFirst(chunk, /<ns\d+:utgaatt>(\w+)<\/ns\d+:utgaatt>/) === "true",
+  };
+}
+
+function parseAdresseChunk(chunk: string): Adresse {
+  const id =
+    extractFirst(chunk, /<id\b[^>]*>\s*<value>(\d+)<\/value>/) ?? "";
+  const adressenavn =
+    extractFirst(chunk, /<ns\d+:adressenavn>([^<]+)<\/ns\d+:adressenavn>/) ??
+    undefined;
+  const husnummer = extractFirst(
+    chunk,
+    /<ns\d+:husnummer>(\d+)<\/ns\d+:husnummer>/
+  );
+  const bokstavMatch = chunk.match(
+    /<ns\d+:bokstav(?:\s[^>]*)?>([^<]+)<\/ns\d+:bokstav>/
+  );
+  const bokstav =
+    bokstavMatch && !bokstavMatch[0].includes('xsi:nil="true"')
+      ? bokstavMatch[1]
+      : undefined;
+  const bolignummer =
+    extractFirst(chunk, /<ns\d+:bolignummer>([^<]+)<\/ns\d+:bolignummer>/) ??
+    undefined;
+  const adressekode = extractFirst(
+    chunk,
+    /<ns\d+:adressekode>(\d+)<\/ns\d+:adressekode>/
+  );
+  const kommuneId =
+    extractFirst(chunk, /<ns\d+:kommuneId>\s*<value>(\d+)<\/value>/) ??
+    undefined;
+  const bruksenhetId =
+    extractFirst(
+      chunk,
+      /<ns\d+:bruksenhetIdFraMatrikkelen>(\d+)<\/ns\d+:bruksenhetIdFraMatrikkelen>/
+    ) ?? undefined;
+  const adresseIdMatrikkel =
+    extractFirst(
+      chunk,
+      /<ns\d+:adresseIdFraMatrikkelen>(\d+)<\/ns\d+:adresseIdFraMatrikkelen>/
+    ) ?? undefined;
+
+  const tekstParts: string[] = [];
+  if (adressenavn) tekstParts.push(adressenavn);
+  if (husnummer) {
+    const husStr = String(Number(husnummer));
+    tekstParts.push(bokstav ? `${husStr}${bokstav}` : husStr);
+  }
+
+  return {
+    id,
+    adressetekst: tekstParts.join(" ").trim(),
+    adressenavn,
+    husnummer: husnummer ? Number(husnummer) : undefined,
+    bokstav,
+    bolignummer,
+    adressekode: adressekode ? Number(adressekode) : undefined,
+    kommuneId,
+    bruksenhetIdFraMatrikkelen: bruksenhetId,
+    adresseIdFraMatrikkelen: adresseIdMatrikkel,
+  };
 }

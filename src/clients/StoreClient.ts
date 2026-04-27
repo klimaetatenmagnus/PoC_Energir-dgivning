@@ -4,14 +4,17 @@
 // -----------------------------------------------------------------------------
 
 import axios, { AxiosRequestConfig } from "axios";
+import https from "https";
 import { XMLParser } from "fast-xml-parser";
 import proj4 from "proj4";
 import { dumpSoap, type SoapPhase } from "../utils/soapDump.ts";
 import { randomUUID } from "crypto";
 import { mapBygningstypeId, getBygningstypeBeskrivelse } from "../utils/bygningstypeMapping.ts";
 import type { BruksenhetInfo } from "./BruksenhetClient.ts";
-import "../../loadEnv.ts"; 
+import "../../loadEnv.ts";
 import { debugLog, warnLog } from "../../services/building-info-service/logging.ts";
+
+const matrikkelKeepAlive = new https.Agent({ keepAlive: true, maxSockets: 100 });
 
 /* ─────────────────────────── Miljøflagg ─────────────────────────── */
 const LOG_SOAP = process.env.LOG_SOAP === "1";
@@ -566,6 +569,7 @@ export class StoreClient {
           ? { username: this.username, password: this.password }
           : undefined,
       validateStatus: () => true,
+      httpsAgent: matrikkelKeepAlive,
     };
 
     if (LOG_SOAP)

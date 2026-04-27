@@ -6,9 +6,12 @@
  * rett på SOAP-responsen og ekstraherer det vi trenger med regex.
  */
 import axios from "axios";
+import https from "https";
 import { matrikkelEndpoint } from "../../src/utils/endpoints.ts";
 import { StoreClient } from "../../src/clients/StoreClient.ts";
 import type { MatrikkelContext } from "../../src/clients/MatrikkelClient.ts";
+
+const bruksenhetKeepAlive = new https.Agent({ keepAlive: true, maxSockets: 100 });
 
 const CTX_XML = `
   <dom:matrikkelContext xmlns:dom="http://matrikkel.statkart.no/matrikkelapi/wsapi/v1/domain">
@@ -69,6 +72,7 @@ export class MatrikkelBruksenhetHelper {
       auth: { username: this.username, password: this.password },
       timeout: 30_000,
       validateStatus: () => true,
+      httpsAgent: bruksenhetKeepAlive,
     });
 
     if (resp.status !== 200) return [];
@@ -104,19 +108,23 @@ export class MatrikkelBruksenhetHelper {
   ): Promise<{ byggIdCount: Map<number, number>; misses: number }> {
     const byggIdCount = new Map<number, number>();
     let misses = 0;
-    for (let i = 0; i < bruksenhetIds.length; i += concurrency) {
-      const batch = bruksenhetIds.slice(i, i + concurrency);
-      const results = await Promise.all(
-        batch.map((id) => this.getBruksenhet(id))
-      );
-      for (const r of results) {
-        if (r?.byggId) {
-          byggIdCount.set(r.byggId, (byggIdCount.get(r.byggId) ?? 0) + 1);
-        } else {
-          misses++;
+    let next = 0;
+    const workers = Array.from(
+      { length: Math.min(concurrency, bruksenhetIds.length) },
+      async () => {
+        while (true) {
+          const i = next++;
+          if (i >= bruksenhetIds.length) return;
+          const r = await this.getBruksenhet(bruksenhetIds[i]);
+          if (r?.byggId) {
+            byggIdCount.set(r.byggId, (byggIdCount.get(r.byggId) ?? 0) + 1);
+          } else {
+            misses++;
+          }
         }
-      }
-    }
+      },
+    );
+    await Promise.all(workers);
     return { byggIdCount, misses };
   }
 }

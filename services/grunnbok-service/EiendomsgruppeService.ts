@@ -401,27 +401,23 @@ async function aggregateForBorettslagInternal(
     await registerenhetService.findBorettslagsandelerForBorettslag(borettslagId);
   if (andelIds.length === 0) throw new Error("Ingen andeler i borettslaget");
 
-  // Kombinert pipeline: andel → adresse → bruksenhetId. Tidligere ble dette
-  // gjort som to separate serielle batch-loops (20 parallelle per runde), som
-  // betyr at Oppsal-borettslaget (598 andeler) tok ~30 runder × 2 faser =
-  // 60 sekvensielle SOAP-runder. Her holder vi 50 fetches inn-flight av
-  // gangen, med én gjennomgående pipeline.
-  let antallAktive = 0;
-  const resolved = await pMap(
-    andelIds,
-    async (id) => {
-      const andel = await storeService!.getBorettslagsandel(id);
-      if (andel.utgaatt) return null;
-      antallAktive++;
-      if (!andel.adresseId) return null;
-      const adresse = await storeService!.getAdresse(andel.adresseId);
-      return adresse.bruksenhetIdFraMatrikkelen
-        ? Number(adresse.bruksenhetIdFraMatrikkelen)
-        : null;
-    },
-    50,
-  );
-  const bruksenhetIds = new Set<number>(resolved.filter((x): x is number => x !== null));
+  // Pipeline: andel → adresse → bruksenhetId via Grunnbok getObjects (batch
+  // SOAP, opptil 200 IDer per kall). Kollapser N andel-kall + N adresse-kall
+  // til typisk 4 SOAP-kall totalt.
+  const andeler = await storeService!.getBorettslagsandelerBatch(andelIds);
+  const aktive = andeler.filter((a) => !a.utgaatt);
+  const antallAktive = aktive.length;
+  const adresseIds = aktive
+    .map((a) => a.adresseId)
+    .filter((x): x is string => Boolean(x));
+
+  const adresser = await storeService!.getAdresserBatch(adresseIds);
+  const bruksenhetIds = new Set<number>();
+  for (const a of adresser) {
+    if (a.bruksenhetIdFraMatrikkelen) {
+      bruksenhetIds.add(Number(a.bruksenhetIdFraMatrikkelen));
+    }
+  }
 
   // Matrikkel: bruksenhetId → byggId
   const { byggIdCount, misses } = await bruksenhetHelper.mapBruksenhetIdsToByggIds(
