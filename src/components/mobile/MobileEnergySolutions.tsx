@@ -220,10 +220,19 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   });
   const [mobileViewMode, setMobileViewMode] = React.useState<'enkelt' | 'gruppe'>('enkelt');
   React.useEffect(() => {
-    if (!mobileEiendomsgruppe.shouldShowToggle && mobileViewMode !== 'enkelt') {
+    if (mobileViewMode === 'enkelt') return;
+    const groupAvailable =
+      mobileEiendomsgruppe.shouldShowToggle &&
+      (mobileEiendomsgruppe.aggregat !== null || mobileEiendomsgruppe.aggregatLoading);
+    if (!groupAvailable) {
       setMobileViewMode('enkelt');
     }
-  }, [mobileEiendomsgruppe.shouldShowToggle, mobileViewMode]);
+  }, [
+    mobileEiendomsgruppe.shouldShowToggle,
+    mobileEiendomsgruppe.aggregat,
+    mobileEiendomsgruppe.aggregatLoading,
+    mobileViewMode,
+  ]);
   const mobileEiendomsgruppeVisning = React.useMemo(() => {
     if (
       mobileEiendomsgruppe.aggregat &&
@@ -1917,11 +1926,6 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
               viewMode={mobileViewMode}
               eiendomsgruppeVisning={mobileEiendomsgruppeVisning}
               showViewModeToggle={mobileEiendomsgruppe.shouldShowToggle}
-              isAggregatLoading={
-                mobileEiendomsgruppe.shouldShowToggle &&
-                (mobileEiendomsgruppe.aggregatLoading ||
-                  (!mobileEiendomsgruppe.aggregat && !mobileEiendomsgruppe.aggregatError))
-              }
               eiendomsgruppeLoaderNavn={
                 mobileEiendomsgruppe.detection?.type === 'borettslag'
                   ? mobileEiendomsgruppe.detection.navn ?? 'borettslaget'

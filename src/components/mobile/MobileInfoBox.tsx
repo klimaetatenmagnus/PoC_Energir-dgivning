@@ -59,8 +59,6 @@ interface MobileInfoBoxProps {
     byggeaar: Array<number | null>;
     estimatedAnnualConsumptionKWh: number;
   };
-  /** Er aggregat-henting fortsatt i gang? Da vises en loader i toggle-området. */
-  isAggregatLoading?: boolean;
   /** Navn på borettslaget/sameiet vi henter data for (brukes i loader-tekst). */
   eiendomsgruppeLoaderNavn?: string;
   /** Callback når toggle-knappen klikkes (tar inn ny viewMode). */
@@ -106,7 +104,6 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   eiendomsgruppeVisning,
   onToggleViewMode,
   showViewModeToggle = false,
-  isAggregatLoading = false,
   eiendomsgruppeLoaderNavn,
 }) => {
   const isGroupMode = viewMode === 'gruppe' && Boolean(eiendomsgruppeVisning);
@@ -297,7 +294,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
       {/* Adresse og tags */}
       <div className="mobile-info-box__header">
         <h2 className="mobile-info-box__address">{displayAddress}</h2>
-        {showViewModeToggle && isAggregatLoading && (
+        {showViewModeToggle && !eiendomsgruppeVisning && (
           <div className="mobile-info-box__view-toggle mobile-info-box__view-toggle--loading">
             <PktLoader size="small" variant="rainbow" isLoading>
               <span />
@@ -307,7 +304,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
             </span>
           </div>
         )}
-        {showViewModeToggle && !isAggregatLoading && onToggleViewMode && (
+        {showViewModeToggle && eiendomsgruppeVisning && onToggleViewMode && (
           <div className="mobile-info-box__view-toggle">
             <PktButton
               skin="primary"
