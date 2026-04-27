@@ -264,6 +264,12 @@ export class StoreService extends GrunnbokSoapClient {
     const chunks = await this.fetchAllItemChunks(ids, "AdresseId");
     return chunks.map((chunk) => parseAdresseChunk(chunk));
   }
+
+  async getSeksjonerBatch(ids: readonly string[]): Promise<Seksjon[]> {
+    if (ids.length === 0) return [];
+    const chunks = await this.fetchAllItemChunks(ids, "SeksjonId");
+    return chunks.map((chunk) => parseSeksjonChunk(chunk));
+  }
 }
 
 /** Splitter <return>...<item>...</item><item>...</item>...</return> til én streng per item. */
@@ -348,5 +354,29 @@ function parseAdresseChunk(chunk: string): Adresse {
     kommuneId,
     bruksenhetIdFraMatrikkelen: bruksenhetId,
     adresseIdFraMatrikkelen: adresseIdMatrikkel,
+  };
+}
+
+function parseSeksjonChunk(chunk: string): Seksjon {
+  const id =
+    extractFirst(chunk, /<id\b[^>]*>\s*<value>(\d+)<\/value>/) ?? "";
+  return {
+    id,
+    kommuneId:
+      extractFirst(chunk, /<ns\d+:kommuneId>\s*<value>(\d+)<\/value>/) ?? "",
+    gaardsnummer: Number(
+      extractFirst(chunk, /<ns\d+:gaardsnummer>(\d+)<\/ns\d+:gaardsnummer>/)
+    ),
+    bruksnummer: Number(
+      extractFirst(chunk, /<ns\d+:bruksnummer>(\d+)<\/ns\d+:bruksnummer>/)
+    ),
+    festenummer: Number(
+      extractFirst(chunk, /<ns\d+:festenummer>(\d+)<\/ns\d+:festenummer>/)
+    ),
+    seksjonsnummer: Number(
+      extractFirst(chunk, /<ns\d+:seksjonsnummer>(\d+)<\/ns\d+:seksjonsnummer>/)
+    ),
+    utgaatt:
+      extractFirst(chunk, /<ns\d+:utgaatt>(\w+)<\/ns\d+:utgaatt>/) === "true",
   };
 }

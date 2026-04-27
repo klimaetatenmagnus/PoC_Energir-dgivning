@@ -478,9 +478,9 @@ async function aggregateForSameieInternal(
   let antallEnheter = 0;
   if (gbMatId) {
     const seksjonIds = await registerenhetService.findSeksjonerFor(gbMatId);
-    const seksjoner = await Promise.all(
-      seksjonIds.map((id) => storeService!.getSeksjon(id))
-    );
+    // Batch via getObjects (én SOAP per 200 IDer) i stedet for én SOAP per seksjon —
+    // tidligere blokkerte Promise.all alt på den tregeste responsen (p95 ~6s).
+    const seksjoner = await storeService!.getSeksjonerBatch(seksjonIds);
     antallEnheter = seksjoner.filter((s) => !s.utgaatt).length;
   }
 
