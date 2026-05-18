@@ -12,6 +12,7 @@ import { Storage } from '@google-cloud/storage';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
 import { metricsRegistry } from '../services/building-info-service/metrics.js';
 import { csvService } from './services/csvService.js';
+import { getSolarCsvService } from './services/solarCsvService.js';
 import { lookupBuildingFromEnovaData } from './services/districtStatisticsService.js';
 import { energyRatingService } from './services/energyRatingService.js';
 import { sjekkGulListe, sjekkGulListeMedGnrBnr } from './services/gul-liste-service.js';
@@ -1083,6 +1084,48 @@ async function handleSolarProxy(req: express.Request, res: express.Response): Pr
     res.status(502).json({ error: 'Failed to proxy solar service' });
   }
 }
+
+/**
+ * CSV-først solar-oppslag per bygningsnummer. Bruker samme PBE WFS-snapshot
+ * og samme filter-formel som sameie-aggregatet, slik at enkeltadresse og
+ * sameie gir identisk besparelse for samme bygg. Fall-through til live
+ * PBE Solkart (via proxyen under) håndteres av kalleren ved 404.
+ */
+app.get('/api/solar/bygning/:bygningsnummer', async (req, res) => {
+  const raw = req.params.bygningsnummer;
+  const bnr = Number(raw);
+  if (!Number.isFinite(bnr) || bnr <= 0) {
+    res.status(400).json({ error: 'Invalid bygningsnummer', value: raw });
+    return;
+  }
+  try {
+    const csvSvc = getSolarCsvService();
+    await csvSvc.waitForReady();
+    const agg = csvSvc.getForBygningsnummer(bnr);
+    if (!agg) {
+      res.status(404).json({ error: 'Not found in solar CSV', bygningsnummer: bnr });
+      return;
+    }
+    res.json({
+      takflater: agg.takflater.map((t) => ({
+        tak_id: t.tak_id,
+        bygg_id: null,
+        area_m2: t.area_m2,
+        irr_kwh_m2_yr: t.irr_kwh_m2_yr,
+        kWh_tot: t.area_m2 * t.irr_kwh_m2_yr,
+      })),
+      takAreal_m2: agg.takAreal_m2,
+      sol_kwh_m2_yr: agg.sol_kwh_m2_yr,
+      sol_kwh_bygg_tot: agg.sol_kwh_bygg_tot,
+      filteredSolarEnergy: agg.filteredSolarEnergy,
+      antallTakflaterTotalt: agg.antallTakflaterTotalt,
+      antallTakflaterEtterFilter: agg.antallTakflaterEtterFilter,
+    });
+  } catch (error) {
+    logger.error('Failed to read solar CSV for bygningsnummer', { bnr, error });
+    res.status(500).json({ error: 'Solar CSV lookup failed' });
+  }
+});
 
 app.use('/api/solar', (req, res, next) => {
   if (req.method !== 'GET') {

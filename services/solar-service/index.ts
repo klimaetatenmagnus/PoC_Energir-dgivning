@@ -32,7 +32,11 @@ import type {
   WfsFeature,
   WfsQueryParams,
 } from './types.js';
-import { getSolarCsvService, SOLAR_FILTER_DEFAULTS } from '../../src/services/solarCsvService.js';
+import { getSolarCsvService } from '../../src/services/solarCsvService.js';
+import {
+  SOLAR_FILTER_DEFAULTS,
+  calculateFilteredSolarEnergy,
+} from '../../src/utils/solarFilter.js';
 
 /* ───────── SRID-definisjoner ─────────────────────────────────────────── */
 proj4.defs('EPSG:32632', '+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs');
@@ -531,16 +535,17 @@ function summariseSurfacesForSelection(takflater: Takflate[]): SurfaceMetrics {
     0
   );
   const avgIrr = sumArea > 0 ? sumPot / sumArea : 0;
-  const filteredEnergy = takflater
-    .filter((surface) => (surface?.irr_kwh_m2_yr ?? 0) > config.minRadiation)
-    .reduce(
-      (sum, surface) =>
-        sum +
-        (Number(surface?.area_m2) || 0) *
-          (Number(surface?.irr_kwh_m2_yr) || 0) *
-          config.solarPanelEfficiency,
-      0
-    );
+  const filteredEnergy = calculateFilteredSolarEnergy(
+    takflater.map((surface) => ({
+      area_m2: Number(surface?.area_m2) || 0,
+      irr_kwh_m2_yr: Number(surface?.irr_kwh_m2_yr) || 0,
+    })),
+    {
+      ...SOLAR_FILTER_DEFAULTS,
+      minRadiation: config.minRadiation,
+      panelEfficiency: config.solarPanelEfficiency,
+    },
+  );
 
   return {
     count: takflater.length,
@@ -988,20 +993,17 @@ const solinnstralingHandler: RequestHandler = async (
     const avgIrr = sumArea ? sumPot / sumArea : null;
     // Ny filter-formel: kun takflater med irr > minRadiation OG area >= minArea,
     // effektiv produksjon = areal × irr × areaCoverage × panelEfficiency.
-    const filteredSolarEnergy = takflater
-      .filter((tak) => {
-        const irr = Number(tak?.irr_kwh_m2_yr) || 0;
-        const area = Number(tak?.area_m2) || 0;
-        return irr > config.minRadiation && area >= SOLAR_FILTER_DEFAULTS.minArea;
-      })
-      .reduce((sum, tak) => {
-        const irr = Number(tak?.irr_kwh_m2_yr) || 0;
-        const area = Number(tak?.area_m2) || 0;
-        return (
-          sum +
-          irr * area * SOLAR_FILTER_DEFAULTS.areaCoverage * config.solarPanelEfficiency
-        );
-      }, 0);
+    const filteredSolarEnergy = calculateFilteredSolarEnergy(
+      takflater.map((tak) => ({
+        area_m2: Number(tak?.area_m2) || 0,
+        irr_kwh_m2_yr: Number(tak?.irr_kwh_m2_yr) || 0,
+      })),
+      {
+        ...SOLAR_FILTER_DEFAULTS,
+        minRadiation: config.minRadiation,
+        panelEfficiency: config.solarPanelEfficiency,
+      },
+    );
 
     const result: SolarApiResponse = {
       reference: config.referenceKwh,

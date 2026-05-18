@@ -3,30 +3,15 @@ import path from 'path';
 import { Storage } from '@google-cloud/storage';
 import { parse } from 'csv-parse/sync';
 import { createLogger } from '../utils/logger.ts';
+import {
+  SOLAR_FILTER_DEFAULTS,
+  calculateFilteredSolarEnergy,
+  type SolarFilterConfig,
+} from '../utils/solarFilter.ts';
+
+export { SOLAR_FILTER_DEFAULTS, type SolarFilterConfig };
 
 const logger = createLogger({ prefix: 'solar-csv-service' });
-
-/**
- * Filterparametre for ny filteredSolarEnergy-formel:
- *   Σ (area × irr × AREA_COVERAGE × PANEL_EFFICIENCY)
- * over takflater der irr > MIN_RADIATION OG area ≥ MIN_AREA.
- *
- * Standardene speiler det som tidligere lå i solar-service config, med
- * tillegg av 20 m²-terskel og 80 %-arealdekning-faktor.
- */
-export const SOLAR_FILTER_DEFAULTS = {
-  minRadiation: 800,
-  minArea: 20,
-  areaCoverage: 0.8,
-  panelEfficiency: 0.2,
-} as const;
-
-export interface SolarFilterConfig {
-  minRadiation: number;
-  minArea: number;
-  areaCoverage: number;
-  panelEfficiency: number;
-}
 
 interface RawSolarRow {
   bygningsnummer: string;
@@ -143,7 +128,6 @@ export class SolarCsvService {
 
     let takAreal = 0;
     let sumKwhTot = 0;
-    let filteredEnergy = 0;
     let antallEtterFilter = 0;
     for (const t of takflater) {
       takAreal += t.area_m2;
@@ -152,14 +136,10 @@ export class SolarCsvService {
         t.irr_kwh_m2_yr > config.minRadiation &&
         t.area_m2 >= config.minArea
       ) {
-        filteredEnergy +=
-          t.area_m2 *
-          t.irr_kwh_m2_yr *
-          config.areaCoverage *
-          config.panelEfficiency;
         antallEtterFilter++;
       }
     }
+    const filteredEnergy = calculateFilteredSolarEnergy(takflater, config);
     const avgIrr = takAreal > 0 ? sumKwhTot / takAreal : 0;
 
     return {

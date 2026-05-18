@@ -26,6 +26,7 @@ import {
   type BuildingResult,
 } from './resultAssembler.ts';
 import { csvService } from '../../src/services/csvService.ts';
+import { calculateFilteredSolarEnergy } from '../../src/utils/solarFilter.ts';
 import {
   startExternalCall,
   type ExternalResultLabel,
@@ -395,6 +396,7 @@ interface SolarResponse {
   sol_kwh_m2_yr?: number;
   sol_kwh_bygg_tot?: number;
   category?: string;
+  filteredSolarEnergy?: number;
 }
 
 export interface SolarData {
@@ -486,26 +488,22 @@ async function fetchSolarData(params: {
           kategori: data.category,
         });
 
-        let filteredSolarEnergy = 0;
-        const minRadiation = 800;
-
-        const solarPanelEfficiency = 0.2;
         const takflater = Array.isArray(data.takflater) ? data.takflater : [];
+        // Stol på upstream verdi (solar-service bruker samme delte formel som
+        // sameie-aggregatet og frontend), med lokal rekalkulering som fallback.
+        const filteredSolarEnergy =
+          typeof data.filteredSolarEnergy === 'number'
+            ? data.filteredSolarEnergy
+            : calculateFilteredSolarEnergy(
+                takflater.map((t) => ({
+                  area_m2: t.area_m2 ?? 0,
+                  irr_kwh_m2_yr: t.irr_kwh_m2_yr ?? 0,
+                })),
+              );
 
         if (takflater.length > 0) {
-          filteredSolarEnergy = takflater
-            .filter((tak) => (tak.irr_kwh_m2_yr ?? 0) > minRadiation)
-            .reduce((sum, tak) => {
-              const irr = tak.irr_kwh_m2_yr ?? 0;
-              const area = tak.area_m2 ?? 0;
-              return sum + irr * area * solarPanelEfficiency;
-            }, 0);
-
           debugLog('☀️ Filtrert solenergi beregning:', {
             totaltAntallFlater: takflater.length,
-            filtrerteFlater: takflater.filter(
-              (tak) => (tak.irr_kwh_m2_yr ?? 0) > minRadiation
-            ).length,
             filteredSolarEnergy: Math.round(filteredSolarEnergy),
           });
         }
