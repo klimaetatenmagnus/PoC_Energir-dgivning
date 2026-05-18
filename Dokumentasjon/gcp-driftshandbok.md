@@ -94,6 +94,27 @@ Følgende secrets er definert og mappes inn i Cloud Run / Cloud Build:
 
 Rotasjon skjer manuelt via Secret Manager; Cloud Build har `roles/secretmanager.secretAccessor`.
 
+**Rotasjonsprosedyre (zero-downtime):**
+
+1. Legg ny secret-versjon inn (gammel forblir aktiv til den disables):
+   ```bash
+   printf '%s' 'NYTT_PASSORD' | \
+     gcloud secrets versions add MATRIKKEL_PASSWORD --data-file=- --project=energiverktoy-poc-1234
+   ```
+2. Bytt passord hos ekstern leverandør (Kartverket / Enova / Grunnbok).
+3. Tving ny Cloud Run-revisjon så `:latest`-referansen plukker opp ny versjon:
+   ```bash
+   bash scripts/force-cloudrun-revision.sh
+   ```
+   (Default: prod + staging i `europe-north1`. Sett `SERVICES=`, `PROJECT=`, `REGION=` for å overstyre.)
+4. Verifiser i logger og UI at API svarer normalt.
+5. Disable gammel versjon (behold i `disabled` så rollback er mulig):
+   ```bash
+   gcloud secrets versions disable <FORRIGE> --secret=MATRIKKEL_PASSWORD --project=energiverktoy-poc-1234
+   ```
+
+Merk: `gcloud run services update --update-secrets=...` krasjer mot dagens `run.googleapis.com/secrets`-annotasjon (krever `/versions/<v>`-suffiks), og `services replace` med uendret `spec.template` lager ingen ny revisjon (dedup). `force-cloudrun-revision.sh` legger en `rotated-at`-label på template for å tvinge fram ny revisjon.
+
 ### 4.4 Service accounts og IAM
 
 - **`cloud-build@energiverktoy-poc-1234.iam.gserviceaccount.com`**Roller: `cloudbuild.builds.editor`, `run.admin`, `artifactregistry.writer`, `secretmanager.secretAccessor`, `iam.serviceAccountUser`, `logging.logWriter`, `storage.objectAdmin`, `compute.loadBalancerAdmin`.
