@@ -8,6 +8,7 @@
 declare global {
   interface Window {
     _paq?: Array<unknown[]>;
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
@@ -27,10 +28,31 @@ export function trackEvent(
   push('trackEvent', category, action, name, value);
 }
 
+/**
+ * Google Ads-konvertering for fullført adresseoppslag.
+ * send_to = konto-ID + label fra konverteringshandlingen «Adresseoppslag» (AW-18244462717).
+ */
+const GADS_ADDRESS_LOOKUP_SEND_TO = 'AW-18244462717/FWlCCN6wt8QcEP3Q0ftD';
+
+/**
+ * Rapporter en Google Ads-konvertering. No-op utenfor produksjon (så dev/test
+ * ikke forurenser konverteringsdataene) og hvis gtag ikke er lastet.
+ */
+function reportGadsConversion(sendTo: string): void {
+  if (
+    import.meta.env.PROD &&
+    typeof window !== 'undefined' &&
+    typeof window.gtag === 'function'
+  ) {
+    window.gtag('event', 'conversion', { send_to: sendTo });
+  }
+}
+
 // ── Forhåndsdefinerte hendelser ──────────────────────────────────────────
 
 export function trackAddressLookup(address: string): void {
   trackEvent('energinokkelen', 'address_lookup', address);
+  reportGadsConversion(GADS_ADDRESS_LOOKUP_SEND_TO);
 }
 
 export function trackResultViewed(address: string, platform: 'desktop' | 'mobile'): void {

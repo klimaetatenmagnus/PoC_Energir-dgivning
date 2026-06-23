@@ -874,10 +874,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", 'https://klimatilskudd.containers.piwik.pro'],
+      scriptSrc: ["'self'", 'https://klimatilskudd.containers.piwik.pro', 'https://www.googletagmanager.com'],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", ...allowedOrigins, 'https://klimatilskudd.piwik.pro'],
+      connectSrc: ["'self'", ...allowedOrigins, 'https://klimatilskudd.piwik.pro', 'https://www.googletagmanager.com', 'https://www.google.com', 'https://googleads.g.doubleclick.net'],
+      frameSrc: ["'self'", 'https://td.doubleclick.net', 'https://www.googletagmanager.com'],
       frameAncestors: ["'self'", 'https://klimaoslo.no', 'https://www.klimaoslo.no'],
     },
   },
