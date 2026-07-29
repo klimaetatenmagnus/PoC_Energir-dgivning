@@ -50,13 +50,15 @@ function reportGadsConversion(sendTo: string): void {
 
 // ── Forhåndsdefinerte hendelser ──────────────────────────────────────────
 
-export function trackAddressLookup(address: string): void {
-  trackEvent('energinokkelen', 'address_lookup', address);
+// Av personvernhensyn sendes aldri gateadresser til Piwik — kun aggregert bydel.
+
+export function trackAddressLookup(): void {
+  trackEvent('energinokkelen', 'address_lookup');
   reportGadsConversion(GADS_ADDRESS_LOOKUP_SEND_TO);
 }
 
-export function trackResultViewed(address: string, platform: 'desktop' | 'mobile'): void {
-  trackEvent('energinokkelen', 'result_viewed', `${platform}:${address}`);
+export function trackResultViewed(platform: 'desktop' | 'mobile', bydel?: string): void {
+  trackEvent('energinokkelen', 'result_viewed', bydel ? `${platform}:${bydel}` : platform);
 }
 
 export function trackTiltakExpanded(tiltakId: string): void {

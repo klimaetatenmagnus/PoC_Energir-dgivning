@@ -293,10 +293,10 @@ export default function App() {
   useEffect(() => {
     if (mode === 'figma-blokk' && result) {
       const platform = isMobileView ? 'mobile' : 'desktop';
-      trackResultViewed(searchValue, platform);
+      trackResultViewed(platform, result.csvData?.bydelsnavn);
       trackPageStep('result', platform);
     }
-  }, [mode, result, isMobileView, searchValue]);
+  }, [mode, result, isMobileView]);
 
   // Bestem audience basert på gulliste-status
   const audienceForTiltak = useMemo(() => {

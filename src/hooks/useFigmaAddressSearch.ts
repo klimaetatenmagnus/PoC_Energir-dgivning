@@ -443,7 +443,7 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
     setError(null);
 
     try {
-      trackAddressLookup(trimmed);
+      trackAddressLookup();
       const lookupResult = await buildingApi.lookupAddress(trimmed);
       setResult(lookupResult);
       beginLandingTransition(getBuildingKind(lookupResult));
