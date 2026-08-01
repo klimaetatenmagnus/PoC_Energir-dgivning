@@ -1205,7 +1205,12 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
 
     const registerRect = () => {
       if (registered) return;
-      const svgEl = buildingIllustrationRef.current?.querySelector('svg');
+      // Må måle primær bygning eksplisitt: sekundær (skjult, translateX(-100%)
+      // scale(0.75)) ligger først i DOM, så en generell 'svg'-query treffer feil
+      // element og overlayet lander til venstre for endelig posisjon.
+      const svgEl = buildingIllustrationRef.current?.querySelector(
+        '.mobile-energy-solutions__building-instance--primary svg'
+      );
       if (svgEl) {
         const rect = svgEl.getBoundingClientRect();
         setTargetRect(kindToRegister, toViewportRect(rect));
