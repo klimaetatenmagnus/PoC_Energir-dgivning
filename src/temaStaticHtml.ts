@@ -9,8 +9,9 @@ import {
   type TemaConfig,
 } from './tema';
 
-/** Kanonisk opphav for canonical/og:url — ASCII-domenet brukes i annonser */
-export const CANONICAL_ORIGIN = 'https://energinokkelen.no';
+/** Kanonisk opphav for canonical/og:url. NB: energinokkelen.no (uten ø) har
+ *  ingen DNS — kun punycode-domenet (energinøkkelen.no) eksisterer. */
+export const CANONICAL_ORIGIN = 'https://xn--energinkkelen-hnb.no';
 
 const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
