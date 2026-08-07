@@ -121,7 +121,25 @@ steps:
       - |
         set -eo pipefail
         frontend_bucket="${_FRONTEND_BUCKET}"
-        gsutil -m rsync -d -r dist "${frontend_bucket}"
+        # backend/-bundlene er serverkode og skal ikke ut i den offentlige frontend-bøtta
+        gsutil -m rsync -d -r -x '^backend/' dist "${frontend_bucket}"
+        gsutil -m rm -r "${frontend_bucket}/backend" 2>/dev/null || true
+
+        # Cache-headere: GCS-metadata overlever ikke rsync, så de settes etter hver sync.
+        # Fingerprintede assets kan caches "for alltid"; HTML må alltid revalideres
+        # slik at nye deploys slår gjennom umiddelbart.
+        gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" "${frontend_bucket}/assets/**"
+        gsutil -m setmeta -h "Cache-Control:public, max-age=604800" "${frontend_bucket}/punkt-assets/**" || true
+        gsutil -m setmeta -h "Cache-Control:no-cache" \
+          "${frontend_bucket}/index.html" \
+          "${frontend_bucket}/solceller/index.html" \
+          "${frontend_bucket}/vinduer/index.html" \
+          "${frontend_bucket}/varmepumpe/index.html" \
+          "${frontend_bucket}/robots.txt" \
+          "${frontend_bucket}/sitemap.xml"
+        gsutil -m setmeta -h "Cache-Control:public, max-age=86400" \
+          "${frontend_bucket}/og-image.png" \
+          "${frontend_bucket}/favicon.ico" || true
         # NB: Content synkes IKKE fra git til GCS.
         # GCS-bøtten (energinokkelen-content) er "master" for innhold.
         # Endringer gjøres via admin-UI og publiseres via wizarden.

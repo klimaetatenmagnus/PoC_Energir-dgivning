@@ -101,9 +101,11 @@ interface FigmaBlokkProps {
   buildingData: AddressLookupResponse;
   onBack: () => void;
   landingSnapshot?: LandingSnapshot | null;
+  /** Tiltak-IDer som forhåndsavhukes (fra temavariant, f.eks. /solceller) */
+  initialCheckedTiltak?: string[];
 }
 
-export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingData, onBack }) => {
+export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buildingData, onBack, initialCheckedTiltak }) => {
   // Speculativ deteksjon + aggregering av borettslag/sameie
   const eiendomsgruppe = useEiendomsgruppe({
     kommunenummer: buildingData.gnr && buildingData.bnr ? '0301' : undefined,
@@ -746,6 +748,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
               onFjernvarmeChange={setFjernvarme}
               viewMode={viewMode}
               aggregatedBuildings={eiendomsgruppe.aggregat?.bygninger}
+              initialCheckedTiltak={initialCheckedTiltak}
             />
           </aside>
 

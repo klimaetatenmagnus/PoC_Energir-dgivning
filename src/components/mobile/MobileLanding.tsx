@@ -5,6 +5,7 @@ import { type AddressSuggestion } from '../../services/buildingApi';
 import { useRotatingLoaderTips } from '../../hooks/useRotatingLoaderTips';
 import { OsloLogo } from '../FigmaBlokk/components/OsloLogo';
 import { MiniSkyline } from './MiniSkyline';
+import { GENERIC_SUBTITLE_MOBILE, type TemaConfig } from '../../tema';
 
 interface MobileLandingProps {
   /**
@@ -34,6 +35,8 @@ interface MobileLandingProps {
   openSuggestions: () => void;
   highlightSuggestion: (index: number) => void;
   clearHighlightedSuggestion: () => void;
+  /** Aktiv temavariant (/solceller m.fl.) — endrer undertittel og H1-struktur */
+  tema?: TemaConfig | null;
 }
 
 export const MobileLanding: React.FC<MobileLandingProps> = ({
@@ -48,11 +51,14 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
   handleInputChange,
   handleSuggestionSelect,
   openSuggestions,
+  tema,
 }) => {
   const { tip: loaderTip, visible: loaderVisible, opacity: loaderOpacity } = useRotatingLoaderTips(loading);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Map AddressSuggestion[] to PktSearchInput's SearchSuggestion[]
+  // Alltid array (aldri undefined): PktSearchInput setter aria-controls="<id>-suggestions"
+  // uansett, og listbox-elementet må finnes i DOM for at verdien skal være gyldig (a11y).
   const pktSuggestions = (showSuggestions && suggestions.length > 0)
     ? suggestions.map((s) => ({
         text: s.adressetekst || s.adresse || '',
@@ -64,7 +70,7 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
           handleSuggestionSelect(s);
         },
       }))
-    : undefined;
+    : [];
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     handleInputChange(e.target.value);
@@ -95,11 +101,18 @@ export const MobileLanding: React.FC<MobileLandingProps> = ({
           />
         </div>
 
-        {/* Tittel */}
-        <h1 className="mobile-landing__title">Energinøkkelen</h1>
-        <p className="mobile-landing__subtitle">
-          Søk på en adresse og se hvor mye du kan spare på energioppgraderinger
-        </p>
+        {/* Tittel — på temavarianter er undertittelen sidens H1 */}
+        {tema ? (
+          <>
+            <p className="mobile-landing__title">Energinøkkelen</p>
+            <h1 className="mobile-landing__subtitle">{tema.subtitle}</h1>
+          </>
+        ) : (
+          <>
+            <h1 className="mobile-landing__title">Energinøkkelen</h1>
+            <p className="mobile-landing__subtitle">{GENERIC_SUBTITLE_MOBILE}</p>
+          </>
+        )}
 
         {/* Søkefelt */}
         <div className="mobile-landing__search-wrapper">

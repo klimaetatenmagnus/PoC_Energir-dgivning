@@ -1,10 +1,7 @@
 // src/App.tsx
-import React, { useState, useCallback, useEffect, useMemo } from "react";
-import { FigmaMainScript } from "./components/FigmaMainScript";
+import React, { Suspense, useState, useCallback, useEffect, useMemo } from "react";
 import { FigmaLanding } from "./components/FigmaBlokk/FigmaLanding";
 import { MobileLanding } from "./components/mobile/MobileLanding";
-import { MobileEnergySolutions } from "./components/mobile/MobileEnergySolutions";
-import { MobileTiltakDetail } from "./components/mobile/MobileTiltakDetail";
 import { TransitionOverlayRenderer } from "./components/TransitionOverlayRenderer";
 import { useFigmaAddressSearch } from "./hooks/useFigmaAddressSearch";
 import { useResponsive } from "./hooks/useResponsive";
@@ -13,6 +10,24 @@ import { fetchSolarData, SolarEnergyData } from "./services/solarEnergyService";
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from "./utils/tekEnergyCalculations";
 import { sjekkGulListeMedGnrBnr } from "./services/gul-liste-service";
 import { trackResultViewed, trackPageStep, trackTiltakExpanded } from "./analytics";
+import { getActiveTema } from "./tema";
+import { TemaSeoSection } from "./components/TemaSeoSection";
+
+// Side 2-komponentene lastes lazy: de trengs først etter adresseoppslag og
+// utgjør en stor del av bundelen. Chunkene prefetches i idle-tid etter mount.
+const importFigmaMainScript = () => import("./components/FigmaMainScript");
+const importMobileEnergySolutions = () => import("./components/mobile/MobileEnergySolutions");
+const importMobileTiltakDetail = () => import("./components/mobile/MobileTiltakDetail");
+
+const FigmaMainScript = React.lazy(() =>
+  importFigmaMainScript().then((m) => ({ default: m.FigmaMainScript }))
+);
+const MobileEnergySolutions = React.lazy(() =>
+  importMobileEnergySolutions().then((m) => ({ default: m.MobileEnergySolutions }))
+);
+const MobileTiltakDetail = React.lazy(() =>
+  importMobileTiltakDetail().then((m) => ({ default: m.MobileTiltakDetail }))
+);
 // Enova bulk-data håndteres internt i MobileEnergySolutions (kun for sammenligningsmodulen)
 
 export default function App() {
@@ -43,6 +58,24 @@ export default function App() {
   } = useFigmaAddressSearch();
 
   const { isMobileView } = useResponsive();
+
+  // Temavariant fra URL (/solceller, /vinduer, /varmepumpe eller ?tema=) — leses én gang
+  const tema = useMemo(() => getActiveTema(), []);
+
+  // Prefetch side 2-chunkene i idle-tid så overgangen etter adresseoppslag er umiddelbar
+  useEffect(() => {
+    const prefetch = () => {
+      void importFigmaMainScript();
+      void importMobileEnergySolutions();
+      void importMobileTiltakDetail();
+    };
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(prefetch, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(prefetch, 2500);
+    return () => window.clearTimeout(id);
+  }, []);
 
   useEffect(() => {
     const BASE_VIEWPORT = { width: 1250, height: 838 };
@@ -308,7 +341,7 @@ export default function App() {
     // Mobil (<768px): Vis MobileEnergySolutions eller MobileTiltakDetail
     if (isMobileView) {
       return (
-        <>
+        <Suspense fallback={overlay}>
           {overlay}
           <MobileEnergySolutions
             searchAddress={searchValue}
@@ -322,6 +355,7 @@ export default function App() {
             audience={audienceForTiltak}
             isUsingEnovaData={isUsingEnovaData}
             isDetailViewActive={!!selectedMobileTiltak}
+            initialCheckedTiltak={tema?.preselectTiltak}
           />
           {selectedMobileTiltak && (
             <MobileTiltakDetail
@@ -332,13 +366,13 @@ export default function App() {
               annualSavingsKwh={selectedMobileTiltakSavings}
             />
           )}
-        </>
+        </Suspense>
       );
     }
 
     // Desktop (>=768px): Vis FigmaMainScript med skalert Figma-design
     return (
-      <>
+      <Suspense fallback={<>{sharedBackground}{overlay}</>}>
         {sharedBackground}
         {overlay}
         <div
@@ -353,9 +387,10 @@ export default function App() {
             buildingData={result}
             onBack={handleBack}
             landingSnapshot={landingSnapshot}
+            initialCheckedTiltak={tema?.preselectTiltak}
           />
         </div>
-      </>
+      </Suspense>
     );
   }
 
@@ -389,7 +424,9 @@ export default function App() {
             openSuggestions={openSuggestions}
             highlightSuggestion={highlightSuggestion}
             clearHighlightedSuggestion={clearHighlightedSuggestion}
+            tema={tema}
           />
+          {tema && <TemaSeoSection tema={tema} opacity={headerFadeOpacity} />}
         </>
       );
     }
@@ -419,7 +456,9 @@ export default function App() {
           clearHighlightedSuggestion={clearHighlightedSuggestion}
           isEnebolig={isEnebolig}
           hasResult={hasResult}
+          tema={tema}
         />
+        {tema && <TemaSeoSection tema={tema} opacity={headerFadeOpacity} />}
       </>
     );
   }

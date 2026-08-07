@@ -22,6 +22,32 @@ pathMatchers:
   - defaultService: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendBuckets/staging-frontend-bucket
     name: staging-matcher
     routeRules:
+      # Annonse-landingssider: egne prerendrede HTML-filer per tema (må ligge
+      # foran catch-all på prioritet 1000 som rewriter alt til /index.html)
+      - matchRules:
+          - fullPathMatch: /solceller
+          - fullPathMatch: /solceller/
+        priority: 60
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendBuckets/staging-frontend-bucket
+        routeAction:
+          urlRewrite:
+            pathPrefixRewrite: /solceller/index.html
+      - matchRules:
+          - fullPathMatch: /vinduer
+          - fullPathMatch: /vinduer/
+        priority: 61
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendBuckets/staging-frontend-bucket
+        routeAction:
+          urlRewrite:
+            pathPrefixRewrite: /vinduer/index.html
+      - matchRules:
+          - fullPathMatch: /varmepumpe
+          - fullPathMatch: /varmepumpe/
+        priority: 62
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendBuckets/staging-frontend-bucket
+        routeAction:
+          urlRewrite:
+            pathPrefixRewrite: /varmepumpe/index.html
       - matchRules:
           - prefixMatch: /api
         priority: 100
@@ -78,6 +104,32 @@ pathMatchers:
         routeAction:
           urlRewrite:
             pathPrefixRewrite: /index.html
+      # Annonse-landingssider: egne prerendrede HTML-filer per tema (må ligge
+      # foran catch-all på prioritet 1000 som rewriter alt til /index.html)
+      - matchRules:
+          - fullPathMatch: /solceller
+          - fullPathMatch: /solceller/
+        priority: 60
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendBuckets/prod-frontend-bucket
+        routeAction:
+          urlRewrite:
+            pathPrefixRewrite: /solceller/index.html
+      - matchRules:
+          - fullPathMatch: /vinduer
+          - fullPathMatch: /vinduer/
+        priority: 61
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendBuckets/prod-frontend-bucket
+        routeAction:
+          urlRewrite:
+            pathPrefixRewrite: /vinduer/index.html
+      - matchRules:
+          - fullPathMatch: /varmepumpe
+          - fullPathMatch: /varmepumpe/
+        priority: 62
+        service: https://www.googleapis.com/compute/v1/projects/energiverktoy-poc-1234/global/backendBuckets/prod-frontend-bucket
+        routeAction:
+          urlRewrite:
+            pathPrefixRewrite: /varmepumpe/index.html
       - matchRules:
           - prefixMatch: /api
         priority: 100

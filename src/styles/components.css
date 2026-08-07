@@ -1060,7 +1060,8 @@
   right: 1.5rem;
   font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 12px;
-  color: rgba(42, 40, 89, 0.5);
+  /* 0.7 gir 4.98:1 mot #D1F9FF — WCAG AA krever 4.5:1 for liten tekst */
+  color: rgba(42, 40, 89, 0.7);
   text-decoration: none;
   z-index: 10;
 }
@@ -1295,7 +1296,8 @@
   right: 1rem;
   font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 11px;
-  color: rgba(42, 40, 89, 0.5);
+  /* 0.7 gir 4.98:1 mot #D1F9FF — WCAG AA krever 4.5:1 for liten tekst */
+  color: rgba(42, 40, 89, 0.7);
   text-decoration: none;
   z-index: 10;
 }
@@ -1450,4 +1452,58 @@ svg#blokk2_layer, svg#enebolig2_layer {
 .tiltak-arrow--remove {
   animation: tiltak-poof-remove .7s linear forwards;
   animation-delay: 170ms;
+}
+
+/* Skjul PktSearchInputs forslags-listbox når den er tom. Elementet må ligge i
+   DOM hele tiden (aria-controls på søkefeltet peker på det), men skal ikke
+   vises som en tom boks. */
+.pkt-searchinput__suggestions:empty {
+  display: none;
+}
+
+/* ────── Tematisk innhold på annonse-landingssider (/solceller m.fl.) ────── */
+/* Ligger i dokumentflyt etter den fixed-posisjonerte landingen og skyver seg
+   over den ved skrolling (landing har z-index 2, denne 3). */
+
+/* flow-root hindrer at .tema-seo sin margin-top kollapser gjennom #root/body —
+   uten denne registreres React-mount som et stort layout-skift (CLS ≈ 1). */
+#root {
+  display: flow-root;
+}
+.tema-seo {
+  position: relative;
+  z-index: 3;
+  margin-top: 100vh;
+  margin-top: 100dvh;
+  background: var(--pkt-color-grays-white, #fff);
+  border-top: 4px solid var(--pkt-color-brand-dark-blue-1000, #2A2859);
+  transition: opacity 1.5s ease-in-out;
+}
+
+.tema-seo__inner {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+}
+
+.tema-seo__heading {
+  margin: 32px 0 8px;
+  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.3;
+  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
+}
+
+.tema-seo__heading:first-child {
+  margin-top: 0;
+}
+
+.tema-seo__text {
+  margin: 0;
+  font-family: 'Oslo Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--pkt-color-brand-dark-blue-1000, #2A2859);
 }

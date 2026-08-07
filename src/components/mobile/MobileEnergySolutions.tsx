@@ -125,6 +125,8 @@ interface MobileEnergySolutionsProps {
   isUsingEnovaData?: boolean;
   /** Om tiltaksdetalj-visningen er aktiv (skjuler hovedinnhold, beholder footer) */
   isDetailViewActive?: boolean;
+  /** Tiltak-IDer som forhåndsavhukes én gang når katalogen er lastet (fra temavariant, f.eks. /solceller) */
+  initialCheckedTiltak?: string[];
 }
 
 /**
@@ -211,6 +213,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   audience = 'standard',
   isUsingEnovaData: _isUsingEnovaData = false,
   isDetailViewActive = false,
+  initialCheckedTiltak,
 }) => {
   // Borettslag/sameie-deteksjon + aggregat
   const mobileEiendomsgruppe = useEiendomsgruppe({
@@ -597,6 +600,19 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
       canonicalKey: getCanonicalKey(t.id, t.title)
     }));
   }, [isCatalogLoading, filteredTiltak]);
+
+  // Forhåndsavhuk temavariantens tiltak (f.eks. solenergi på /solceller) én gang
+  // når katalogen er lastet. Kun tiltak som faktisk vises for bygget hukes av.
+  const initialTiltakApplied = useRef(false);
+  useEffect(() => {
+    if (initialTiltakApplied.current) return;
+    if (!initialCheckedTiltak?.length || displayTiltak.length === 0) return;
+    initialTiltakApplied.current = true;
+    const valid = initialCheckedTiltak.filter((id) => displayTiltak.some((t) => t.id === id));
+    if (valid.length > 0) {
+      setCheckedItems((prev) => new Set([...prev, ...valid]));
+    }
+  }, [initialCheckedTiltak, displayTiltak]);
 
   // "Velg energioppgraderinger" – alle minus de som er avkrysset i gjennomførte
   // Vinduer-unntak: gjennomført tolags fjerner IKKE vinduer fra nye (trelags er fortsatt tilgjengelig)

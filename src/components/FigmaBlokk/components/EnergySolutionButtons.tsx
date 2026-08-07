@@ -149,6 +149,8 @@ interface EnergySolutionButtonsProps {
   onTiltakInfoChange?: (tiltakInfo: TiltakSavingsInfo[]) => void;
   /** Callback when tiltak selection changes. Uses canonical keys (not display titles) for stability. */
   onSelectionChange?: (activeTiltak: TiltakCanonicalKey[], finalRating?: string | null) => void;
+  /** Tiltak-IDer som forhåndsavhukes én gang når katalogen er lastet (fra temavariant, f.eks. /solceller) */
+  initialCheckedTiltak?: string[];
   /** Audience for tiltak content - determines gul liste status */
   audience?: ContentAudience;
   /** External control for info modal visibility */
@@ -171,7 +173,7 @@ interface EnergySolutionButtonsProps {
   aggregatedBuildings?: EiendomsgruppeBygning[];
 }
 
-export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onTotalSavingsNokChange, onTiltakInfoChange, onSelectionChange, audience = 'standard', showInfoModal: externalShowInfoModal, onShowInfoModalChange, onCompletedSavingsChange, fjernvarme, onFjernvarmeChange, viewMode = 'enkelt', aggregatedBuildings }) => {
+export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ showHeader, isExpanded, onExpand, onSelectSolution, buildingData, yearlyConsumption = '', onTotalSavingsChange, onTotalSavingsNokChange, onTiltakInfoChange, onSelectionChange, audience = 'standard', showInfoModal: externalShowInfoModal, onShowInfoModalChange, onCompletedSavingsChange, fjernvarme, onFjernvarmeChange, viewMode = 'enkelt', aggregatedBuildings, initialCheckedTiltak }) => {
   // Utled gul liste-status fra audience prop (FigmaMainScript er "single source of truth" via PBE-oppslag)
   const erPaaGulListe = audience === 'gulliste';
   // Animasjoner (fadeIn, slideUpFadeIn) er definert i EnergySolutionButtons.css
@@ -372,6 +374,19 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
       canonicalKey: getCanonicalKey(t.id, t.title)
     }));
   }, [isCatalogLoading, filteredTiltak, viewMode, groupUnionTiltak]);
+
+  // Forhåndsavhuk temavariantens tiltak (f.eks. solenergi på /solceller) én gang
+  // når katalogen er lastet. Kun tiltak som faktisk vises for bygget hukes av.
+  const initialTiltakApplied = useRef(false);
+  useEffect(() => {
+    if (initialTiltakApplied.current) return;
+    if (!initialCheckedTiltak?.length || displayTiltak.length === 0) return;
+    initialTiltakApplied.current = true;
+    const valid = initialCheckedTiltak.filter((id) => displayTiltak.some((t) => t.id === id));
+    if (valid.length > 0) {
+      setCheckedItems((prev) => new Set([...prev, ...valid]));
+    }
+  }, [initialCheckedTiltak, displayTiltak]);
 
   // "Velg energioppgraderinger" – alle minus de som er avkrysset i gjennomførte
   // Vinduer-unntak: gjennomført tolags fjerner IKKE vinduer fra nye (trelags er fortsatt tilgjengelig)

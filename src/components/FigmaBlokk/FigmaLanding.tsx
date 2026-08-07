@@ -5,6 +5,7 @@ import { useRotatingLoaderTips } from '../../hooks/useRotatingLoaderTips';
 import { OsloLogo } from './components/OsloLogo';
 import { OsloSkyline } from './components/OsloSkyline';
 import { SKYLINE_LIGHTS_ENABLED } from './constants';
+import { GENERIC_SUBTITLE_DESKTOP, type TemaConfig } from '../../tema';
 
 interface FigmaLandingProps {
   headerFadeOpacity: number;
@@ -26,6 +27,8 @@ interface FigmaLandingProps {
   clearHighlightedSuggestion: () => void;
   isEnebolig: boolean;
   hasResult: boolean;
+  /** Aktiv temavariant (/solceller m.fl.) — endrer undertittel og H1-struktur */
+  tema?: TemaConfig | null;
 }
 
 export const FigmaLanding: React.FC<FigmaLandingProps> = ({
@@ -42,6 +45,7 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
   openSuggestions,
   isEnebolig,
   hasResult,
+  tema,
 }) => {
   const { tip: loaderTip, visible: loaderVisible, opacity: loaderOpacity } = useRotatingLoaderTips(loading);
   const landingForeground = 'var(--pkt-color-brand-dark-blue-1000, #2A2859)';
@@ -52,6 +56,8 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
   // Map AddressSuggestion[] to PktSearchInput's SearchSuggestion[]
   // PktSearchInput is uncontrolled (uses defaultValue), so we must sync the
   // DOM input via ref when a suggestion is selected.
+  // Alltid array (aldri undefined): PktSearchInput setter aria-controls="<id>-suggestions"
+  // uansett, og listbox-elementet må finnes i DOM for at verdien skal være gyldig (a11y).
   const pktSuggestions = (showSuggestions && suggestions.length > 0)
     ? suggestions.map((s) => ({
         text: s.adressetekst || s.adresse || '',
@@ -63,7 +69,7 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
           handleSuggestionSelect(s);
         },
       }))
-    : undefined;
+    : [];
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     handleInputChange(e.target.value);
@@ -96,8 +102,17 @@ export const FigmaLanding: React.FC<FigmaLandingProps> = ({
           </div>
 
           <div className="energiportalen-header">
-            <h1 className="energiportalen-title">Energinøkkelen</h1>
-            <p className="energiportalen-subtitle">Søk opp adressen din, og se hvor mye du kan spare på energioppgraderinger</p>
+            {tema ? (
+              <>
+                <p className="energiportalen-title">Energinøkkelen</p>
+                <h1 className="energiportalen-subtitle">{tema.subtitle}</h1>
+              </>
+            ) : (
+              <>
+                <h1 className="energiportalen-title">Energinøkkelen</h1>
+                <p className="energiportalen-subtitle">{GENERIC_SUBTITLE_DESKTOP}</p>
+              </>
+            )}
           </div>
 
           <div className="landing__search">
