@@ -145,6 +145,17 @@ pathMatchers:
         routeAction:
           urlRewrite:
             hostRewrite: energinokkelen-prod-168751968131.europe-north1.run.app
+      # Adminverktøyet finnes bare på staging-domenet. Uten redirect rendrer
+      # SPA-en admin-UI-et på prod, men /admin/api/* faller i bucketen (HTML-404).
+      # 302 (ikke 301) fordi en egen prod-admin-tjeneste er planlagt.
+      - matchRules:
+          - prefixMatch: /admin
+        priority: 250
+        urlRedirect:
+          hostRedirect: staging.xn--energinkkelen-hnb.no
+          httpsRedirect: true
+          redirectResponseCode: FOUND
+          stripQuery: false
       - matchRules:
           - fullPathMatch: /metrics
         priority: 300
