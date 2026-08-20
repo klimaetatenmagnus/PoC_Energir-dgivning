@@ -1,0 +1,957 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slik regner Energinøkkelen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f5f4fa;
+    --surface-2: #f8f0dd;
+    --border: #dedceb;
+    --border-strong: #b9b7d0;
+    --text: #2c2c2c;
+    --muted: #5d5c78;
+    --ink: #2a2859;
+    --accent: #1f42aa;
+    --accent-soft: #dff6fc;
+    --accent-soft-text: #0f3a55;
+    --warn-bg: #fdf1d6;
+    --warn-border: #f9c66b;
+    --code-bg: #efeef7;
+    --rom: #d85a46;
+    --tap: #1f42aa;
+    --el: #c8921c;
+    --shadow: 0 1px 2px rgba(42, 40, 89, 0.06), 0 6px 20px rgba(42, 40, 89, 0.06);
+    --font-body: "Oslo Sans", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15142a;
+      --surface: #1f1e3a;
+      --surface-2: #2a2542;
+      --border: #36355c;
+      --border-strong: #55547f;
+      --text: #e9e8f4;
+      --muted: #aeadcb;
+      --ink: #dedbff;
+      --accent: #8fd3ff;
+      --accent-soft: #1c3650;
+      --accent-soft-text: #c9ecff;
+      --warn-bg: #3a3020;
+      --warn-border: #c89a44;
+      --code-bg: #26254a;
+      --rom: #ff8d80;
+      --tap: #8fb0ff;
+      --el: #f9c66b;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15142a;
+    --surface: #1f1e3a;
+    --surface-2: #2a2542;
+    --border: #36355c;
+    --border-strong: #55547f;
+    --text: #e9e8f4;
+    --muted: #aeadcb;
+    --ink: #dedbff;
+    --accent: #8fd3ff;
+    --accent-soft: #1c3650;
+    --accent-soft-text: #c9ecff;
+    --warn-bg: #3a3020;
+    --warn-border: #c89a44;
+    --code-bg: #26254a;
+    --rom: #ff8d80;
+    --tap: #8fb0ff;
+    --el: #f9c66b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 3px solid var(--accent); outline-offset: 2px;
+  }
+  h1, h2, h3, h4 { color: var(--ink); line-height: 1.2; margin: 0; text-wrap: balance; font-weight: 700; }
+  h1 { font-size: clamp(2rem, 4vw, 2.75rem); letter-spacing: -0.01em; }
+  h2 { font-size: 1.65rem; letter-spacing: -0.005em; }
+  h3 { font-size: 1.2rem; }
+  h4 { font-size: 1rem; }
+  p { margin: 0; }
+  code, .mono { font-family: var(--font-mono); font-size: 0.92em; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
+
+  .page {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 5rem;
+    gap: 2rem;
+  }
+  @media (min-width: 980px) {
+    .page { grid-template-columns: 230px minmax(0, 1fr); gap: 3rem; padding-top: 3rem; }
+  }
+
+  /* Innholdsfortegnelse */
+  .toc { font-size: 0.9rem; }
+  @media (min-width: 980px) {
+    .toc { position: sticky; top: 1.5rem; align-self: start; max-height: calc(100vh - 3rem); overflow-y: auto; }
+  }
+  .toc-title { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.6rem; font-weight: 700; }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+  .toc li a { display: block; padding: 0.3rem 0.6rem; border-left: 2px solid var(--border); color: var(--text); text-decoration: none; }
+  .toc li a:hover { border-left-color: var(--accent); color: var(--accent); }
+  .toc li.sub a { padding-left: 1.4rem; color: var(--muted); }
+  .toc li.group > span { display: block; padding: 0.7rem 0.6rem 0.2rem; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  @media (max-width: 979px) {
+    .toc ol { flex-direction: row; flex-wrap: wrap; gap: 0.35rem; }
+    .toc li a { border: 1px solid var(--border); border-radius: 999px; padding: 0.25rem 0.7rem; }
+    .toc li.group > span { display: none; }
+    .toc li.sub a { padding-left: 0.7rem; color: var(--text); }
+  }
+
+  main { min-width: 0; display: flex; flex-direction: column; gap: 3.5rem; }
+  .prose { max-width: 70ch; }
+  .prose > * + * { margin-top: 1rem; }
+  section > * + * { margin-top: 1.25rem; }
+  section > h2 + p, section > h2 + .prose { margin-top: 0.9rem; }
+  .lede { font-size: 1.2rem; color: var(--muted); max-width: 62ch; line-height: 1.5; }
+
+  .eyebrow { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 0.5rem; display: block; }
+  header.hero { display: flex; flex-direction: column; gap: 1rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; font-size: 0.85rem; color: var(--muted); }
+  .hero-meta span b { color: var(--text); font-weight: 700; }
+
+  .two-outputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+  .output-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem 1.25rem; }
+  .output-card h3 { font-size: 1.05rem; margin-bottom: 0.35rem; }
+  .output-card p { font-size: 0.95rem; color: var(--muted); }
+
+  /* Flytdiagram */
+  .flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem; counter-reset: flow; }
+  .flow-node { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.8rem 0.9rem 0.9rem; min-height: 118px; counter-increment: flow; }
+  .flow-node::before { content: counter(flow); font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent); font-weight: 600; display: block; margin-bottom: 0.25rem; }
+  .flow-node b { display: block; color: var(--ink); font-size: 0.98rem; line-height: 1.25; margin-bottom: 0.3rem; }
+  .flow-node span { font-size: 0.82rem; color: var(--muted); line-height: 1.35; display: block; }
+  .flow-node.emph { background: var(--accent-soft); border-color: transparent; }
+  .flow-node.emph b { color: var(--accent-soft-text); }
+  .flow-node.emph span { color: var(--accent-soft-text); opacity: 0.85; }
+
+  /* Tabeller */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; min-width: 520px; }
+  thead th { text-align: left; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 0.7rem 0.85rem; border-bottom: 1px solid var(--border-strong); background: var(--surface); white-space: nowrap; }
+  tbody td, tbody th { padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody th { text-align: left; font-weight: 700; color: var(--ink); }
+  tbody tr:last-child td, tbody tr:last-child th { border-bottom: none; }
+  td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.dim { color: var(--muted); }
+  td.none { color: var(--muted); text-align: center; }
+  .table-caption { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+  .table-wrap.compact table { font-size: 0.85rem; }
+  .table-wrap.compact tbody td, .table-wrap.compact tbody th { padding: 0.45rem 0.65rem; }
+
+  /* Formel */
+  .formula { font-family: var(--font-mono); font-size: 0.98rem; background: var(--code-bg); border-left: 3px solid var(--accent); padding: 0.85rem 1rem; border-radius: 0 8px 8px 0; overflow-x: auto; white-space: pre; line-height: 1.6; }
+  .formula small { color: var(--muted); font-size: 0.85em; }
+
+  /* Callouts */
+  .note { background: var(--surface-2); border-radius: 10px; padding: 0.9rem 1.1rem; font-size: 0.95rem; max-width: 75ch; }
+  .note.warn { background: var(--warn-bg); border: 1px solid var(--warn-border); }
+  .note b { color: var(--ink); }
+  .note + .note { margin-top: 0.75rem; }
+
+  /* Steg-lister */
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; max-width: 75ch; }
+  .steps li { display: grid; grid-template-columns: 2rem 1fr; gap: 0.6rem; align-items: baseline; }
+  .steps li .k { font-family: var(--font-mono); color: var(--accent); font-weight: 600; font-size: 0.85rem; }
+  .steps li b { color: var(--ink); }
+  ul.plain { margin: 0; padding-left: 1.2rem; max-width: 75ch; }
+  ul.plain li + li { margin-top: 0.35rem; }
+
+  /* TEK-tidslinje */
+  .timeline { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; font-size: 0.8rem; }
+  .timeline div { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.4rem; text-align: center; }
+  .timeline div b { display: block; color: var(--ink); font-family: var(--font-mono); font-size: 0.85rem; }
+  .timeline div span { color: var(--muted); display: block; font-size: 0.74rem; }
+  @media (max-width: 700px) { .timeline { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+  /* Karakter-badges */
+  .grade { display: inline-flex; align-items: center; justify-content: center; min-width: 2rem; height: 2rem; padding: 0 0.5rem; border-radius: 6px; font-weight: 700; font-family: var(--font-mono); color: #fff; }
+  .grade.big { min-width: 3rem; height: 3rem; font-size: 1.5rem; border-radius: 8px; }
+  .g-A { background: #1a7f37; } .g-B { background: #4c9a2a; } .g-C { background: #9cb51e; color: #1a1a1a; }
+  .g-D { background: #e6b800; color: #1a1a1a; } .g-E { background: #ef8a17; color: #1a1a1a; } .g-F { background: #e2571e; } .g-G { background: #c62828; }
+  .scale { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+  .scale .grade { min-width: 3.2rem; }
+  .scale small { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); margin-left: 0.15rem; }
+
+  /* Stablet søyle */
+  .bar { display: flex; height: 28px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); background: var(--surface); }
+  .bar div { display: flex; align-items: center; justify-content: center; color: #fff; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600; min-width: 0; overflow: hidden; white-space: nowrap; }
+  .bar .b-rom { background: var(--rom); } .bar .b-tap { background: var(--tap); } .bar .b-el { background: var(--el); color: #1a1a1a; }
+  .legend { display: flex; gap: 1.2rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
+  .legend i { display: inline-block; width: 0.8em; height: 0.8em; border-radius: 3px; margin-right: 0.35em; vertical-align: -0.05em; }
+  .legend .b-rom { background: var(--rom); } .legend .b-tap { background: var(--tap); } .legend .b-el { background: var(--el); }
+  .bar-row { display: grid; grid-template-columns: 9rem 1fr; gap: 0.75rem; align-items: center; font-size: 0.9rem; }
+  .bar-row + .bar-row { margin-top: 0.5rem; }
+  .bar-row .lbl { color: var(--muted); text-align: right; }
+  @media (max-width: 560px) { .bar-row { grid-template-columns: 1fr; gap: 0.25rem; } .bar-row .lbl { text-align: left; } }
+
+  /* Eksempel */
+  .example { border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.4rem; background: var(--surface); }
+  .example h3 { margin-bottom: 0.75rem; }
+  .example-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem 1.25rem; }
+  .kv { display: flex; flex-direction: column; gap: 0.1rem; }
+  .kv .k { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .kv .v { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 1.15rem; color: var(--ink); font-weight: 600; }
+  .kv .v small { font-size: 0.75rem; color: var(--muted); font-weight: 400; margin-left: 0.25rem; }
+
+  /* Kalkulator */
+  .calc { border: 1px solid var(--border-strong); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+  .calc-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 860px) { .calc-grid { grid-template-columns: 340px minmax(0, 1fr); } }
+  .calc-form { background: var(--surface); padding: 1.25rem 1.4rem; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 1.1rem; }
+  @media (min-width: 860px) { .calc-form { border-bottom: none; border-right: 1px solid var(--border); } }
+  .calc-out { padding: 1.25rem 1.4rem; display: flex; flex-direction: column; gap: 1.25rem; background: var(--bg); }
+  .field { display: flex; flex-direction: column; gap: 0.35rem; }
+  .field > label, .field > .lbl { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .field input[type="number"] { font: inherit; font-family: var(--font-mono); padding: 0.45rem 0.6rem; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--bg); color: var(--text); width: 100%; max-width: 200px; }
+  .seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden; }
+  .seg label { padding: 0.4rem 0.8rem; font-size: 0.9rem; cursor: pointer; background: var(--bg); color: var(--text); }
+  .seg label:has(input:checked) { background: var(--ink); color: #fff; }
+  .seg label:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: -3px; }
+  .seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .check { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.95rem; cursor: pointer; }
+  .check input { margin-top: 0.3rem; accent-color: var(--accent); width: 1rem; height: 1rem; flex: none; }
+  .check.disabled { opacity: 0.5; cursor: not-allowed; }
+  .check .why { display: block; font-size: 0.78rem; color: var(--muted); }
+  .subopts { margin: 0.2rem 0 0.2rem 1.6rem; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .subopts label { font-size: 0.82rem; border: 1px solid var(--border-strong); border-radius: 999px; padding: 0.15rem 0.6rem; cursor: pointer; background: var(--bg); }
+  .subopts label:has(input:checked) { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .subopts label:has(input:disabled) { opacity: 0.45; cursor: not-allowed; }
+  .subopts input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .tiltak-list { display: flex; flex-direction: column; gap: 0.55rem; }
+  .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.9rem 1.25rem; }
+  .stat .k { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; display: block; }
+  .stat .v { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 1.5rem; color: var(--ink); font-weight: 600; line-height: 1.2; display: flex; align-items: center; gap: 0.5rem; }
+  .stat .v small { font-size: 0.8rem; color: var(--muted); font-weight: 400; }
+  .arrow { color: var(--muted); font-size: 1.1rem; }
+  .per-tiltak { border-top: 1px solid var(--border); padding-top: 0.9rem; }
+  .per-tiltak table { min-width: 0; }
+  .calc-out .hint { font-size: 0.85rem; color: var(--muted); }
+
+  .src-list { display: grid; gap: 0.4rem; font-size: 0.9rem; max-width: 75ch; }
+  .src-list div { display: grid; grid-template-columns: 10rem 1fr; gap: 0.75rem; }
+  .src-list div b { color: var(--ink); }
+  @media (max-width: 560px) { .src-list div { grid-template-columns: 1fr; gap: 0.1rem; } }
+
+  footer { border-top: 1px solid var(--border); padding-top: 1.25rem; font-size: 0.85rem; color: var(--muted); max-width: 75ch; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <nav class="toc" aria-label="Innhold">
+    <div class="toc-title">Innhold</div>
+    <ol>
+      <li><a href="#oversikt">Oversikt</a></li>
+      <li><a href="#datagrunnlag">Datagrunnlag</a></li>
+      <li class="group"><span>Energiforbruk</span></li>
+      <li class="sub"><a href="#steg1">1 · Tre nøkkeltall om boligen</a></li>
+      <li class="sub"><a href="#steg2">2 · Byggeår → TEK-periode</a></li>
+      <li class="sub"><a href="#steg3">3 · Estimert årsforbruk</a></li>
+      <li class="sub"><a href="#steg4">4 · Estimert energikarakter og fjernvarme</a></li>
+      <li class="sub"><a href="#steg5">5 · Forbruket deles i tre</a></li>
+      <li class="group"><span>Effekt av tiltak</span></li>
+      <li class="sub"><a href="#steg6">6 · Besparelse per tiltak</a></li>
+      <li class="sub"><a href="#steg7">7 · Flere tiltak sammen</a></li>
+      <li class="sub"><a href="#sol">8 · Solenergi</a></li>
+      <li class="sub"><a href="#kroner">9 · Fra kWh til kroner</a></li>
+      <li class="sub"><a href="#nykarakter">10 · Ny karakter og gjennomførte tiltak</a></li>
+      <li class="group"><span>Rundt modellen</span></li>
+      <li class="sub"><a href="#hvilke">Hvilke tiltak vises</a></li>
+      <li class="sub"><a href="#naboen">Sammenligning med nabolaget</a></li>
+      <li class="sub"><a href="#borettslag">Borettslag og sameier</a></li>
+      <li class="sub"><a href="#provselv">Prøv regnestykket selv</a></li>
+      <li class="sub"><a href="#forbehold">Forbehold</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <span class="eyebrow">Energinøkkelen · beregningsmodell</span>
+      <h1>Slik regner Energinøkkelen</h1>
+      <p class="lede">Energinøkkelen måler ingenting. Den anslår boligens energibruk ut fra tre offentlige kjennetegn ved bygget, og regner effekten av hvert tiltak som en andel av det anslaget. Denne siden forklarer hvilke data som brukes og hvordan tallene henger sammen.</p>
+      <div class="hero-meta">
+        <span>Gjelder <b>energinokkelen.no</b></span>
+        <span>Målgruppe <b>kolleger, partnere og andre som vil forstå tallene</b></span>
+        <span>Status <b>speiler løsningen per august 2026</b></span>
+      </div>
+    </header>
+
+    <section id="oversikt">
+      <h2>Oversikt</h2>
+      <p class="prose">Alt starter med en adresse og ender i to svar: <em>hvor mye energi boligen antagelig bruker</em>, og <em>hvor mye hvert tiltak kan spare</em>. Mellom de to ligger en kort kjede av oppslag og enkle regnestykker.</p>
+      <div class="flow" role="list">
+        <div class="flow-node" role="listitem"><b>Adresse</b><span>Brukeren skriver inn en adresse i Oslo. Geonorge gir gårds- og bruksnummer.</span></div>
+        <div class="flow-node" role="listitem"><b>Oppslag i registre</b><span>Matrikkelen, Enova, Solkart og Gul liste hentes parallelt.</span></div>
+        <div class="flow-node" role="listitem"><b>Tre nøkkeltall</b><span>Byggeår, bruksareal og bygningstype (småhus eller blokk).</span></div>
+        <div class="flow-node" role="listitem"><b>TEK-periode</b><span>Byggeåret oversettes til hvilken byggteknisk forskrift huset ble bygget etter.</span></div>
+        <div class="flow-node emph" role="listitem"><b>Forbruk og karakter</b><span>kWh/m² for TEK-perioden × areal. Karakter A–G fra kWh/m².</span></div>
+        <div class="flow-node" role="listitem"><b>Tiltak</b><span>Hvert tiltak har en tabellverdi for hvor stor andel av forbruket som blir igjen.</span></div>
+        <div class="flow-node emph" role="listitem"><b>Besparelse</b><span>kWh, kroner (1,10 kr/kWh) og ny karakter. Sol legges til som produksjon.</span></div>
+      </div>
+      <div class="two-outputs">
+        <div class="output-card">
+          <h3>Det viktigste å vite</h3>
+          <p>Alle besparelser regnes ut fra det <b>estimerte</b> forbruket – aldri fra Enovas energiattest. Estimatet avhenger bare av byggeår, areal og bygningstype. Brukeren kan rette disse tre tallene (og selve forbruket), og alt regnes om.</p>
+        </div>
+        <div class="output-card">
+          <h3>Hvor tallene kommer fra</h3>
+          <p>Prosentsatsene og kWh/m²-verdiene er hentet fra en modell utarbeidet av Multiconsult med Enova-tall («Logikk og input til modellen»). Energinøkkelen legger ikke til egne antakelser utover strømpris og solcelle-forutsetninger.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="datagrunnlag">
+      <h2>Datagrunnlag</h2>
+      <p class="prose">Løsningen kombinerer sju kilder. De fire første beskriver boligen; de tre siste er selve regnemodellen og antakelsene rundt den.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Kilde</th><th>Eier</th><th>Hva hentes</th><th>Brukes til</th></tr></thead>
+          <tbody>
+            <tr><th>Geonorge adresse-API</th><td>Kartverket</td><td>Gårds-/bruksnummer, koordinater, bydel</td><td>Finne riktig eiendom og bygg</td></tr>
+            <tr><th>Matrikkelen</th><td>Kartverket</td><td>Byggeår, bruksareal, bygningstype (SSB-kode), seksjoner. Både levende SOAP-API og et lokalt Oslo-uttrekk (2023) som slås opp først</td><td>De tre nøkkeltallene i steg 1</td></tr>
+            <tr><th>Enova energimerke-API</th><td>Enova</td><td>Energiattest: karakter, oppvarmingskarakter, beregnet levert energi</td><td>Reservekilde for areal og byggeår; <b>ikke</b> brukt til estimatet. Vises som referanse</td></tr>
+            <tr><th>Enova bulk-data (alle attester)</th><td>Enova</td><td>kWh/m² og karakter for ca. 88 500 Oslo-boliger, aggregert per bydel og delbydel</td><td>«Sammenlign deg med nabolaget»</td></tr>
+            <tr><th>Solkart</th><td>Plan- og bygningsetaten</td><td>Takflater med areal og årlig solinnstråling (kWh/m²)</td><td>Solenergi-potensial</td></tr>
+            <tr><th>Gul liste</th><td>Byantikvaren / PBE</td><td>Om eiendommen er bevaringsverdig</td><td>Begrenser vindustiltak til tolags glass, justerer tekster</td></tr>
+            <tr><th>Multiconsult-modellen</th><td>Multiconsult / Enova</td><td>kWh/m² per TEK-periode og bygningstype, fordeling på romoppvarming/tappevann/el, besparelsesrater per tiltak</td><td>Steg 2–7</td></tr>
+            <tr><th>Faste antakelser</th><td>Klimaetaten</td><td>Strømpris 1,10 kr/kWh; solcelle-dekning 80 % og virkningsgrad 20 %; 70 % av solstrøm fra småhus selges til halv pris</td><td>Steg 8–9</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="steg1">
+      <span class="eyebrow">Energiforbruk · steg 1</span>
+      <h2>Tre nøkkeltall om boligen</h2>
+      <p class="prose">Hele estimatet hviler på byggeår, bruksareal og bygningstype. Kildene er ikke alltid enige, så løsningen har en fast prioritering for hvert tall, og alle verdier brukeren ser kan rettes manuelt.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nøkkeltall</th><th>1. valg</th><th>2. valg</th><th>3. valg</th><th>Merknad</th></tr></thead>
+          <tbody>
+            <tr><th>Bruksareal</th><td>Matrikkel-uttrekk (Oslo 2023)</td><td>Enova-attest</td><td>Matrikkel-API</td><td>9999/99999 m² betyr «ukjent» i Matrikkelen og forkastes. For seksjonerte eneboliger uten eget areal brukes hele byggets areal.</td></tr>
+            <tr><th>Byggeår</th><td>Matrikkel-uttrekk («tatt i bruk»-dato)</td><td>Enova-attest</td><td>Matrikkel-API</td><td>Mangler byggeår helt, behandles bygget som TEK49 – et forsiktig valg for Oslos eldre boligmasse.</td></tr>
+            <tr><th>Bygningstype</th><td>Matrikkel-uttrekk</td><td>Enova-attest</td><td>Matrikkel-API</td><td>SSB-kode 11x–13x (enebolig, tomannsbolig, rekkehus) → <b>småhus</b>. 14x–17x (blokk, store boligbygg) → <b>blokk</b>. Garasjer og næringsbygg siles bort.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note"><b>Småhus eller blokk</b> er det eneste skillet modellen gjør på bygningstype. Enebolig, tomannsbolig og rekkehus får samme tabellverdier; alle typer leilighetsbygg får blokk-verdiene. For blokker gjelder arealet hele bygget (ikke én leilighet) med mindre det er registrert et leilighetsareal.</div>
+    </section>
+
+    <section id="steg2">
+      <span class="eyebrow">Energiforbruk · steg 2</span>
+      <h2>Byggeår → TEK-periode</h2>
+      <p class="prose">Byggteknisk forskrift (TEK) setter krav til isolasjon, vinduer og ventilasjon. Et hus bygget i 1965 ble bygget etter helt andre krav enn ett fra 2015. Modellen bruker derfor byggeåret til å plassere boligen i én av åtte TEK-perioder – og legger på to års forsinkelse, fordi bygg de første årene etter en ny forskrift ofte er prosjektert etter den forrige.</p>
+      <div class="timeline" aria-label="TEK-perioder etter byggeår">
+        <div><b>Eldre</b><span>før 1951</span></div>
+        <div><b>TEK49</b><span>1951–1970</span></div>
+        <div><b>TEK69</b><span>1971–1988</span></div>
+        <div><b>TEK87</b><span>1989–1998</span></div>
+        <div><b>TEK97</b><span>1999–2008</span></div>
+        <div><b>TEK07</b><span>2009–2011</span></div>
+        <div><b>TEK10</b><span>2012–2018</span></div>
+        <div><b>TEK17</b><span>2019 →</span></div>
+      </div>
+      <p class="table-caption">Eksempel: et hus fra 1972 havner i TEK69, et hus fra 2018 i TEK10. Ugyldig eller manglende byggeår gir TEK49.</p>
+    </section>
+
+    <section id="steg3">
+      <span class="eyebrow">Energiforbruk · steg 3</span>
+      <h2>Estimert årsforbruk</h2>
+      <p class="prose">Hver kombinasjon av TEK-periode og bygningstype har en typisk energibruk i kWh per kvadratmeter og år. Forbruket er rett og slett dette tallet ganget med bruksarealet, avrundet til nærmeste tusen kWh.</p>
+      <div class="formula">Årsforbruk (kWh) = kWh/m² for TEK-periode og bygningstype × bruksareal (m²)</div>
+      <div class="table-wrap compact">
+        <table>
+          <thead><tr><th>TEK-periode</th><th class="num">Småhus (kWh/m²)</th><th class="num">Blokk (kWh/m²)</th></tr></thead>
+          <tbody>
+            <tr><th>Eldre (før 1951)</th><td class="num">335,9</td><td class="num">272,5</td></tr>
+            <tr><th>TEK49</th><td class="num">234,9</td><td class="num">225,4</td></tr>
+            <tr><th>TEK69</th><td class="num">222,3</td><td class="num">206,1</td></tr>
+            <tr><th>TEK87</th><td class="num">187,0</td><td class="num">160,2</td></tr>
+            <tr><th>TEK97</th><td class="num">156,5</td><td class="num">145,0</td></tr>
+            <tr><th>TEK07</th><td class="num">122,9</td><td class="num">108,1</td></tr>
+            <tr><th>TEK10 og TEK17</th><td class="num">115,6</td><td class="num">100,4</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="table-caption">Verdiene er totalt levert energi før tiltak, fra Multiconsult-modellen. Merk at modellen bruker samme tall for TEK10 og TEK17.</p>
+      <div class="example">
+        <h3>Gjennomgangseksempel: enebolig fra 1972, 160 m²</h3>
+        <div class="example-grid">
+          <div class="kv"><span class="k">Bygningstype</span><span class="v">Småhus</span></div>
+          <div class="kv"><span class="k">TEK-periode</span><span class="v">TEK69</span></div>
+          <div class="kv"><span class="k">kWh/m²</span><span class="v">222,3</span></div>
+          <div class="kv"><span class="k">Regnestykke</span><span class="v">222,3 × 160 <small>= 35 562</small></span></div>
+          <div class="kv"><span class="k">Estimert årsforbruk</span><span class="v">36 000 <small>kWh</small></span></div>
+        </div>
+        <p class="table-caption">Eksempelet følger med videre gjennom siden.</p>
+      </div>
+    </section>
+
+    <section id="steg4">
+      <span class="eyebrow">Energiforbruk · steg 4</span>
+      <h2>Estimert energikarakter</h2>
+      <p class="prose">Karakteren A–G settes ut fra kWh per m² (forbruk delt på areal), med terskler inspirert av energimerkeordningens skala (NS 3031:2025). Skalaen er flat – den varierer ikke med boligstørrelse slik den offisielle gjør – og er derfor en forenkling. Småhus og blokk har hver sin skala.</p>
+      <div class="table-wrap compact">
+        <table>
+          <thead><tr><th>Karakter</th><th class="num">Småhus – til og med kWh/m²</th><th class="num">Blokk – til og med kWh/m²</th></tr></thead>
+          <tbody>
+            <tr><th><span class="grade g-A">A</span></th><td class="num">85</td><td class="num">80</td></tr>
+            <tr><th><span class="grade g-B">B</span></th><td class="num">95</td><td class="num">95</td></tr>
+            <tr><th><span class="grade g-C">C</span></th><td class="num">155</td><td class="num">140</td></tr>
+            <tr><th><span class="grade g-D">D</span></th><td class="num">210</td><td class="num">185</td></tr>
+            <tr><th><span class="grade g-E">E</span></th><td class="num">265</td><td class="num">230</td></tr>
+            <tr><th><span class="grade g-F">F</span></th><td class="num">315</td><td class="num">270</td></tr>
+            <tr><th><span class="grade g-G">G</span></th><td class="num">over 315</td><td class="num">over 270</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="prose">I eksempelet: 36 000 kWh / 160 m² = 225 kWh/m² → <span class="grade g-E">E</span>.</p>
+      <div class="note">Karakteren merkes alltid som <b>estimert</b> i løsningen og kan avvike fra en registrert Enova-attest for samme bygg. Attesten vises ved siden av når den finnes, men brukes ikke i regnestykket.</div>
+
+      <h3 id="fjernvarme">Fjernvarme</h3>
+      <p class="prose">Energimerket vekter energivarer ulikt, og fjernvarme teller lavere enn strøm. Løsningen har derfor en bryter for fjernvarme. Når den er på, antas det at all romoppvarming og alt tappevann dekkes av fjernvarme, og disse to delene av forbruket ganges med <b>0,45</b> før karakteren settes. Det el-spesifikke forbruket (lys, utstyr) står urørt. Hvor stor del av forbruket som er oppvarming og tappevann hentes fra fordelingen i steg 5.</p>
+      <div class="formula">Vektet forbruk = forbruk × (andel oppvarming × 0,45 + andel tappevann × 0,45 + andel el × 1,0)
+Karakter settes fra vektet forbruk / bruksareal
+<small>Andelene gjelder boligens TEK-periode og bygningstype (steg 5).</small></div>
+      <div class="example">
+        <h3>Eksempelet med fjernvarme</h3>
+        <div class="example-grid">
+          <div class="kv"><span class="k">Andeler (TEK69 småhus)</span><span class="v">73 / 13 / 14 <small>% oppv / tappev / el</small></span></div>
+          <div class="kv"><span class="k">Vektfaktor</span><span class="v">0,52 <small>0,73×0,45 + 0,13×0,45 + 0,14</small></span></div>
+          <div class="kv"><span class="k">Vektet kWh/m²</span><span class="v">118 <small>225 × 0,52</small></span></div>
+          <div class="kv"><span class="k">Karakter</span><span class="v"><span class="grade g-E">E</span> <span class="arrow">→</span> <span class="grade g-C">C</span></span></div>
+        </div>
+      </div>
+      <ul class="plain">
+        <li>Bryteren endrer <b>bare karakteren</b> – både utgangspunktet og den nye karakteren etter tiltak. kWh-forbruk, besparelser og kroner er de samme med og uten fjernvarme.</li>
+        <li>Bryteren er av som standard; løsningen vet ikke om en bolig har fjernvarme, det må brukeren oppgi.</li>
+        <li>Tiltakene regnes på samme måte uansett: en varmepumpe «sparer» like mange kWh i modellen enten oppvarmingen i dag er strøm eller fjernvarme. Det er en forenkling som er verdt å kjenne til.</li>
+      </ul>
+    </section>
+
+    <section id="steg5">
+      <span class="eyebrow">Energiforbruk · steg 5</span>
+      <h2>Forbruket deles i tre</h2>
+      <p class="prose">For å regne på tiltak må forbruket deles opp, fordi tiltak virker på ulike deler: etterisolering reduserer bare romoppvarming, en luft-vann-varmepumpe reduserer både romoppvarming og tappevann, og ventilasjon med varmegjenvinning sparer oppvarming men bruker litt mer strøm til vifter. Modellen har en fast fordeling per TEK-periode og bygningstype.</p>
+      <div class="legend"><span><i class="b-rom"></i>Romoppvarming</span><span><i class="b-tap"></i>Tappevann</span><span><i class="b-el"></i>El-spesifikt (lys, utstyr, vifter)</span></div>
+      <div>
+        <div class="bar-row"><span class="lbl">Eldre, småhus</span><div class="bar" aria-label="275,8 / 29,8 / 30,3 kWh per m²"><div class="b-rom" style="width:82.1%">276</div><div class="b-tap" style="width:8.9%">30</div><div class="b-el" style="width:9%">30</div></div></div>
+        <div class="bar-row"><span class="lbl">TEK69, småhus</span><div class="bar" aria-label="162,4 / 29,8 / 30,1 kWh per m²"><div class="b-rom" style="width:73%">162</div><div class="b-tap" style="width:13.4%">30</div><div class="b-el" style="width:13.6%">30</div></div></div>
+        <div class="bar-row"><span class="lbl">TEK97, småhus</span><div class="bar" aria-label="92,6 / 29,8 / 34,1 kWh per m²"><div class="b-rom" style="width:59.2%">93</div><div class="b-tap" style="width:19%">30</div><div class="b-el" style="width:21.8%">34</div></div></div>
+        <div class="bar-row"><span class="lbl">TEK17, småhus</span><div class="bar" aria-label="49,1 / 29,8 / 36,7 kWh per m²"><div class="b-rom" style="width:42.4%">49</div><div class="b-tap" style="width:25.8%">30</div><div class="b-el" style="width:31.8%">37</div></div></div>
+      </div>
+      <p class="table-caption">Tall i kWh/m²/år. Søylene er skalert til 100 % av eget forbruk; et eldre hus bruker i kroner og øre langt mer enn et TEK17-hus, men det som først og fremst skiller dem er romoppvarmingen. Tappevann ligger fast på 29,8 kWh/m² i alle perioder.</p>
+      <div class="example">
+        <h3>Eksempelet, fordelt</h3>
+        <div class="example-grid">
+          <div class="kv"><span class="k">Romoppvarming</span><span class="v">73 % <small>162,4 kWh/m²</small></span></div>
+          <div class="kv"><span class="k">Tappevann</span><span class="v">13 % <small>29,8 kWh/m²</small></span></div>
+          <div class="kv"><span class="k">El-spesifikt</span><span class="v">14 % <small>30,1 kWh/m²</small></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="steg6">
+      <span class="eyebrow">Effekt av tiltak · steg 6</span>
+      <h2>Besparelse per tiltak</h2>
+      <p class="prose">Hvert tiltak beskrives med tre tall: hvor stor <em>andel som blir igjen</em> av romoppvarming, tappevann og el-spesifikt forbruk etter tiltaket. 0,83 for romoppvarming betyr at 17 % av oppvarmingsbehovet forsvinner. Tallene avhenger av TEK-periode og bygningstype, og er null (ingen effekt) der tiltaket ikke gir noe – for eksempel etterisolering av et TEK07-hus som allerede er godt isolert.</p>
+      <div class="formula">Besparelse = forbruk til energitype × (1 − andel igjen)
+<small>Andelen er fast per tiltak, TEK-periode og bygningstype.</small></div>
+      <div class="seg" role="radiogroup" aria-label="Vis rater for">
+        <label><input type="radio" name="rateType" value="småhus" checked> Småhus</label>
+        <label><input type="radio" name="rateType" value="blokk"> Blokk</label>
+      </div>
+      <div class="table-wrap compact" id="rateTableWrap"></div>
+      <p class="table-caption">Verdiene er «andel igjen» av <b>romoppvarming</b>; der et tiltak også påvirker tappevann eller el-spesifikt forbruk står det i parentes (T = tappevann, E = el). «–» betyr at tiltaket ikke vises for denne kombinasjonen. Tolags vindu brukes for bygg på Gul liste; trelags er standard oppgradering for andre.</p>
+      <div class="example">
+        <h3>Eksempelet: to tiltak hver for seg</h3>
+        <div class="example-grid">
+          <div class="kv"><span class="k">Etterisolering av yttervegg</span><span class="v">0,83 <small>igjen av oppvarming</small></span></div>
+          <div class="kv"><span class="k">→ besparelse</span><span class="v">12,5 % <small>≈ 4 500 kWh</small></span></div>
+          <div class="kv"><span class="k">Luft-vann-varmepumpe</span><span class="v">0,52 / 0,70 <small>oppvarming / tappevann</small></span></div>
+          <div class="kv"><span class="k">→ besparelse</span><span class="v">39,1 % <small>≈ 14 100 kWh</small></span></div>
+        </div>
+        <p class="table-caption">Prosenten regnes mot hele forbruket (222,3 kWh/m²): varmepumpen sparer 48 % av 162,4 pluss 30 % av 29,8, til sammen 86,9 kWh/m² = 39,1 %. Ganget med 36 000 kWh gir det 14 100 kWh.</p>
+      </div>
+    </section>
+
+    <section id="steg7">
+      <span class="eyebrow">Effekt av tiltak · steg 7</span>
+      <h2>Flere tiltak sammen</h2>
+      <p class="prose">Besparelser kan ikke bare summeres. Har du allerede halvert oppvarmingsbehovet med en varmepumpe, er det bare halvparten igjen for etterisoleringen å spare på. Modellen håndterer dette ved å <em>gange sammen</em> andelene for tiltak som virker på samme energitype, og deretter legge sammen de tre energitypene.</p>
+      <ol class="steps">
+        <li><span class="k">1</span><span>Del forbruket i romoppvarming, tappevann og el-spesifikt (steg 5).</span></li>
+        <li><span class="k">2</span><span>For hver energitype: gang sammen «andel igjen» for alle valgte tiltak som påvirker den.</span></li>
+        <li><span class="k">3</span><span>Regn ut forbruket etter tiltak per energitype, og legg de tre sammen.</span></li>
+        <li><span class="k">4</span><span>Besparelse i prosent = (før − etter) / før. Prosenten ganges med det estimerte årsforbruket.</span></li>
+        <li><span class="k">5</span><span>Solenergi holdes utenfor og legges til som ren produksjon til slutt (steg 8).</span></li>
+      </ol>
+      <div class="example">
+        <h3>Eksempelet: yttervegg + luft-vann-varmepumpe samtidig</h3>
+        <div class="bar-row"><span class="lbl">Før</span><div class="bar"><div class="b-rom" style="width:73%">162</div><div class="b-tap" style="width:13.4%">30</div><div class="b-el" style="width:13.6%">30</div></div></div>
+        <div class="bar-row"><span class="lbl">Etter</span><div class="bar"><div class="b-rom" style="width:31.5%">70</div><div class="b-tap" style="width:9.4%">21</div><div class="b-el" style="width:13.6%">30</div><div style="width:45.5%;background:transparent;color:var(--muted)">spart 101 kWh/m²</div></div></div>
+        <div class="example-grid" style="margin-top:1rem">
+          <div class="kv"><span class="k">Romoppvarming</span><span class="v">162,4 × 0,83 × 0,52 <small>= 70,0</small></span></div>
+          <div class="kv"><span class="k">Tappevann</span><span class="v">29,8 × 0,70 <small>= 20,9</small></span></div>
+          <div class="kv"><span class="k">El-spesifikt</span><span class="v">30,1 × 1,00 <small>= 30,1</small></span></div>
+          <div class="kv"><span class="k">Samlet besparelse</span><span class="v">45,6 % <small>≈ 16 400 kWh</small></span></div>
+        </div>
+        <p class="table-caption">Hver for seg: 4 500 + 14 100 = 18 600 kWh. Sammen: 16 400 kWh. Differansen på 2 200 kWh er oppvarmingen som varmepumpen og isolasjonen ellers ville «spart to ganger».</p>
+      </div>
+    </section>
+
+    <section id="sol">
+      <span class="eyebrow">Effekt av tiltak · steg 8</span>
+      <h2>Solenergi</h2>
+      <p class="prose">Solceller sparer ikke forbruk – de produserer strøm. Derfor regnes solenergi for seg, ut fra takflatene i Oslo kommunes Solkart, og legges til kWh-besparelsen til slutt uten å påvirke de andre tiltakene.</p>
+      <div class="formula">Solproduksjon (kWh/år) = Σ over egnede takflater: areal (m²) × solinnstråling (kWh/m²/år) × 0,80 × 0,20
+<small>Egnet takflate: innstråling over 800 kWh/m²/år og minst 20 m². 0,80 = andel av flaten som kan dekkes av paneler. 0,20 = panelenes virkningsgrad.</small></div>
+      <ul class="plain">
+        <li>Takflatene slås opp på bygningsnummer i et lokalt uttrekk av Solkart, med fall-tilbake til Solkarts WFS-tjeneste for bygg som mangler der (typisk nybygg).</li>
+        <li>Tiltaket vises bare når beregnet produksjon er over null.</li>
+        <li>Reduserer brukeren bruksarealet manuelt, skaleres solproduksjonen ned tilsvarende (men aldri opp).</li>
+        <li>For blokker og sameier gjelder hele byggets tak.</li>
+      </ul>
+    </section>
+
+    <section id="kroner">
+      <span class="eyebrow">Effekt av tiltak · steg 9</span>
+      <h2>Fra kWh til kroner</h2>
+      <p class="prose">Kroner er kWh ganget med en fast strømpris på <b>1,10 kr/kWh</b>. Én justering gjøres for solenergi på småhus: erfaringstall tilsier at rundt 70 % av solstrømmen fra en enebolig selges til nettet, til omtrent halv pris av det man kjøper for. Kroneverdien av solstrøm på småhus ganges derfor med 0,65. For blokker antas det at strømmen brukes i bygget, og faktoren er 1,0.</p>
+      <div class="formula">Kroner/år = (besparelse − solproduksjon) × 1,10 + solproduksjon × 1,10 × solfaktor
+<small>solfaktor = 0,65 for småhus (0,30 × 1 + 0,70 × 0,5), 1,0 for blokk</small></div>
+      <p class="prose">I eksempelet: 16 400 kWh × 1,10 ≈ <b>18 000 kr/år</b>. Legges 3 500 kWh solstrøm på taket av denne eneboligen oppå, blir det 19 900 kWh og 18 000 + 3 500 × 1,10 × 0,65 ≈ <b>20 500 kr/år</b>. Løsningen viser ikke investeringskostnad eller tilbakebetalingstid.</p>
+    </section>
+
+    <section id="nykarakter">
+      <span class="eyebrow">Effekt av tiltak · steg 10</span>
+      <h2>Ny karakter – og tiltak som allerede er gjort</h2>
+      <p class="prose">Ny energikarakter følger av nytt forbruk: (estimert forbruk − besparelse) / areal, mot samme skala som i steg 4. I eksempelet gir 19 600 kWh / 160 m² = 122 kWh/m², altså fra <span class="grade g-E">E</span> til <span class="grade g-C">C</span>. Ny karakter vises bare når den faktisk er bedre enn utgangspunktet.</p>
+      <p class="prose">Tiltakslisten har to faner: <b>Nye</b> og <b>Gjennomførte</b>. Tiltak som merkes som gjennomført trekker boligen ned til et nytt utgangspunkt – lavere forbruk, ofte bedre karakter – før de nye tiltakene regnes. Det hindrer at noen «sparer» på en varmepumpe de allerede har.</p>
+      <ol class="steps">
+        <li><span class="k">1</span><span><b>Utgangspunkt</b> = estimert forbruk − besparelse fra gjennomførte tiltak.</span></li>
+        <li><span class="k">2</span><span><b>Samlet effekt</b> regnes for gjennomførte + nye tiltak sammen (steg 7), slik at overlapp håndteres.</span></li>
+        <li><span class="k">3</span><span><b>Vist besparelse</b> for nye tiltak = samlet effekt − effekten av de gjennomførte.</span></li>
+      </ol>
+      <div class="note">Unntaket er vinduer: har man allerede tolags glass, kan trelags fortsatt velges som nytt tiltak. Da regnes ikke de to vindustiltakene sammen – bare trelags teller.</div>
+    </section>
+
+    <section id="hvilke">
+      <h2>Hvilke tiltak vises for en bolig</h2>
+      <p class="prose">Katalogen har åtte tiltak. Hvilke som faktisk dukker opp for en adresse bestemmes av fire regler, slik at en bruker ikke får foreslått noe som ikke gir effekt for akkurat dette bygget.</p>
+      <ul class="plain">
+        <li><b>Bygningstype:</b> hvert tiltak har en liste over hvilke boligtyper det gjelder for (enebolig, tomannsbolig, rekkehus, blokk). Per i dag gjelder alle åtte for alle fire.</li>
+        <li><b>Energieffekt:</b> tiltak uten rate for boligens TEK-periode, eller der alle tre andelene er 1,0, skjules. Derfor ser et TEK17-hus ikke etterisolering, og et hus på Gul liste ser bare tolags vindusoppgradering.</li>
+        <li><b>Vinduer:</b> trelags glass er byggekrav fra TEK10, så bygg fra 2012 og nyere får ingen vindusoppgradering. Eldre bygg kan velge mellom tolags og trelags; Gul liste låser valget til tolags av vernehensyn.</li>
+        <li><b>Varmepumpe:</b> luft-luft er standardvalg; brukeren kan bytte til luft-vann eller væske-vann, som har egne rater.</li>
+      </ul>
+      <div class="note">To tiltak i katalogen har ingen regnemodell ennå: <b>tetting</b> (ingen tall i datagrunnlaget) og <b>temperaturstyring</b> vises bare der tabellen gir effekt. Tiltak uten tall skjules automatisk fra listen.</div>
+    </section>
+
+    <section id="naboen">
+      <h2>Sammenligning med nabolaget</h2>
+      <p class="prose">Modulen «Sammenlign deg med nabolaget» er det ene stedet løsningen bruker Enovas faktiske data. Den bygger på et samlet uttrekk av alle energiattester i Oslo (om lag 88 500 boliger, oppdatert januar 2026), aggregert til kWh/m²-fordelinger per bydel, delbydel og boligtype.</p>
+      <ul class="plain">
+        <li>Finnes brukerens bolig i Enova-uttrekket, og brukeren ikke har redigert nøkkeltallene, sammenlignes Enovas kWh/m² og karakter for boligen – «epler mot epler». Ellers brukes det estimerte forbruket fra steg 3.</li>
+        <li>Boligen plasseres på en persentil mellom naboene (p10, p25, p50, p75, p90) og får en tilpasset melding.</li>
+        <li>Besparelsen som vises her regnes på Enova-forbruket: modellen finner den TEK-perioden som ligner mest på boligens faktiske kWh/m² («effektiv TEK») og bruker dens rater. En godt oppgradert 70-tallsvilla behandles da som et nyere hus, med mindre gjenstående potensial.</li>
+      </ul>
+    </section>
+
+    <section id="borettslag">
+      <h2>Borettslag og sameier</h2>
+      <p class="prose">Når adressen hører til et borettslag eller sameie med flere bygg, kan brukeren bytte til «hele gruppen». Da kjøres steg 1–9 for hvert bygg for seg – med byggets eget byggeår, areal, bygningstype og tak – og kWh og kroner summeres. Tiltak som ikke gir effekt for et enkeltbygg telles ikke for det bygget, og solfaktoren velges per bygg.</p>
+    </section>
+
+    <section id="provselv">
+      <h2>Prøv regnestykket selv</h2>
+      <p class="prose">Kalkulatoren under bruker nøyaktig de samme tabellene og reglene som Energinøkkelen. Endre byggeår, areal og tiltak og se hvordan forbruk, karakter og besparelse henger sammen.</p>
+      <div class="calc">
+        <div class="calc-grid">
+          <form class="calc-form" id="calcForm" onsubmit="return false">
+            <div class="field">
+              <span class="lbl">Bygningstype</span>
+              <div class="seg" role="radiogroup" aria-label="Bygningstype">
+                <label><input type="radio" name="boligtype" value="småhus" checked> Småhus</label>
+                <label><input type="radio" name="boligtype" value="blokk"> Blokk</label>
+              </div>
+            </div>
+            <div class="field"><label for="inYear">Byggeår</label><input id="inYear" type="number" min="1800" max="2030" step="1" value="1972"></div>
+            <div class="field"><label for="inArea">Bruksareal (m²)</label><input id="inArea" type="number" min="10" max="20000" step="1" value="160"></div>
+            <div class="field">
+              <label class="check"><input type="checkbox" id="inFjern"><span>Fjernvarme <span class="why">Påvirker bare karakteren (×0,45 på oppvarming og tappevann)</span></span></label>
+              <label class="check"><input type="checkbox" id="inGul"><span>På Gul liste <span class="why">Låser vinduer til tolags glass</span></span></label>
+            </div>
+            <div class="field">
+              <span class="lbl">Tiltak</span>
+              <div class="tiltak-list" id="tiltakList"></div>
+            </div>
+          </form>
+          <div class="calc-out" aria-live="polite">
+            <div class="stat-row">
+              <div class="stat"><span class="k">TEK-periode</span><span class="v" id="oTek">–</span></div>
+              <div class="stat"><span class="k">Estimert årsforbruk</span><span class="v" id="oCons">–</span></div>
+              <div class="stat"><span class="k">Karakter</span><span class="v" id="oGrade">–</span></div>
+            </div>
+            <div>
+              <div class="legend" style="margin-bottom:0.5rem"><span><i class="b-rom"></i>Romoppvarming</span><span><i class="b-tap"></i>Tappevann</span><span><i class="b-el"></i>El-spesifikt</span></div>
+              <div class="bar-row"><span class="lbl">Før tiltak</span><div class="bar" id="barBefore"></div></div>
+              <div class="bar-row"><span class="lbl">Etter tiltak</span><div class="bar" id="barAfter"></div></div>
+            </div>
+            <div class="stat-row">
+              <div class="stat"><span class="k">Samlet besparelse</span><span class="v" id="oSave">–</span></div>
+              <div class="stat"><span class="k">Kroner per år</span><span class="v" id="oNok">–</span></div>
+              <div class="stat"><span class="k">Ny karakter</span><span class="v" id="oNew">–</span></div>
+            </div>
+            <div class="per-tiltak">
+              <div class="table-wrap"><table id="perTiltak"><thead><tr><th>Tiltak</th><th>Andel igjen (rom / tapp / el)</th><th class="num">Alene</th></tr></thead><tbody></tbody></table></div>
+              <p class="hint" id="oHint"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="forbehold">
+      <h2>Forbehold</h2>
+      <ul class="plain">
+        <li><b>Modell, ikke måling.</b> Forbruket er et typisk tall for bygg av samme alder og type. Faktisk forbruk avhenger av hvor mange som bor der, innetemperatur, oppvarmingsløsning og tidligere oppgraderinger.</li>
+        <li><b>TEK fra byggeår</b> forutsetter at bygget står som da det ble bygget. Er det allerede etterisolert eller har fått varmepumpe, må brukeren selv merke tiltakene som gjennomført for at utgangspunktet skal stemme.</li>
+        <li><b>Ratene er gjennomsnitt</b> fra modellen; faktisk effekt av et tiltak varierer med utførelse og bygningens tilstand. Flere tiltak sammen gir mindre enn summen av hvert enkelt.</li>
+        <li><b>Strømprisen er fast</b> på 1,10 kr/kWh og følger ikke markedet. Investeringskostnad og tilbakebetalingstid er ikke med.</li>
+        <li><b>Karakterskalaen er forenklet</b> og kan avvike fra Enovas energiattest for samme bygg. Attesten vises der den finnes.</li>
+        <li><b>Registerdata kan være feil.</b> Bygningstype og areal i Matrikkelen er ikke alltid korrekte; for blokker gjelder tallene hele bygget, ikke én leilighet.</li>
+        <li><b>Solproduksjon er teoretisk</b> – et potensial for taket, ikke et dimensjonert anlegg.</li>
+      </ul>
+    </section>
+
+    <footer>
+      Klimaetaten, Oslo kommune · Energinøkkelen. Tallgrunnlag: Multiconsult-modellen («Logikk og input til modellen», Enova-tall), Matrikkelen (Kartverket), Enova energimerke-API og bulk-data, Solkart (PBE), Gul liste (Byantikvaren).
+    </footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  // ---- Tabeller (eksportert fra løsningens kode) ----
+  var INTENSITY = {
+    Eldre: { 'småhus': 335.86, blokk: 272.5 },
+    TEK49: { 'småhus': 234.87, blokk: 225.4 },
+    TEK69: { 'småhus': 222.26, blokk: 206.06 },
+    TEK87: { 'småhus': 186.96, blokk: 160.21 },
+    TEK97: { 'småhus': 156.51, blokk: 144.99 },
+    TEK07: { 'småhus': 122.93, blokk: 108.06 },
+    TEK10: { 'småhus': 115.55, blokk: 100.41 },
+    TEK17: { 'småhus': 115.55, blokk: 100.41 }
+  };
+  var THRESH = {
+    'småhus': { A: 85, B: 95, C: 155, D: 210, E: 265, F: 315 },
+    blokk:    { A: 80, B: 95, C: 140, D: 185, E: 230, F: 270 }
+  };
+  var DIST = {"Eldre":{"småhus":{"romoppvarming":275.76,"tappevann":29.8,"elspesifikt":30.3},"blokk":{"romoppvarming":212.4,"tappevann":29.8,"elspesifikt":30.3}},"TEK49":{"småhus":{"romoppvarming":174.87,"tappevann":29.8,"elspesifikt":30.2},"blokk":{"romoppvarming":165.6,"tappevann":29.8,"elspesifikt":30}},"TEK69":{"småhus":{"romoppvarming":162.36,"tappevann":29.8,"elspesifikt":30.1},"blokk":{"romoppvarming":146.16,"tappevann":29.8,"elspesifikt":30.1}},"TEK87":{"småhus":{"romoppvarming":127.26,"tappevann":29.8,"elspesifikt":29.9},"blokk":{"romoppvarming":100.71,"tappevann":29.8,"elspesifikt":29.7}},"TEK97":{"småhus":{"romoppvarming":92.61,"tappevann":29.8,"elspesifikt":34.1},"blokk":{"romoppvarming":80.19,"tappevann":29.8,"elspesifikt":35}},"TEK07":{"småhus":{"romoppvarming":56.43,"tappevann":29.8,"elspesifikt":36.7},"blokk":{"romoppvarming":39.96,"tappevann":29.8,"elspesifikt":38.3}},"TEK17":{"småhus":{"romoppvarming":49.05,"tappevann":29.8,"elspesifikt":36.7},"blokk":{"romoppvarming":32.31,"tappevann":29.8,"elspesifikt":38.3}},"TEK10":{"småhus":{"romoppvarming":49.05,"tappevann":29.8,"elspesifikt":36.7},"blokk":{"romoppvarming":32.31,"tappevann":29.8,"elspesifikt":38.3}}};
+  var RATES = {"etterisolering_yttervegg":{"Eldre":{"småhus":{"romoppvarming":0.6587612417,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.6153483992,"tappevann":1,"elspesifikt":1}},"TEK49":{"småhus":{"romoppvarming":0.7661119689,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.643115942,"tappevann":1,"elspesifikt":1}},"TEK69":{"småhus":{"romoppvarming":0.8293914757,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.7283798577,"tappevann":1,"elspesifikt":1}},"TEK87":{"småhus":{"romoppvarming":0.8821310702,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.9036838447,"tappevann":1,"elspesifikt":1}},"TEK97":{"småhus":{"romoppvarming":0.9600475111,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.9089662053,"tappevann":1,"elspesifikt":1}},"TEK07":{"småhus":{"romoppvarming":1,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":1,"tappevann":1,"elspesifikt":1}},"TEK17":{"småhus":null,"blokk":null},"TEK10":{"småhus":null,"blokk":null}},"etterisolering_kjeller_loft":{"Eldre":{"småhus":{"romoppvarming":0.85059472,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.8851224105,"tappevann":1,"elspesifikt":1}},"TEK49":{"småhus":{"romoppvarming":0.9239435009,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.9565217391,"tappevann":1,"elspesifikt":1}},"TEK69":{"småhus":{"romoppvarming":0.9297856615,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.9425287356,"tappevann":1,"elspesifikt":1}},"TEK87":{"småhus":{"romoppvarming":0.9630677353,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.9721973985,"tappevann":1,"elspesifikt":1}},"TEK97":{"småhus":{"romoppvarming":0.995680812,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":1,"tappevann":1,"elspesifikt":1}},"TEK07":{"småhus":{"romoppvarming":1,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.98998999,"tappevann":1,"elspesifikt":1}},"TEK17":{"småhus":null,"blokk":null},"TEK10":{"småhus":null,"blokk":null}},"vinduer_gul_liste":{"Eldre":{"småhus":{"romoppvarming":0.8756164781,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.8488700565,"tappevann":1,"elspesifikt":1}},"TEK49":{"småhus":{"romoppvarming":0.8061417053,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.809178744,"tappevann":1,"elspesifikt":1}},"TEK69":{"småhus":{"romoppvarming":0.7924365607,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.7858511221,"tappevann":1,"elspesifikt":1}},"TEK87":{"småhus":{"romoppvarming":0.8161244696,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.7914804885,"tappevann":1,"elspesifikt":1}},"TEK97":{"småhus":{"romoppvarming":0.9341323831,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.9376480858,"tappevann":1,"elspesifikt":1}},"TEK07":{"småhus":{"romoppvarming":0.8546872231,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.8198198198,"tappevann":1,"elspesifikt":1}},"TEK17":{"småhus":{"romoppvarming":0.8859813084,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.9065420561,"tappevann":1,"elspesifikt":1}},"TEK10":{"småhus":{"romoppvarming":0.8859813084,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.9065420561,"tappevann":1,"elspesifikt":1}}},"vinduer_standard":{"Eldre":{"småhus":{"romoppvarming":0.8469683783,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.8168549906,"tappevann":1,"elspesifikt":1}},"TEK49":{"småhus":{"romoppvarming":0.7603934351,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.7675120773,"tappevann":1,"elspesifikt":1}},"TEK69":{"småhus":{"romoppvarming":0.7431633407,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.7379584018,"tappevann":1,"elspesifikt":1}},"TEK87":{"småhus":{"romoppvarming":0.7532610404,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.7209810347,"tappevann":1,"elspesifikt":1}},"TEK97":{"småhus":{"romoppvarming":0.8466688263,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.8491083676,"tappevann":1,"elspesifikt":1}},"TEK07":{"småhus":{"romoppvarming":0.8546872231,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.8198198198,"tappevann":1,"elspesifikt":1}},"TEK17":{"småhus":null,"blokk":null},"TEK10":{"småhus":null,"blokk":null}},"temperaturstyring":{"Eldre":{"småhus":{"romoppvarming":0.94,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.94,"tappevann":1,"elspesifikt":1}},"TEK49":{"småhus":{"romoppvarming":0.94,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.94,"tappevann":1,"elspesifikt":1}},"TEK69":{"småhus":{"romoppvarming":0.9333333333,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.9333333333,"tappevann":1,"elspesifikt":1}},"TEK87":{"småhus":{"romoppvarming":0.9333333333,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.9444444444,"tappevann":1,"elspesifikt":1}},"TEK97":{"småhus":{"romoppvarming":1,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":1,"tappevann":1,"elspesifikt":1}},"TEK07":{"småhus":{"romoppvarming":1,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":1,"tappevann":1,"elspesifikt":1}},"TEK17":{"småhus":{"romoppvarming":1,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":1,"tappevann":1,"elspesifikt":1}},"TEK10":{"småhus":{"romoppvarming":1,"tappevann":0.7,"elspesifikt":1},"blokk":{"romoppvarming":1,"tappevann":0.64,"elspesifikt":1}}},"ventilasjonsgjenvinning":{"Eldre":{"småhus":{"romoppvarming":1,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":1,"tappevann":1,"elspesifikt":1}},"TEK49":{"småhus":{"romoppvarming":1,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":1,"tappevann":1,"elspesifikt":1}},"TEK69":{"småhus":{"romoppvarming":0.89,"tappevann":1,"elspesifikt":1.06},"blokk":{"romoppvarming":0.71,"tappevann":1,"elspesifikt":0.97}},"TEK87":{"småhus":{"romoppvarming":0.88,"tappevann":1,"elspesifikt":0.96},"blokk":{"romoppvarming":0.67,"tappevann":1,"elspesifikt":0.95}},"TEK97":{"småhus":{"romoppvarming":0.84,"tappevann":1,"elspesifikt":0.95},"blokk":{"romoppvarming":0.58,"tappevann":1,"elspesifikt":0.95}},"TEK07":{"småhus":null,"blokk":null},"TEK17":{"småhus":null,"blokk":null},"TEK10":{"småhus":null,"blokk":null}},"luft_luft_varmepumpe":{"Eldre":{"småhus":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1}},"TEK49":{"småhus":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1}},"TEK69":{"småhus":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1}},"TEK87":{"småhus":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1}},"TEK97":{"småhus":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1}},"TEK07":{"småhus":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1}},"TEK17":{"småhus":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1},"blokk":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1}},"TEK10":{"småhus":null,"blokk":{"romoppvarming":0.6727272727,"tappevann":1,"elspesifikt":1}}},"luft_vaeske_varmepumpe":{"Eldre":{"småhus":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1},"blokk":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1}},"TEK49":{"småhus":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1},"blokk":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1}},"TEK69":{"småhus":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1},"blokk":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1}},"TEK87":{"småhus":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1},"blokk":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1}},"TEK97":{"småhus":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1},"blokk":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1}},"TEK07":{"småhus":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1},"blokk":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1}},"TEK17":{"småhus":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1},"blokk":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1}},"TEK10":{"småhus":null,"blokk":{"romoppvarming":0.52,"tappevann":0.7,"elspesifikt":1}}},"vaeske_vaeske_varmepumpe":{"Eldre":{"småhus":{"romoppvarming":0.4214285714,"tappevann":0.74,"elspesifikt":1},"blokk":{"romoppvarming":0.5214285714,"tappevann":0.84,"elspesifikt":1}},"TEK49":{"småhus":{"romoppvarming":0.4214285714,"tappevann":0.74,"elspesifikt":1},"blokk":{"romoppvarming":0.5214285714,"tappevann":0.84,"elspesifikt":1}},"TEK69":{"småhus":{"romoppvarming":0.4214285714,"tappevann":0.74,"elspesifikt":1},"blokk":{"romoppvarming":0.5214285714,"tappevann":0.84,"elspesifikt":1}},"TEK87":{"småhus":{"romoppvarming":0.4214285714,"tappevann":0.74,"elspesifikt":1},"blokk":{"romoppvarming":0.5214285714,"tappevann":0.84,"elspesifikt":1}},"TEK97":{"småhus":{"romoppvarming":0.4214285714,"tappevann":0.74,"elspesifikt":1},"blokk":{"romoppvarming":0.5214285714,"tappevann":0.84,"elspesifikt":1}},"TEK07":{"småhus":{"romoppvarming":0.4214285714,"tappevann":0.74,"elspesifikt":1},"blokk":{"romoppvarming":0.5214285714,"tappevann":0.84,"elspesifikt":1}},"TEK17":{"småhus":{"romoppvarming":0.4214285714,"tappevann":0.74,"elspesifikt":1},"blokk":{"romoppvarming":0.5214285714,"tappevann":0.84,"elspesifikt":1}},"TEK10":{"småhus":null,"blokk":{"romoppvarming":0.5214285714,"tappevann":0.5214285714,"elspesifikt":1}}}};
+
+  var TEK_ORDER = ['Eldre', 'TEK49', 'TEK69', 'TEK87', 'TEK97', 'TEK07', 'TEK10', 'TEK17'];
+  var PRICE = 1.1;
+  var SOLAR_FACTOR_SMAAHUS = 0.65;
+  var FJERNVARME = 0.45;
+
+  // ---- Logikk (port av tekEnergyCalculations / energySavingsData) ----
+  function calcTek(year) {
+    if (!year || year < 1860) return 'TEK49';
+    var lag = 2;
+    if (year >= 2017 + lag) return 'TEK17';
+    if (year >= 2010 + lag) return 'TEK10';
+    if (year >= 2007 + lag) return 'TEK07';
+    if (year >= 1997 + lag) return 'TEK97';
+    if (year >= 1987 + lag) return 'TEK87';
+    if (year >= 1969 + lag) return 'TEK69';
+    if (year >= 1949 + lag) return 'TEK49';
+    return 'Eldre';
+  }
+  function consumption(tek, type, area) {
+    if (!area || area <= 0) return 0;
+    return Math.round(INTENSITY[tek][type] * area / 1000) * 1000;
+  }
+  function grade(intensity, type) {
+    var t = THRESH[type];
+    if (!isFinite(intensity)) return 'G';
+    if (intensity <= t.A) return 'A'; if (intensity <= t.B) return 'B'; if (intensity <= t.C) return 'C';
+    if (intensity <= t.D) return 'D'; if (intensity <= t.E) return 'E'; if (intensity <= t.F) return 'F';
+    return 'G';
+  }
+  function gradeFor(cons, area, type, tek, fjern) {
+    if (!cons || !area) return null;
+    if (fjern) {
+      var d = DIST[tek][type]; var tot = d.romoppvarming + d.tappevann + d.elspesifikt;
+      var adj = cons * ((d.romoppvarming / tot) * FJERNVARME + (d.tappevann / tot) * FJERNVARME + (d.elspesifikt / tot));
+      return grade(adj / area, type);
+    }
+    return grade(cons / area, type);
+  }
+  function hasEffect(r) { return !!r && (r.romoppvarming !== 1 || r.tappevann !== 1 || r.elspesifikt !== 1); }
+  function rateFor(key, tek, type) { var t = RATES[key]; return t && t[tek] ? t[tek][type] : null; }
+  function combined(cons, items, tek, type, solar) {
+    var rom = [], tap = [], el = [];
+    items.forEach(function (r) {
+      if (r.romoppvarming > 0) rom.push(r.romoppvarming);
+      if (r.tappevann > 0) tap.push(r.tappevann);
+      if (r.elspesifikt > 0) el.push(r.elspesifikt);
+    });
+    var mul = function (a) { return a.reduce(function (x, y) { return x * y; }, 1); };
+    var kr = mul(rom), kt = mul(tap), ke = mul(el);
+    if (!rom.length && !tap.length && !el.length) return { kwh: solar, pct: 0, kr: kr, kt: kt, ke: ke };
+    var d = DIST[tek][type];
+    var before = d.romoppvarming + d.tappevann + d.elspesifikt;
+    var after = d.romoppvarming * kr + d.tappevann * kt + d.elspesifikt * ke;
+    var pct = (before - after) / before;
+    var kwh = Math.max(0, cons * pct);
+    return { kwh: kwh + solar, pct: pct, kr: kr, kt: kt, ke: ke };
+  }
+  function nok(totalKwh, solarKwh, type) {
+    if (!totalKwh || totalKwh <= 0) return 0;
+    var s = Math.max(0, Math.min(solarKwh, totalKwh));
+    var f = type === 'småhus' ? SOLAR_FACTOR_SMAAHUS : 1;
+    return (totalKwh - s) * PRICE + s * PRICE * f;
+  }
+  function availableVinduer(tek, type, gul) {
+    var tolags = rateFor('vinduer_gul_liste', tek, type); var tv = hasEffect(tolags);
+    if (gul) return tv ? ['tolags'] : [];
+    var trelags = rateFor('vinduer_standard', tek, type); var sv = hasEffect(trelags);
+    if (!sv) return [];
+    return tv ? ['tolags', 'trelags'] : ['trelags'];
+  }
+
+  // ---- Hjelpere ----
+  var nf = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
+  function fmt(n) { return nf.format(Math.round(n)); }
+  function pctTxt(p) { return (Math.round(p * 1000) / 10).toLocaleString('nb-NO') + ' %'; }
+  function rateTxt(r) { return r.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function gradeHtml(g, big) { return g ? '<span class="grade g-' + g + (big ? ' big' : '') + '">' + g + '</span>' : '–'; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
+
+  // ---- Ratetabell (steg 6) ----
+  var RATE_ROWS = [
+    ['Etterisolering av yttervegg', 'etterisolering_yttervegg'],
+    ['Etterisolering av kjeller og loft', 'etterisolering_kjeller_loft'],
+    ['Vinduer – tolags (Gul liste)', 'vinduer_gul_liste'],
+    ['Vinduer – trelags (standard)', 'vinduer_standard'],
+    ['Temperaturstyring', 'temperaturstyring'],
+    ['Ventilasjon med varmegjenvinning', 'ventilasjonsgjenvinning'],
+    ['Varmepumpe luft-luft', 'luft_luft_varmepumpe'],
+    ['Varmepumpe luft-vann', 'luft_vaeske_varmepumpe'],
+    ['Varmepumpe væske-vann', 'vaeske_vaeske_varmepumpe']
+  ];
+  var RATE_COLS = ['Eldre', 'TEK49', 'TEK69', 'TEK87', 'TEK97', 'TEK07', 'TEK10', 'TEK17'];
+  function renderRateTable(type) {
+    var h = '<table><thead><tr><th>Tiltak</th>';
+    RATE_COLS.forEach(function (c) { h += '<th class="num">' + c + '</th>'; });
+    h += '</tr></thead><tbody>';
+    RATE_ROWS.forEach(function (row) {
+      h += '<tr><th>' + esc(row[0]) + '</th>';
+      RATE_COLS.forEach(function (c) {
+        var r = rateFor(row[1], c, type);
+        if (!r || !hasEffect(r)) { h += '<td class="none">–</td>'; return; }
+        var cell = rateTxt(r.romoppvarming);
+        var extra = [];
+        if (r.tappevann !== 1) extra.push('T ' + rateTxt(r.tappevann));
+        if (r.elspesifikt !== 1) extra.push('E ' + rateTxt(r.elspesifikt));
+        if (extra.length) cell += ' <span class="dim">(' + extra.join(', ') + ')</span>';
+        h += '<td class="num">' + cell + '</td>';
+      });
+      h += '</tr>';
+    });
+    h += '</tbody></table>';
+    document.getElementById('rateTableWrap').innerHTML = h;
+  }
+  document.querySelectorAll('input[name="rateType"]').forEach(function (el) {
+    el.addEventListener('change', function () { renderRateTable(el.value); });
+  });
+  renderRateTable('småhus');
+
+  // ---- Kalkulator ----
+  var TILTAK = [
+    { id: 'yttervegg', label: 'Etterisolering av yttervegg', key: 'etterisolering_yttervegg' },
+    { id: 'kjellerloft', label: 'Etterisolering av kjeller og loft', key: 'etterisolering_kjeller_loft' },
+    { id: 'vinduer', label: 'Oppgradering av vinduer', key: null, opts: [['tolags', 'Tolags'], ['trelags', 'Trelags']] },
+    { id: 'temperaturstyring', label: 'Temperaturstyring', key: 'temperaturstyring' },
+    { id: 'ventilasjon', label: 'Ventilasjon med varmegjenvinning', key: 'ventilasjonsgjenvinning' },
+    { id: 'varmepumpe', label: 'Varmepumpe', key: null, opts: [['luft-luft', 'Luft-luft'], ['luft-vann', 'Luft-vann'], ['vaeske-vann', 'Væske-vann']] },
+    { id: 'solenergi', label: 'Solenergi', key: null, solar: true }
+  ];
+  var VP_KEY = { 'luft-luft': 'luft_luft_varmepumpe', 'luft-vann': 'luft_vaeske_varmepumpe', 'vaeske-vann': 'vaeske_vaeske_varmepumpe' };
+  var VIN_KEY = { tolags: 'vinduer_gul_liste', trelags: 'vinduer_standard' };
+  var state = { checked: { yttervegg: true, varmepumpe: true }, vp: 'luft-vann', vin: 'trelags', solar: 3500 };
+
+  var list = document.getElementById('tiltakList');
+  TILTAK.forEach(function (t) {
+    var wrap = document.createElement('div');
+    var html = '<label class="check" id="row-' + t.id + '"><input type="checkbox" data-id="' + t.id + '"' + (state.checked[t.id] ? ' checked' : '') + '><span>' + esc(t.label) + '<span class="why" id="why-' + t.id + '"></span></span></label>';
+    if (t.opts) {
+      html += '<div class="subopts" id="opts-' + t.id + '">';
+      t.opts.forEach(function (o) {
+        var cur = t.id === 'vinduer' ? state.vin : state.vp;
+        html += '<label><input type="radio" name="opt-' + t.id + '" value="' + o[0] + '"' + (cur === o[0] ? ' checked' : '') + '> ' + esc(o[1]) + '</label>';
+      });
+      html += '</div>';
+    }
+    if (t.solar) {
+      html += '<div class="subopts" style="align-items:center;gap:0.5rem"><input id="inSolar" type="number" min="0" max="200000" step="100" value="' + state.solar + '" style="font:inherit;font-family:var(--font-mono);padding:0.3rem 0.5rem;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);width:7.5rem"><span style="font-size:0.82rem;color:var(--muted)">kWh/år fra taket (Solkart)</span></div>';
+    }
+    wrap.innerHTML = html;
+    list.appendChild(wrap);
+  });
+
+  function readForm() {
+    var type = document.querySelector('input[name="boligtype"]:checked').value;
+    var year = parseInt(document.getElementById('inYear').value, 10);
+    var area = parseFloat(document.getElementById('inArea').value);
+    var fjern = document.getElementById('inFjern').checked;
+    var gul = document.getElementById('inGul').checked;
+    document.querySelectorAll('#tiltakList input[type="checkbox"]').forEach(function (cb) { state.checked[cb.getAttribute('data-id')] = cb.checked; });
+    var vp = document.querySelector('input[name="opt-varmepumpe"]:checked'); state.vp = vp ? vp.value : 'luft-luft';
+    var vin = document.querySelector('input[name="opt-vinduer"]:checked'); state.vin = vin ? vin.value : 'trelags';
+    state.solar = parseFloat(document.getElementById('inSolar').value) || 0;
+    return { type: type, year: isFinite(year) ? year : 0, area: isFinite(area) && area > 0 ? area : 0, fjern: fjern, gul: gul };
+  }
+
+  function setWhy(id, msg, disabled) {
+    var row = document.getElementById('row-' + id);
+    var why = document.getElementById('why-' + id);
+    var cb = row.querySelector('input');
+    why.textContent = msg || '';
+    row.classList.toggle('disabled', !!disabled);
+    cb.disabled = !!disabled;
+  }
+
+  function update() {
+    var f = readForm();
+    var tek = calcTek(f.year);
+    var cons = consumption(tek, f.type, f.area);
+    var g = gradeFor(cons, f.area, f.type, tek, f.fjern);
+    var d = DIST[tek][f.type];
+
+    // Tilgjengelighet per tiltak (speiler filterreglene)
+    var vinAvail = availableVinduer(tek, f.type, f.gul);
+    document.querySelectorAll('input[name="opt-vinduer"]').forEach(function (r) {
+      r.disabled = vinAvail.indexOf(r.value) < 0;
+    });
+    if (vinAvail.length && vinAvail.indexOf(state.vin) < 0) {
+      state.vin = vinAvail[0];
+      document.querySelector('input[name="opt-vinduer"][value="' + state.vin + '"]').checked = true;
+    }
+    setWhy('vinduer', vinAvail.length ? (f.gul ? 'Gul liste: bare tolags tillatt' : (vinAvail.length === 1 ? 'Bare trelags aktuelt for denne perioden' : '')) : 'Vises ikke: trelags er allerede krav (TEK10+)', !vinAvail.length);
+
+    var vpDefault = rateFor('luft_luft_varmepumpe', tek, f.type);
+    document.querySelectorAll('input[name="opt-varmepumpe"]').forEach(function (r) {
+      r.disabled = !hasEffect(rateFor(VP_KEY[r.value], tek, f.type));
+    });
+    setWhy('varmepumpe', hasEffect(vpDefault) ? '' : 'Vises ikke: mangler tall for denne kombinasjonen', !hasEffect(vpDefault));
+
+    ['yttervegg', 'kjellerloft', 'temperaturstyring', 'ventilasjon'].forEach(function (id) {
+      var t = TILTAK.filter(function (x) { return x.id === id; })[0];
+      var r = rateFor(t.key, tek, f.type);
+      setWhy(id, hasEffect(r) ? '' : 'Vises ikke: ingen effekt for ' + tek, !hasEffect(r));
+    });
+    setWhy('solenergi', '', false);
+
+    // Valgte tiltak → rater
+    var items = [], rows = [], solar = 0;
+    TILTAK.forEach(function (t) {
+      var cb = document.querySelector('#row-' + t.id + ' input');
+      if (!cb.checked || cb.disabled) return;
+      if (t.solar) { solar = state.solar; rows.push({ label: t.label, rate: null, alone: solar }); return; }
+      var key = t.key;
+      if (t.id === 'vinduer') key = VIN_KEY[state.vin];
+      if (t.id === 'varmepumpe') key = VP_KEY[state.vp];
+      var r = rateFor(key, tek, f.type);
+      if (!hasEffect(r)) return;
+      items.push(r);
+      var alone = combined(cons, [r], tek, f.type, 0);
+      var lbl = t.label + (t.id === 'vinduer' ? ' (' + state.vin + ')' : '') + (t.id === 'varmepumpe' ? ' (' + state.vp + ')' : '');
+      rows.push({ label: lbl, rate: r, alone: alone.kwh, pct: alone.pct });
+    });
+    var res = combined(cons, items, tek, f.type, solar);
+    var kr = nok(res.kwh, solar, f.type);
+    var newCons = Math.max(0, cons - res.kwh);
+    var ng = gradeFor(newCons, f.area, f.type, tek, f.fjern);
+    var order = 'ABCDEFG';
+    if (g && ng && order.indexOf(ng) > order.indexOf(g)) ng = g;
+
+    // Utdata
+    document.getElementById('oTek').textContent = tek;
+    document.getElementById('oCons').innerHTML = cons ? fmt(cons) + ' <small>kWh · ' + fmt(INTENSITY[tek][f.type]) + ' kWh/m²</small>' : '–';
+    document.getElementById('oGrade').innerHTML = gradeHtml(g, true);
+    document.getElementById('oSave').innerHTML = res.kwh > 0 ? fmt(res.kwh) + ' <small>kWh · ' + pctTxt(cons ? res.kwh / cons : 0) + ' av forbruket</small>' : '–';
+    document.getElementById('oNok').innerHTML = kr > 0 ? fmt(kr) + ' <small>kr</small>' : '–';
+    document.getElementById('oNew').innerHTML = (g && ng && ng !== g) ? gradeHtml(g, true) + '<span class="arrow">→</span>' + gradeHtml(ng, true) : (g ? gradeHtml(g, true) + ' <small>uendret</small>' : '–');
+
+    // Søyler
+    var tot = d.romoppvarming + d.tappevann + d.elspesifikt;
+    function bar(el, rom, tap, e, restLabel) {
+      var h = '';
+      h += '<div class="b-rom" style="width:' + (rom / tot * 100) + '%">' + Math.round(rom) + '</div>';
+      h += '<div class="b-tap" style="width:' + (tap / tot * 100) + '%">' + Math.round(tap) + '</div>';
+      h += '<div class="b-el" style="width:' + (e / tot * 100) + '%">' + Math.round(e) + '</div>';
+      var rest = tot - rom - tap - e;
+      if (rest > 0.5) h += '<div style="width:' + (rest / tot * 100) + '%;background:transparent;color:var(--muted)">' + (restLabel || '') + '</div>';
+      el.innerHTML = h;
+    }
+    bar(document.getElementById('barBefore'), d.romoppvarming, d.tappevann, d.elspesifikt);
+    bar(document.getElementById('barAfter'), d.romoppvarming * res.kr, d.tappevann * res.kt, d.elspesifikt * res.ke, 'spart ' + Math.round(tot * res.pct) + ' kWh/m²');
+
+    // Per tiltak
+    var tb = document.querySelector('#perTiltak tbody'); var h = '';
+    rows.forEach(function (r) {
+      h += '<tr><td>' + esc(r.label) + '</td>';
+      if (r.rate) h += '<td class="mono dim">' + rateTxt(r.rate.romoppvarming) + ' / ' + rateTxt(r.rate.tappevann) + ' / ' + rateTxt(r.rate.elspesifikt) + '</td><td class="num">' + fmt(r.alone) + ' kWh <span class="dim">(' + pctTxt(r.pct) + ')</span></td>';
+      else h += '<td class="dim">produksjon, legges til</td><td class="num">' + fmt(r.alone) + ' kWh</td>';
+      h += '</tr>';
+    });
+    if (!rows.length) h = '<tr><td colspan="3" class="dim">Ingen tiltak valgt.</td></tr>';
+    tb.innerHTML = h;
+    var sumAlone = rows.reduce(function (a, r) { return a + r.alone; }, 0);
+    var hint = '';
+    if (rows.length > 1 && sumAlone - res.kwh > 1) hint = 'Hver for seg: ' + fmt(sumAlone) + ' kWh. Sammen: ' + fmt(res.kwh) + ' kWh – overlappende effekt på samme energitype ganges, ikke summeres.';
+    if (f.fjern) hint += (hint ? ' ' : '') + 'Fjernvarme påvirker bare karakteren, ikke kWh.';
+    document.getElementById('oHint').textContent = hint;
+  }
+
+  document.getElementById('calcForm').addEventListener('input', update);
+  document.getElementById('calcForm').addEventListener('change', update);
+  update();
+})();
+</script>
+
+</body>
+</html>
