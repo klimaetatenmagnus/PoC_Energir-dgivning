@@ -6,7 +6,11 @@
 import {
   GENERIC_SUBTITLE_DESKTOP,
   GENERIC_SUBTITLE_MOBILE,
+  OM_ENERGINOKKELEN,
+  TEMA_NAV,
   type TemaConfig,
+  type TemaLink,
+  type TemaSection,
 } from './tema';
 
 /** Kanonisk opphav for canonical/og:url. NB: energinokkelen.no (uten ø) har
@@ -41,11 +45,51 @@ body{margin:0;background:#D1F9FF;font-family:'Oslo Sans',-apple-system,BlinkMacS
 .pr-tema h2{margin:32px 0 8px;font-weight:700;font-size:22px;line-height:1.3}
 .pr-tema h2:first-child{margin-top:0}
 .pr-tema p{margin:0;font-size:17px;line-height:1.6}
+.pr-tema p+p{margin-top:12px}
+.pr-tema a{color:#2A2859;text-decoration:underline}
+.pr-tema-links{margin:12px 0 0;padding-left:20px;font-size:16px;line-height:1.6}
+.pr-tema-links li{margin:4px 0}
+.pr-tema-nav{margin-top:40px;padding-top:24px;border-top:1px solid #2A2859}
+.pr-tema-nav h2{margin-top:0}
+.pr-tema-navlinks{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px 20px;font-size:16px;line-height:1.6}
 `.trim();
 
+const renderLinks = (
+  links: TemaLink[] | undefined,
+  className: string,
+  currentPath?: string
+): string => {
+  if (!links || links.length === 0) return '';
+  const items = links
+    .map((l) => {
+      const current =
+        currentPath !== undefined && l.href === currentPath ? ' aria-current="page"' : '';
+      return `<li><a href="${esc(l.href)}"${current}>${esc(l.label)}</a></li>`;
+    })
+    .join('');
+  return `<ul class="${className}">${items}</ul>`;
+};
+
+const renderSection = (s: TemaSection): string =>
+  `<h2>${esc(s.heading)}</h2>` +
+  s.paragraphs.map((p) => `<p>${esc(p)}</p>`).join('') +
+  renderLinks(s.links, 'pr-tema-links');
+
 /**
- * Statisk over-folden-innhold: tittel, undertittel og et søkefelt-lookalike.
- * Rendres inne i #root og erstattes i sin helhet når React mounter.
+ * Bunnblokker på alle landingssider (også forsiden): navigasjon mellom
+ * temasidene – internlenker slik at variantene ikke er øyer for crawlere –
+ * og «Om Energinøkkelen».
+ */
+const renderFooterBlocks = (currentPath: string): string =>
+  `<nav class="pr-tema-nav" aria-label="${esc(TEMA_NAV.heading)}"><h2>${esc(TEMA_NAV.heading)}</h2>` +
+  renderLinks(TEMA_NAV.links, 'pr-tema-navlinks', currentPath) +
+  '</nav>' +
+  renderSection(OM_ENERGINOKKELEN);
+
+/**
+ * Statisk over-folden-innhold (tittel, undertittel, søkefelt-lookalike) pluss
+ * tematekst og bunnblokker. Rendres inne i #root og erstattes i sin helhet
+ * når React mounter (TemaSeoSection speiler samme struktur fra samme kilde).
  */
 const renderStaticLanding = (tema: TemaConfig | null): string => {
   const heading = tema
@@ -54,22 +98,18 @@ const renderStaticLanding = (tema: TemaConfig | null): string => {
     : `<h1 class="pr-brand">Energinøkkelen</h1>
       <p class="pr-subtitle"><span class="pr-sub-mobile">${esc(GENERIC_SUBTITLE_MOBILE)}</span><span class="pr-sub-desktop">${esc(GENERIC_SUBTITLE_DESKTOP)}</span></p>`;
 
-  const temaSections = tema
-    ? `
-    <section class="pr-tema">
-      <div class="pr-tema-inner">
-        ${tema.sections
-          .map((s) => `<h2>${esc(s.heading)}</h2>\n        <p>${esc(s.text)}</p>`)
-          .join('\n        ')}
-      </div>
-    </section>`
-    : '';
+  const body =
+    (tema ? tema.sections.map(renderSection).join('') : '') +
+    renderFooterBlocks(tema ? tema.path : '/');
 
   return `
     <div class="pr-landing">
       ${heading}
       <div class="pr-search" aria-hidden="true">Skriv inn adresse...</div>
-    </div>${temaSections}
+    </div>
+    <section class="pr-tema">
+      <div class="pr-tema-inner">${body}</div>
+    </section>
   `;
 };
 

@@ -426,7 +426,7 @@ export default function App() {
             clearHighlightedSuggestion={clearHighlightedSuggestion}
             tema={tema}
           />
-          {tema && <TemaSeoSection tema={tema} opacity={headerFadeOpacity} />}
+          <TemaSeoSection tema={tema} opacity={headerFadeOpacity} />
         </>
       );
     }
@@ -458,7 +458,7 @@ export default function App() {
           hasResult={hasResult}
           tema={tema}
         />
-        {tema && <TemaSeoSection tema={tema} opacity={headerFadeOpacity} />}
+        <TemaSeoSection tema={tema} opacity={headerFadeOpacity} />
       </>
     );
   }
