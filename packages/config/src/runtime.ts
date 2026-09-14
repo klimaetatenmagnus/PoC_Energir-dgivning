@@ -3,7 +3,7 @@ import { existsSync } from "fs";
 import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 
-const DEFAULT_MATRIKKEL_BASE_URL = "https://www.matrikkel.no/matrikkelapi/wsapi/v1";
+const DEFAULT_MATRIKKEL_BASE_URL = "https://innsyn.matrikkel.no/matrikkelapi/wsapi/v1";
 const DEFAULT_GRUNNBOK_BASE_URL_PROD = "https://grunnbok.no/grunnbok/wsapi/v2";
 const DEFAULT_GRUNNBOK_BASE_URL_TEST = "https://syntest.grunnbok.no/grunnbok/wsapi/v2";
 

@@ -26,7 +26,7 @@ import { matrikkelEndpoint } from "../src/utils/endpoints.ts";
 
 const BASE_URL =
   process.env.MATRIKKEL_API_BASE_URL_PROD ||
-  "https://www.matrikkel.no/matrikkelapi/wsapi/v1";
+  "https://innsyn.matrikkel.no/matrikkelapi/wsapi/v1";
 const USERNAME = process.env.MATRIKKEL_USERNAME!;
 const PASSWORD = process.env.MATRIKKEL_PASSWORD!;
 const IS_LIVE = process.env.LIVE === "1";

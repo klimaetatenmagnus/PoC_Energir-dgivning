@@ -75,7 +75,7 @@ Integrasjons- og E2E-tester krever følgende miljøvariabler:
 
 ```env
 # Matrikkel API (kanonisk navngivning - bruk disse)
-MATRIKKEL_API_BASE_URL_PROD=https://www.matrikkel.no/matrikkelapi/wsapi/v1
+MATRIKKEL_API_BASE_URL_PROD=https://innsyn.matrikkel.no/matrikkelapi/wsapi/v1
 MATRIKKEL_USERNAME=<brukernavn>
 MATRIKKEL_PASSWORD=<passord>
 

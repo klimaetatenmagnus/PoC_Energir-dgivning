@@ -5,7 +5,7 @@ import { StoreClient } from "../src/clients/StoreClient.ts";
 import { matrikkelEndpoint } from "../src/utils/endpoints.ts";
 import fs from "fs/promises";
 
-const BASE_URL = process.env.MATRIKKEL_API_BASE_URL_PROD || "https://www.matrikkel.no/matrikkelapi/wsapi/v1";
+const BASE_URL = process.env.MATRIKKEL_API_BASE_URL_PROD || "https://innsyn.matrikkel.no/matrikkelapi/wsapi/v1";
 const USERNAME = process.env.MATRIKKEL_USERNAME!;
 const PASSWORD = process.env.MATRIKKEL_PASSWORD!;
 

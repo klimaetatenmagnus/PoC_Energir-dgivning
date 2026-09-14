@@ -7,7 +7,7 @@ async function analyzeDetailedBuildingTypes() {
   process.env.LIVE = '1';
   
   // Create BygningClient instance
-  const baseUrl = process.env.MATRIKKEL_TEST_URL || 'https://www.matrikkel.no/matrikkelapi/wsapi/v1';
+  const baseUrl = process.env.MATRIKKEL_TEST_URL || 'https://innsyn.matrikkel.no/matrikkelapi/wsapi/v1';
   const username = process.env.MATRIKKEL_USERNAME || '';
   const password = process.env.MATRIKKEL_PASSWORD || '';
   const bygningClient = new BygningClient(baseUrl, username, password);
