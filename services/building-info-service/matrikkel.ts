@@ -10,6 +10,10 @@ import {
   shouldReportSectionLevel,
   shouldReportBuildingLevel,
 } from '../../src/utils/buildingTypeUtils.ts';
+import {
+  isGarageOrOutbuildingCode,
+  parseBuildingTypeCode,
+} from '../../src/utils/buildingTypeCode.ts';
 import { selectBuildingImproved } from './improved-building-selection.ts';
 import {
   LOG,
@@ -564,13 +568,15 @@ export async function resolveBuildingData(
         debugLog(`   Areal: ${csvData.bruksarealTotalt} m²`);
       }
 
-      // Ikke bruk garasje/uthus (type >= 180) til å styre bygningsvalget.
+      // Ikke bruk garasje/uthus (type 180–199) til å styre bygningsvalget.
       // findByExactAddress returnerer garasje når KUN garasje finnes på adressen
       // (ett treff → returneres alltid). Uten denne sjekken ville
       // csvPreferredBuildingNr peke på garasjen og aktivt velge den fra
       // Matrikkel-dataene, selv om den ble filtrert ut som ikke-bolig.
-      const code = parseInt(csvData.bygningstype3siffer, 10);
-      if (code >= 180) {
+      // Næringsbygg (kode 200+) er ikke garasje: de skal ikke byttes ut med
+      // en søsken-bolig på naboadressen.
+      const code = parseBuildingTypeCode(csvData.bygningstype3siffer);
+      if (isGarageOrOutbuildingCode(code)) {
         if (LOG) {
           debugLog(
             `⚠️  CSV returnerte garasje/uthus (type ${code}) – csvPreferredBuildingNr settes ikke`
@@ -768,7 +774,7 @@ export async function resolveBuildingData(
     for (const byggId of byggIds) {
       try {
         const byggInfo = await getByggInfo(byggId);
-        if (shouldProcessBuildingType(byggInfo.bygningstypeKodeId)) {
+        if (shouldProcessBuildingType(byggInfo)) {
           harBoligbygg = true;
         }
 
@@ -1062,7 +1068,7 @@ export async function resolveBuildingData(
   const MIN_AREA_THRESHOLD = 20;
 
   let eligibleBuildings = allBygningsInfo.filter((bygg) =>
-    shouldProcessBuildingType(bygg.bygningstypeKodeId)
+    shouldProcessBuildingType(bygg)
   );
 
   eligibleBuildings = eligibleBuildings.filter(
@@ -1083,7 +1089,7 @@ export async function resolveBuildingData(
   if (LOG) {
     debugLog(`🏠 Eligible buildings after filtering: ${eligibleBuildings.length}`);
     for (const bygg of eligibleBuildings) {
-      const strategy = determineBuildingTypeStrategy(bygg.bygningstypeKodeId);
+      const strategy = determineBuildingTypeStrategy(bygg);
       debugLog(
         `  Building ${bygg.id}: ${strategy.description} (${strategy.reportingLevel})`
       );
@@ -1212,10 +1218,10 @@ export async function resolveBuildingData(
   if (!selectedBygg) {
     if (!erSeksjonertEiendom) {
       const sectionLevelBuildings = eligibleBuildings.filter((bygg) =>
-        shouldReportSectionLevel(bygg.bygningstypeKodeId)
+        shouldReportSectionLevel(bygg)
       );
       const buildingLevelBuildings = eligibleBuildings.filter((bygg) =>
-        shouldReportBuildingLevel(bygg.bygningstypeKodeId)
+        shouldReportBuildingLevel(bygg)
       );
 
       if (sectionLevelBuildings.length > 0) {
@@ -1333,7 +1339,7 @@ export async function resolveBuildingData(
   const byggId = bygg.id;
 
   if (LOG) {
-    const strategy = determineBuildingTypeStrategy(bygg.bygningstypeKodeId);
+    const strategy = determineBuildingTypeStrategy(bygg);
     debugLog(
       `📋 Building type strategy: ${strategy.description} (${strategy.reportingLevel})`
     );

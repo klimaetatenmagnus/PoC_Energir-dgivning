@@ -20,32 +20,38 @@ const USERNAME = process.env.MATRIKKEL_USERNAME!;
 const PASSWORD = process.env.MATRIKKEL_PASSWORD!;
 
 describe("Building Type Filtering - Unit Tests", () => {
-  // Test-cases for bygningstype-filtrering
-  const testCases = [
+  // Test-cases for bygningstype-filtrering.
+  // `id` er Matrikkelens interne bygningstypeKodeId, `kode` er 3-sifret
+  // bygningstypekode. De to må aldri blandes: ID 111 er sykehjem (kode 721).
+  const testCases: Array<{
+    source: { bygningstypeKodeId?: number; bygningstypeKode?: string };
+    name: string;
+    expected: boolean;
+  }> = [
     // Boligbygg som SKAL behandles
-    { code: 1, name: "Enebolig (internal ID 1)", expected: true },
-    { code: 4, name: "Tomannsbolig (internal ID 4)", expected: true },
-    { code: 111, name: "Enebolig", expected: true },
-    { code: 121, name: "Tomannsbolig, vertikaldelt", expected: true },
-    { code: 131, name: "Rekkehus", expected: true },
-    { code: 141, name: "Store frittliggende boligbygg pa 2 etasjer", expected: true },
+    { source: { bygningstypeKodeId: 1 }, name: "Enebolig (intern ID 1)", expected: true },
+    { source: { bygningstypeKodeId: 4 }, name: "Tomannsbolig (intern ID 4)", expected: true },
+    { source: { bygningstypeKode: "111" }, name: "Enebolig (kode 111)", expected: true },
+    { source: { bygningstypeKode: "121" }, name: "Tomannsbolig, vertikaldelt (kode 121)", expected: true },
+    { source: { bygningstypeKode: "131" }, name: "Rekkehus (kode 131)", expected: true },
+    { source: { bygningstypeKode: "141" }, name: "Store frittliggende boligbygg pa 2 etasjer (kode 141)", expected: true },
 
     // Ikke-bolig eller ekskluderte bygg som IKKE skal behandles
-    { code: 26, name: "Garasje, uthus, anneks (internal ID 26)", expected: false },
-    { code: 181, name: "Garasje, uthus, anneks knyttet til bolig", expected: false },
-    { code: 182, name: "Garasje i boligbygg", expected: false },
-    { code: 183, name: "Innhegnet garasjeanlegg", expected: false },
-    { code: 189, name: "Annen garasje/uthus", expected: false },
-    { code: 211, name: "Fabrikkbygning", expected: false },
-    { code: 311, name: "Kontor- og administrasjonsbygg", expected: false },
-    { code: undefined, name: "Undefined building type", expected: false },
+    { source: { bygningstypeKodeId: 26 }, name: "Garasje, uthus, anneks (intern ID 26)", expected: false },
+    { source: { bygningstypeKode: "181" }, name: "Garasje, uthus, anneks knyttet til bolig (kode 181)", expected: false },
+    { source: { bygningstypeKode: "182" }, name: "Garasje i boligbygg (kode 182)", expected: false },
+    { source: { bygningstypeKode: "183" }, name: "Innhegnet garasjeanlegg (kode 183)", expected: false },
+    { source: { bygningstypeKode: "189" }, name: "Annen garasje/uthus (kode 189)", expected: false },
+    { source: { bygningstypeKode: "211" }, name: "Fabrikkbygning (kode 211)", expected: false },
+    { source: { bygningstypeKode: "311" }, name: "Kontor- og administrasjonsbygg (kode 311)", expected: false },
+    { source: {}, name: "Undefined building type", expected: false },
   ];
 
   describe("shouldProcessBuildingType", () => {
     it.each(testCases)(
-      "$name (kode $code) skal returnere $expected",
-      ({ code, expected }) => {
-        const result = shouldProcessBuildingType(code);
+      "$name skal returnere $expected",
+      ({ source, expected }) => {
+        const result = shouldProcessBuildingType(source);
         expect(result).toBe(expected);
       }
     );
@@ -53,18 +59,18 @@ describe("Building Type Filtering - Unit Tests", () => {
 
   describe("determineBuildingTypeStrategy", () => {
     it("skal returnere 'building' for boligbygg", () => {
-      const strategy = determineBuildingTypeStrategy(111);
+      const strategy = determineBuildingTypeStrategy({ bygningstypeKode: "111" });
       expect(strategy.reportingLevel).toBe("building");
     });
 
     it("skal returnere 'skip' for garasjer", () => {
-      const strategy = determineBuildingTypeStrategy(181);
+      const strategy = determineBuildingTypeStrategy({ bygningstypeKode: "181" });
       expect(strategy.reportingLevel).toBe("skip");
     });
 
     it("skal ha beskrivelse for alle typer", () => {
-      testCases.forEach(({ code }) => {
-        const strategy = determineBuildingTypeStrategy(code);
+      testCases.forEach(({ source }) => {
+        const strategy = determineBuildingTypeStrategy(source);
         expect(strategy.description).toBeDefined();
         expect(strategy.description.length).toBeGreaterThan(0);
       });
@@ -108,7 +114,7 @@ describe.skipIf(!LIVE)("Building Type Filtering - Integration", () => {
       for (const byggId of byggIds) {
         try {
           const byggData = await storeClient.getObject(byggId);
-          const shouldProcess = shouldProcessBuildingType(byggData.bygningstypeKodeId);
+          const shouldProcess = shouldProcessBuildingType(byggData);
 
           buildings.push({
             id: byggId,
@@ -158,7 +164,7 @@ describe.skipIf(!LIVE)("Building Type Filtering - Integration", () => {
       if (filtered.length > 0) {
         console.log("\nFiltered buildings:");
         filtered.forEach((b) => {
-          const strategy = determineBuildingTypeStrategy(b.type);
+          const strategy = determineBuildingTypeStrategy({ bygningstypeKodeId: b.type });
           console.log(`  - ${strategy.description} (${b.area} m2)`);
         });
       }

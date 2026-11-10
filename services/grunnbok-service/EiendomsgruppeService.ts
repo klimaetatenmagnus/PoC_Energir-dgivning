@@ -28,6 +28,7 @@ import type { SolarEnergyData } from "../../src/services/solarEnergyService.ts";
 import { csvService } from "../../src/services/csvService.ts";
 import { getSolarCsvService } from "../../src/services/solarCsvService.ts";
 import { shouldProcessBuildingType } from "../../src/utils/buildingTypeUtils.ts";
+import { resolveBuildingTypeCodeString } from "../../src/utils/buildingTypeCode.ts";
 
 proj4.defs("EPSG:32632", "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs");
 
@@ -97,7 +98,10 @@ export interface AggregatedBuilding {
   bruksarealM2: number | null;
   bruksarealKilde: BruksarealKilde;
   tekStandard: string;
+  /** Matrikkelens interne ID – IKKE en 3-sifret kode. Bruk bygningstypeKode. */
   bygningstypeKodeId: number | null;
+  /** 3-sifret bygningstypekode (f.eks. "142"), eller null hvis ukjent. */
+  bygningstypeKode: string | null;
   antallEnheterIBygg: number;
   solar?: {
     takAreal_m2: number | null;
@@ -282,9 +286,7 @@ function aggregerBygg(
   // Filtrer bort ikke-boligbygg (garasjer, uthus, næringsbygg, m.m.) så
   // aggregeringen bare dekker boligmassen. Uten dette havner f.eks.
   // garasjeseksjoner i sameier i byggtellingen og inflaterer m²/boenhet.
-  const boligByggInfo = byggInfo.filter((b) =>
-    shouldProcessBuildingType(b.bygningstypeKodeId)
-  );
+  const boligByggInfo = byggInfo.filter((b) => shouldProcessBuildingType(b));
   const antallFiltrert = byggInfo.length - boligByggInfo.length;
   if (antallFiltrert > 0) {
     warnings.push(
@@ -318,6 +320,12 @@ function aggregerBygg(
       bruksarealKilde,
       tekStandard: calculateTEK(isSentinelByggeaar(b.byggeaar) ? 0 : (b.byggeaar ?? 0)),
       bygningstypeKodeId: b.bygningstypeKodeId ?? null,
+      bygningstypeKode:
+        resolveBuildingTypeCodeString({
+          bygningstypeKode: b.bygningstypeKode,
+          bygningstypeKodeId: b.bygningstypeKodeId,
+          csvData: csvMatch,
+        }) ?? null,
       antallEnheterIBygg: byggIdCount.get(b.id) ?? 0,
       solar: solar
         ? {

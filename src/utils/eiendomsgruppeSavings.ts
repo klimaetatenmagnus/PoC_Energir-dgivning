@@ -15,6 +15,7 @@ import {
   determineBuildingType,
 } from './tekEnergyCalculations.ts';
 import { computeAggregatedSavingsNok } from './tiltakSavings.ts';
+import { resolveBuildingTypeCodeString } from './buildingTypeCode.ts';
 import type { Boligtype, TekPeriodInput } from './energySavingsData.ts';
 
 /** Minimalt delsett av EiendomsgruppeBygning som aggregeringen trenger. */
@@ -22,7 +23,10 @@ export interface EiendomsgruppeBygg {
   byggId: number;
   byggeaar: number | null;
   bruksarealM2: number | null;
+  /** Matrikkelens interne ID (f.eks. 13) – IKKE en 3-sifret kode. */
   bygningstypeKodeId: number | null;
+  /** 3-sifret bygningstypekode (f.eks. "142") når backend har levert den. */
+  bygningstypeKode?: string | null;
   solar?: { filteredSolarEnergy: number | null } | null;
 }
 
@@ -112,7 +116,7 @@ export function computeEiendomsgruppeSavings(
 
     const byggeaar = b.byggeaar ?? 0;
     const boligtype = determineBuildingType(
-      b.bygningstypeKodeId != null ? String(b.bygningstypeKodeId) : undefined,
+      resolveBuildingTypeCodeString(b),
       undefined,
     );
     const tekPeriod = calculateTEK(byggeaar) as TekPeriodInput;
@@ -188,7 +192,7 @@ export function beregnGruppeBaselineForbruk(
     const bruksareal = b.bruksarealM2 ?? 0;
     if (!Number.isFinite(bruksareal) || bruksareal <= 0) continue;
     const boligtype = determineBuildingType(
-      b.bygningstypeKodeId != null ? String(b.bygningstypeKodeId) : undefined,
+      resolveBuildingTypeCodeString(b),
       undefined,
     );
     total += calculateAnnualEnergyConsumption(b.byggeaar ?? undefined, bruksareal, boligtype);

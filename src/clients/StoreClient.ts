@@ -9,7 +9,7 @@ import { XMLParser } from "fast-xml-parser";
 import proj4 from "proj4";
 import { dumpSoap, type SoapPhase } from "../utils/soapDump.ts";
 import { randomUUID } from "crypto";
-import { mapBygningstypeId, getBygningstypeBeskrivelse } from "../utils/bygningstypeMapping.ts";
+import { buildingTypeCodeFromId } from "../utils/buildingTypeCode.ts";
 import type { BruksenhetInfo } from "./BruksenhetClient.ts";
 import "../../loadEnv.ts";
 import { debugLog, warnLog } from "../../services/building-info-service/logging.ts";
@@ -195,10 +195,9 @@ function extractBygningstypeKodeId(tree: unknown): number | undefined {
     if (value) {
       const num = Number(value);
       if (Number.isFinite(num)) {
-        // VIKTIG: Matrikkelen returnerer ofte bare intern kode-ID (f.eks. 8)
-        // som må mappes til faktisk bygningstype-kode (f.eks. 131 for rekkehus)
-        // Dette krever trolig bruk av findAlleBygningstypeKoder fra BygningService
-        debugLog(`Mottok intern bygningstype-kode ID: ${num} - dette må mappes til 3-sifret bygningstype`);
+        // VIKTIG: Matrikkelen returnerer intern kode-ID (f.eks. 8), ikke den
+        // 3-sifrede bygningstypekoden (131 for rekkehus). ID-en mappes til
+        // kode i getObject via buildingTypeCodeFromId.
         return num;
       }
     }
@@ -476,29 +475,12 @@ export class StoreClient {
         }
       : undefined;
 
-    // Mapper intern bygningstype-ID til faktisk 3-sifret kode
-    let bygningstypeKode: string | undefined;
-    let bygningstypeBeskrivelse: string | undefined;
-    
-    if (bygningstypeKodeId && this.username && this.password) {
-      try {
-        bygningstypeKode = await mapBygningstypeId(
-          bygningstypeKodeId,
-          this.baseUrl.replace("/StoreServiceWS", ""),
-          this.username,
-          this.password
-        );
-        
-        bygningstypeBeskrivelse = await getBygningstypeBeskrivelse(
-          bygningstypeKodeId,
-          this.baseUrl.replace("/StoreServiceWS", ""),
-          this.username,
-          this.password
-        );
-      } catch (error) {
-        warnLog(`Kunne ikke mappe bygningstype-ID ${bygningstypeKodeId}:`, error);
-      }
-    }
+    // Mapper intern bygningstype-ID til faktisk 3-sifret kode via den
+    // verifiserte ID-tabellen. (Tidligere oppslag mot findAlleBygningstypeKoder
+    // ga alltid tomt resultat: tjenesten returnerer bare ID-er, ikke koder.)
+    const mappedCode = buildingTypeCodeFromId(bygningstypeKodeId);
+    const bygningstypeKode =
+      mappedCode !== undefined ? String(mappedCode) : undefined;
 
     return {
       id,
@@ -507,7 +489,6 @@ export class StoreClient {
       representasjonspunkt,
       bygningstypeKodeId,
       bygningstypeKode,
-      bygningstypeBeskrivelse,
       bygningsnummer,
       bruksenhetIds,
       oppvarmingsKodeIds,
