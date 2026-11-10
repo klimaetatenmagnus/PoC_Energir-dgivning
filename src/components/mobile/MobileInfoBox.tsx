@@ -20,6 +20,7 @@ import { gruppenavn as gruppenavnFmt } from '../../utils/eiendomsgruppeFormat';
 import { AddressLookupResponse } from '../../services/buildingApi';
 import '../../config/badges.css';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, calculateEnergyRatingWithFjernvarme, calculateTEK } from '../../utils/tekEnergyCalculations';
+import { resolveBuildingTypeCodeString } from '../../utils/buildingTypeCode';
 import { type TekPeriodInput } from '../../utils/energySavingsData';
 import { formatCurrency, formatNumberWithSpaces } from '../../utils/energy';
 import { getOsloMapExportUrl } from '../../utils/coordinateUtils';
@@ -132,6 +133,8 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   // Bygningstypevisning (bruker sentral badge-konfigurasjon)
   // (erstattet av displayBuildingTypeLabel/displayBuildingBadgeConfig over)
   const isBlockBuilding = buildingTypeName.toLowerCase() === 'blokk' || buildingTypeName === 'Store boligbygg';
+  // 3-sifret bygningstypekode via felles oppslag (oppslått kode → CSV → ID-tabell)
+  const buildingTypeCode = resolveBuildingTypeCodeString(buildingData);
 
   // Store the original fetched values so "Tilbakestill" can always reset to them
   // Bruker originalBuildingData (uendrede verdier fra API) fordi MobileInfoBox remonteres
@@ -160,13 +163,13 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
 
     const bruksareal = rawBruksareal ? Number(rawBruksareal) : undefined;
     const buildingType = determineBuildingType(
-      buildingData?.bygningstypeKode,
+      buildingTypeCode,
       buildingTypeName
     );
 
     // Bruker alltid TEK-basert estimering, ikke Enova-attest
     return calculateAnnualEnergyConsumption(parsedByggeaar, bruksareal, buildingType);
-  }, [savedByggeaar, savedAreal, buildingData, buildingTypeName]);
+  }, [savedByggeaar, savedAreal, buildingData, buildingTypeCode, buildingTypeName]);
 
   const [savedEnergiforbruk, setSavedEnergiforbruk] = useState(
     String(buildingData?.energiattest?.registering?.beregnetLevertEnergiTotaltkWh || estimatedConsumption)
@@ -190,7 +193,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   React.useEffect(() => {
     if (isEditMode && !hasUserEditedEnergy) {
       const buildingType = determineBuildingType(
-        buildingData?.bygningstypeKode,
+        buildingTypeCode,
         buildingTypeName
       );
       const newEstimate = calculateAnnualEnergyConsumption(
@@ -200,7 +203,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
       );
       setEditedEnergiforbruk(String(newEstimate));
     }
-  }, [editedByggeaar, editedAreal, isEditMode, buildingData?.bygningstypeKode, buildingTypeName, hasUserEditedEnergy]);
+  }, [editedByggeaar, editedAreal, isEditMode, buildingTypeCode, buildingTypeName, hasUserEditedEnergy]);
 
   // Justert energiforbruk basert på gjennomførte tiltak
   // Avrundes til nærmeste 1000 for konsistent visning
@@ -231,7 +234,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
       return null;
     }
 
-    const buildingType = determineBuildingType(buildingData?.bygningstypeKode, buildingTypeName);
+    const buildingType = determineBuildingType(buildingTypeCode, buildingTypeName);
 
     if (fjernvarme) {
       const rawByggeaarForTek = savedByggeaar || buildingData?.byggeaar?.toString() || buildingData?.csvData?.byggeaar;
@@ -249,7 +252,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
     adjustedEnergyConsumption,
     buildingData?.bruksarealM2,
     buildingData?.byggeaar,
-    buildingData?.bygningstypeKode,
+    buildingTypeCode,
     buildingData?.csvData?.bruksareal_totalt,
     buildingData?.csvData?.byggeaar,
     buildingTypeName,
@@ -505,7 +508,7 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
                       const origByggeaar = originalByggeaarRef.current;
                       const origAreal = originalArealRef.current;
                       const origArealLeilighet = originalArealLeilighetRef.current;
-                      const buildingType = determineBuildingType(buildingData?.bygningstypeKode, buildingTypeName);
+                      const buildingType = determineBuildingType(buildingTypeCode, buildingTypeName);
                       const origEnergy = String(calculateAnnualEnergyConsumption(
                         origByggeaar ? Number(origByggeaar) : undefined,
                         origAreal ? Number(origAreal) : undefined,

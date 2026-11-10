@@ -63,6 +63,8 @@ export interface AddressLookupResponse {
     bygningstypeNavn?: string;
     bygningstypekode?: string;
     bygningstypeKode?: string;
+    /** 3-sifret bygningstypekode fra Oslo kommunes matrikkeluttrekk, f.eks. "142". */
+    bygningstype3siffer?: string;
     byggeaar?: string;
     bruksareal_totalt?: string;
     takflate_main?: string;
@@ -112,7 +114,10 @@ export interface EiendomsgruppeBygning {
   byggeaar: number | null;
   bruksarealM2: number | null;
   tekStandard: string;
+  /** Matrikkelens interne ID – IKKE en 3-sifret kode. Bruk bygningstypeKode. */
   bygningstypeKodeId: number | null;
+  /** 3-sifret bygningstypekode (f.eks. "142"). Mangler i svar fra eldre backend. */
+  bygningstypeKode?: string | null;
   antallEnheterIBygg: number;
   solar?: {
     takAreal_m2: number | null;

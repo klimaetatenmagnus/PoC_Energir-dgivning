@@ -14,6 +14,7 @@ import {
   type Boligtype,
 } from '../../../utils/energySavingsData';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateTEK, calculateEnergyRating, calculateEnergyRatingWithFjernvarme } from '../../../utils/tekEnergyCalculations';
+import { resolveBuildingTypeCodeString } from '../../../utils/buildingTypeCode';
 import { computeAggregatedSavingsNok } from '../../../utils/tiltakSavings';
 import { computeBygningSavings } from '../../../utils/bygningSavings';
 import { computeEiendomsgruppeSavings } from '../../../utils/eiendomsgruppeSavings';
@@ -232,11 +233,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   }, [buildingData]);
 
   const buildingTypeCode = React.useMemo(() => {
-    return (
-      buildingData?.bygningstypeKode?.substring(0, 2) ||
-      buildingData?.csvData?.bygningstypekode?.substring(0, 2) ||
-      ''
-    );
+    return resolveBuildingTypeCodeString(buildingData)?.substring(0, 2) ?? '';
   }, [buildingData]);
 
   const buildingTypeName = React.useMemo(() => {
@@ -280,7 +277,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
   // Bruker sentralisert determineBuildingType() for konsistens
   const boligtype: Boligtype | null = React.useMemo(() => {
     return determineBuildingType(
-      buildingData?.bygningstypeKode || buildingData?.csvData?.bygningstypekode,
+      resolveBuildingTypeCodeString(buildingData),
       buildingData?.bygningstype || buildingData?.csvData?.bygningstype
     );
   }, [buildingData]);
@@ -309,14 +306,10 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
     (b: EiendomsgruppeBygning) => {
       const bYear = b.byggeaar ?? 0;
       const bTek = calculateTEK(bYear) as TekPeriodInput;
-      const bType = determineBuildingType(
-        b.bygningstypeKodeId != null ? String(b.bygningstypeKodeId) : undefined,
-        undefined,
-      ) as Boligtype;
-      const bTypeKey = determineBuildingTypeKey(
-        b.bygningstypeKodeId != null ? String(b.bygningstypeKodeId).substring(0, 2) : '',
-        '',
-      );
+      // 3-sifret kode – aldri Matrikkelens interne ID (ID 13 = kode 142, blokk)
+      const bCode = resolveBuildingTypeCodeString(b);
+      const bType = determineBuildingType(bCode, undefined) as Boligtype;
+      const bTypeKey = determineBuildingTypeKey(bCode?.substring(0, 2) ?? '', '');
       return filterTiltakForBuilding(
         publishedCatalog,
         bTypeKey,
@@ -444,7 +437,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
         : undefined;
 
     const buildingType = determineBuildingType(
-      buildingData?.bygningstypeKode || buildingData?.csvData?.bygningstypekode,
+      resolveBuildingTypeCodeString(buildingData),
       buildingData?.bygningstype || buildingData?.csvData?.bygningstype
     );
 
@@ -462,6 +455,7 @@ export const EnergySolutionButtons: React.FC<EnergySolutionButtonsProps> = ({ sh
           byggeaar: b.byggeaar,
           bruksarealM2: b.bruksarealM2,
           bygningstypeKodeId: b.bygningstypeKodeId,
+          bygningstypeKode: b.bygningstypeKode,
           solar: b.solar ? { filteredSolarEnergy: b.solar.filteredSolarEnergy } : null,
         })),
         displayTiltak: groupUnionTiltak.map((t) => ({ id: t.id, title: t.title })),

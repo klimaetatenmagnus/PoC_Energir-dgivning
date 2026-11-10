@@ -8,6 +8,7 @@ import { useResponsive } from "./hooks/useResponsive";
 import { useAddressCoordinates } from "./components/FigmaBlokk/hooks/useAddressCoordinates";
 import { fetchSolarData, SolarEnergyData } from "./services/solarEnergyService";
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from "./utils/tekEnergyCalculations";
+import { resolveBuildingTypeCodeString } from "./utils/buildingTypeCode";
 import { sjekkGulListeMedGnrBnr } from "./services/gul-liste-service";
 import { trackResultViewed, trackPageStep, trackTiltakExpanded } from "./analytics";
 import { getActiveTema } from "./tema";
@@ -207,7 +208,7 @@ export default function App() {
     if (!byggeaar || !bruksareal) return '';
 
     const buildingType = determineBuildingType(
-      result.bygningstypeKode || result.csvData?.bygningstypekode,
+      resolveBuildingTypeCodeString(result),
       result.bygningstype || result.csvData?.bygningstype
     );
 
@@ -238,7 +239,7 @@ export default function App() {
     const bra = Number(bruksareal);
     const intensity = consumption / bra;
     const buildingType = determineBuildingType(
-      result.bygningstypeKode || result.csvData?.bygningstypekode,
+      resolveBuildingTypeCodeString(result),
       result.bygningstype || result.csvData?.bygningstype
     );
 

@@ -34,6 +34,7 @@ import { MobileSavingsFooter } from './MobileSavingsFooter';
 import { MobileDistrictComparison } from './MobileDistrictComparison';
 import { MobileProsessenVidere } from './MobileProsessenVidere';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, calculateEnergyRatingWithFjernvarme } from '../../utils/tekEnergyCalculations';
+import { resolveBuildingTypeCodeString } from '../../utils/buildingTypeCode';
 import { calculateTekPeriod, parseNumericValue } from '../FigmaBlokk/components/Tiltak/shared';
 import { computeAggregatedSavingsNok } from '../../utils/tiltakSavings';
 import {
@@ -335,11 +336,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
 
   // Bygningstypedata
   const buildingTypeCode = useMemo(() => {
-    return (
-      updatedBuildingData?.bygningstypeKode?.substring(0, 2) ||
-      updatedBuildingData?.csvData?.bygningstypekode?.substring(0, 2) ||
-      ''
-    );
+    return resolveBuildingTypeCodeString(updatedBuildingData)?.substring(0, 2) ?? '';
   }, [updatedBuildingData]);
 
   const buildingTypeName = useMemo(() => {
@@ -419,7 +416,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   // Bruker sentralisert determineBuildingType() for konsistens med desktop
   const boligtype: Boligtype | null = useMemo(() => {
     return determineBuildingType(
-      updatedBuildingData?.bygningstypeKode || updatedBuildingData?.csvData?.bygningstypekode,
+      resolveBuildingTypeCodeString(updatedBuildingData),
       updatedBuildingData?.bygningstype || updatedBuildingData?.csvData?.bygningstype
     );
   }, [updatedBuildingData]);
@@ -692,17 +689,17 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
     ) {
       const publishedCatalog = catalogData.items.filter((t) => t.status === 'published');
       const displayTiltakForGruppe = publishedCatalog.map((t) => ({ id: t.id, title: t.title }));
-      const filterForBygg = (b: { byggeaar: number | null; bygningstypeKodeId: number | null }) => {
+      const filterForBygg = (b: {
+        byggeaar: number | null;
+        bygningstypeKodeId: number | null;
+        bygningstypeKode?: string | null;
+      }) => {
         const bYear = b.byggeaar ?? 0;
         const bTek = calculateTekPeriod(bYear) as TekPeriodInput;
-        const bType = determineBuildingType(
-          b.bygningstypeKodeId != null ? String(b.bygningstypeKodeId) : undefined,
-          undefined,
-        );
-        const bTypeKey = determineBuildingTypeKey(
-          b.bygningstypeKodeId != null ? String(b.bygningstypeKodeId).substring(0, 2) : '',
-          '',
-        );
+        // 3-sifret kode – aldri Matrikkelens interne ID (ID 13 = kode 142, blokk)
+        const bCode = resolveBuildingTypeCodeString(b);
+        const bType = determineBuildingType(bCode, undefined);
+        const bTypeKey = determineBuildingTypeKey(bCode?.substring(0, 2) ?? '', '');
         return filterTiltakForBuilding(
           publishedCatalog,
           bTypeKey,
@@ -718,6 +715,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
           byggeaar: b.byggeaar,
           bruksarealM2: b.bruksarealM2,
           bygningstypeKodeId: b.bygningstypeKodeId,
+          bygningstypeKode: b.bygningstypeKode,
           solar: b.solar ? { filteredSolarEnergy: b.solar.filteredSolarEnergy } : null,
         })),
         displayTiltak: displayTiltakForGruppe,
