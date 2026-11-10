@@ -46,16 +46,25 @@ const ENERGY_RATING_THRESHOLDS = {
 };
 
 /**
+ * Laveste byggeår som regnes som gyldig. Følger gyldighetssjekken for
+ * byggeår ellers i koden (> 1800 i resultAssembler og StoreClient).
+ */
+export const MIN_VALID_BYGGEAAR = 1801;
+
+/**
  * Beregn TEK-periode basert på byggeår.
  * Inkluderer 2 års terskel for å ta høyde for at bygg ofte
  * bygges etter forrige TEK-standard de første årene etter ny TEK.
  *
- * Ugyldig eller manglende byggeår (0 eller under 1860) gir TEK49
+ * Ugyldig eller manglende byggeår (0, eller 1800 og eldre) gir TEK49
  * som konservativ standard – de fleste eldre bygg i Oslo er fra
  * denne perioden og TEK49 gir rimelige estimater for tiltaksberegninger.
+ *
+ * Reelle byggeår 1801–1950 gir "eldre". Tidligere ga 1801–1859 feilaktig
+ * TEK49, dvs. lavere estimert forbruk enn for et bygg fra 1870.
  */
 export function calculateTEK(byggeaar: number): string {
-  if (!byggeaar || byggeaar < 1860) return "TEK49";
+  if (!byggeaar || byggeaar < MIN_VALID_BYGGEAAR) return "TEK49";
 
   const terskel = 2; // lag i år i forhold til tek
 
@@ -199,6 +208,11 @@ export function estimateEnergyGradeFromKwhPerM2(
 /**
  * Bestem bygningstype basert på bygningstypekode eller -navn.
  * Koder 11-13 = småhus, 14-17 = blokk.
+ *
+ * `buildingTypeCode` må være den 3-sifrede bygningstypekoden (eller de to
+ * første sifrene), ALDRI Matrikkelens interne `bygningstypeKodeId` – ID 13
+ * er kode 142 (blokk). Hent koden med resolveBuildingTypeCodeString() fra
+ * buildingTypeCode.ts.
  */
 export function determineBuildingType(
   buildingTypeCode?: string,
