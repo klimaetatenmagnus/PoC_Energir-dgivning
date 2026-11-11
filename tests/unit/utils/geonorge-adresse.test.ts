@@ -13,6 +13,7 @@ import {
   buildAddressSearchVariants,
   buildGeonorgeSearchUrl,
   findOsloAdresse,
+  matchesSearchText,
   selectOsloAdresse,
   type GeoAdresseEntry,
   type GeonorgeSearchResponse,
@@ -288,5 +289,164 @@ describe('findOsloAdresse', () => {
     });
 
     expect(treff.bruksnummer).toBe(56);
+  });
+});
+
+/**
+ * Bug: findOsloAdresse brukte første treff fra Geonorges fuzzy-søk uten å
+ * sammenligne husnummer og bokstav med søketeksten. Forslagslisten fyller
+ * søkefeltet med «Gate N, PPPP OSLO», og for den teksten rangerer Geonorge ofte
+ * NB, N0–N9 eller et nabonummer foran N. Målt mot Geonorge 11.11.2026 traff
+ * cirka hvert tiende oppslag fra forslagslisten en annen adresse, og brukeren
+ * fikk areal, byggeår og energidata for nabohuset uten noen feilmelding.
+ */
+const adresseTreff = (
+  adressetekst: string,
+  bruksnummer: number,
+  kommunenummer = OSLO_KOMMUNENUMMER
+): GeoAdresseEntry => ({
+  kommunenummer,
+  gardsnummer: 100,
+  bruksnummer,
+  adressekode: 12345,
+  adressetekst,
+});
+
+describe('matchesSearchText', () => {
+  it.each([
+    ['Eksempelveien 10', 'Eksempelveien 10'],
+    ['Eksempelveien 10', 'Eksempelveien 10, 0382 OSLO'],
+    ['Eksempelveien 10', 'eksempelveien 10 0382 oslo'],
+    ['Eksempelveien 10B', 'Eksempelveien 10B, 0382 OSLO'],
+    ['Eksempelveien 10B', 'eksempelveien 10 b'],
+    ['Eksempelveien 10B', 'Eksempelveien 10 B, 0382 OSLO'],
+    ['St. Eksempels gate 2', 'St. Eksempels gate 2, 0165 OSLO'],
+    ['St. Eksempels gate 2', 'St Eksempels gate 2'],
+  ])('%s stemmer med søket «%s»', (adressetekst, sok) => {
+    expect(matchesSearchText(adresseTreff(adressetekst, 1), sok)).toBe(true);
+  });
+
+  it.each([
+    ['Eksempelveien 10B', 'Eksempelveien 10, 0382 OSLO'],
+    ['Eksempelveien 100', 'Eksempelveien 10, 0382 OSLO'],
+    ['Eksempelveien 1', 'Eksempelveien 10, 0382 OSLO'],
+    ['Eksempelveien 10', 'Eksempelveien 10B, 0382 OSLO'],
+    ['Eksempelveien 10', 'Eksempelvegen 10'],
+    ['Eksempelveien 10', 'Store Eksempelveien 10'],
+    ['', 'Eksempelveien 10'],
+  ])('%s stemmer ikke med søket «%s»', (adressetekst, sok) => {
+    expect(matchesSearchText(adresseTreff(adressetekst, 1), sok)).toBe(false);
+  });
+});
+
+describe('findOsloAdresse velger adressen det ble søkt på', () => {
+  const svar = (adresser: GeoAdresseEntry[]): GeonorgeSearchResponse => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ adresser }),
+  });
+  const sokFra = (url: string) => new URL(url).searchParams.get('sok');
+
+  it('velger eksakt treff selv om Geonorge rangerer naboadresser først', async () => {
+    let antallSok = 0;
+
+    const treff = await findOsloAdresse('Eksempelveien 10, 0382 OSLO', async () => {
+      antallSok += 1;
+      return svar([
+        adresseTreff('Eksempelveien 10B', 2),
+        adresseTreff('Eksempelveien 100', 3),
+        adresseTreff('Eksempelveien 10', 1),
+      ]);
+    });
+
+    expect(treff.adressetekst).toBe('Eksempelveien 10');
+    expect(treff.bruksnummer).toBe(1);
+    expect(antallSok).toBe(1);
+  });
+
+  it('prøver neste skrivemåte når første søk bare gir naboadresser', async () => {
+    const sok: Array<string | null> = [];
+
+    const treff = await findOsloAdresse('Eksempelveien 7, 0451 OSLO', async (url) => {
+      sok.push(sokFra(url));
+      return sokFra(url)?.includes(',')
+        ? svar([adresseTreff('Eksempelveien 6A', 61), adresseTreff('Eksempelveien 70', 70)])
+        : svar([adresseTreff('Eksempelveien 7', 7), adresseTreff('Eksempelveien 6A', 61)]);
+    });
+
+    expect(treff.adressetekst).toBe('Eksempelveien 7');
+    expect(sok).toEqual(['Eksempelveien 7, 0451 OSLO', 'Eksempelveien 7 0451 OSLO']);
+  });
+
+  it('bruker første Oslo-treff når ingen skrivemåte gir eksakt treff (skrivefeil)', async () => {
+    let antallSok = 0;
+
+    const treff = await findOsloAdresse('Eksempelvein 12', async () => {
+      antallSok += 1;
+      return antallSok === 1
+        ? svar([adresseTreff('Eksempelveien 12', 12), adresseTreff('Eksempelveien 13', 13)])
+        : svar([adresseTreff('Eksempelveien 13', 13)]);
+    });
+
+    expect(treff.bruksnummer).toBe(12);
+    expect(antallSok).toBe(buildAddressSearchVariants('Eksempelvein 12').length);
+  });
+
+  it('ser bort fra treff utenfor Oslo også når de stemmer eksakt', async () => {
+    const treff = await findOsloAdresse('Eksempelveien 10', async () =>
+      svar([
+        adresseTreff('Eksempelveien 10', 99, '4601'),
+        adresseTreff('Eksempelveien 10', 1),
+      ])
+    );
+
+    expect(treff.kommunenummer).toBe(OSLO_KOMMUNENUMMER);
+    expect(treff.bruksnummer).toBe(1);
+  });
+
+  it('returnerer tilnærmet treff selv om en senere skrivemåte feilet', async () => {
+    let antallSok = 0;
+
+    const treff = await findOsloAdresse('Eksempelveien 7, 0451 OSLO', async () => {
+      antallSok += 1;
+      if (antallSok === 1) {
+        return svar([adresseTreff('Eksempelveien 6A', 61)]);
+      }
+      throw new Error('The operation was aborted due to timeout');
+    });
+
+    expect(treff.bruksnummer).toBe(61);
+  });
+});
+
+/**
+ * Bug: For søketekst uten bokstaver eller tall («???», «,») ble det sendt tomme
+ * søk til Geonorge, som svarer med ti vilkårlige Oslo-adresser. Oppslaget
+ * fortsatte da med en eiendom brukeren aldri hadde søkt på.
+ */
+describe('søketekst uten bokstaver eller tall', () => {
+  it.each(['???', ',', '.', '...', '-', '   '])(
+    '«%s» gir ingen søkevarianter',
+    (tekst) => {
+      expect(buildAddressSearchVariants(tekst)).toEqual([]);
+    }
+  );
+
+  it('gir LookupNotFoundError uten å spørre Geonorge', async () => {
+    let antallSok = 0;
+
+    const error = await findOsloAdresse('?,.', async () => {
+      antallSok += 1;
+      return { ok: true, status: 200, json: async () => ({ adresser: [] }) };
+    }).catch((e: unknown) => e);
+
+    expect(antallSok).toBe(0);
+    expect(isLookupNotFoundError(error) && error.reason).toBe('address');
+  });
+
+  it('beholder varianter som har innhold når bare tegnsettingen fjernes', () => {
+    expect(buildAddressSearchVariants('Eksempelveien 12, 0123 OSLO')).toContain(
+      'Eksempelveien 12 0123 OSLO'
+    );
   });
 });
