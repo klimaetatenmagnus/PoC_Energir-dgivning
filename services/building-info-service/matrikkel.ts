@@ -1,4 +1,4 @@
-import fetch, { Response as FetchResponse } from 'node-fetch';
+import fetch from 'node-fetch';
 import { fetchWithRetry } from '../../src/utils/fetchWithRetry.ts';
 import proj4 from 'proj4';
 
@@ -35,20 +35,13 @@ import {
   startExternalCall,
   type ExternalResultLabel,
 } from './metrics.ts';
-import {
-  buildGeonorgeSearchUrl,
-  selectOsloAdresse,
-  type GeoAdresseEntry,
-} from './geonorgeAdresse.ts';
+import { findOsloAdresse } from './geonorgeAdresse.ts';
+import { LookupNotFoundError, isLookupNotFoundError } from './lookupErrors.ts';
 
 proj4.defs('EPSG:32632', '+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs');
 proj4.defs('EPSG:4326', '+proj=longlat +datum=WGS84 +no_defs');
 
 const ctx = createMatrikkelContext;
-
-interface GeoResp {
-  adresser: GeoAdresseEntry[];
-}
 
 export interface LookupAdresseResult {
   kommunenummer: string;
@@ -171,84 +164,31 @@ async function lookupAdresse(adresse: string): Promise<LookupAdresseResult> {
     'geonorge',
     'lookup',
     async () => {
-      const headers = { headers: { 'User-Agent': 'Energitiltak/1.0' } };
-
       // Søket avgrenses til Oslo – ellers kan samme gateadresse i en annen
-      // kommune bli første treff (se geonorgeAdresse.ts).
-      const buildUrl = buildGeonorgeSearchUrl;
-
-      const parse = async (
-        response: FetchResponse
-      ): Promise<LookupAdresseResult> => {
-        const json = (await response.json()) as GeoResp;
-        const first = selectOsloAdresse(json.adresser);
-        if (!first) {
-          throw new Error('Adressen ikke funnet i Geonorge');
-        }
-        return {
-          kommunenummer: first.kommunenummer,
-          gnr: first.gardsnummer,
-          bnr: first.bruksnummer,
-          adressekode: first.adressekode,
-          husnummer: Number(first.nummer ?? first.husnummer ?? 0),
-          bokstav: first.bokstav ?? '',
-          adressetekst: first.adressetekst || '',
-          poststed: first.poststed || '',
-          postnummer: first.postnummer || '',
-        };
-      };
-
-      const variants = [
-        adresse,
-        adresse.replace(/,/g, ' ').trim().replace(/\s+/g, ' '),
-        adresse
-          .replace(/,/g, ' ')
-          .replace(/(\d+)([A-Za-z])/, '$1 $2')
-          .trim()
-          .replace(/\s+/g, ' '),
-        adresse
-          .replace(/,/g, ' ')
-          .replace(/(\d+)\s+([A-Za-z])/, '$1$2')
-          .trim()
-          .replace(/\s+/g, ' '),
-        adresse.replace(/(\d+)\s+([A-Za-z])/, '$1$2'),
-        adresse.replace(/\./g, '').trim().replace(/\s+/g, ' '),
-        adresse.replace(/[.,]/g, ' ').trim().replace(/\s+/g, ' '),
-      ];
-
-      // Dedupliser varianter som gir identisk URL
-      const seen = new Set<string>();
-      const uniqueVariants: string[] = [];
-      for (const v of variants) {
-        const url = buildUrl(v);
-        if (!seen.has(url)) {
-          seen.add(url);
-          uniqueVariants.push(v);
-        }
-      }
-
-      for (const variant of uniqueVariants) {
-        try {
-          const response = await fetchWithRetry(buildUrl(variant), { ...headers, timeoutMs: 5_000 });
-          if (!response.ok) {
-            continue;
-          }
-          return await parse(response);
-        } catch {
-          continue;
-        }
-      }
-
-      throw new Error(
-        'Ingen adresse funnet i Geonorge etter å ha prøvd alle varianter'
+      // kommune bli første treff (se geonorgeAdresse.ts). findOsloAdresse
+      // kaster LookupNotFoundError bare når Geonorge har svart uten treff;
+      // tidsavbrudd og feilstatus gir en vanlig Error (driftsfeil).
+      const first = await findOsloAdresse(adresse, (url) =>
+        fetchWithRetry(url, {
+          headers: { 'User-Agent': 'Energitiltak/1.0' },
+          timeoutMs: 5_000,
+        })
       );
+
+      return {
+        kommunenummer: first.kommunenummer,
+        gnr: first.gardsnummer,
+        bnr: first.bruksnummer,
+        adressekode: first.adressekode,
+        husnummer: Number(first.nummer ?? first.husnummer ?? 0),
+        bokstav: first.bokstav ?? '',
+        adressetekst: first.adressetekst || '',
+        poststed: first.poststed || '',
+        postnummer: first.postnummer || '',
+      };
     },
     undefined,
-    (error) =>
-      error instanceof Error &&
-      /(ikke funnet|ingen adresse)/i.test(error.message)
-        ? 'not_found'
-        : 'error'
+    (error) => (isLookupNotFoundError(error) ? 'not_found' : 'error')
   );
 }
 
@@ -818,7 +758,7 @@ export async function resolveBuildingData(
   );
 
   if (!ids.length) {
-    throw new Error('Fant ingen matrikkelenhets-ID for adressen');
+    throw new LookupNotFoundError('building', 'Fant ingen matrikkelenhets-ID for adressen');
   }
 
   // Hent matrikkelinfo for alle IDer parallelt (populerer matrikkelXmlCache)
@@ -983,7 +923,7 @@ export async function resolveBuildingData(
   }
 
   if (!matrikkelenhetsId) {
-    throw new Error('Fant ingen matrikkelenhet med boligbygg for adressen');
+    throw new LookupNotFoundError('building', 'Fant ingen matrikkelenhet med boligbygg for adressen');
   }
 
   let byggIdListe = await getByggIdsForMatrikkelenhet(matrikkelenhetsId);
@@ -1115,7 +1055,7 @@ export async function resolveBuildingData(
   }
 
   if (eligibleBuildings.length === 0) {
-    throw new Error('Ingen bygninger funnet på denne adressen');
+    throw new LookupNotFoundError('building', 'Ingen bygninger funnet på denne adressen');
   }
 
   let selectedBygg: (ByggInfo & { id: number }) | null = null;
@@ -1246,7 +1186,7 @@ export async function resolveBuildingData(
       );
 
       if (!byggMedTilstrekkeligAreal.length) {
-        throw new Error('Ingen bygg med tilstrekkelig areal funnet');
+        throw new LookupNotFoundError('building', 'Ingen bygg med tilstrekkelig areal funnet');
       }
 
       const byggMedFlereBruksenheter = byggMedTilstrekkeligAreal.filter(
@@ -1322,7 +1262,7 @@ export async function resolveBuildingData(
   }
 
   if (!selectedBygg) {
-    throw new Error('Fant ikke egnet bygg');
+    throw new LookupNotFoundError('building', 'Fant ikke egnet bygg');
   }
 
   const bygg = selectedBygg;

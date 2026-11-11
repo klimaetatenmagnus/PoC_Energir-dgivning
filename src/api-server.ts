@@ -11,6 +11,7 @@ import { createHash } from 'node:crypto';
 import { Storage } from '@google-cloud/storage';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
 import { metricsRegistry } from '../services/building-info-service/metrics.js';
+import { describeLookupFailure } from '../services/building-info-service/lookupErrors.js';
 import { csvService } from './services/csvService.js';
 import { getSolarCsvService } from './services/solarCsvService.js';
 import { lookupBuildingFromEnovaData } from './services/districtStatisticsService.js';
@@ -1205,8 +1206,15 @@ app.post('/api/address-lookup', async (req, res) => {
         ?? null;
 
       if (!csvRecord) {
-        res.status(500).json({
-          error: 'Adressen ble ikke funnet. Tjenesten for adresseoppslag er midlertidig utilgjengelig.',
+        // Verken oppslaget eller CSV-reserven har adressen. «Ikke funnet»
+        // (adressen er ikke i Oslo, eller har ingen bygning) er et svar til
+        // brukeren (404) – bare reelle driftsfeil skal gi 500 og beskjed om å
+        // prøve igjen senere.
+        const failure = describeLookupFailure(error);
+        infoLog(`Lookup gave ${failure.status} ${failure.code} after ${Date.now() - startTime}ms`);
+        res.status(failure.status).json({
+          error: failure.message,
+          code: failure.code,
           address,
           _meta: { duration: Date.now() - startTime, timestamp: new Date().toISOString() },
         });
