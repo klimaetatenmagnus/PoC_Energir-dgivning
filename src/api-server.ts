@@ -11,6 +11,7 @@ import { createHash } from 'node:crypto';
 import { Storage } from '@google-cloud/storage';
 import { resolveBuildingData } from '../services/building-info-service/index.js';
 import { metricsRegistry } from '../services/building-info-service/metrics.js';
+import { resolveLookupFallback } from '../services/building-info-service/lookupErrors.js';
 import { csvService } from './services/csvService.js';
 import { getSolarCsvService } from './services/solarCsvService.js';
 import { lookupBuildingFromEnovaData } from './services/districtStatisticsService.js';
@@ -1185,7 +1186,7 @@ app.post('/api/address-lookup', async (req, res) => {
     });
   } catch (error) {
     const duration = Date.now() - startTime;
-    logger.warn(`Lookup failed after ${duration}ms, trying CSV fallback:`, error);
+    logger.warn(`Lookup failed after ${duration}ms:`, error);
 
     // Handle authentication errors specially
     if (error instanceof Error && error.message.includes('401')) {
@@ -1200,18 +1201,32 @@ app.post('/api/address-lookup', async (req, res) => {
 
     // Fallback: bygg resultat fra CSV + Enova bulk-data
     try {
-      const csvRecord = csvService.findByExactAddress(address)
-        ?? csvService.findByAddress(address)[0]
-        ?? null;
+      // CSV-reserven hoppes over når Geonorge har svart at adressen ikke
+      // finnes i Oslo (se resolveLookupFallback). Ellers ville «gate nr,
+      // postnr sted» utenfor Oslo gitt data for samme gate og nummer i Oslo.
+      const fallback = resolveLookupFallback(error, () =>
+        csvService.findByExactAddress(address)
+          ?? csvService.findByAddress(address)[0]
+          ?? null
+      );
 
-      if (!csvRecord) {
-        res.status(500).json({
-          error: 'Adressen ble ikke funnet. Tjenesten for adresseoppslag er midlertidig utilgjengelig.',
+      if (fallback.kind === 'failure') {
+        // Oppslaget kunne ikke besvares, heller ikke fra CSV-reserven. «Ikke
+        // funnet» (adressen er ikke i Oslo, eller har ingen bygning) er et
+        // svar til brukeren (404) – bare reelle driftsfeil skal gi 500 og
+        // beskjed om å prøve igjen senere.
+        const { failure } = fallback;
+        infoLog(`Lookup gave ${failure.status} ${failure.code} after ${Date.now() - startTime}ms`);
+        res.status(failure.status).json({
+          error: failure.message,
+          code: failure.code,
           address,
           _meta: { duration: Date.now() - startTime, timestamp: new Date().toISOString() },
         });
         return;
       }
+
+      const csvRecord = fallback.record;
 
       // Slå opp energiattest fra Enova bulk-data
       const enovaData = await lookupBuildingFromEnovaData(csvRecord.bygningsNr);

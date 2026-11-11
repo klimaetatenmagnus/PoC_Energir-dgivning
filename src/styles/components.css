@@ -1396,6 +1396,36 @@
   }
 }
 
+/* Lave skjermer (høyde <= 520px), f.eks. 320 × 454 synlig i Safari på små
+   iPhone-er. Landingssiden er fixed og kan ikke rulles, så feilmeldingen under
+   søkefeltet må få plass i sin helhet. Logoen flyttes derfor opp i hjørnet, og
+   innholdet legges fra toppen uten den reserverte plassen til skyline.
+   I liggende format på de minste skjermene er det likevel ikke plass; da kan
+   landingssiden rulles i stedet for at meldingen kuttes.
+   Må stå etter >=576px-blokken for å gjelde også for mobil i liggende format. */
+@media (max-height: 520px) {
+  .mobile-landing {
+    overflow-y: auto;
+  }
+
+  .mobile-landing__content {
+    justify-content: flex-start;
+    padding-top: 48px;
+    padding-bottom: 8px;
+  }
+
+  .mobile-landing__logo-container {
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    margin-bottom: 0;
+  }
+
+  .mobile-landing__logo {
+    height: 28px;
+  }
+}
+
 /* ===========================================
    Tiltak Overlay Animations
    Animasjoner for energitiltak-overlays på bygningsillustrasjonene

@@ -3,6 +3,7 @@ import nock from "nock";
 
 import { __testing as matrikkelTesting } from "../services/building-info-service/matrikkel.ts";
 import { metricsRegistry } from "../services/building-info-service/metrics.ts";
+import { isLookupNotFoundError } from "../services/building-info-service/lookupErrors.ts";
 
 async function main() {
   nock.disableNetConnect();
@@ -58,7 +59,14 @@ async function main() {
 
     await assert.rejects(
       () => matrikkelTesting.lookupAdresse("Ukjent adresse 123"),
-      /Ingen adresse funnet/i
+      (error: unknown) => {
+        assert(error instanceof Error);
+        assert.match(error.message, /Ingen adresse funnet/i);
+        // «Ikke funnet» skal kunne skilles fra driftsfeil (gir 404, ikke 500)
+        assert(isLookupNotFoundError(error), "forventer LookupNotFoundError");
+        assert.equal(error.reason, "address");
+        return true;
+      }
     );
 
     const notFoundMetrics = await metricsRegistry.getMetricsAsJSON();
@@ -141,8 +149,107 @@ async function main() {
 
     await assert.rejects(
       () => matrikkelTesting.lookupAdresse("Neptunveien 9A"),
-      /Ingen adresse funnet/i
+      (error: unknown) => {
+        assert(error instanceof Error);
+        assert.match(error.message, /Ingen adresse funnet/i);
+        assert(isLookupNotFoundError(error), "forventer LookupNotFoundError");
+        return true;
+      }
     );
+
+    // Geonorge nede (503 på alle søk): vi vet ikke om adressen finnes, så
+    // dette skal være en driftsfeil – ikke «ikke funnet».
+    metricsRegistry.resetMetrics();
+    nock.cleanAll();
+
+    nock("https://ws.geonorge.no")
+      .get("/adresser/v1/sok")
+      .query(true)
+      .times(7)
+      .reply(503, "Service Unavailable");
+
+    await assert.rejects(
+      () => matrikkelTesting.lookupAdresse("Karl Johans gate 1"),
+      (error: unknown) => {
+        assert(error instanceof Error);
+        assert.match(error.message, /Geonorge adressesøk feilet/);
+        assert(!isLookupNotFoundError(error), "driftsfeil skal ikke være LookupNotFoundError");
+        return true;
+      }
+    );
+
+    const outageMetrics = await metricsRegistry.getMetricsAsJSON();
+    const geonorgeSamples =
+      outageMetrics.find(
+        (metric) => metric.name === "building_info_service_external_requests_total"
+      )?.values ?? [];
+    const geonorgeError = geonorgeSamples.find(
+      (sample) =>
+        sample.labels.service === "geonorge" &&
+        sample.labels.operation === "lookup" &&
+        sample.labels.result === "error"
+    );
+    assert(geonorgeError, "forventer geonorge=error metrikk ved driftsfeil");
+    assert.equal(geonorgeError.value, 1);
+    assert(
+      !geonorgeSamples.some(
+        (sample) =>
+          sample.labels.service === "geonorge" &&
+          sample.labels.result === "not_found"
+      ),
+      "driftsfeil skal ikke telles som not_found"
+    );
+
+    // Geonorge sperrer oss (403) eller svarer 200 uten treffliste: heller ikke
+    // da vet vi om adressen finnes. Bare avvist søketekst (f.eks. 400) og tom
+    // treffliste er svar på søket.
+    const ikkeBesvart: Array<[string, number, string | Record<string, unknown>]> = [
+      ["403 Forbidden", 403, "Forbidden"],
+      ["200 uten treffliste", 200, { melding: "Tjenesten er under vedlikehold" }],
+    ];
+
+    for (const [beskrivelse, status, body] of ikkeBesvart) {
+      metricsRegistry.resetMetrics();
+      nock.cleanAll();
+
+      nock("https://ws.geonorge.no")
+        .get("/adresser/v1/sok")
+        .query(true)
+        .times(7)
+        .reply(status, body);
+
+      await assert.rejects(
+        () => matrikkelTesting.lookupAdresse("Karl Johans gate 1"),
+        (error: unknown) => {
+          assert(error instanceof Error);
+          assert.match(error.message, /Geonorge adressesøk feilet/);
+          assert(
+            !isLookupNotFoundError(error),
+            `${beskrivelse} skal være driftsfeil, ikke LookupNotFoundError`
+          );
+          return true;
+        }
+      );
+
+      const samples =
+        (await metricsRegistry.getMetricsAsJSON()).find(
+          (metric) => metric.name === "building_info_service_external_requests_total"
+        )?.values ?? [];
+      assert(
+        samples.some(
+          (sample) =>
+            sample.labels.service === "geonorge" && sample.labels.result === "error"
+        ),
+        `${beskrivelse}: forventer geonorge=error metrikk`
+      );
+      assert(
+        !samples.some(
+          (sample) =>
+            sample.labels.service === "geonorge" && sample.labels.result === "not_found"
+        ),
+        `${beskrivelse} skal ikke telles som not_found`
+      );
+    }
 
     console.log("✅ matrikkel contract tests passed");
   } finally {
