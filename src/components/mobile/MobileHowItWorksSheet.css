@@ -1,0 +1,46 @@
+/* MobileHowItWorksSheet – forklaring av datagrunnlag og beregninger */
+
+.mobile-how-it-works__header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 4px 0;
+}
+
+.mobile-how-it-works__content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 16px 24px;
+}
+
+.mobile-how-it-works__content h2 {
+  margin: 0 0 16px;
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.mobile-how-it-works__content h3 {
+  margin: 20px 0 6px;
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.mobile-how-it-works__content p {
+  margin: 0 0 10px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.mobile-how-it-works__content a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mobile-how-it-works__note {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--pkt-color-brand-beige-200, #f8f0dd);
+}

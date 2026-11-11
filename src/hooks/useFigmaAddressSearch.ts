@@ -201,53 +201,10 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
     }
 
     requestAnimationFrame(() => {
-      // Mobile: direct viewport capture without Figma scaling
+      // Mobil: resultatsiden har ingen bygningsillustrasjon å lande på, så vi
+      // hopper over overgangsanimasjonen og bytter visning rett etter uttoningen.
       if (isMobileView) {
-        const eneboligEl = document.getElementById('mobile-anim-enebolig');
-        const blokkEl = document.getElementById('mobile-anim-blokk');
-
-        const selectedEl = buildingKind === 'enebolig' ? eneboligEl : blokkEl;
-        if (!selectedEl) {
-          // Element not found - log warning in development and reset state to avoid ambiguous intermediate phase
-          if (process.env.NODE_ENV === 'development') {
-            console.warn(
-              `[useFigmaAddressSearch] Expected mobile building element not found: mobile-anim-${buildingKind}. ` +
-              `Skipping transition animation and resetting landing snapshot.`
-            );
-          }
-          // Reset landing snapshot to keep UI consistent, skip beginTransition
-          setLandingSnapshot(null);
-          return;
-        }
-
-        const rect = selectedEl.getBoundingClientRect();
-        beginTransition({
-          buildingType: buildingKind,
-          startRect: {
-            left: rect.left,
-            top: rect.top,
-            width: rect.width,
-            height: rect.height,
-          },
-          isMobile: true,
-        });
-
-        // Store snapshot for consistency
-        const snapshot: BuildingSnapshot = {
-          left: rect.left,
-          bottom: window.innerHeight - rect.bottom,
-          width: rect.width,
-          height: rect.height,
-          viewport: {
-            left: rect.left,
-            top: rect.top,
-            width: rect.width,
-            height: rect.height,
-          },
-        };
-        setLandingSnapshot({
-          [buildingKind]: snapshot,
-        });
+        setLandingSnapshot({});
         return;
       }
 

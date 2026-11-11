@@ -1,0 +1,132 @@
+/* MobileTypePickerSheet – typevalg for varmepumpe og vinduer */
+
+.mobile-type-picker {
+  gap: 12px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+}
+
+.mobile-type-picker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-right: -12px;
+}
+
+.mobile-type-picker__heading {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.mobile-type-picker__intro {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.mobile-type-picker__options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-type-picker__option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 8px 12px;
+  border: 2px solid #bfbfbf;
+  background: var(--pkt-color-brand-neutrals-white, #ffffff);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mobile-type-picker__option--checked {
+  border-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  background: var(--pkt-color-brand-blue-200, #d1f9ff);
+}
+
+.mobile-type-picker__radio {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border: 2px solid var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  border-radius: 50%;
+  background: var(--pkt-color-brand-neutrals-white, #ffffff);
+}
+
+.mobile-type-picker__radio span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.mobile-type-picker__option--checked .mobile-type-picker__radio span {
+  background: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-type-picker__option-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-type-picker__option-label {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.mobile-type-picker__option-desc {
+  font-size: 0.875rem;
+  color: #4d4d4d;
+}
+
+.mobile-type-picker__option-amount {
+  flex: none;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--pkt-color-brand-dark-green-1000, #034b45);
+  font-variant-numeric: tabular-nums;
+}
+
+.mobile-type-picker__primary {
+  height: 52px;
+  border: 0;
+  background: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  color: #ffffff;
+  font: inherit;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mobile-type-picker__links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+}
+
+.mobile-type-picker__link {
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9375rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}

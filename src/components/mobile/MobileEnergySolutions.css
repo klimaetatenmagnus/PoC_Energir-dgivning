@@ -1,5 +1,5 @@
-/* MobileEnergySolutions - Responsiv tiltaksvalg for mobil */
-/* Bruker Punkt designsystem farger og spacing */
+/* MobileEnergySolutions – resultatsiden på mobil (fliser + slank bunnlinje) */
+/* Oslo Sans og Oslo-paletten. Egne komponenter, ikke Punkt-komponenter. */
 
 .mobile-energy-solutions {
   display: flex;
@@ -10,34 +10,58 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--pkt-color-brand-neutrals-100, #f9f9f9);
-  overflow: hidden; /* Forhindrer scrolling på rot-elementet */
+  overflow: hidden; /* Bare tiltakslista ruller */
+  background-color: var(--pkt-color-brand-beige-200, #f8f0dd);
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  font-family: 'Oslo Sans', system-ui, sans-serif;
 }
 
+.mobile-energy-solutions--fade-in {
+  animation: mobile-energy-solutions-fade-in 300ms ease-out;
+}
 
-/* Header */
+@keyframes mobile-energy-solutions-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* :where() holder spesifisiteten lav, så knappeklassene under kan sette egen skrift og farge */
+:where(.mobile-energy-solutions) button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.mobile-energy-solutions button:focus-visible,
+.mobile-energy-solutions a:focus-visible {
+  outline: 3px solid #1f42aa;
+  outline-offset: -3px;
+}
+
+/* Topplinje */
 .mobile-energy-solutions__header {
+  flex: none;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: var(--pkt-spacing-12, 0.75rem) var(--pkt-spacing-16, 1rem);
-  padding-top: max(var(--pkt-spacing-12, 0.75rem), env(safe-area-inset-top));
+  justify-content: space-between;
+  box-sizing: content-box;
+  height: 52px;
+  padding: env(safe-area-inset-top) 4px 0 16px;
   background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
-  border-bottom: 1px solid var(--pkt-color-brand-neutrals-200, #f2f2f2);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  min-height: 60px;
 }
 
 .mobile-energy-solutions__header-content {
   display: flex;
   align-items: center;
-  gap: var(--pkt-spacing-12, 0.75rem);
+  gap: 10px;
 }
 
 .mobile-energy-solutions__logo {
-  width: 52px;
+  width: 44px;
   height: auto;
 }
 
@@ -47,1050 +71,476 @@
 }
 
 .mobile-energy-solutions__header-title {
-  font-family: 'Oslo Sans', sans-serif;
-  font-size: 1.25rem;
-  font-weight: 400;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  font-size: 1.0625rem;
+  font-weight: 500;
 }
 
-.mobile-energy-solutions__back-button {
-  --pkt-btn-bg: transparent;
-  --pkt-btn-border-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-  --pkt-btn-text-color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+.mobile-energy-solutions__search-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
-/* Hovedinnhold */
+.mobile-energy-solutions__search-button svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+/* Rullbart hovedinnhold */
 .mobile-energy-solutions__main {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--pkt-spacing-16, 1rem);
-  padding: var(--pkt-spacing-16, 1rem);
-  padding-bottom: 0; /* Tiltakslisten håndterer safe-area */
-  overflow-x: clip; /* Forhindrer horisontal scrolling */
-  overflow-y: visible; /* Tillat tiltak-pil-animasjoner å vises utenfor */
-  min-height: 0; /* Viktig for flexbox scrolling */
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-bottom: 16px;
 }
 
-/* Når footer er synlig, fjern standard padding-bottom siden tiltak-seksjonen håndterer dette */
-.mobile-energy-solutions--has-footer .mobile-energy-solutions__main {
-  padding-bottom: 0;
-}
-
-/* Adresse-seksjon - midtstilt, fast høyde */
-.mobile-energy-solutions__address-section {
+/* Adressefelt */
+.mobile-energy-solutions__address-band {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
-  gap: var(--pkt-spacing-8, 0.5rem);
-  flex-shrink: 0; /* Ikke krymp denne seksjonen */
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 4px 12px 16px;
+  background-color: var(--pkt-color-brand-blue-200, #d1f9ff);
+}
+
+.mobile-energy-solutions__address-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
 .mobile-energy-solutions__address {
-  font-family: 'Oslo Sans', sans-serif;
-  font-size: 1.75rem;
-  font-weight: 500;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
   margin: 0;
-  line-height: 1.2;
-  text-align: center;
-}
-
-.mobile-energy-solutions__tags {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--pkt-spacing-8, 0.5rem);
-}
-
-/* Vis mer om boligen - trigger i adresse-seksjonen */
-.mobile-energy-solutions__show-more-trigger {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  padding: 0;
-  background: none;
-  border: none;
-  cursor: pointer;
-  margin-top: 0;
-}
-
-.mobile-energy-solutions__show-more-text {
-  font-family: 'Oslo Sans', sans-serif;
-  font-size: 1.125rem;
-  font-weight: 500;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-}
-
-.mobile-energy-solutions__show-more-icon {
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s ease;
-}
-
-.mobile-energy-solutions__show-more-trigger:hover .mobile-energy-solutions__show-more-icon,
-.mobile-energy-solutions__show-more-trigger:active .mobile-energy-solutions__show-more-icon {
-  transform: translateY(2px);
-}
-
-/* Energi-seksjon - fast høyde */
-.mobile-energy-solutions__energy-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--pkt-spacing-12, 0.75rem);
-  flex-shrink: 0; /* Ikke krymp denne seksjonen */
-}
-
-.mobile-energy-solutions__energy-header {
-  display: flex;
-  align-items: center;
-}
-
-/* Tittelrad med info-knapp rett til høyre for tittelen */
-.mobile-energy-solutions__energy-title-row {
-  display: flex;
-  align-items: center;
-  gap: var(--pkt-spacing-4, 0.25rem);
-}
-
-.mobile-energy-solutions__section-title {
-  font-family: 'Oslo Sans', sans-serif;
-  font-size: 1.125rem;
-  font-weight: 500;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-  margin: 0;
-}
-
-/* Info-knapp - større og klikkbar på mobil */
-.mobile-energy-solutions__info-button {
-  background: none;
-  border: none;
-  padding: var(--pkt-spacing-4, 0.25rem);
-  cursor: pointer;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
-  border-radius: 50%;
-  transition: background-color 0.15s ease;
-  margin-left: -0.25rem;
-}
-
-.mobile-energy-solutions__info-button:hover,
-.mobile-energy-solutions__info-button:active {
-  background-color: var(--pkt-color-brand-neutrals-100, #f9f9f9);
-}
-
-/* Rad med energiskala og bygningsillustrasjon */
-.mobile-energy-solutions__energy-row {
-  position: relative;
-  padding-right: 70px; /* Plass til illustrasjonen */
-}
-
-/* Energiskala */
-.mobile-energy-solutions__energy-scale {
-  display: flex;
-  gap: 2px;
-}
-
-.mobile-energy-solutions__energy-box {
-  flex: 1;
-  aspect-ratio: 1;
-  max-width: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Oslo Sans', sans-serif;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--pkt-color-brand-neutrals-white, #ffffff);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.mobile-energy-solutions__energy-box--active {
-  transform: scale(1.15);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  z-index: 1;
-}
-
-/* Ny energikarakter (forbedret) - ligger over opprinnelig karakter */
-.mobile-energy-solutions__energy-box--new {
-  position: relative;
-  z-index: 2;
-  animation: energyBoxPulse 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 0 0 3px var(--pkt-color-brand-dark-blue-1000, #2a2859),
-              0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-@keyframes energyBoxPulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.25);
-  }
-  100% {
-    transform: scale(1.15);
-  }
-}
-
-/* "Ny" label på energiboks */
-.mobile-energy-solutions__energy-box-label {
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.625rem;
+  font-size: 1.375rem;
   font-weight: 700;
-  text-transform: uppercase;
-  background: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-  color: white;
-  padding: 1px 4px;
-  border-radius: 2px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.mobile-energy-solutions__address-meta {
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.mobile-energy-solutions__about-link {
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
   white-space: nowrap;
 }
 
-/* Tekst for forbedret energikarakter */
-.mobile-energy-solutions__energy-improvement {
-  margin-top: var(--pkt-spacing-8, 0.5rem);
-  font-family: 'Oslo Sans', sans-serif;
-  font-size: 0.875rem;
+/* Overskrift over flisene */
+.mobile-energy-solutions__list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 10px;
+  padding: 14px 16px 8px;
+}
+
+.mobile-energy-solutions__section-title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mobile-energy-solutions__status {
+  flex: none;
+  font-size: 0.8125rem;
+  color: #4d4d4d;
+}
+
+.mobile-energy-solutions__message {
+  margin: 0;
+  padding: 24px 16px;
+  font-size: 1rem;
+  color: #4d4d4d;
+}
+
+/* Fliser i to kolonner */
+.mobile-energy-solutions__tiles {
+  list-style: none;
+  margin: 0;
+  padding: 0 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mobile-tile {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  min-height: 142px;
+  box-sizing: border-box;
+  border: 2px solid var(--pkt-color-brand-neutrals-white, #ffffff);
+  background: var(--pkt-color-brand-neutrals-white, #ffffff);
+}
+
+.mobile-tile--selected {
+  border-color: var(--pkt-color-brand-dark-green-1000, #034b45);
+  background: var(--pkt-color-brand-light-green-400, #c7f6c9);
+}
+
+.mobile-tile--done {
+  border-color: var(--pkt-color-brand-dark-beige-700, #d0bfae);
+  background: transparent;
+}
+
+.mobile-tile__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  box-sizing: border-box;
+  padding: 8px 10px 2px;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.mobile-tile__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Tilstandsmerke: tom firkant (kan velges), grønn hake (valgt), rund hake (gjort fra før) */
+.mobile-tile__state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border: 2px solid var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  background: var(--pkt-color-brand-neutrals-white, #ffffff);
+}
+
+.mobile-tile__state svg {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 3;
+}
+
+.mobile-tile--selected .mobile-tile__state {
+  border-color: var(--pkt-color-brand-dark-green-1000, #034b45);
+  background: var(--pkt-color-brand-dark-green-1000, #034b45);
+}
+
+.mobile-tile--done .mobile-tile__state {
+  border-radius: 50%;
+  background: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+}
+
+.mobile-tile__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-tile__title {
+  font-size: 0.9375rem;
   font-weight: 500;
+  line-height: 1.25;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.mobile-tile__sub {
+  font-size: 0.875rem;
   color: var(--pkt-color-brand-dark-green-1000, #034b45);
-  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Bygningsillustrasjon ved energiskala - absolutt posisjonert for konsistent layout */
-.mobile-energy-solutions__building-illustration {
-  position: absolute;
-  right: 0;
-  bottom: 0;
+.mobile-tile--done .mobile-tile__sub {
+  color: #4d4d4d;
+}
+
+.mobile-tile__footer {
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: space-between;
+  height: 40px;
 }
 
-.mobile-energy-solutions__building-svg {
-  display: block;
+.mobile-tile__link {
+  padding: 0 6px 0 10px;
+  border: 0;
+  background: none;
+  font-size: 0.8125rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
 }
 
-/* To bygninger i gruppe-modus: primær og sekundær er stablet i samme
-   koordinatsystem. Sekundær sitter bak og litt til venstre, med fade +
-   slide-animasjon når data-gruppe-active='true'. */
-.mobile-energy-solutions__building-instance {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  transform-origin: right bottom;
-  transition: transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 400ms ease-out;
+.mobile-tile__link--info {
+  padding: 0 10px 0 6px;
+  font-weight: 700;
 }
 
-.mobile-energy-solutions__building-instance--primary {
-  position: relative;
-  z-index: 3;
+/* «Gjort fra før» får ikke plass ved siden av «Tilskudd» på smale fliser */
+.mobile-tile__label-short {
+  display: none;
 }
 
-/* Primær: behold base-origin (right bottom) så bunnlinjen ikke hopper, og
-   skaler ned — venstre kant trekkes inn mot høyre (= visuell skalering mot
-   høyre), topp trekkes ned (= mot vertikal midte). */
-.mobile-energy-solutions__building-illustration[data-gruppe-active='true']
-  .mobile-energy-solutions__building-instance--primary {
-  transform: scale(0.85);
-}
-
-.mobile-energy-solutions__building-instance--secondary {
-  z-index: 2;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(-100%) scale(0.75);
-}
-
-.mobile-energy-solutions__building-illustration[data-gruppe-active='true']
-  .mobile-energy-solutions__building-instance--secondary {
-  opacity: 1;
-  transform: translateX(-72%) scale(0.75);
-}
-
-/* Enebolig - større størrelse, tett inntil skalaen */
-.mobile-energy-solutions__building-svg--enebolig {
-  width: 70px;
-  height: auto;
-}
-
-/* Blokk - høyden kan nå opp til overskriften */
-.mobile-energy-solutions__building-svg--blokk {
-  height: 85px;
-  width: auto;
-}
-
-/* På veldig smale skjermer, skjul illustrasjonen */
-@media (max-width: 340px) {
-  .mobile-energy-solutions__building-illustration {
+@container (max-width: 162px) {
+  .mobile-tile__label-long {
     display: none;
   }
 
-  .mobile-energy-solutions__energy-row {
-    padding-right: 0;
+  .mobile-tile__label-short {
+    display: inline;
+  }
+
+  /* Lange ord som «Temperaturstyring» skal få plass på én linje */
+  .mobile-tile__title {
+    font-size: 0.875rem;
   }
 }
 
-/* Tiltaks-seksjon - scrollbar område med posisjon for scroll-indikator */
-.mobile-energy-solutions__tiltak-section {
+@container (max-width: 132px) {
+  .mobile-tile__link {
+    font-size: 0.75rem;
+  }
+}
+
+/* Bunnlinje */
+.mobile-bottom-bar {
+  flex: none;
+  position: relative;
+  z-index: 10;
+}
+
+.mobile-bottom-bar__bar {
+  display: flex;
+  align-items: stretch;
+  box-sizing: content-box;
+  height: 72px;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  color: #ffffff;
+}
+
+.mobile-bottom-bar__summary {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 12px 0 16px;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.mobile-energy-solutions .mobile-bottom-bar__bar button:focus-visible {
+  outline-color: #ffffff;
+}
+
+.mobile-bottom-bar__summary-text {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0; /* Viktig for at flex-child skal kunne scrolle */
-  overflow-y: auto;
-  position: relative;
-  padding-bottom: max(var(--pkt-spacing-16, 1rem), env(safe-area-inset-bottom));
+  gap: 4px;
+  min-width: 0;
 }
 
-/* Når footer er synlig, legg til padding nederst i tiltakslisten slik at siste tiltak kan scrolles over footeren */
-.mobile-energy-solutions--has-footer .mobile-energy-solutions__tiltak-section {
-  padding-bottom: calc(170px + env(safe-area-inset-bottom, 0));
+.mobile-bottom-bar__total {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-/* Tiltaks-kort - samler alle tiltak i én visuell enhet */
-/* Bruker hvit bakgrunn mot grå side-bakgrunn for naturlig gruppering */
-/* Subtil skygge gir dybde uten tung ramme */
-.mobile-energy-solutions__tiltak-card {
-  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-/* Tiltaks-header - overskrift og bygningsillustrasjon på linje */
-.mobile-energy-solutions__tiltak-header {
+.mobile-bottom-bar__meta {
   display: flex;
-  align-items: flex-end; /* Bunnkant på tekst og illustrasjon på linje */
-  justify-content: space-between;
-  flex-shrink: 0;
-  margin-bottom: var(--pkt-spacing-8, 0.5rem);
-  padding-right: var(--pkt-spacing-8, 0.5rem);
-  overflow: visible; /* Tillat pil-animasjoner å vises utenfor */
-}
-
-/* Tiltaks-overskrift - inne i header */
-.mobile-energy-solutions__tiltak-title {
-  flex-shrink: 0;
-  margin: 0;
-  line-height: 1.2;
-}
-
-/* Bygningsillustrasjon i tiltak-header */
-.mobile-energy-solutions__tiltak-header .mobile-energy-solutions__building-illustration {
-  position: relative;
-  right: auto;
-  bottom: auto;
-}
-
-.mobile-energy-solutions__tiltak-header .mobile-energy-solutions__building-svg--enebolig {
-  width: 65px;
-  height: auto;
-}
-
-.mobile-energy-solutions__tiltak-header .mobile-energy-solutions__building-svg--blokk {
-  height: 80px;
-  width: auto;
-}
-
-.mobile-energy-solutions__loading,
-.mobile-energy-solutions__empty {
-  font-family: 'Oslo Sans', sans-serif;
+  align-items: center;
+  gap: 8px;
   font-size: 0.875rem;
-  color: var(--pkt-color-brand-neutrals-1000, #2c2c2c);
-  opacity: 0.8;
-  margin: 0;
-  padding: var(--pkt-spacing-16, 1rem);
+  white-space: nowrap;
 }
 
-/* Tiltaksliste inni kortet */
-.mobile-energy-solutions__tiltak-list {
+.mobile-bottom-bar__ratings {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.mobile-bottom-bar__rating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 0.8125rem;
+}
+
+.mobile-bottom-bar__chevron {
+  flex: none;
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2;
+  transition: transform 160ms ease-out;
+}
+
+.mobile-bottom-bar__chevron--open {
+  transform: rotate(180deg);
+}
+
+.mobile-bottom-bar__cta {
+  flex: none;
+  align-self: center;
+  height: 48px;
+  margin-right: 12px;
+  padding: 0 16px;
+  border: 0;
+  background: var(--pkt-color-brand-green-1000, #43f8b6);
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  font-size: 1rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+
+.mobile-bottom-bar__empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 16px;
+  font-size: 0.875rem;
+}
+
+.mobile-bottom-bar__potential {
+  font-size: 1.125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Utregningen som åpnes over bunnlinja */
+.mobile-bottom-bar__breakdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  max-height: 60vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-top: 2px solid var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  background: var(--pkt-color-brand-neutrals-white, #ffffff);
+  box-shadow: 0 -8px 24px rgba(42, 40, 89, 0.16);
+}
+
+.mobile-bottom-bar__breakdown-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.mobile-bottom-bar__breakdown-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
 
-/* Enkelt tiltak-element - uten egen ramme, bruker skillelinjer */
-.mobile-energy-solutions__tiltak-item {
+.mobile-bottom-bar__breakdown-list li,
+.mobile-bottom-bar__totals div {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: var(--pkt-spacing-8, 0.5rem);
-  padding: var(--pkt-spacing-12, 0.75rem) var(--pkt-spacing-16, 1rem);
-  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
-  border-bottom: 1px solid var(--pkt-color-grays-gray-100, #e6e6e6);
-  min-height: 56px;
-  transition: background-color 0.15s ease;
-}
-
-/* Siste element har ingen border-bottom */
-.mobile-energy-solutions__tiltak-item--last {
-  border-bottom: none;
-}
-
-.mobile-energy-solutions__tiltak-item--fjernvarme {
-  border-top: 2px solid var(--pkt-color-brand-neutrals-200, #e5e5e5);
-  margin-top: 4px;
-  padding-top: 0.875rem;
-}
-
-.mobile-energy-solutions__tiltak-item:hover {
-  background-color: var(--pkt-color-brand-neutrals-100, #f9f9f9);
-}
-
-.mobile-energy-solutions__tiltak-item:active {
-  background-color: var(--pkt-color-brand-neutrals-200, #f2f2f2);
-}
-
-/* Scroll-indikator - pil som indikerer at listen kan scrolles */
-.mobile-energy-solutions__scroll-indicator {
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: var(--pkt-spacing-8, 0.5rem);
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    var(--pkt-color-brand-neutrals-100, #f9f9f9) 30%
-  );
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-  pointer-events: none;
-  animation: scrollIndicatorBounce 1.5s ease-in-out infinite;
-}
-
-@keyframes scrollIndicatorBounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(4px);
-  }
-}
-
-.mobile-energy-solutions__tiltak-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.mobile-energy-solutions__tiltak-content .pkt-checkbox__label {
-  font-family: 'Oslo Sans', sans-serif;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-}
-
-/* Sikre at tiltaksnavn har tyngre font-vekt */
-.mobile-energy-solutions__tiltak-item .pkt-checkbox label,
-.mobile-energy-solutions__tiltak-item .pkt-checkbox__label,
-.mobile-energy-solutions__tiltak-item label {
-  font-weight: 500 !important;
-}
-
-.mobile-energy-solutions__tiltak-button {
-  flex-shrink: 0;
-}
-
-/* ==========================================================================
-   Tabs
-   ========================================================================== */
-
-.mobile-energy-solutions__tabs {
-  margin-bottom: var(--pkt-spacing-4, 0.25rem);
-  flex-shrink: 0;
-}
-
-/* Fjern innebygd fade-gradient og horisontal scrollbar fra Punkt tabs */
-.mobile-energy-solutions__tabs .pkt-tabs::after {
-  display: none;
-}
-
-.mobile-energy-solutions__tabs .pkt-tabs__list {
-  overflow-x: hidden;
-  padding-right: 0.25rem;
-  align-items: center;
-  display: flex;
-}
-
-.mobile-energy-solutions__tabs .pkt-tabs__list > * {
-  flex: 1;
-  text-align: center;
-}
-
-.mobile-energy-solutions__tabs .pkt-tabs__button {
-  white-space: normal;
-  text-align: center;
-  justify-content: center;
-  width: 100%;
-  line-height: 1.3;
+  gap: 12px;
   font-size: 0.9375rem;
 }
 
-/* ==========================================================================
-   Varmepumpe utvidbar seksjon (mobil)
-   ========================================================================== */
-
-.mobile-energy-solutions__tiltak-item--expandable {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  padding: 0;
-}
-
-.mobile-energy-solutions__varmepumpe-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--pkt-spacing-8, 0.5rem);
-  padding: var(--pkt-spacing-12, 0.75rem) var(--pkt-spacing-16, 1rem);
-  min-height: 56px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.mobile-energy-solutions__tiltak-content--with-chevron {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.mobile-energy-solutions__chevron-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  min-width: 32px;
-  min-height: 32px;
-  transition: background-color 0.15s ease;
-}
-
-.mobile-energy-solutions__chevron-toggle:hover,
-.mobile-energy-solutions__chevron-toggle:active {
-  background-color: var(--pkt-color-brand-neutrals-200, #f2f2f2);
-}
-
-.mobile-energy-solutions__varmepumpe-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--pkt-spacing-8, 0.5rem);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  font-family: 'Oslo Sans', sans-serif;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-  flex: 1;
-  text-align: left;
-}
-
-.mobile-energy-solutions__varmepumpe-toggle:hover {
-  opacity: 0.8;
-}
-
-.mobile-energy-solutions__chevron {
-  width: 20px;
-  height: 20px;
-  transition: transform 0.2s ease;
-  flex-shrink: 0;
-}
-
-.mobile-energy-solutions__chevron--expanded {
-  transform: rotate(180deg);
-}
-
-.mobile-energy-solutions__varmepumpe-label {
-  flex: 1;
-}
-
-.mobile-energy-solutions__varmepumpe-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding: var(--pkt-spacing-8, 0.5rem) var(--pkt-spacing-16, 1rem) var(--pkt-spacing-12, 0.75rem) var(--pkt-spacing-40, 2.5rem);
-  border-top: 1px solid var(--pkt-color-grays-gray-100, #e6e6e6);
-  background-color: var(--pkt-color-brand-neutrals-50, #fafafa);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.mobile-energy-solutions__varmepumpe-option {
-  padding: var(--pkt-spacing-8, 0.5rem) 0;
-}
-
-.mobile-energy-solutions__varmepumpe-option--selected {
-  background-color: transparent;
-}
-
-/* Punkt RadioButton styling tilpasninger for mobil */
-.mobile-energy-solutions__varmepumpe-option .pkt-radiobutton {
-  --pkt-radiobutton-label-font-weight: 400;
-}
-
-.mobile-energy-solutions__varmepumpe-option .pkt-radiobutton__helptext {
-  font-size: 0.875rem;
-  color: var(--pkt-color-brand-neutrals-600, #666);
-  margin-top: 0.125rem;
-}
-
-/* Oppsummering */
-.mobile-energy-solutions__summary-section {
-  margin-top: auto;
-}
-
-.mobile-energy-solutions__summary-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--pkt-spacing-16, 1rem);
-}
-
-.mobile-energy-solutions__summary-content p {
-  font-family: 'Oslo Sans', sans-serif;
-  font-size: 0.875rem;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+.mobile-bottom-bar__amount,
+.mobile-bottom-bar__totals dd {
+  flex: none;
   margin: 0;
+  font-variant-numeric: tabular-nums;
 }
 
-.mobile-energy-solutions__summary-button {
-  width: 100%;
-}
-
-/* Modal */
-.mobile-energy-solutions__modal-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 1000;
-  padding: var(--pkt-spacing-16, 1rem);
-  padding-bottom: max(var(--pkt-spacing-16, 1rem), env(safe-area-inset-bottom));
-}
-
-.mobile-energy-solutions__modal {
-  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
-  width: 100%;
-  max-width: 500px;
-  max-height: 80vh;
-  overflow-y: auto;
-  padding: var(--pkt-spacing-24, 1.5rem);
-  position: relative;
-}
-
-.mobile-energy-solutions__modal-close {
-  position: absolute;
-  top: var(--pkt-spacing-12, 0.75rem);
-  right: var(--pkt-spacing-12, 0.75rem);
-  background: none;
-  border: none;
-  padding: var(--pkt-spacing-8, 0.5rem);
-  cursor: pointer;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
-}
-
-.mobile-energy-solutions__modal-title {
-  font-family: 'Oslo Sans', sans-serif;
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-  margin: 0 0 var(--pkt-spacing-16, 1rem) 0;
-}
-
-.mobile-energy-solutions__modal-content {
+.mobile-bottom-bar__totals {
   display: flex;
   flex-direction: column;
-  gap: var(--pkt-spacing-12, 0.75rem);
-}
-
-.mobile-energy-solutions__modal-content p {
-  font-family: 'Oslo Sans', sans-serif;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: var(--pkt-color-brand-neutrals-1000, #2c2c2c);
+  gap: 8px;
   margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid #e6e6e6;
 }
 
-/* InfoBox overlay - animeres nedover fra toppen */
-.mobile-energy-solutions__infobox-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.2s ease-out;
+.mobile-bottom-bar__totals div:first-child {
+  font-weight: 700;
 }
 
-.mobile-energy-solutions__infobox-container {
-  background-color: var(--pkt-color-brand-neutrals-white, #ffffff);
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  max-height: 100vh;
-  max-height: 100dvh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  position: relative;
-  animation: slideDown 0.3s ease-out;
-  padding-bottom: max(var(--pkt-spacing-24, 1.5rem), env(safe-area-inset-bottom));
-}
-
-/* Exit-animasjoner for InfoBox */
-.mobile-energy-solutions__infobox-overlay--exiting {
-  animation: fadeOut 0.3s ease-in forwards;
-}
-
-.mobile-energy-solutions__infobox-container--exiting {
-  animation: slideUpOut 0.3s ease-in forwards;
-}
-
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes slideUpOut {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(-100%);
-  }
-}
-
-/* Når footer er synlig, InfoBox dekker hele skjermen (footer med z-index 1100 legger seg oppå) */
-.mobile-energy-solutions--has-footer .mobile-energy-solutions__infobox-container {
-  height: 100vh;
-  height: 100dvh;
-  max-height: 100vh;
-  max-height: 100dvh;
-}
-
-/* Midtstilt chevron-opp knapp for å kollapse InfoBox */
-.mobile-energy-solutions__infobox-collapse {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: var(--pkt-spacing-16, 1rem) var(--pkt-spacing-16, 1rem) var(--pkt-spacing-8, 0.5rem);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-  transition: background-color 0.15s ease;
-}
-
-.mobile-energy-solutions__infobox-collapse:hover,
-.mobile-energy-solutions__infobox-collapse:active {
-  background-color: var(--pkt-color-brand-neutrals-100, #f9f9f9);
-}
-
-/* Animasjon på chevron-ikonet */
-.mobile-energy-solutions__infobox-collapse .pkt-icon {
-  transition: transform 0.2s ease;
-}
-
-.mobile-energy-solutions__infobox-collapse:hover .pkt-icon,
-.mobile-energy-solutions__infobox-collapse:active .pkt-icon {
-  transform: translateY(-2px);
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideDown {
-  from {
-    transform: translateY(-100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-/* Tittelrad med info-knapp for tiltak-header */
-.mobile-energy-solutions__tiltak-title-row {
-  display: flex;
-  align-items: center;
-  gap: 0.125rem;
-}
-
-/* "Hvordan fungerer Energinøkkelen?" modal innhold */
-.mobile-energy-solutions__how-it-works-close {
-  position: absolute;
-  top: var(--pkt-spacing-12, 0.75rem);
-  right: var(--pkt-spacing-12, 0.75rem);
-  background: none;
-  border: none;
-  padding: var(--pkt-spacing-8, 0.5rem);
-  cursor: pointer;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
-  z-index: 1;
-}
-
-.mobile-energy-solutions__how-it-works-content {
-  padding: var(--pkt-spacing-24, 1.5rem);
-  padding-top: calc(var(--pkt-spacing-24, 1.5rem) + 44px);
-}
-
-.mobile-energy-solutions__how-it-works-content h2 {
-  font-family: 'Oslo Sans', sans-serif;
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-  margin: 0 0 var(--pkt-spacing-16, 1rem) 0;
-}
-
-.mobile-energy-solutions__how-it-works-content h3 {
-  font-family: 'Oslo Sans', sans-serif;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
-  margin: var(--pkt-spacing-16, 1rem) 0 var(--pkt-spacing-8, 0.5rem) 0;
-}
-
-.mobile-energy-solutions__how-it-works-content h3:first-of-type {
-  margin-top: 0;
-}
-
-.mobile-energy-solutions__how-it-works-content p {
-  font-family: 'Oslo Sans', sans-serif;
+.mobile-bottom-bar__note {
+  margin: 0;
   font-size: 0.875rem;
-  line-height: 1.5;
-  color: var(--pkt-color-brand-neutrals-1000, #2c2c2c);
-  margin: 0 0 var(--pkt-spacing-8, 0.5rem) 0;
+  line-height: 1.45;
+  color: #4d4d4d;
 }
 
-.mobile-energy-solutions__how-it-works-content a {
-  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+.mobile-bottom-bar__how {
+  align-self: flex-start;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.9375rem;
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-.mobile-energy-solutions__how-it-works-note {
-  font-style: italic;
-  margin-top: var(--pkt-spacing-16, 1rem) !important;
-  color: var(--pkt-color-brand-neutrals-600, #666) !important;
-}
-
-/* Punkt-komponenter tilpasninger */
-.mobile-energy-solutions .pkt-accordion {
-  --pkt-accordion-bg: var(--pkt-color-brand-neutrals-white, #ffffff);
-}
-
-.mobile-energy-solutions .pkt-tag {
-  font-size: 0.75rem;
-}
-
-/* Mobile Energy Solutions Fade-in Animation
-   Background transitions from green (matching MobileLanding) to white,
-   then content fades in with a delay for a smooth transition */
-.mobile-energy-solutions--fade-in {
-  animation: mobileBackgroundColorFade 0.8s ease-out forwards;
-}
-
-.mobile-energy-solutions--fade-in .mobile-energy-solutions__header,
-.mobile-energy-solutions--fade-in .mobile-energy-solutions__main {
-  opacity: 0;
-  animation: mobileContentFadeIn 0.5s ease-out 0.4s forwards;
-}
-
-/* Background color transition from blue (MobileLanding) to gray */
-@keyframes mobileBackgroundColorFade {
-  0% {
-    background-color: #D1F9FF; /* Same blue as MobileLanding background */
+/* Lave skjermer: lavere fliser, så flere får plass over bunnlinja */
+@media (max-height: 700px) {
+  .mobile-tile {
+    min-height: 122px;
   }
-  100% {
-    background-color: var(--pkt-color-brand-neutrals-100, #f9f9f9);
+
+  .mobile-tile__footer {
+    height: 36px;
+  }
+
+  .mobile-energy-solutions__list-header {
+    padding-top: 10px;
   }
 }
 
-@keyframes mobileContentFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* GPU acceleration for root container */
-.mobile-energy-solutions {
-  will-change: opacity;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-/* GPU acceleration for animated elements */
-.mobile-energy-solutions__energy-box {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-.mobile-energy-solutions__energy-box--active,
-.mobile-energy-solutions__energy-box--new {
-  will-change: transform, box-shadow;
-}
-
-.mobile-energy-solutions__scroll-indicator {
-  will-change: transform;
-  transform: translateZ(0);
-}
-
-.mobile-energy-solutions__building-illustration {
-  will-change: auto; /* No animation, no will-change */
-  transform: translateZ(0);
-}
-
-/* ==========================================================================
-   Tiltak-animasjoner for mobil
-   Justerer pil-animasjoner for mindre SVG-størrelser
-   ========================================================================== */
-
-/* Tillat at pil-elementer vises utenfor SVG viewBox */
-.mobile-energy-solutions__building-svg {
-  overflow: visible;
-}
-
-/* Container må også tillate overflow for at pilene skal synes */
-.mobile-energy-solutions__building-illustration {
-  overflow: visible;
-}
-
-/* Skalerte arrow-animasjoner for mobil */
-.mobile-energy-solutions__building-svg .tiltak-arrow {
-  opacity: 0;
-  pointer-events: none;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-/* Pil-animasjon når tiltak legges til */
-.mobile-energy-solutions__building-svg .tiltak-arrow--add {
-  animation: mobile-tiltak-poof-add 0.8s ease-out forwards !important;
-}
-
-/* Pil-animasjon når tiltak fjernes */
-.mobile-energy-solutions__building-svg .tiltak-arrow--remove {
-  animation: mobile-tiltak-poof-remove 0.8s ease-out forwards !important;
-}
-
-/* Animasjon for "add" - pluss-tegn flyter opp
-   NB: scale() multipliserer translate-verdiene, så med scale(4) gir
-   translate(14px, -4px) en faktisk posisjon på ~(60, -12) i SVG-koordinater
-   — tilsvarende desktop-animasjonen med scale(1.7) translate(33px, -10px). */
-@keyframes mobile-tiltak-poof-add {
-  0%   { opacity: 0;   transform: scale(4) translate(14px, -4px); }
-  20%  { opacity: 1; }
-  80%  { opacity: 1; }
-  100% { opacity: 0;   transform: scale(4) translate(14px, -13px); }
-}
-
-/* Animasjon for "remove" - minus-tegn flyter ned */
-@keyframes mobile-tiltak-poof-remove {
-  0%   { opacity: 0;   transform: scale(4) translate(14px, -11px); }
-  20%  { opacity: 1; }
-  80%  { opacity: 1; }
-  100% { opacity: 0;   transform: scale(4) translate(14px, 0px); }
-}
-
-/* Sikre at tiltak-overlays vises korrekt */
-.mobile-energy-solutions__building-svg .tiltak-shape {
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.mobile-energy-solutions__building-svg .tiltak-shape.tiltak--visible {
-  opacity: 1;
-}
-
-/* Respect user's motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .mobile-energy-solutions--fade-in {
-    animation: none !important;
-    background-color: var(--pkt-color-brand-neutrals-100, #f9f9f9);
+    animation: none;
   }
 
-  .mobile-energy-solutions--fade-in .mobile-energy-solutions__header,
-  .mobile-energy-solutions--fade-in .mobile-energy-solutions__main {
-    opacity: 1;
-    animation: none !important;
-  }
-
-  .mobile-energy-solutions {
-    will-change: auto;
-  }
-
-  /* Disable energy box pulse animation */
-  .mobile-energy-solutions__energy-box--new {
-    animation: none !important;
-    transform: scale(1.15);
-  }
-
-  /* Disable scroll indicator bounce */
-  .mobile-energy-solutions__scroll-indicator {
-    animation: none !important;
-  }
-
-  /* Disable modal slide animations */
-  .mobile-energy-solutions__infobox-container {
-    animation: none !important;
-  }
-
-  /* Disable tiltak arrow animations */
-  .mobile-energy-solutions__building-svg .tiltak-arrow--add,
-  .mobile-energy-solutions__building-svg .tiltak-arrow--remove {
-    animation: none !important;
-    opacity: 0 !important;
+  .mobile-bottom-bar__chevron {
+    transition: none;
   }
 }

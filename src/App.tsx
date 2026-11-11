@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { Suspense, useState, useCallback, useEffect, useMemo } from "react";
+import React, { Suspense, useState, useEffect, useMemo } from "react";
 import { FigmaLanding } from "./components/FigmaBlokk/FigmaLanding";
 import { MobileLanding } from "./components/mobile/MobileLanding";
 import { TransitionOverlayRenderer } from "./components/TransitionOverlayRenderer";
@@ -10,7 +10,7 @@ import { fetchSolarData, SolarEnergyData } from "./services/solarEnergyService";
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating } from "./utils/tekEnergyCalculations";
 import { resolveBuildingTypeCodeString } from "./utils/buildingTypeCode";
 import { sjekkGulListeMedGnrBnr } from "./services/gul-liste-service";
-import { trackResultViewed, trackPageStep, trackTiltakExpanded } from "./analytics";
+import { trackResultViewed, trackPageStep } from "./analytics";
 import { getActiveTema } from "./tema";
 import { TemaSeoSection } from "./components/TemaSeoSection";
 
@@ -18,16 +18,12 @@ import { TemaSeoSection } from "./components/TemaSeoSection";
 // utgjør en stor del av bundelen. Chunkene prefetches i idle-tid etter mount.
 const importFigmaMainScript = () => import("./components/FigmaMainScript");
 const importMobileEnergySolutions = () => import("./components/mobile/MobileEnergySolutions");
-const importMobileTiltakDetail = () => import("./components/mobile/MobileTiltakDetail");
 
 const FigmaMainScript = React.lazy(() =>
   importFigmaMainScript().then((m) => ({ default: m.FigmaMainScript }))
 );
 const MobileEnergySolutions = React.lazy(() =>
   importMobileEnergySolutions().then((m) => ({ default: m.MobileEnergySolutions }))
-);
-const MobileTiltakDetail = React.lazy(() =>
-  importMobileTiltakDetail().then((m) => ({ default: m.MobileTiltakDetail }))
 );
 // Enova bulk-data håndteres internt i MobileEnergySolutions (kun for sammenligningsmodulen)
 
@@ -68,7 +64,6 @@ export default function App() {
     const prefetch = () => {
       void importFigmaMainScript();
       void importMobileEnergySolutions();
-      void importMobileTiltakDetail();
     };
     if ("requestIdleCallback" in window) {
       const id = window.requestIdleCallback(prefetch, { timeout: 4000 });
@@ -154,10 +149,6 @@ export default function App() {
     return null;
   }, [result?.coordinatesWgs84]);
   const mapCoordinates = useAddressCoordinates(searchValue, initialCoords);
-
-  // State for mobil tiltaksdetalj
-  const [selectedMobileTiltak, setSelectedMobileTiltak] = useState<string | null>(null);
-  const [selectedMobileTiltakSavings, setSelectedMobileTiltakSavings] = useState<number | undefined>(undefined);
 
   // State for solarData (for mobil)
   const [solarData, setSolarData] = useState<SolarEnergyData | null>(null);
@@ -246,17 +237,6 @@ export default function App() {
     return calculateEnergyRating(intensity, bra, buildingType);
   }, [result, yearlyConsumption]);
 
-  const handleSelectMobileTiltak = useCallback((tiltakId: string, savingsKwh?: number) => {
-    trackTiltakExpanded(tiltakId);
-    setSelectedMobileTiltak(tiltakId);
-    setSelectedMobileTiltakSavings(savingsKwh);
-  }, []);
-
-  const handleBackFromMobileTiltak = useCallback(() => {
-    setSelectedMobileTiltak(null);
-    setSelectedMobileTiltakSavings(undefined);
-  }, []);
-
   const overlay = <TransitionOverlayRenderer />;
 
   // Shared background layer – always rendered for desktop figma modes
@@ -268,19 +248,6 @@ export default function App() {
       </div>
     </div>
   ) : null;
-
-  // Bestem byggtype for tiltaksdetalj
-  const buildingTypeForTiltak = useMemo(() => {
-    if (!result) return undefined;
-    const code = result.bygningstypeKode || result.csvData?.bygningstypekode || '';
-    const name = (result.bygningstype || result.csvData?.bygningstype || '').toLowerCase();
-
-    if (code === '11' || name.includes('enebolig')) return 'enebolig';
-    if (code === '12' || name.includes('tomannsbolig')) return 'tomannsbolig';
-    if (code === '13' || name.includes('rekkehus') || name.includes('kjedehus') || name.includes('småhus')) return 'rekkehus';
-    if (['14', '15', '16', '17'].includes(code) || name.includes('blokk') || name.includes('leilighet')) return 'blokk';
-    return undefined;
-  }, [result]);
 
   // State for gulliste-status (for mobil)
   const [isGulliste, setIsGulliste] = useState(false);
@@ -339,7 +306,7 @@ export default function App() {
 
   // Special rendering for Figma blokk mode (handles both enebolig and blokk)
   if (mode === "figma-blokk" && result) {
-    // Mobil (<768px): Vis MobileEnergySolutions eller MobileTiltakDetail
+    // Mobil (<768px): Vis MobileEnergySolutions (tiltaksinfo åpnes som ark inne i komponenten)
     if (isMobileView) {
       return (
         <Suspense fallback={overlay}>
@@ -348,25 +315,14 @@ export default function App() {
             searchAddress={searchValue}
             buildingData={result}
             onBack={handleBack}
-            onSelectTiltak={handleSelectMobileTiltak}
             yearlyConsumption={yearlyConsumption}
             estimatedRating={estimatedRating}
             solarData={solarData}
             mapCoordinates={mapCoordinates}
             audience={audienceForTiltak}
             isUsingEnovaData={isUsingEnovaData}
-            isDetailViewActive={!!selectedMobileTiltak}
             initialCheckedTiltak={tema?.preselectTiltak}
           />
-          {selectedMobileTiltak && (
-            <MobileTiltakDetail
-              tiltakId={selectedMobileTiltak}
-              buildingType={buildingTypeForTiltak}
-              audience={audienceForTiltak}
-              onBack={handleBackFromMobileTiltak}
-              annualSavingsKwh={selectedMobileTiltakSavings}
-            />
-          )}
         </Suspense>
       );
     }

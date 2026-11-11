@@ -1,29 +1,16 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import {
-  PktButton,
-  PktAccordion,
-  PktAccordionItem,
-  PktTag,
-  PktAlert,
-  PktIcon,
-  PktLoader,
-} from '@oslokommune/punkt-react';
-import {
-  DISTRICT_BADGE,
-  getBuildingTypeBadgeConfig,
-  getDisplayBuildingTypeName,
-  getEiendomsgruppeBadgeConfig,
-  isBlockBuilding as isBlockBuildingType,
-} from '../../config/badgeConfig';
+import { PktLoader } from '@oslokommune/punkt-react';
+import { getDisplayBuildingTypeName } from '../../config/badgeConfig';
 import { capitalizeAdresse } from '../../utils/adresseFormat';
 import { gruppenavn as gruppenavnFmt } from '../../utils/eiendomsgruppeFormat';
 import { AddressLookupResponse } from '../../services/buildingApi';
-import '../../config/badges.css';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, calculateEnergyRatingWithFjernvarme, calculateTEK } from '../../utils/tekEnergyCalculations';
 import { resolveBuildingTypeCodeString } from '../../utils/buildingTypeCode';
 import { type TekPeriodInput } from '../../utils/energySavingsData';
 import { formatCurrency, formatNumberWithSpaces } from '../../utils/energy';
 import { getOsloMapExportUrl } from '../../utils/coordinateUtils';
+import { MobileSheetCloseButton } from './MobileSheet';
+import { ENERGY_RATING_COLORS, ratingTextColor } from './mobileFormat';
 import './MobileInfoBox.css';
 
 interface MobileInfoBoxProps {
@@ -66,6 +53,19 @@ interface MobileInfoBoxProps {
   onToggleViewMode?: (next: 'enkelt' | 'gruppe') => void;
   /** Vis toggle-knappen. Default skjult. */
   showViewModeToggle?: boolean;
+  /** Slår fjernvarme av/på (påvirker energikarakteren) */
+  onToggleFjernvarme?: () => void;
+  /** Åpner «Hvordan fungerer Energinøkkelen?» */
+  onShowHowItWorks?: () => void;
+  /** Tall for sammenligning med bydelen, i kWh per kvadratmeter og år */
+  comparison?: {
+    current: number;
+    /** Null når ingen nye tiltak er valgt */
+    withTiltak: number | null;
+    districtAverage: number;
+    /** F.eks. «småhus» eller «boligblokker» */
+    buildingTypeLabel: string;
+  };
 }
 
 const roundToNearestThousandValue = (value: number): number => {
@@ -75,15 +75,7 @@ const roundToNearestThousandValue = (value: number): number => {
   return Math.round(value / 1000) * 1000;
 };
 
-const ENERGY_RATING_COLORS: Record<string, string> = {
-  A: '#097E3E',
-  B: '#32A548',
-  C: '#96C133',
-  D: '#F5D000',
-  E: '#F0A500',
-  F: '#E06000',
-  G: '#C8001E',
-};
+const ENERGY_RATING_SCALE = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 
 export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   addressOnly,
@@ -106,6 +98,9 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   onToggleViewMode,
   showViewModeToggle = false,
   eiendomsgruppeLoaderNavn,
+  onToggleFjernvarme,
+  onShowHowItWorks,
+  comparison,
 }) => {
   const isGroupMode = viewMode === 'gruppe' && Boolean(eiendomsgruppeVisning);
   const displayAddress = isGroupMode
@@ -114,14 +109,6 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   const displayBuildingTypeLabel = isGroupMode
     ? (eiendomsgruppeVisning!.type === 'borettslag' ? 'Borettslag' : 'Sameie')
     : getDisplayBuildingTypeName(buildingTypeName);
-  const displayBuildingBadgeConfig = isGroupMode
-    ? getEiendomsgruppeBadgeConfig(eiendomsgruppeVisning!.type)
-    : getBuildingTypeBadgeConfig(buildingTypeName);
-  const toggleIconName = isGroupMode
-    ? (isBlockBuildingType(buildingTypeName) ? 'organization' : 'home')
-    : (eiendomsgruppeVisning
-        ? (eiendomsgruppeVisning.type === 'borettslag' ? 'organization' : 'home')
-        : 'organization');
   const toggleLabel = isGroupMode
     ? 'Vis din bolig'
     : (eiendomsgruppeVisning
@@ -130,8 +117,6 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
   const [isEditMode, setIsEditMode] = useState(false);
   const [isGulListeInfoOpen, setIsGulListeInfoOpen] = useState(false);
 
-  // Bygningstypevisning (bruker sentral badge-konfigurasjon)
-  // (erstattet av displayBuildingTypeLabel/displayBuildingBadgeConfig over)
   const isBlockBuilding = buildingTypeName.toLowerCase() === 'blokk' || buildingTypeName === 'Store boligbygg';
   // 3-sifret bygningstypekode via felles oppslag (oppslått kode → CSV → ID-tabell)
   const buildingTypeCode = resolveBuildingTypeCodeString(buildingData);
@@ -292,283 +277,109 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
     setIsEditMode(false);
   }, [savedByggeaar, savedAreal, savedArealLeilighet, savedEnergiforbruk]);
 
+  // Sammenligning med bydelen: søyler i kWh per kvadratmeter
+  const comparisonBars = comparison
+    ? [
+        { key: 'current', label: 'Din bolig (estimert)', value: comparison.current, color: '#2A2859' },
+        ...(comparison.withTiltak !== null
+          ? [{ key: 'tiltak', label: 'Med valgte tiltak', value: comparison.withTiltak, color: '#43F8B6' }]
+          : []),
+        {
+          key: 'district',
+          label: `Snitt for ${comparison.buildingTypeLabel} i bydelen`,
+          value: comparison.districtAverage,
+          color: '#9A8C7A',
+        },
+      ]
+    : [];
+  const comparisonMax = Math.max(1, ...comparisonBars.map((bar) => bar.value)) * 1.05;
+
+  const startEdit = () => {
+    setEditedByggeaar(savedByggeaar);
+    setEditedAreal(savedAreal);
+    setEditedArealLeilighet(savedArealLeilighet);
+    setEditedEnergiforbruk(savedEnergiforbruk);
+    setIsEditMode(true);
+    setHasUserEditedEnergy(false);
+  };
+
+  // Tilbakestill til verdiene som ble hentet fra Matrikkelen
+  const handleReset = () => {
+    const origByggeaar = originalByggeaarRef.current;
+    const origAreal = originalArealRef.current;
+    const origArealLeilighet = originalArealLeilighetRef.current;
+    const buildingType = determineBuildingType(buildingTypeCode, buildingTypeName);
+    const origEnergy = String(calculateAnnualEnergyConsumption(
+      origByggeaar ? Number(origByggeaar) : undefined,
+      origAreal ? Number(origAreal) : undefined,
+      buildingType
+    ));
+    setSavedByggeaar(origByggeaar);
+    setSavedAreal(origAreal);
+    setSavedArealLeilighet(origArealLeilighet);
+    setSavedEnergiforbruk(origEnergy);
+    setEditedByggeaar(origByggeaar);
+    setEditedAreal(origAreal);
+    setEditedArealLeilighet(origArealLeilighet);
+    setEditedEnergiforbruk(origEnergy);
+    setHasUserEditedEnergy(false);
+    setIsEditMode(false);
+    onUpdateBuildingData?.(origByggeaar, origAreal, origArealLeilighet, origEnergy);
+  };
+
+  const onlyDigits = (value: string) => value.replace(/[^0-9]/g, '');
+
   return (
     <div className="mobile-info-box">
-      {/* Adresse og tags */}
       <div className="mobile-info-box__header">
-        <h2 className="mobile-info-box__address">{displayAddress}</h2>
+        <div className="mobile-info-box__header-text">
+          <h2 className="mobile-info-box__title">Om boligen</h2>
+          <span className="mobile-info-box__subtitle">
+            {[displayAddress, districtName].filter(Boolean).join(' · ')}
+          </span>
+        </div>
+        {onCollapse && <MobileSheetCloseButton onClick={onCollapse} />}
+      </div>
+
+      <div className="mobile-info-box__scroll">
+        {/* Bytt mellom egen bolig og hele borettslaget/sameiet */}
         {showViewModeToggle && !eiendomsgruppeVisning && (
           <div className="mobile-info-box__view-toggle mobile-info-box__view-toggle--loading">
             <PktLoader size="small" variant="rainbow" isLoading>
               <span />
             </PktLoader>
-            <span className="mobile-info-box__view-toggle-loader-text">
-              Henter data for {eiendomsgruppeLoaderNavn ?? 'borettslaget/sameiet'}
-            </span>
+            <span>Henter data for {eiendomsgruppeLoaderNavn ?? 'borettslaget/sameiet'}</span>
           </div>
         )}
         {showViewModeToggle && eiendomsgruppeVisning && onToggleViewMode && (
-          <div className="mobile-info-box__view-toggle">
-            <PktButton
-              skin="primary"
-              size="small"
-              variant="icon-left"
-              iconName={toggleIconName}
-              onClick={() => onToggleViewMode(isGroupMode ? 'enkelt' : 'gruppe')}
-            >
-              {toggleLabel}
-            </PktButton>
-          </div>
+          <button
+            type="button"
+            className="mobile-info-box__view-toggle mobile-info-box__button"
+            onClick={() => onToggleViewMode(isGroupMode ? 'enkelt' : 'gruppe')}
+          >
+            {toggleLabel}
+          </button>
         )}
-        <div className="mobile-info-box__tags">
-          {districtName && (
-            <PktTag
-              skin={DISTRICT_BADGE.skin}
-              aria-label={`${DISTRICT_BADGE.ariaLabelPrefix}: ${districtName}`}
-            >
-              <PktIcon name={DISTRICT_BADGE.iconName} />
-              <span>{districtName}</span>
-            </PktTag>
-          )}
-          {displayBuildingTypeLabel && (
-            <PktTag
-              skin={displayBuildingBadgeConfig.skin}
-              aria-label={`${displayBuildingBadgeConfig.ariaLabelPrefix}: ${displayBuildingTypeLabel}`}
-            >
-              <PktIcon name={displayBuildingBadgeConfig.iconName} />
-              <span>{displayBuildingTypeLabel}</span>
-            </PktTag>
-          )}
-        </div>
-      </div>
 
-      {/* Besparelseskort er fjernet fra mobil - vises i MobileSavingsFooter i stedet */}
-
-      {/* Gul liste varsling */}
-      {showYellowBox && (
-        <div className="mobile-info-box__gul-liste-alert">
-          <PktAlert skin="warning" variant="default">
+        {/* Gul liste varsling */}
+        {showYellowBox && (
+          <div className="mobile-info-box__gul-liste-alert">
             <strong>Gul liste</strong>
-            <p>Denne bygningen er registrert på Byantikvarens Gul liste.</p>
+            <span>
+              Bygningen er registrert på Byantikvarens gule liste. Tiltak og tilskudd er tilpasset det.
+            </span>
             <button
-              className="mobile-info-box__gul-liste-link"
+              type="button"
+              className="mobile-info-box__link"
               onClick={() => setIsGulListeInfoOpen(true)}
             >
-              Hva betyr dette?
+              Hva betyr gul liste?
             </button>
-          </PktAlert>
-        </div>
-      )}
-
-      {/* Chevron for å kollapse visningen */}
-      {onCollapse && (
-        <button
-          className="mobile-info-box__collapse-button"
-          onClick={onCollapse}
-          aria-label="Lukk boliginformasjon"
-        >
-          <PktIcon name="chevron-thin-up" className="pkt-icon--medium" />
-        </button>
-      )}
-
-      {/* Nøkkelinformasjon */}
-      <PktAccordion skin="outlined">
-        <PktAccordionItem
-          title="Nøkkelinformasjon"
-          id="nokkelinfo"
-          isOpen
-        >
-          <div className="mobile-info-box__key-info">
-            {!isEditMode ? (
-              <>
-                {!isGroupMode && (<PktButton
-                  skin="tertiary"
-                  size="small"
-                  variant="icon-left"
-                  iconName="edit"
-                  onClick={() => {
-                    setEditedByggeaar(savedByggeaar);
-                    setEditedAreal(savedAreal);
-                    setEditedArealLeilighet(savedArealLeilighet);
-                    setEditedEnergiforbruk(savedEnergiforbruk);
-                    setIsEditMode(true);
-                    setHasUserEditedEnergy(false);
-                  }}
-                  className="mobile-info-box__edit-button"
-                >
-                  Rediger
-                </PktButton>)}
-                {isGroupMode ? (
-                  <div className="mobile-info-box__info-row">
-                    <span className="mobile-info-box__info-label">Antall boenheter:</span>
-                    <span className="mobile-info-box__info-value">{eiendomsgruppeVisning!.antallEnheter.toLocaleString('nb-NO')}</span>
-                  </div>
-                ) : (
-                  <div className="mobile-info-box__info-row">
-                    <span className="mobile-info-box__info-label">Byggeår:</span>
-                    <span className="mobile-info-box__info-value">{savedByggeaar || 'Ukjent'}</span>
-                  </div>
-                )}
-                <div className="mobile-info-box__info-row">
-                  <span className="mobile-info-box__info-label">{isGroupMode ? 'Samlet areal:' : 'Bruksareal:'}</span>
-                  <span className="mobile-info-box__info-value">
-                    {isGroupMode
-                      ? `${eiendomsgruppeVisning!.totalBruksarealM2.toLocaleString('nb-NO')} m²`
-                      : `${savedAreal || 'Ukjent'} m²`}
-                  </span>
-                </div>
-                {isBlockBuilding && (
-                  <>
-                    {savedArealLeilighet && (
-                      <div className="mobile-info-box__info-row">
-                        <span className="mobile-info-box__info-label">Areal leilighet:</span>
-                        <span className="mobile-info-box__info-value">{savedArealLeilighet} m²</span>
-                      </div>
-                    )}
-                  </>
-                )}
-                <div className="mobile-info-box__info-row">
-                  <span className="mobile-info-box__info-label">Estimert energiforbruk:</span>
-                  <span className="mobile-info-box__info-value">{formattedEnergyConsumption} kWh/år</span>
-                </div>
-                {!isGroupMode && (<div className="mobile-info-box__info-row mobile-info-box__info-row--rating">
-                  <span className="mobile-info-box__info-label">Estimert energikarakter:</span>
-                  <div className="mobile-info-box__energy-rating-value">
-                    {normalizedCurrentRating ? (
-                      <span
-                        className="mobile-info-box__rating-box"
-                        style={{ backgroundColor: ENERGY_RATING_COLORS[normalizedCurrentRating] }}
-                      >
-                        {normalizedCurrentRating}
-                      </span>
-                    ) : (
-                      <span className="mobile-info-box__energy-rating-empty">Ukjent</span>
-                    )}
-                  </div>
-                </div>)}
-              </>
-            ) : (
-              <>
-                <div className="mobile-info-box__edit-row">
-                  <label className="mobile-info-box__edit-label" htmlFor="edit-byggeaar">Byggeår:</label>
-                  <input
-                    id="edit-byggeaar"
-                    type="text"
-                    inputMode="numeric"
-                    className="mobile-info-box__edit-input"
-                    value={editedByggeaar}
-                    onChange={(e) => setEditedByggeaar(e.target.value.replace(/[^0-9]/g, ''))}
-                  />
-                </div>
-                <div className="mobile-info-box__edit-row">
-                  <label className="mobile-info-box__edit-label" htmlFor="edit-areal">Areal (m²):</label>
-                  <input
-                    id="edit-areal"
-                    type="text"
-                    inputMode="numeric"
-                    className="mobile-info-box__edit-input"
-                    value={editedAreal}
-                    onChange={(e) => setEditedAreal(e.target.value.replace(/[^0-9]/g, ''))}
-                  />
-                </div>
-                {isBlockBuilding && (
-                  <div className="mobile-info-box__edit-row">
-                    <label className="mobile-info-box__edit-label" htmlFor="edit-areal-leilighet">Areal leilighet (m²):</label>
-                    <input
-                      id="edit-areal-leilighet"
-                      type="text"
-                      inputMode="numeric"
-                      className="mobile-info-box__edit-input"
-                      value={editedArealLeilighet}
-                      onChange={(e) => setEditedArealLeilighet(e.target.value.replace(/[^0-9]/g, ''))}
-                    />
-                  </div>
-                )}
-                <div className="mobile-info-box__edit-row">
-                  <label className="mobile-info-box__edit-label" htmlFor="edit-energi">Energiforbruk (kWh/år):</label>
-                  <input
-                    id="edit-energi"
-                    type="text"
-                    inputMode="numeric"
-                    className="mobile-info-box__edit-input"
-                    value={editedEnergiforbruk}
-                    onChange={(e) => {
-                      setEditedEnergiforbruk(e.target.value.replace(/[^0-9]/g, ''));
-                      setHasUserEditedEnergy(true);
-                    }}
-                  />
-                </div>
-                <div className="mobile-info-box__edit-actions">
-                  <PktButton
-                    skin="tertiary"
-                    size="small"
-                    variant="icon-left"
-                    iconName="arrow-circle"
-                    onClick={() => {
-                      const origByggeaar = originalByggeaarRef.current;
-                      const origAreal = originalArealRef.current;
-                      const origArealLeilighet = originalArealLeilighetRef.current;
-                      const buildingType = determineBuildingType(buildingTypeCode, buildingTypeName);
-                      const origEnergy = String(calculateAnnualEnergyConsumption(
-                        origByggeaar ? Number(origByggeaar) : undefined,
-                        origAreal ? Number(origAreal) : undefined,
-                        buildingType
-                      ));
-                      setSavedByggeaar(origByggeaar);
-                      setSavedAreal(origAreal);
-                      setSavedArealLeilighet(origArealLeilighet);
-                      setSavedEnergiforbruk(origEnergy);
-                      setEditedByggeaar(origByggeaar);
-                      setEditedAreal(origAreal);
-                      setEditedArealLeilighet(origArealLeilighet);
-                      setEditedEnergiforbruk(origEnergy);
-                      setHasUserEditedEnergy(false);
-                      setIsEditMode(false);
-                      onUpdateBuildingData?.(origByggeaar, origAreal, origArealLeilighet, origEnergy);
-                    }}
-                  >
-                    Tilbakestill
-                  </PktButton>
-                  <PktButton
-                    skin="secondary"
-                    size="small"
-                    onClick={handleCancel}
-                  >
-                    Avbryt
-                  </PktButton>
-                  <PktButton
-                    skin="primary"
-                    size="small"
-                    onClick={handleSave}
-                  >
-                    Lagre
-                  </PktButton>
-                </div>
-              </>
-            )}
           </div>
-        </PktAccordionItem>
-      </PktAccordion>
+        )}
 
-      {/* Sammenlign med naboer - knapp mellom Nøkkelinfo og Kart */}
-      {showCompareButton && onCompareClick && (
-        <div className="mobile-info-box__compare-section">
-          <PktButton
-            skin="primary"
-            size="medium"
-            variant="icon-left"
-            iconName="eye"
-            onClick={onCompareClick}
-          >
-            <span>Sammenlign med naboer</span>
-          </PktButton>
-        </div>
-      )}
-
-      {/* Kart - vises direkte under nøkkelinformasjon (Oslo kommune karttjeneste) */}
-      <div className="mobile-info-box__map-section">
-        <h3 className="mobile-info-box__map-title">Kart</h3>
-        <div className="mobile-info-box__map-container">
+        {/* Kart (Oslo kommunes karttjeneste) som bekreftelse på riktig bygg */}
+        <figure className="mobile-info-box__map">
           {mapCoordinates ? (
             <div className="mobile-info-box__map-wrapper">
               <img
@@ -584,14 +395,227 @@ export const MobileInfoBox: React.FC<MobileInfoBoxProps> = ({
               </div>
             </div>
           ) : (
-            <div className="mobile-info-box__map-loading">
-              Kartkoordinater ikke tilgjengelig
+            <div className="mobile-info-box__map-missing">Kartkoordinater ikke tilgjengelig</div>
+          )}
+          <figcaption className="mobile-info-box__muted">Kart: Bymiljøetaten, Oslo kommune</figcaption>
+        </figure>
+
+        {/* Energi i dag */}
+        <section className="mobile-info-box__section">
+          <h3 className="mobile-info-box__section-title">Energi i dag</h3>
+          {!isGroupMode && normalizedCurrentRating && (
+            <div
+              className="mobile-info-box__scale"
+              role="img"
+              aria-label={`Estimert energikarakter ${normalizedCurrentRating} på en skala fra A til G`}
+            >
+              {ENERGY_RATING_SCALE.map((letter) => (
+                <span
+                  key={letter}
+                  className={`mobile-info-box__scale-step${letter === normalizedCurrentRating ? ' mobile-info-box__scale-step--current' : ''}`}
+                  style={{ backgroundColor: ENERGY_RATING_COLORS[letter], color: ratingTextColor(letter) }}
+                >
+                  {letter}
+                </span>
+              ))}
             </div>
           )}
-        </div>
-        <span className="mobile-info-box__map-attribution">
-          Kart: Bymiljøetaten, Oslo kommune
-        </span>
+          <dl className="mobile-info-box__rows">
+            {!isGroupMode && (
+              <div>
+                <dt>Estimert energikarakter</dt>
+                <dd>{normalizedCurrentRating ?? 'Ukjent'}</dd>
+              </div>
+            )}
+            <div>
+              <dt>Estimert energiforbruk</dt>
+              <dd>~{formattedEnergyConsumption} kWh/år</dd>
+            </div>
+          </dl>
+          {onToggleFjernvarme && (
+            <label className="mobile-info-box__checkbox" htmlFor="om-boligen-fjernvarme">
+              <input
+                id="om-boligen-fjernvarme"
+                type="checkbox"
+                checked={Boolean(fjernvarme)}
+                onChange={onToggleFjernvarme}
+              />
+              <span>Boligen har fjernvarme</span>
+            </label>
+          )}
+          <p className="mobile-info-box__muted">
+            Anslaget bygger på byggeår, areal og bygningstype.
+            {onToggleFjernvarme ? ' Fjernvarme gir bedre energikarakter.' : ''}
+          </p>
+        </section>
+
+        {/* Opplysninger om boligen */}
+        <section className="mobile-info-box__section mobile-info-box__section--tight">
+          <div className="mobile-info-box__section-head">
+            <h3 className="mobile-info-box__section-title">
+              {isGroupMode ? 'Opplysninger om eiendommen' : 'Opplysninger om boligen'}
+            </h3>
+            {!isEditMode && !isGroupMode && (
+              <button type="button" className="mobile-info-box__link" onClick={startEdit}>
+                Rediger
+              </button>
+            )}
+          </div>
+
+          {!isEditMode ? (
+            <>
+              <dl className="mobile-info-box__rows">
+                {displayBuildingTypeLabel && (
+                  <div>
+                    <dt>{isGroupMode ? 'Eierform' : 'Bygningstype'}</dt>
+                    <dd>{displayBuildingTypeLabel}</dd>
+                  </div>
+                )}
+                {isGroupMode ? (
+                  <div>
+                    <dt>Antall boenheter</dt>
+                    <dd>{eiendomsgruppeVisning!.antallEnheter.toLocaleString('nb-NO')}</dd>
+                  </div>
+                ) : (
+                  <div>
+                    <dt>Byggeår</dt>
+                    <dd>{savedByggeaar || 'Ukjent'}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt>{isGroupMode ? 'Samlet areal' : 'Bruksareal'}</dt>
+                  <dd>
+                    {isGroupMode
+                      ? `${eiendomsgruppeVisning!.totalBruksarealM2.toLocaleString('nb-NO')} m²`
+                      : `${savedAreal || 'Ukjent'} m²`}
+                  </dd>
+                </div>
+                {isBlockBuilding && savedArealLeilighet && (
+                  <div>
+                    <dt>Areal leilighet</dt>
+                    <dd>{savedArealLeilighet} m²</dd>
+                  </div>
+                )}
+              </dl>
+              {!isGroupMode && (
+                <p className="mobile-info-box__muted">
+                  Hentet fra Matrikkelen. Stemmer det ikke, kan du rette tallene og få et nytt anslag.
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="mobile-info-box__form">
+              <div className="mobile-info-box__field">
+                <label htmlFor="edit-byggeaar">Byggeår</label>
+                <input
+                  id="edit-byggeaar"
+                  type="text"
+                  inputMode="numeric"
+                  value={editedByggeaar}
+                  onChange={(e) => setEditedByggeaar(onlyDigits(e.target.value))}
+                />
+              </div>
+              <div className="mobile-info-box__field">
+                <label htmlFor="edit-areal">Bruksareal (m²)</label>
+                <input
+                  id="edit-areal"
+                  type="text"
+                  inputMode="numeric"
+                  value={editedAreal}
+                  onChange={(e) => setEditedAreal(onlyDigits(e.target.value))}
+                />
+              </div>
+              {isBlockBuilding && (
+                <div className="mobile-info-box__field">
+                  <label htmlFor="edit-areal-leilighet">Areal leilighet (m²)</label>
+                  <input
+                    id="edit-areal-leilighet"
+                    type="text"
+                    inputMode="numeric"
+                    value={editedArealLeilighet}
+                    onChange={(e) => setEditedArealLeilighet(onlyDigits(e.target.value))}
+                  />
+                </div>
+              )}
+              <div className="mobile-info-box__field">
+                <label htmlFor="edit-energi">Energiforbruk (kWh/år)</label>
+                <input
+                  id="edit-energi"
+                  type="text"
+                  inputMode="numeric"
+                  value={editedEnergiforbruk}
+                  onChange={(e) => {
+                    setEditedEnergiforbruk(onlyDigits(e.target.value));
+                    setHasUserEditedEnergy(true);
+                  }}
+                />
+                <span className="mobile-info-box__muted">
+                  Har du strømregningen, kan du legge inn det faktiske forbruket.
+                </span>
+              </div>
+              <div className="mobile-info-box__form-actions">
+                <button type="button" className="mobile-info-box__link" onClick={handleReset}>
+                  Tilbakestill
+                </button>
+                <div className="mobile-info-box__form-buttons">
+                  <button type="button" className="mobile-info-box__button" onClick={handleCancel}>
+                    Avbryt
+                  </button>
+                  <button
+                    type="button"
+                    className="mobile-info-box__button mobile-info-box__button--primary"
+                    onClick={handleSave}
+                  >
+                    Lagre
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Sammenligning med bydelen */}
+        {comparison && (
+          <section className="mobile-info-box__section">
+            <div className="mobile-info-box__section-intro">
+              <h3 className="mobile-info-box__section-title">
+                Sammenlignet med {districtName || 'bydelen'}
+              </h3>
+              <span className="mobile-info-box__muted">Energiforbruk per kvadratmeter i året</span>
+            </div>
+            <ul className="mobile-info-box__bars">
+              {comparisonBars.map((bar) => (
+                <li key={bar.key}>
+                  <span className="mobile-info-box__bar-label">
+                    <span>{bar.label}</span>
+                    <span className="mobile-info-box__bar-value">
+                      {Math.round(bar.value).toLocaleString('nb-NO')} kWh/m²
+                    </span>
+                  </span>
+                  <span className="mobile-info-box__bar-track" aria-hidden="true">
+                    <span
+                      style={{
+                        width: `${Math.round((bar.value / comparisonMax) * 100)}%`,
+                        backgroundColor: bar.color,
+                      }}
+                    />
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {showCompareButton && onCompareClick && (
+              <button type="button" className="mobile-info-box__link" onClick={onCompareClick}>
+                Se hele sammenligningen
+              </button>
+            )}
+          </section>
+        )}
+
+        {onShowHowItWorks && (
+          <button type="button" className="mobile-info-box__link" onClick={onShowHowItWorks}>
+            Hvordan fungerer Energinøkkelen?
+          </button>
+        )}
       </div>
 
       {/* Gul liste info modal */}

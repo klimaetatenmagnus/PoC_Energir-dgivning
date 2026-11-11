@@ -1,0 +1,295 @@
+/* MobileTiltakInfoSheet – infoark med tilskudd øverst */
+
+.mobile-info-sheet__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 4px 12px 16px;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.mobile-info-sheet__header-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.mobile-info-sheet__header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mobile-info-sheet__title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.mobile-info-sheet__savings {
+  font-size: 0.9375rem;
+  color: var(--pkt-color-brand-dark-green-1000, #034b45);
+  font-variant-numeric: tabular-nums;
+}
+
+.mobile-info-sheet__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 16px 20px;
+}
+
+.mobile-info-sheet__section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mobile-info-sheet__section-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.mobile-info-sheet__section-title--spaced {
+  margin-top: 14px;
+}
+
+.mobile-info-sheet__count {
+  flex: none;
+  font-size: 0.875rem;
+  color: #4d4d4d;
+}
+
+.mobile-info-sheet__muted {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #4d4d4d;
+}
+
+.mobile-info-sheet__paragraph {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Tilskuddskort */
+.mobile-info-sheet__grants {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-info-sheet__grant {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 76px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  text-decoration: none;
+}
+
+/* Overstyr globale lenkestiler, kortet skal se likt ut i alle tilstander */
+.mobile-info-sheet__grant:hover,
+.mobile-info-sheet__grant:visited,
+.mobile-info-sheet__grant:active {
+  color: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  text-decoration: none;
+}
+
+.mobile-info-sheet__grant-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mobile-info-sheet__grant-provider {
+  font-size: 0.8125rem;
+}
+
+.mobile-info-sheet__grant-title {
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.mobile-info-sheet__grant-amount {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.mobile-info-sheet__external {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+/* Utvidbare rader */
+.mobile-info-sheet__rows {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  border-top: 1px solid #e6e6e6;
+}
+
+.mobile-info-sheet__row {
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.mobile-info-sheet__row-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mobile-info-sheet__row-chevron {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  transition: transform 160ms ease-out;
+}
+
+.mobile-info-sheet__row-chevron--open {
+  transform: rotate(180deg);
+}
+
+.mobile-info-sheet__row-body {
+  padding: 0 0 14px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.mobile-info-sheet__row-body p {
+  margin: 0;
+}
+
+.mobile-info-sheet__row-body > p + * {
+  margin-top: 10px;
+}
+
+.mobile-info-sheet__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-info-sheet__links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-info-sheet__text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mobile-info-sheet__highlight {
+  padding: 12px;
+  background: var(--pkt-color-brand-beige-200, #f8f0dd);
+}
+
+.mobile-info-sheet__highlight h4 {
+  margin: 0 0 6px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+/* Faner inne i en rad (f.eks. varmepumpetyper) */
+.mobile-info-sheet__tabs {
+  display: flex;
+  gap: 8px;
+  margin: 0 -16px 12px;
+  padding: 0 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.mobile-info-sheet__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-info-sheet__tab {
+  flex: none;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  background: var(--pkt-color-brand-neutrals-white, #ffffff);
+  color: inherit;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.mobile-info-sheet__tab--active {
+  background: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  color: #ffffff;
+}
+
+/* Valgknapper i bunnen */
+.mobile-info-sheet__footer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid #e6e6e6;
+  background: var(--pkt-color-brand-neutrals-white, #ffffff);
+}
+
+.mobile-info-sheet__button {
+  min-height: 52px;
+  padding: 4px 8px;
+  border: 2px solid var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  background: var(--pkt-color-brand-neutrals-white, #ffffff);
+  color: inherit;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.mobile-info-sheet__button--primary {
+  background: var(--pkt-color-brand-dark-blue-1000, #2a2859);
+  color: #ffffff;
+  font-weight: 700;
+}
