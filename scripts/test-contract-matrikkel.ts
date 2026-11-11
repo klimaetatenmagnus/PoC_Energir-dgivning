@@ -12,7 +12,7 @@ async function main() {
 
     nock("https://ws.geonorge.no")
       .get("/adresser/v1/sok")
-      .query({ sok: "Karl Johans gate 1", fuzzy: "true" })
+      .query({ sok: "Karl Johans gate 1", fuzzy: "true", kommunenummer: "0301" })
       .reply(200, {
         adresser: [
           {
@@ -75,6 +75,74 @@ async function main() {
 
     assert(geonorgeNotFound, "forventer geonorge=not_found metrikk");
     assert.equal(geonorgeNotFound.value, 1);
+
+    // Samme gateadresse finnes i flere kommuner: oppslaget skal bruke Oslo-treffet,
+    // også når en annen kommune står først i svaret.
+    metricsRegistry.resetMetrics();
+    nock.cleanAll();
+
+    nock("https://ws.geonorge.no")
+      .get("/adresser/v1/sok")
+      .query({ sok: "Ivar Aasens vei 23A", fuzzy: "true", kommunenummer: "0301" })
+      .reply(200, {
+        adresser: [
+          {
+            kommunenummer: "3222",
+            gardsnummer: 107,
+            bruksnummer: 2852,
+            adressekode: 2890,
+            nummer: "23",
+            bokstav: "A",
+            poststed: "LØRENSKOG",
+            postnummer: "1476",
+            adressetekst: "Ivar Aasens vei 23A",
+          },
+          {
+            kommunenummer: "0301",
+            gardsnummer: 39,
+            bruksnummer: 56,
+            adressekode: 14200,
+            nummer: "23",
+            bokstav: "A",
+            poststed: "OSLO",
+            postnummer: "0373",
+            adressetekst: "Ivar Aasens vei 23A",
+          },
+        ],
+      });
+
+    const osloAdresse = await matrikkelTesting.lookupAdresse("Ivar Aasens vei 23A");
+    assert.equal(osloAdresse.kommunenummer, "0301");
+    assert.equal(osloAdresse.gnr, 39);
+    assert.equal(osloAdresse.bnr, 56);
+
+    // Bare treff utenfor Oslo skal behandles som «ikke funnet»
+    nock.cleanAll();
+
+    nock("https://ws.geonorge.no")
+      .get("/adresser/v1/sok")
+      .query(true)
+      .times(7)
+      .reply(200, {
+        adresser: [
+          {
+            kommunenummer: "1103",
+            gardsnummer: 28,
+            bruksnummer: 647,
+            adressekode: 16500,
+            nummer: "9",
+            bokstav: "A",
+            poststed: "STAVANGER",
+            postnummer: "4021",
+            adressetekst: "Neptunveien 9A",
+          },
+        ],
+      });
+
+    await assert.rejects(
+      () => matrikkelTesting.lookupAdresse("Neptunveien 9A"),
+      /Ingen adresse funnet/i
+    );
 
     console.log("✅ matrikkel contract tests passed");
   } finally {
