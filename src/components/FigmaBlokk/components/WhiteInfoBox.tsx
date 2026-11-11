@@ -24,6 +24,7 @@ import { DesktopTiltakCard } from './Tiltak';
 import { DistrictComparisonModal } from './DistrictComparison/DistrictComparisonModal';
 import { trackNeighborComparison } from '../../../analytics';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, calculateEnergyRatingWithFjernvarme, calculateTEK } from '../../../utils/tekEnergyCalculations';
+import { BLOCK_CODE_GROUPS, resolveBuildingTypeCodeString } from '../../../utils/buildingTypeCode';
 import { calculateComparisonSavings, type TiltakSavingsInfo, type TekPeriodInput } from '../../../utils/energySavingsData';
 import {
   getDistrictStatistics,
@@ -137,32 +138,32 @@ function resolveTiltakBuildingType(
     return undefined;
   };
 
-  const codeCandidate =
-    buildingData?.bygningstypeKode ||
-    buildingData?.csvData?.bygningstypekode ||
-    buildingData?.csvData?.bygningstypeKode;
-
-  if (codeCandidate && codeCandidate.length >= 2) {
-    const prefix = codeCandidate.slice(0, 2);
-    if (['11'].includes(prefix)) {
-      return 'enebolig';
-    }
-    if (['12', '13'].includes(prefix)) {
-      return 'rekkehus';
-    }
-    if (['14', '15', '16', '17'].includes(prefix)) {
-      return 'blokk';
-    }
-  }
-
+  // Navn først: slik har oppslag via Matrikkelen alltid blitt klassifisert
+  // (API-et leverte tidligere ingen 3-sifret kode der). Koden brukes når
+  // navnet ikke gir treff, f.eks. «Kjede/atriumhus» og «Terrassehus».
   const fromNames =
     resolveFromName(buildingData?.bygningstype) ||
     resolveFromName(buildingData?.bygningstypeNavn) ||
     resolveFromName(buildingData?.csvData?.bygningstype) ||
     resolveFromName(buildingData?.csvData?.bygningstypeNavn) ||
     resolveFromName(fallbackName);
+  if (fromNames) {
+    return fromNames;
+  }
 
-  return fromNames ?? undefined;
+  const prefix = resolveBuildingTypeCodeString(buildingData)?.slice(0, 2);
+  // Enebolig (11x) og fritidsbolig, koie/seterhus (16x–17x)
+  if (prefix === '11' || prefix === '16' || prefix === '17') {
+    return 'enebolig';
+  }
+  if (prefix === '12' || prefix === '13') {
+    return 'rekkehus';
+  }
+  if (prefix && BLOCK_CODE_GROUPS.includes(prefix)) {
+    return 'blokk';
+  }
+
+  return undefined;
 }
 
 
@@ -292,7 +293,8 @@ export const WhiteInfoBox: React.FC<WhiteInfoBoxProps> = ({
   const isApartmentBuilding =
     buildingTypeName === 'Store boligbygg' || buildingTypeName.toLowerCase() === 'blokk';
   const isBlockBuilding = buildingTypeName.toLowerCase() === 'blokk';
-  const buildingTypeCode = buildingData?.bygningstypeKode || buildingData?.csvData?.bygningstypekode || '';
+  // 3-sifret bygningstypekode via felles oppslag (oppslått kode → CSV → ID-tabell)
+  const buildingTypeCode = resolveBuildingTypeCodeString(buildingData) ?? '';
   const roundedSavingsKwh = React.useMemo(
     () => roundToNearestThousandValue(totalEnergySavings),
     [totalEnergySavings]
@@ -429,13 +431,13 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
 
     const bruksareal = rawBruksareal ? Number(rawBruksareal) : undefined;
     const buildingType = determineBuildingType(
-      buildingData?.bygningstypeKode,
+      buildingTypeCode,
       buildingTypeName
     );
     
     // Bruker alltid TEK-basert estimering, ikke Enova-attest
     return calculateAnnualEnergyConsumption(parsedByggeaar, bruksareal, buildingType);
-  }, [savedByggeaar, savedAreal, buildingData, buildingTypeName]);
+  }, [savedByggeaar, savedAreal, buildingData, buildingTypeCode, buildingTypeName]);
   
   // VIKTIG: Nøkkelinformasjon skal ALLTID bruke TEK-estimering, ikke Enova-data.
   // Enova-data brukes KUN i sammenligningsmodulen.
@@ -584,13 +586,13 @@ const tiltakAudience = showYellowBox ? 'gulliste' : 'standard';
   React.useEffect(() => {
     if (isEditMode && !hasUserEditedEnergy) {
       const buildingType = determineBuildingType(
-        buildingData?.bygningstypeKode,
+        buildingTypeCode,
         buildingTypeName
       );
       const newEstimate = calculateAnnualEnergyConsumption(editedByggeaar, editedAreal, buildingType);
       setEditedEnergiforbruk(String(newEstimate));
     }
-  }, [editedByggeaar, editedAreal, isEditMode, buildingData?.bygningstypeKode, buildingTypeName, hasUserEditedEnergy]);
+  }, [editedByggeaar, editedAreal, isEditMode, buildingTypeCode, buildingTypeName, hasUserEditedEnergy]);
   
   const energyBlockHeight = isEditMode ? 168 : 96;
   const trimmedApartmentArea = (savedArealLeilighet || '').trim();
@@ -1217,7 +1219,7 @@ const tiltakPreview = selectedTiltakSlug ? (
                       variant="icon-left"
                       iconName="arrow-circle"
                       onClick={() => {
-                        const buildingType = determineBuildingType(buildingData?.bygningstypeKode, buildingTypeName);
+                        const buildingType = determineBuildingType(buildingTypeCode, buildingTypeName);
                         const origEnergy = String(calculateAnnualEnergyConsumption(
                           originalByggeaar ? Number(originalByggeaar) : undefined,
                           originalAreal ? Number(originalAreal) : undefined,

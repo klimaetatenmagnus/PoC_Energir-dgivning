@@ -144,7 +144,7 @@ Selv om vi ikke kan bekrefte at kode 7 = fjernvarme, er det sterke indisier:
 
 For aa bekrefte/avkrefte, implementer et SOAP-kall til Matrikkelens kodeliste-tjeneste:
 
-1. **Moenster:** `BygningClient.findAlleBygningstypeKoder()` (allerede implementert i kodebasen)
+1. **Moenster:** `scripts/verify-bygningstype-kodeliste.ts`. NB: `findAlle...Koder` returnerer bare interne ID-er; kodeverdi og navn hentes med `StoreService.getObjects` (den tidligere `BygningClient.findAlleBygningstypeKoder()` ga derfor alltid tomt resultat og er fjernet)
 2. **Ny metode:** `findAlleEnergikildeKoder()` med SOAP-action `findAlleEnergikildeKoder`
 3. **Alternativt:** Bruk `KodelisteService` endepunktet direkte
 4. Kallet returnerer `id`, `kodeverdi` og `beskrivelse` for alle koder
@@ -176,7 +176,7 @@ Oppvarmingskarakteren er en indirekte indikator basert paa fargekode, ikke en ek
 
 #### c) Matrikkelens kodeliste-API
 - **Mest lovende for kode 7-sporsmaal:** Implementer `findAlleEnergikildeKoder()` for aa faa den offisielle mappingen.
-- **Tiltak:** Kopier monsteret fra `findAlleBygningstypeKoder()` i BygningClient.
+- **Tiltak:** Kopier monsteret fra `scripts/verify-bygningstype-kodeliste.ts` (ID-liste + `StoreService.getObjects`).
 
 ### 5.3 Prioritert handlingsplan
 

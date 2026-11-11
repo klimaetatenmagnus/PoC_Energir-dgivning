@@ -17,6 +17,8 @@ import { sjekkGulListeMedGnrBnr } from '../services/gul-liste-service';
 import { LYSEVEIEN_3_DATA } from '../testData/lyseveien3';
 import { THERESES_11A_DATA } from '../testData/theresegate11a';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, getEnergyIntensityFromTEK, calculateTEK } from '../utils/tekEnergyCalculations';
+import { resolveBuildingTypeCodeString } from '../utils/buildingTypeCode';
+import { getBuildingKind } from '../utils/buildingTypeUtils';
 import { THERESES_44A_DATA } from '../testData/theresegate44a';
 import { Enebolig2LayerSvg, Blokk2LayerSvg } from './FigmaBlokk/components/BuildingSprites';
 import type { LandingSnapshot } from '../hooks/useFigmaAddressSearch';
@@ -119,29 +121,15 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
       setViewMode('enkelt');
     }
   }, [eiendomsgruppe.shouldShowToggle, viewMode]);
-  // Check if building is an Enebolig
-  const isEnebolig = React.useMemo(() => {
-    // First check CSV/Excel data
-    const csvBuildingType = buildingData.csvData?.bygningstypeNavn?.toLowerCase();
-    if (csvBuildingType) {
-      return csvBuildingType.includes('enebolig') ||
-             csvBuildingType.includes('tomannsbolig') ||
-             csvBuildingType.includes('rekkehus') ||
-             csvBuildingType.includes('småhus');
-    }
-
-    // Fallback to API data
-    const buildingTypeCode = buildingData.bygningstypeKode;
-    const buildingTypeId = buildingData.bygningstypeKodeId;
-
-    if (buildingTypeCode) {
-      const code = parseInt(buildingTypeCode);
-      return code >= 110 && code < 140;
-    } else if (buildingTypeId) {
-      return buildingTypeId === 1 || buildingTypeId === 4 || buildingTypeId === 5 || buildingTypeId === 8;
-    }
-    return false;
-  }, [buildingData]);
+  // Check if building is an Enebolig.
+  // Må bruke samme klassifisering som landingsovergangen (getBuildingKind i
+  // useFigmaAddressSearch). Er de uenige, får overgangsanimasjonen aldri en
+  // mål-posisjon og blir hengende på skjermen (f.eks. «Terrassehus», der
+  // navnet ikke gir treff, men koden 135 er småhus).
+  const isEnebolig = React.useMemo(
+    () => getBuildingKind(buildingData) === 'enebolig',
+    [buildingData]
+  );
 
   // Use coordinates from building API response directly (skips redundant Geonorge lookup)
   const initialCoords = React.useMemo(() => {
@@ -238,7 +226,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     const byggeaar = buildingData?.csvData?.byggeaar || buildingData?.byggeaar;
     const bruksareal = buildingData?.bruksarealM2 || buildingData?.csvData?.bruksareal_totalt;
     const buildingType = determineBuildingType(
-      buildingData?.bygningstypeKode || buildingData?.csvData?.bygningstypekode,
+      resolveBuildingTypeCodeString(buildingData),
       buildingData?.bygningstype || buildingData?.csvData?.bygningstype
     );
 
@@ -444,7 +432,7 @@ export const FigmaMainScript: React.FC<FigmaBlokkProps> = ({ searchAddress, buil
     const byggeaar = buildingData?.csvData?.byggeaar || buildingData?.byggeaar;
     const bruksareal = buildingData?.bruksarealM2 || buildingData?.csvData?.bruksareal_totalt;
     const buildingType = determineBuildingType(
-      buildingData?.bygningstypeKode || buildingData?.csvData?.bygningstypekode,
+      resolveBuildingTypeCodeString(buildingData),
       buildingData?.bygningstype || buildingData?.csvData?.bygningstype
     );
 

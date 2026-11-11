@@ -3,6 +3,14 @@
 // Utilities for handling building type logic based on Norwegian building standards
 // -----------------------------------------------------------------------------
 
+import {
+  BLOCK_CODE_GROUPS,
+  isResidentialCode,
+  resolveBuildingTypeCode,
+  SMALL_HOUSE_CODE_GROUPS,
+  type BuildingTypeSource,
+} from './buildingTypeCode.ts';
+
 /**
  * Building type classification based on Norwegian standard for bygningstype
  * https://www.ssb.no/klass/klassifikasjoner/31
@@ -15,19 +23,27 @@ export interface BuildingTypeStrategy {
 }
 
 /**
- * Determine reporting strategy based on building type code
- * 
+ * Determine reporting strategy based on the 3-digit building type code.
+ *
+ * Koden hentes via resolveBuildingTypeCode (oppslått kode → CSV → verifisert
+ * ID-tabell). Matrikkelens interne `bygningstypeKodeId` tolkes aldri direkte
+ * som kode: ID 111 er sykehjem (kode 721), ikke enebolig.
+ *
  * Rules:
  * 1. Only residential buildings (1xx codes) are processed
  * 2. Individual houses (11x, 12x, 16x, 17x) -> report section data
- * 3. Collective housing (13x, 14x) -> report building data  
+ * 3. Collective housing (13x, 14x) -> report building data
  * 4. Other residential types (15x, 18x, 19x) -> exclude
- * 
- * @param bygningstypeKodeId - Building type code from Matrikkel API
+ *
+ * @param building - Building with `bygningstypeKode`, `bygningstypeKodeId` and/or `csvData`
  * @returns Strategy object indicating how to handle this building type
  */
-export function determineBuildingTypeStrategy(bygningstypeKodeId?: number): BuildingTypeStrategy {
-  if (!bygningstypeKodeId) {
+export function determineBuildingTypeStrategy(
+  building?: BuildingTypeSource | null
+): BuildingTypeStrategy {
+  const code = resolveBuildingTypeCode(building);
+
+  if (code === undefined) {
     return {
       isResidential: false,
       reportingLevel: 'exclude',
@@ -35,31 +51,6 @@ export function determineBuildingTypeStrategy(bygningstypeKodeId?: number): Buil
     };
   }
 
-  let code = bygningstypeKodeId;
-  
-  // Handle internal IDs (under 100) by mapping to standard codes
-  if (code < 100) {
-    // Known mappings from internal IDs to standard codes
-    const internalIdMapping: Record<number, number> = {
-      1: 111,   // Enebolig
-      4: 121,   // Tomannsbolig, vertikaldelt
-      5: 122,   // Tomannsbolig, horisontaldelt
-      8: 131,   // Rekkehus
-      10: 141,  // Store frittliggende boligbygg på 2 etasjer
-      11: 142,  // Store frittliggende boligbygg på 3 og 4 etasjer
-      12: 143,  // Store frittliggende boligbygg på 5 etasjer eller over
-      13: 142,  // Store frittliggende boligbygg på 3 og 4 etasjer
-      14: 144,  // Store sammenbygde boligbygg på 2 etasjer
-      15: 145,  // Store sammenbygde boligbygg på 3 og 4 etasjer
-      16: 146,  // Store sammenbygde boligbygg på 5 etasjer og over
-      26: 181,  // Garasje, uthus, anneks knyttet til bolig
-      127: 142, // Store frittliggende boligbygg på 3 og 4 etasjer (Fallanveien 29)
-    };
-    
-    // Map internal ID to standard code
-    code = internalIdMapping[code] || code;
-  }
-  
   // Check if it's a residential building (1xx)
   if (code < 100 || code >= 200) {
     return {
@@ -121,25 +112,45 @@ function getBuildingTypeDescription(code: number): string {
 /**
  * Check if a building type should be processed by the energy tool
  */
-export function shouldProcessBuildingType(bygningstypeKodeId?: number): boolean {
-  const strategy = determineBuildingTypeStrategy(bygningstypeKodeId);
+export function shouldProcessBuildingType(building?: BuildingTypeSource | null): boolean {
+  const strategy = determineBuildingTypeStrategy(building);
   return strategy.isResidential && strategy.reportingLevel !== 'exclude';
 }
 
 /**
  * Check if building data should be reported at section level vs building level
  */
-export function shouldReportSectionLevel(bygningstypeKodeId?: number): boolean {
-  const strategy = determineBuildingTypeStrategy(bygningstypeKodeId);
+export function shouldReportSectionLevel(building?: BuildingTypeSource | null): boolean {
+  const strategy = determineBuildingTypeStrategy(building);
   return strategy.reportingLevel === 'section';
 }
 
 /**
  * Check if building data should be reported at building level
  */
-export function shouldReportBuildingLevel(bygningstypeKodeId?: number): boolean {
-  const strategy = determineBuildingTypeStrategy(bygningstypeKodeId);
+export function shouldReportBuildingLevel(building?: BuildingTypeSource | null): boolean {
+  const strategy = determineBuildingTypeStrategy(building);
   return strategy.reportingLevel === 'building';
+}
+
+/**
+ * Melding som vises i stedet for årsforbruk og karakter når adressen er
+ * registrert som noe annet enn bolig (kode utenfor 110–179). Returnerer
+ * `null` for boliger og for bygg uten kjent bygningstype.
+ */
+export function getUnsupportedBuildingMessage(
+  building: (BuildingTypeSource & { bygningstype?: string | null }) | null | undefined
+): string | null {
+  const code = resolveBuildingTypeCode(building);
+  if (code === undefined || isResidentialCode(code)) {
+    return null;
+  }
+
+  const typeName = building?.bygningstype?.trim();
+  const registeredAs = typeName
+    ? `Denne adressen er registrert som «${typeName}».`
+    : 'Denne adressen er ikke registrert som bolig.';
+  return `Energinøkkelen støtter foreløpig bare boliger. ${registeredAs}`;
 }
 
 /**
@@ -157,13 +168,14 @@ export type { BuildingKind } from '../context/TransitionOverlayTypes';
  *
  * Classification rules:
  * - 'enebolig': single-family homes, duplexes, row houses (codes 11x, 12x, 13x)
- * - 'blokk': apartment blocks, large residential buildings (codes 14x, 15x, 16x, 17x)
+ *   and holiday homes/cabins (codes 16x, 17x)
+ * - 'blokk': apartment blocks, large residential buildings (codes 14x, 15x)
  *
  * @param building - Object containing building type information
  * @returns 'enebolig' or 'blokk'
  */
 export function getBuildingKind(building: {
-  csvData?: { bygningstypeNavn?: string };
+  csvData?: { bygningstypeNavn?: string; bygningstype3siffer?: string | null };
   bygningstypeKode?: string;
   bygningstypeKodeId?: number;
 }): 'enebolig' | 'blokk' {
@@ -188,31 +200,15 @@ export function getBuildingKind(building: {
     }
   }
 
-  // Check building type code (standard Norwegian codes)
-  const buildingTypeCode = building.bygningstypeKode;
-  if (buildingTypeCode) {
-    const code = Number.parseInt(buildingTypeCode, 10);
-    if (Number.isInteger(code)) {
-      // Codes 110-139 are single-family/row houses -> 'enebolig'
-      if (code >= 110 && code < 140) {
-        return 'enebolig';
-      }
-      // Codes 140+ are larger residential buildings -> 'blokk'
-      if (code >= 140 && code < 200) {
-        return 'blokk';
-      }
-    }
-  }
-
-  // Check internal building type ID
-  const buildingTypeId = building.bygningstypeKodeId;
-  if (buildingTypeId) {
-    // Internal IDs for enebolig-type buildings
-    if ([1, 4, 5, 8].includes(buildingTypeId)) {
+  // Check 3-digit building type code (oppslått kode → CSV → verifisert ID-tabell)
+  const code = resolveBuildingTypeCode(building);
+  if (code !== undefined) {
+    // Småhus (11x–13x) og fritidsbolig/koie (16x–17x) -> 'enebolig'
+    if (SMALL_HOUSE_CODE_GROUPS.includes(String(code).substring(0, 2))) {
       return 'enebolig';
     }
-    // Internal IDs for blokk-type buildings
-    if ([10, 11, 12, 13, 14, 15, 16].includes(buildingTypeId)) {
+    // Store boligbygg og bofellesskap (14x–15x) -> 'blokk'
+    if (BLOCK_CODE_GROUPS.includes(String(code).substring(0, 2))) {
       return 'blokk';
     }
   }
@@ -226,7 +222,7 @@ export function getBuildingKind(building: {
  * Convenience function that wraps getBuildingKind
  */
 export function isEneboligBuilding(building: {
-  csvData?: { bygningstypeNavn?: string };
+  csvData?: { bygningstypeNavn?: string; bygningstype3siffer?: string | null };
   bygningstypeKode?: string;
   bygningstypeKodeId?: number;
 }): boolean {

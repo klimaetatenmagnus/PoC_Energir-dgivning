@@ -3,6 +3,7 @@ import type { AddressLookupResponse } from '../../../../services/buildingApi';
 import { useContentDictionary } from '../../../../hooks/contentHooks';
 import type { ContentAudience } from '../../../../../content/schema-helpers';
 import { trackExternalLinkClick } from '../../../../analytics';
+import { MIN_VALID_BYGGEAAR } from '../../../../utils/tekEnergyCalculations';
 
 export interface Stotteordning {
   ordning: string;
@@ -141,7 +142,8 @@ export const resolveBuildingCategory = (buildingType?: string): BuildingCategory
 };
 
 export const calculateTekPeriod = (byggeaar: number): TekPeriod => {
-  if (!byggeaar || Number.isNaN(byggeaar) || byggeaar < 1860) {
+  // Samme gyldighetsgrense som calculateTEK: reelle byggeår 1801–1950 er 'eldre'
+  if (!byggeaar || Number.isNaN(byggeaar) || byggeaar < MIN_VALID_BYGGEAAR) {
     return '49';
   }
 

@@ -3,6 +3,11 @@ import {
   determineBuildingTypeStrategy,
   shouldProcessBuildingType,
 } from '../../src/utils/buildingTypeUtils.ts';
+import {
+  isGarageOrOutbuildingCode,
+  parseBuildingTypeCode,
+  resolveBuildingTypeCode,
+} from '../../src/utils/buildingTypeCode.ts';
 import type { ByggInfo } from '../../src/clients/StoreClient.ts';
 import { LOG } from './context.ts';
 import {
@@ -84,7 +89,7 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
     solarData,
   } = args;
 
-  const strategy = determineBuildingTypeStrategy(bygg.bygningstypeKodeId);
+  const strategy = determineBuildingTypeStrategy(bygg);
 
   let totalBygningsareal: number | null = null;
   let antallSeksjoner: number | null = null;
@@ -94,7 +99,7 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
 
   if (erSeksjonertEiendom && allBygningsInfo.length > 0) {
     const hovedBygg = allBygningsInfo
-      .filter((b) => shouldProcessBuildingType(b.bygningstypeKodeId))
+      .filter((b) => shouldProcessBuildingType(b))
       .reduce(
         (prev, curr) =>
           (curr.bruksarealM2 ?? 0) > (prev.bruksarealM2 ?? 0) ? curr : prev,
@@ -105,7 +110,8 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
       totalBygningsareal = hovedBygg.bruksarealM2 ?? null;
       hovedbyggId = hovedBygg.id;
 
-      if (bygg.bygningstypeKodeId === 4 || bygg.bygningstypeKodeId === 121) {
+      // Tomannsbolig, vertikaldelt (kode 121) har to seksjoner
+      if (resolveBuildingTypeCode(bygg) === 121) {
         antallSeksjoner = 2;
       }
 
@@ -133,10 +139,12 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
       debugLog(`📊 CSV-data funnet via adresse "${adresse.adressetekst}"`);
     }
 
-    // Hvis CSV-treffet er garasje/uthus, bruk søsken-bolig i stedet
+    // Hvis CSV-treffet er garasje/uthus (kode 180–199), bruk søsken-bolig i
+    // stedet. Næringsbygg (kode 200+) skal IKKE få CSV-data byttet med
+    // naboboligens – da ville f.eks. et kontorbygg framstå som bolig.
     if (csvData) {
-      const code = parseInt(csvData.bygningstype3siffer, 10);
-      if (code >= 180) {
+      const code = parseBuildingTypeCode(csvData.bygningstype3siffer);
+      if (isGarageOrOutbuildingCode(code)) {
         const sibling = csvService.findResidentialSibling(adresse.adressetekst);
         if (sibling) {
           if (LOG) {
@@ -285,6 +293,10 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
 
   recordSolarPresence(solarData ? 'present' : 'missing');
 
+  const resultBuildingTypeCode =
+    parseBuildingTypeCode(csvData?.bygningstype3siffer) ??
+    parseBuildingTypeCode(bygg.bygningstypeKode);
+
   return {
     gnr: adresse.gnr,
     bnr: adresse.bnr,
@@ -303,7 +315,11 @@ export function assembleBuildingResult(args: AssembleArgs): BuildingResult {
     coordinatesWgs84,
     energiattest: attest,
     bygningstypeKodeId: bygg.bygningstypeKodeId ?? null,
-    bygningstypeKode: bygg.bygningstypeKode ?? null,
+    // Koden følger samme kildehierarki som areal, byggeår og typenavn: når
+    // CSV-data finnes, beskriver resultatet CSV-posten (som kan være et annet
+    // bygg enn det Matrikkel-valgte, f.eks. søsken-bolig for en garasje).
+    bygningstypeKode:
+      resultBuildingTypeCode !== undefined ? String(resultBuildingTypeCode) : null,
     bygningstype: finalBygningstype,
     rapporteringsNivaa: strategy.reportingLevel,
     takAreal_m2: solarData?.takAreal_m2 ?? null,

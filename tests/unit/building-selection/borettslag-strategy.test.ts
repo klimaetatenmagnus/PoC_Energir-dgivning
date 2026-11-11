@@ -78,7 +78,7 @@ describe.skipIf(!LIVE)("Borettslag-strategi", () => {
           const byggInfo = await storeClient.getObject(byggId);
 
           // Sjekk om det er boligbygg
-          if (shouldProcessBuildingType(byggInfo.bygningstypeKodeId)) {
+          if (shouldProcessBuildingType(byggInfo)) {
             boligbygg.push({
               id: byggId,
               bruksarealM2: byggInfo.bruksarealM2,

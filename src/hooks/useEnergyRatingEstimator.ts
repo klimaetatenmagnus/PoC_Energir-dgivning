@@ -6,6 +6,7 @@ import {
 } from 'react';
 import type { EnergyEstimatorBuildingData } from '../types/energy';
 import { calculateEnergyRating } from '../utils/tekEnergyCalculations';
+import { BLOCK_CODE_GROUPS, SMALL_HOUSE_CODE_GROUPS } from '../utils/buildingTypeCode';
 
 type SimulationMeasure =
   | 'vindu'
@@ -172,10 +173,10 @@ function detectBuildingCategory(
 ): BuildingCategory | null {
   const code = data.bygningstypeKode?.substring(0, 2);
   if (code) {
-    if (['11', '12', '13'].includes(code)) {
+    if (SMALL_HOUSE_CODE_GROUPS.includes(code)) {
       return 'småhus';
     }
-    if (['14', '15', '16', '17'].includes(code)) {
+    if (BLOCK_CODE_GROUPS.includes(code)) {
       return 'blokk';
     }
   }

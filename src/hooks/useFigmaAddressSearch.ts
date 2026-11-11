@@ -21,7 +21,11 @@ import { computeFigmaViewportMetrics, DESIGN_HEIGHT, DESIGN_WIDTH } from '../com
 import { BuildingKind } from '../context/TransitionOverlayTypes';
 import { useTransitionOverlay } from '../context/useTransitionOverlay';
 import { useResponsive } from './useResponsive';
-import { getBuildingKind as getBuildingKindFromUtils, isEneboligBuilding } from '../utils/buildingTypeUtils';
+import {
+  getBuildingKind as getBuildingKindFromUtils,
+  getUnsupportedBuildingMessage,
+  isEneboligBuilding,
+} from '../utils/buildingTypeUtils';
 
 const FADE_DURATION_MS = 2000;
 const BACK_FADE_OUT_MS = 800;
@@ -160,6 +164,8 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  // Økes når et søk sendes, slik at forslag som er underveis ikke åpner listen igjen
+  const suggestionsRequestId = useRef(0);
   const [landingSnapshot, setLandingSnapshot] = useState<LandingSnapshot | null>(null);
   const [fadeCompleted, setFadeCompleted] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
@@ -388,12 +394,19 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
 
   const fetchSuggestions = useCallback(
     async (query: string) => {
+      const requestId = ++suggestionsRequestId.current;
       setSuggestionsLoading(true);
       try {
         const nextSuggestions = await buildingApi.fetchSuggestions(query);
+        if (requestId !== suggestionsRequestId.current) {
+          return; // Utdatert svar: et søk er sendt (eller nyere forslag hentes)
+        }
         setSuggestions(nextSuggestions);
         setShowSuggestions(nextSuggestions.length > 0);
       } catch {
+        if (requestId !== suggestionsRequestId.current) {
+          return;
+        }
         // Vi skjuler forslag ved feil, men lar hovedsøket fortsette
         setSuggestions([]);
         setShowSuggestions(false);
@@ -439,12 +452,31 @@ export function useFigmaAddressSearch(): UseFigmaAddressSearchResult {
       return;
     }
 
+    // Lukk forslagslisten når søket sendes, slik at den ikke legger seg over
+    // feilmeldingen (f.eks. «støtter foreløpig bare boliger»).
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+      debounceTimer.current = null;
+    }
+    suggestionsRequestId.current += 1;
+    setSuggestions([]);
+    setShowSuggestions(false);
+
     setLoading(true);
     setError(null);
 
     try {
       trackAddressLookup();
       const lookupResult = await buildingApi.lookupAddress(trimmed);
+
+      // Tjenesten støtter foreløpig bare boliger. Næringsbygg, garasjer o.l.
+      // skal ikke regnes som småhus – vis en forklaring i stedet for
+      // årsforbruk og energikarakter.
+      const unsupportedMessage = getUnsupportedBuildingMessage(lookupResult);
+      if (unsupportedMessage) {
+        throw new Error(unsupportedMessage);
+      }
+
       setResult(lookupResult);
       beginLandingTransition(getBuildingKind(lookupResult));
     } catch (lookupError) {
