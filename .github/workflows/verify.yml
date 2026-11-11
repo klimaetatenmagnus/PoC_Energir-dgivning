@@ -28,3 +28,15 @@ jobs:
         env:
           MATRIKKEL_USERNAME: dummy
           MATRIKKEL_PASSWORD: dummy
+
+      # Enhetstestene for feilklassifiseringen i adresseoppslaget (404 «ikke
+      # funnet» mot 500 driftsfeil). De er rene og trenger verken nett eller
+      # data/raw. Resten av tests/unit kjøres ikke her ennå.
+      - name: Run address lookup unit tests
+        run: >-
+          npx vitest run --config vitest.config.backend.ts
+          tests/unit/utils/geonorge-adresse.test.ts
+          tests/unit/utils/lookup-errors.test.ts
+        env:
+          MATRIKKEL_USERNAME: dummy
+          MATRIKKEL_PASSWORD: dummy

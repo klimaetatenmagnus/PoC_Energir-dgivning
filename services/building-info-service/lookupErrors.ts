@@ -90,3 +90,46 @@ export function describeLookupFailure(error: unknown): LookupFailure {
     message: LOOKUP_UNAVAILABLE_MESSAGE,
   };
 }
+
+/**
+ * Skal CSV-reserven prøves etter at oppslaget feilet?
+ *
+ * Ikke når Geonorge entydig har svart at adressen ikke finnes i Oslo.
+ * CSV-oppslaget kjenner bare Oslo og kutter alt etter komma, så
+ * «Kirkeveien 59, 1363 Høvik» ville gitt data for Kirkeveien 59 i Oslo, og
+ * det tilnærmede CSV-søket kan treffe en lignende, men annen adresse. Reserven
+ * er laget for tilfeller der oppslaget ikke kunne gjennomføres, ikke for å
+ * overprøve et negativt svar.
+ *
+ * Den prøves fortsatt ved driftsfeil, og når adressen finnes i Oslo, men
+ * Matrikkel-oppslaget ikke fant en egnet bygning (årsak «building»).
+ */
+export function shouldTryCsvFallback(error: unknown): boolean {
+  return !(isLookupNotFoundError(error) && error.reason === 'address');
+}
+
+export type LookupFallbackOutcome<TRecord> =
+  | { kind: 'csv'; record: TRecord }
+  | { kind: 'failure'; failure: LookupFailure };
+
+/**
+ * Avgjør hva /api/address-lookup skal svare når oppslaget har feilet: data fra
+ * CSV-reserven, eller et feilsvar.
+ *
+ * `findCsvRecord` kalles ikke når shouldTryCsvFallback sier nei. Finner den
+ * ingen post, blir svaret det describeLookupFailure gir for den opprinnelige
+ * feilen.
+ */
+export function resolveLookupFallback<TRecord>(
+  error: unknown,
+  findCsvRecord: () => TRecord | null | undefined
+): LookupFallbackOutcome<TRecord> {
+  if (shouldTryCsvFallback(error)) {
+    const record = findCsvRecord();
+    if (record !== null && record !== undefined) {
+      return { kind: 'csv', record };
+    }
+  }
+
+  return { kind: 'failure', failure: describeLookupFailure(error) };
+}

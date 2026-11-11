@@ -95,18 +95,44 @@ export function buildAddressSearchVariants(adresse: string): string[] {
   return uniqueVariants;
 }
 
-/** Tidsavbrudd, nettverksfeil, 429 og 5xx: Geonorge har ikke svart på søket. */
-function isUpstreamFailureStatus(status: number): boolean {
-  return status === 429 || status >= 500;
+/**
+ * Feilstatuser som betyr at selve søketeksten ble avvist. Da finnes det ingen
+ * treff på den varianten:
+ * - 400: Geonorge avviser teksten (for eksempel jokertegn sammen med fuzzy,
+ *   eller mer enn 500 tegn).
+ * - 413/414/431: teksten er så lang at mellomtjeneren foran Geonorge avviser
+ *   forespørselen (målt: 431 ved ca. 16 000 tegn i URL-en, 414 ved ca. 20 000).
+ *
+ * Alle andre feilstatuser betyr at søket ikke ble utført: 401/403 (sperret),
+ * 404/410 (endepunktet er flyttet), 408, 429 og 5xx. De sier ingenting om
+ * adressen finnes, og skal gi driftsfeil – ikke «ikke funnet».
+ */
+function isSearchRejectedStatus(status: number): boolean {
+  return status === 400 || status === 413 || status === 414 || status === 431;
+}
+
+/**
+ * Leser trefflisten fra et 200-svar. Gir null når svaret ikke har formen
+ * `{ adresser: [...] }`. Da har vi ikke fått svar på søket (for eksempel en
+ * feilside fra en mellomtjener), og kan ikke slutte at adressen mangler.
+ */
+function readAdresser(payload: unknown): GeoAdresseEntry[] | null {
+  if (typeof payload !== 'object' || payload === null) {
+    return null;
+  }
+  const adresser = (payload as { adresser?: unknown }).adresser;
+  return Array.isArray(adresser) ? (adresser as GeoAdresseEntry[]) : null;
 }
 
 /**
  * Finner adressen i Oslo ved å prøve søkevariantene etter tur.
  *
  * Kaster LookupNotFoundError bare når Geonorge faktisk har svart på alle
- * variantene uten Oslo-treff. Hvis minst ett søk feilet (tidsavbrudd,
- * nettverksfeil, 429/5xx eller uleselig svar) vet vi ikke om adressen finnes,
- * og da kastes en vanlig Error slik at kalleren kan melde driftsfeil.
+ * variantene uten Oslo-treff (tom treffliste, eller en status som betyr at
+ * søketeksten ble avvist). Hvis minst ett søk feilet (tidsavbrudd,
+ * nettverksfeil, annen feilstatus, eller et svar uten treffliste) vet vi ikke
+ * om adressen finnes, og da kastes en vanlig Error slik at kalleren kan melde
+ * driftsfeil.
  */
 export async function findOsloAdresse(
   adresse: string,
@@ -115,22 +141,27 @@ export async function findOsloAdresse(
   let upstreamFailures = 0;
 
   for (const variant of buildAddressSearchVariants(adresse)) {
-    let payload: { adresser?: GeoAdresseEntry[] } | null;
+    let adresser: GeoAdresseEntry[] | null;
     try {
       const response = await fetchSearch(buildGeonorgeSearchUrl(variant));
       if (!response.ok) {
-        if (isUpstreamFailureStatus(response.status)) {
+        if (!isSearchRejectedStatus(response.status)) {
           upstreamFailures += 1;
         }
         continue;
       }
-      payload = (await response.json()) as { adresser?: GeoAdresseEntry[] } | null;
+      adresser = readAdresser(await response.json());
     } catch {
       upstreamFailures += 1;
       continue;
     }
 
-    const treff = selectOsloAdresse(payload?.adresser);
+    if (!adresser) {
+      upstreamFailures += 1;
+      continue;
+    }
+
+    const treff = selectOsloAdresse(adresser);
     if (treff) {
       return treff;
     }

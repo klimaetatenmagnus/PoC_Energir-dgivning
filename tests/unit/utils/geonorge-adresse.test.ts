@@ -183,13 +183,19 @@ describe('findOsloAdresse', () => {
     expect(isLookupNotFoundError(error)).toBe(true);
   });
 
-  it('regner 400 fra Geonorge som «ingen treff», ikke som driftsfeil', async () => {
-    const error = await findOsloAdresse('Eksempelveien 12', async () =>
-      statusResponse(400)
-    ).catch((e: unknown) => e);
+  // 400: Geonorge avviser søketeksten. 413/414/431: teksten er så lang at
+  // mellomtjeneren avviser forespørselen. Ingen av dem er driftsfeil.
+  it.each([400, 413, 414, 431])(
+    'regner %i (søketeksten ble avvist) som «ingen treff», ikke som driftsfeil',
+    async (status) => {
+      const error = await findOsloAdresse('Eksempelveien 12', async () =>
+        statusResponse(status)
+      ).catch((e: unknown) => e);
 
-    expect(isLookupNotFoundError(error)).toBe(true);
-  });
+      expect(isLookupNotFoundError(error)).toBe(true);
+      expect(isLookupNotFoundError(error) && error.reason).toBe('address');
+    }
+  );
 
   it('kaster vanlig Error når Geonorge ikke svarer (tidsavbrudd)', async () => {
     const error = await findOsloAdresse('Ivar Aasens vei 23A', async () => {
@@ -205,7 +211,9 @@ describe('findOsloAdresse', () => {
     expect((error as Error).message).not.toMatch(/ikke funnet|ingen adresse/i);
   });
 
-  it.each([429, 500, 503])(
+  // Bare 400 betyr at Geonorge har behandlet søket. 401/403 (sperret),
+  // 404/410 (endepunktet flyttet) og 408 sier like lite om adressen som 5xx.
+  it.each([401, 403, 404, 408, 410, 429, 500, 503])(
     'kaster vanlig Error når Geonorge svarer %i',
     async (status) => {
       const error = await findOsloAdresse('Ivar Aasens vei 23A', async () =>
@@ -214,6 +222,30 @@ describe('findOsloAdresse', () => {
 
       expect(error).toBeInstanceOf(Error);
       expect(isLookupNotFoundError(error)).toBe(false);
+      expect((error as Error).message).toMatch(/Geonorge adressesøk feilet/);
+    }
+  );
+
+  it.each([
+    ['et tomt objekt', {}],
+    ['adresser: null', { adresser: null }],
+    ['en liste i stedet for et objekt', []],
+    ['null', null],
+    ['en tekststreng', 'Service Unavailable'],
+  ])(
+    'kaster vanlig Error når 200-svaret er %s i stedet for en treffliste',
+    async (_beskrivelse, payload) => {
+      // Uten `adresser`-liste har vi ikke fått svar på søket, og kan ikke
+      // si at adressen ikke finnes i Oslo.
+      const error = await findOsloAdresse('Ivar Aasens vei 23A', async () => ({
+        ok: true,
+        status: 200,
+        json: async () => payload,
+      })).catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(Error);
+      expect(isLookupNotFoundError(error)).toBe(false);
+      expect((error as Error).message).toMatch(/Geonorge adressesøk feilet/);
     }
   );
 
