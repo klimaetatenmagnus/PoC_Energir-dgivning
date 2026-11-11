@@ -24,7 +24,7 @@ import { DesktopTiltakCard } from './Tiltak';
 import { DistrictComparisonModal } from './DistrictComparison/DistrictComparisonModal';
 import { trackNeighborComparison } from '../../../analytics';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, calculateEnergyRatingWithFjernvarme, calculateTEK } from '../../../utils/tekEnergyCalculations';
-import { resolveBuildingTypeCodeString } from '../../../utils/buildingTypeCode';
+import { BLOCK_CODE_GROUPS, resolveBuildingTypeCodeString } from '../../../utils/buildingTypeCode';
 import { calculateComparisonSavings, type TiltakSavingsInfo, type TekPeriodInput } from '../../../utils/energySavingsData';
 import {
   getDistrictStatistics,
@@ -152,13 +152,14 @@ function resolveTiltakBuildingType(
   }
 
   const prefix = resolveBuildingTypeCodeString(buildingData)?.slice(0, 2);
-  if (prefix === '11') {
+  // Enebolig (11x) og fritidsbolig, koie/seterhus (16x–17x)
+  if (prefix === '11' || prefix === '16' || prefix === '17') {
     return 'enebolig';
   }
   if (prefix === '12' || prefix === '13') {
     return 'rekkehus';
   }
-  if (prefix && ['14', '15', '16', '17'].includes(prefix)) {
+  if (prefix && BLOCK_CODE_GROUPS.includes(prefix)) {
     return 'blokk';
   }
 

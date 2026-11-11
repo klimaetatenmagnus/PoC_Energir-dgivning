@@ -15,6 +15,7 @@ import {
   type TekPeriodInput,
   type Boligtype,
 } from './energySavingsData';
+import { BLOCK_CODE_GROUPS, SMALL_HOUSE_CODE_GROUPS } from './buildingTypeCode';
 
 export type BuildingType = 'småhus' | 'blokk';
 
@@ -207,7 +208,7 @@ export function estimateEnergyGradeFromKwhPerM2(
 
 /**
  * Bestem bygningstype basert på bygningstypekode eller -navn.
- * Koder 11-13 = småhus, 14-17 = blokk.
+ * Koder 11-13 og 16-17 (fritidsbolig, koie/seterhus) = småhus, 14-15 = blokk.
  *
  * `buildingTypeCode` må være den 3-sifrede bygningstypekoden (eller de to
  * første sifrene), ALDRI Matrikkelens interne `bygningstypeKodeId` – ID 13
@@ -221,10 +222,10 @@ export function determineBuildingType(
   // Sjekk først kode
   if (buildingTypeCode) {
     const code = buildingTypeCode.substring(0, 2);
-    if (['11', '12', '13'].includes(code)) {
+    if (SMALL_HOUSE_CODE_GROUPS.includes(code)) {
       return 'småhus';
     }
-    if (['14', '15', '16', '17'].includes(code)) {
+    if (BLOCK_CODE_GROUPS.includes(code)) {
       return 'blokk';
     }
   }

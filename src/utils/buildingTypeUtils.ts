@@ -4,8 +4,10 @@
 // -----------------------------------------------------------------------------
 
 import {
+  BLOCK_CODE_GROUPS,
   isResidentialCode,
   resolveBuildingTypeCode,
+  SMALL_HOUSE_CODE_GROUPS,
   type BuildingTypeSource,
 } from './buildingTypeCode.ts';
 
@@ -166,7 +168,8 @@ export type { BuildingKind } from '../context/TransitionOverlayTypes';
  *
  * Classification rules:
  * - 'enebolig': single-family homes, duplexes, row houses (codes 11x, 12x, 13x)
- * - 'blokk': apartment blocks, large residential buildings (codes 14x, 15x, 16x, 17x)
+ *   and holiday homes/cabins (codes 16x, 17x)
+ * - 'blokk': apartment blocks, large residential buildings (codes 14x, 15x)
  *
  * @param building - Object containing building type information
  * @returns 'enebolig' or 'blokk'
@@ -200,12 +203,12 @@ export function getBuildingKind(building: {
   // Check 3-digit building type code (oppslått kode → CSV → verifisert ID-tabell)
   const code = resolveBuildingTypeCode(building);
   if (code !== undefined) {
-    // Codes 110-139 are single-family/row houses -> 'enebolig'
-    if (code >= 110 && code < 140) {
+    // Småhus (11x–13x) og fritidsbolig/koie (16x–17x) -> 'enebolig'
+    if (SMALL_HOUSE_CODE_GROUPS.includes(String(code).substring(0, 2))) {
       return 'enebolig';
     }
-    // Codes 140+ are larger residential buildings -> 'blokk'
-    if (code >= 140 && code < 200) {
+    // Store boligbygg og bofellesskap (14x–15x) -> 'blokk'
+    if (BLOCK_CODE_GROUPS.includes(String(code).substring(0, 2))) {
       return 'blokk';
     }
   }

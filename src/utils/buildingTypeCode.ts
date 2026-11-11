@@ -242,6 +242,19 @@ export function isGarageOrOutbuildingCode(code: number | undefined): boolean {
 }
 
 /**
+ * Kodegrupper (de to første sifrene) som regnes som småhus i
+ * beregningsmodellen: enebolig, tomannsbolig og rekkehus (11x–13x), samt
+ * fritidsbolig og koie/seterhus (16x–17x).
+ */
+export const SMALL_HOUSE_CODE_GROUPS: readonly string[] = ['11', '12', '13', '16', '17'];
+
+/**
+ * Kodegrupper som regnes som blokk: store boligbygg (14x) og bygninger for
+ * bofellesskap (15x).
+ */
+export const BLOCK_CODE_GROUPS: readonly string[] = ['14', '15'];
+
+/**
  * Sant når vi VET at bygget ikke er en bolig (kode finnes og ligger utenfor
  * 110–179). Ukjent kode gir `false`, slik at oppslag uten typeinformasjon
  * behandles som før.

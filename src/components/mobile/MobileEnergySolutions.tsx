@@ -34,7 +34,7 @@ import { MobileSavingsFooter } from './MobileSavingsFooter';
 import { MobileDistrictComparison } from './MobileDistrictComparison';
 import { MobileProsessenVidere } from './MobileProsessenVidere';
 import { calculateAnnualEnergyConsumption, determineBuildingType, calculateEnergyRating, calculateEnergyRatingWithFjernvarme } from '../../utils/tekEnergyCalculations';
-import { resolveBuildingTypeCodeString } from '../../utils/buildingTypeCode';
+import { BLOCK_CODE_GROUPS, resolveBuildingTypeCodeString } from '../../utils/buildingTypeCode';
 import { calculateTekPeriod, parseNumericValue } from '../FigmaBlokk/components/Tiltak/shared';
 import { computeAggregatedSavingsNok } from '../../utils/tiltakSavings';
 import {
@@ -137,7 +137,8 @@ const determineBuildingTypeKey = (
   buildingTypeCode: string,
   buildingTypeNameLower: string
 ): string | undefined => {
-  if (buildingTypeCode === '11' || buildingTypeNameLower.includes('enebolig')) {
+  // Enebolig (kode 11) og fritidsbolig, koie/seterhus (kode 16-17)
+  if (['11', '16', '17'].includes(buildingTypeCode) || buildingTypeNameLower.includes('enebolig')) {
     return 'enebolig';
   }
   if (buildingTypeCode === '12' || buildingTypeNameLower.includes('tomannsbolig')) {
@@ -153,7 +154,7 @@ const determineBuildingTypeKey = (
     return 'rekkehus';
   }
   if (
-    ['14', '15', '16', '17'].includes(buildingTypeCode) ||
+    BLOCK_CODE_GROUPS.includes(buildingTypeCode) ||
     buildingTypeNameLower.includes('blokk') ||
     buildingTypeNameLower.includes('leilighet') ||
     buildingTypeNameLower.includes('boligbygg')
@@ -404,7 +405,7 @@ export const MobileEnergySolutions: React.FC<MobileEnergySolutionsProps> = ({
   // Er dette en blokk?
   const isBlokk = useMemo(() => {
     return (
-      ['14', '15', '16', '17'].includes(buildingTypeCode) ||
+      BLOCK_CODE_GROUPS.includes(buildingTypeCode) ||
       buildingTypeNameLower.includes('blokk') ||
       buildingTypeNameLower.includes('leilighet') ||
       buildingTypeNameLower.includes('boligbygg') ||

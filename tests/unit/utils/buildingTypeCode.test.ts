@@ -4,7 +4,9 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  BLOCK_CODE_GROUPS,
   BUILDING_TYPE_ID_TO_CODE,
+  SMALL_HOUSE_CODE_GROUPS,
   buildingTypeCodeFromId,
   isGarageOrOutbuildingCode,
   isKnownNonResidential,
@@ -270,8 +272,32 @@ describe('determineBuildingType (småhus/blokk) via felles kodeoppslag', () => {
     ['141', 'blokk'],
     ['142', 'blokk'],
     ['146', 'blokk'],
+    ['151', 'blokk'], // bo- og servicesenter
+    ['152', 'blokk'], // studentboliger
+    ['159', 'blokk'],
   ] as const)('kode %s → %s', (kode, forventet) => {
     expect(determineBuildingType(kode)).toBe(forventet);
+  });
+
+  it.each(['161', '162', '163', '171', '172'])(
+    'fritidsbolig og koie/seterhus (kode %s) regnes som småhus, ikke blokk',
+    (kode) => {
+      expect(determineBuildingType(kode)).toBe('småhus');
+    }
+  );
+
+  it('fritidsbygg via intern ID 21 (kode 161) er småhus', () => {
+    expect(determineBuildingType(resolveBuildingTypeCodeString({ bygningstypeKodeId: 21 }))).toBe('småhus');
+  });
+
+  it('hver boligkode (110–179) i tabellen hører til nøyaktig én gruppe', () => {
+    const boligkoder = Object.values(BUILDING_TYPE_ID_TO_CODE).filter(isResidentialCode);
+    expect(boligkoder.length).toBe(25); // ID 1–25
+    for (const kode of boligkoder) {
+      const gruppe = String(kode).substring(0, 2);
+      const treff = [SMALL_HOUSE_CODE_GROUPS, BLOCK_CODE_GROUPS].filter((g) => g.includes(gruppe));
+      expect(treff, `kode ${kode}`).toHaveLength(1);
+    }
   });
 });
 
@@ -282,6 +308,35 @@ describe('getBuildingKind', () => {
     expect(getBuildingKind({ bygningstypeKodeId: 10 })).toBe('enebolig'); // 135 terrassehus
     expect(getBuildingKind({ bygningstypeKodeId: 13 })).toBe('blokk'); // 142
     expect(getBuildingKind({ bygningstypeKodeId: 17 })).toBe('blokk'); // 146
+    expect(getBuildingKind({ bygningstypeKodeId: 19 })).toBe('blokk'); // 152 studentboliger
+  });
+
+  it('fritidsbolig og koie/seterhus (16x–17x) vises som enebolig', () => {
+    expect(getBuildingKind({ bygningstypeKodeId: 21 })).toBe('enebolig'); // 161
+    expect(getBuildingKind({ bygningstypeKode: '172' })).toBe('enebolig');
+    // CSV-navnet gir ikke treff – koden avgjør
+    expect(
+      getBuildingKind({
+        csvData: { bygningstypeNavn: 'Fritidsbygg(hyttersommerh. ol', bygningstype3siffer: '161' },
+        bygningstypeKode: '161',
+      })
+    ).toBe('enebolig');
+  });
+
+  it('typenavn uten treff faller tilbake til koden (terrassehus, kjede-/atriumhus)', () => {
+    // Desktop-visningen og landingsovergangen må være enige om disse,
+    // ellers blir overgangsanimasjonen hengende.
+    expect(
+      getBuildingKind({ csvData: { bygningstypeNavn: 'Terrassehus' }, bygningstypeKode: '135' })
+    ).toBe('enebolig');
+    expect(
+      getBuildingKind({ csvData: { bygningstypeNavn: 'Kjede/atriumhus' }, bygningstypeKode: '133' })
+    ).toBe('enebolig');
+  });
+
+  it('garasje og ukjent type gir blokk som standard', () => {
+    expect(getBuildingKind({ bygningstypeKode: '181' })).toBe('blokk');
+    expect(getBuildingKind({})).toBe('blokk');
   });
 
   it('CSV-navn har fortsatt forrang', () => {
