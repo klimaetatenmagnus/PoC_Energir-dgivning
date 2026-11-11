@@ -35,24 +35,16 @@ import {
   startExternalCall,
   type ExternalResultLabel,
 } from './metrics.ts';
+import {
+  buildGeonorgeSearchUrl,
+  selectOsloAdresse,
+  type GeoAdresseEntry,
+} from './geonorgeAdresse.ts';
 
 proj4.defs('EPSG:32632', '+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs');
 proj4.defs('EPSG:4326', '+proj=longlat +datum=WGS84 +no_defs');
 
 const ctx = createMatrikkelContext;
-
-interface GeoAdresseEntry {
-  kommunenummer: string;
-  gardsnummer: number;
-  bruksnummer: number;
-  adressekode: number;
-  nummer?: string;
-  husnummer?: string;
-  bokstav?: string;
-  adressetekst?: string;
-  poststed?: string;
-  postnummer?: string;
-}
 
 interface GeoResp {
   adresser: GeoAdresseEntry[];
@@ -181,20 +173,18 @@ async function lookupAdresse(adresse: string): Promise<LookupAdresseResult> {
     async () => {
       const headers = { headers: { 'User-Agent': 'Energitiltak/1.0' } };
 
-      const buildUrl = (query: string) =>
-        'https://ws.geonorge.no/adresser/v1/sok?' +
-        new URLSearchParams({ sok: query, fuzzy: 'true' })
-          .toString()
-          .replace(/\+/g, '%20');
+      // Søket avgrenses til Oslo – ellers kan samme gateadresse i en annen
+      // kommune bli første treff (se geonorgeAdresse.ts).
+      const buildUrl = buildGeonorgeSearchUrl;
 
       const parse = async (
         response: FetchResponse
       ): Promise<LookupAdresseResult> => {
         const json = (await response.json()) as GeoResp;
-        if (!json.adresser?.length) {
+        const first = selectOsloAdresse(json.adresser);
+        if (!first) {
           throw new Error('Adressen ikke funnet i Geonorge');
         }
-        const first = json.adresser[0];
         return {
           kommunenummer: first.kommunenummer,
           gnr: first.gardsnummer,
