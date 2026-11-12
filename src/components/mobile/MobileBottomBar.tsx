@@ -6,6 +6,7 @@ import {
   ratingTextColor,
   roundEstimate,
 } from './mobileFormat';
+import { RollingNumber } from './RollingNumber';
 
 export interface BottomBarChosenItem {
   id: string;
@@ -134,7 +135,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
             >
               <span className="mobile-bottom-bar__summary-text">
                 <span className="mobile-bottom-bar__total" aria-live="polite">
-                  {hasTotal ? formatSavingsNok(totalNok) : 'Ikke beregnet'}
+                  {hasTotal ? <RollingNumber text={formatSavingsNok(totalNok)} /> : 'Ikke beregnet'}
                 </span>
                 <span className="mobile-bottom-bar__meta">
                   <span>{chosen.length} tiltak</span>
